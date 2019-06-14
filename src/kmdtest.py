@@ -101,6 +101,7 @@ class TestKMD(unittest.TestCase):
         ac1 = self.client.generateKey(handle, True)["address"]
         ac2 = self.client.generateKey(handle, True)["address"]
         tr = transaction.PaymentTxn(ac1, 1000, 300, 400, None, 'testnet-v38.0', '4HkOQEL2o2bVh2P1wSpky3s6cwcEg/AAd5qlery942g=', ac2, 100)
+
         result = self.client.signTransaction(handle, wallet_pswd, tr)
         self.assertIn("signed_transaction", result)
 

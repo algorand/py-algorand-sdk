@@ -6,7 +6,7 @@ import encoding
 class Transaction:
     def __init__(self, sender, fee, first, last, note, gen, gh):
         self.type = None
-        self.sender = sender  # str
+        self.sender = encoding.decodeAddress(sender)  # str, decode into bytes
         self.fee = fee  # possibly min txn fee
         self.firstValidRound = first  # num
         self.lastValidRound = last  # num
@@ -43,9 +43,9 @@ class PaymentTxn(Transaction):
     """
     def __init__(self,  sender, fee, first, last, note, gen, gh, receiver, amt, closeRemainderTo=None):
         Transaction.__init__(self,  sender, fee, first, last, note, gen, gh)
-        self.receiver = receiver
+        self.receiver = encoding.decodeAddress(receiver)
         self.amt = amt
-        self.closeRemainderTo = closeRemainderTo
+        self.closeRemainderTo = encoding.decodeAddress(closeRemainderTo)
         self.type = "pay"
 
     def dictify(self):
@@ -53,7 +53,7 @@ class PaymentTxn(Transaction):
         od = OrderedDict()
         od["amt"] = self.amt
         if self.closeRemainderTo:
-            od["close"] = correct_padding(self.closeRemainderTo)
+            od["close"] = self.closeRemainderTo
         od["fee"] = self.fee
         od["fv"] = self.firstValidRound
         od["gen"] = self.genesisID
@@ -61,8 +61,8 @@ class PaymentTxn(Transaction):
         od["lv"] = self.lastValidRound
         if self.note:
             od["note"] = self.note
-        od["rcv"] = base64.b32decode(correct_padding(self.receiver))
-        od["snd"] = base64.b32decode(correct_padding(self.sender))
+        od["rcv"] = self.receiver
+        od["snd"] = self.sender
         od["type"] = self.type
 
         return od
@@ -88,7 +88,7 @@ class KeyregTxn(Transaction):
         if self.note:
             od["note"] = self.note
         od["selkey"] = self.selkey
-        od["snd"] = base64.b32decode(correct_padding(self.sender))
+        od["snd"] = self.sender
         od["type"] = self.type
         od["votefst"] = self.votefst,
         od["votekd"] = self.votekd,
@@ -105,11 +105,9 @@ class SignedTransaction:
 
     def dictify(self):
         od = OrderedDict()
-        od["msig"] = self.multisig
-        od["sig"] = self.signature
+        if self.multisig:
+            od["msig"] = self.multisig
+        if self.signature:
+            od["sig"] = self.signature
         od["txn"] = self.transaction.dictify()
         return od
-
-
-def correct_padding(value):
-    return value[:-6] + "===="

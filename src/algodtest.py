@@ -63,7 +63,6 @@ class TestAlgod(unittest.TestCase):
         result = self.client.accountInfo(addr)
         self.assertIn("status", result)
         self.assertEqual(result["address"], addr)
-        print(result)
 
     # fromDate and toDate only work if indexer is enabled
     # should add extra test here for testing that
@@ -125,7 +124,6 @@ class TestAlgod(unittest.TestCase):
     @unittest.skipIf(skipAll, reason)
     def test_suggestedParams(self):
         result = self.client.suggestedParams()
-        print(result)
         self.assertIn("fee", result)
         self.assertIn("genesisID", result)
         self.assertIn("consensusVersion", result)

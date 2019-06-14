@@ -1,11 +1,10 @@
 import base64
-from nacl.signing import SigningKey, VerifyKey
 import transaction
 import encoding
 import kmd
 import standalone
-import json
 import algod
+from collections import OrderedDict
 
 ac1 = "Y54QNLK53ZSLFTRGVIANL7ILVRQAWYSEPSX7CXE7EE7BFGXD35O4PEG6WI"
 ac2 = "H66LMSZVWGMKVOCTDTB7TKYC4DBSTUY6RTUOC5UTL7WHYQZCJP2AEONHFE"
@@ -38,4 +37,9 @@ stxbytes, txid, sig = standalone.signTransaction(tr, prk)
 print(c.signTransaction(t, "example-password", tr))
 
 print(stxbytes)
+
+stxbytes = base64.b64decode(stxbytes.encode("ASCII"))
+stxbytes = base64.b32encode(stxbytes).decode()
+print(stxbytes)
+print(a.sendRawTransaction(stxbytes))
 
