@@ -3,9 +3,12 @@ from urllib import parse, error
 import encoding
 import urllib
 import json
+import base64
+
+# change if version changes
+apiVersionPathPrefix = "/v1"
 
 algodAuthHeader = "X-Algo-API-Token"
-apiVersionPathPrefix = "/v1"
 unversionedPaths = ["/health", "/versions", "/metrics"]
 noAuth = ["/health"]
 
@@ -37,9 +40,7 @@ class AlgodClient:
             requrl = apiVersionPathPrefix + requrl
         if params:
             requrl = requrl + "?" + parse.urlencode(params)
-        if data:
-            data = json.dumps(data, indent=2)
-            data = bytearray(data, "ASCII")
+            
         req = Request(self.algodAddress+requrl, headers=header, method=method, data=data)
 
         try:
@@ -128,10 +129,10 @@ class AlgodClient:
         return self.algodRequest("GET", req)
 
     def sendRawTransaction(self, signed_txn):
-        """Broadcasts a signed transaction to the network."""
-        query = {"rawtxn": signed_txn}
+        """Broadcasts a signed transaction (encoded using encoding.msgpack_encode, in base64) to the network."""
+        signed_txn = base64.b64decode(signed_txn)
         req = "/transactions"
-        return self.algodRequest("POST", req, data=query)
+        return self.algodRequest("POST", req, data=signed_txn)
 
     def blockInfo(self, round):
         """Returns block information."""

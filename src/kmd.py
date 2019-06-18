@@ -178,7 +178,7 @@ class kmdClient:
             }
         return self.kmdRequest("POST", req, data=query)
 
-    def listMultiSig(self, handle):
+    def listMultisig(self, handle):
         """Returns all multisig accounts."""
         req = "/multisig/list"
         query = {
@@ -186,8 +186,10 @@ class kmdClient:
             }
         return self.kmdRequest("POST", req, data=query)
 
-    def importMultiSig(self, handle, version, threshold, public_keys):
-        """Imports a multisig account into the wallet."""
+    def importMultisig(self, handle, version, threshold, public_keys):
+        """Imports a multisig account into the wallet.
+        public_keys are in base64
+        """
         req = "/multisig/import"
         query = {
             "wallet_handle_token": handle,
@@ -197,20 +199,26 @@ class kmdClient:
             }
         return self.kmdRequest("POST", req, data=query)
 
-    def exportMultiSig(self, handle, password, address):
+    def exportMultisig(self, handle, address):
         """Returns a multisig preimage, containing
-        public keys, version, and threshold."""
+        public keys, version, and threshold.
+        address is base32
+        """
         req = "/multisig/export"
         query = {
             "wallet_handle_token": handle,
-            "wallet_password": password,
             "address": address
             }
         return self.kmdRequest("POST", req, data=query)
 
-    def signMultiSigTransaction(
-            self, handle, password, transaction, public_key, partial):
-        """Given a public key, returns a signed multisig transaction."""
+    def signMultisigTransaction(self, handle, password, transaction, public_key, partial):
+        """Given a public key, returns a signed multisig transaction.
+        transaction is obj
+        public key is in base64
+        multisig (partial) is obj
+        """
+        partial = partial.json_dictify()
+        transaction = encoding.msgpack_encode(transaction)
         req = "/multisig/sign"
         query = {
             "wallet_handle_token": handle,

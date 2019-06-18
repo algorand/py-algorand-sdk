@@ -4,13 +4,14 @@ from collections import OrderedDict
 import json
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
+import transaction
 
 checkSumLenBytes = 4
 
 
 def msgpack_encode(obj):
     """
-    Encodes the object using canonical msgpack (specified as follows) so that it is ready broadcast or sign.
+    Encodes the object using canonical msgpack (specified as follows) so that it is ready for signing.
         Maps must contain keys in lexicographic order;
         Maps must omit key-value pairs where the value is a zero-value;
         Positive integer values must be encoded as "unsigned" in msgpack, regardless of whether the value space is semantically signed or unsigned;
@@ -24,6 +25,22 @@ def msgpack_encode(obj):
         if obj[key]:
             od[key] = obj[key]
     return base64.b64encode(umsgpack.dumps(od)).decode()
+
+
+def msgpack_decode(enc):
+    """
+    Decodes a msgpack encoded object from a string.
+    """
+    decoded = umsgpack.loads(base64.b64decode(enc))
+    if "type" in decoded:
+        if decoded["type"].__eq__("pay"):
+            return transaction.PaymentTxn.undictify(decoded)
+        else:
+            return transaction.KeyregTxn.undictify(decoded)
+    if "txn" in decoded:
+        return transaction.SignedTransaction.undictify(decoded)
+    if "subsig" in decoded:
+        return transaction.Multisig.undictify(decoded)
 
 
 def isValidAddress(addr):
@@ -62,7 +79,7 @@ def decodeAddress(addr):
 
 def encodeAddress(addrBytes):
     """
-    Encodes a byte address into a string composed of the bytes, encoded, and the checksum.
+    Encodes a byte address into a string composed of the encoded bytes and the checksum.
     """
     chksum = checksum(addrBytes)
     addr = base64.b32encode(addrBytes+chksum)
@@ -77,6 +94,10 @@ def checksum(addr):
     hash.update(addr)
     chksum = hash.finalize()[-checkSumLenBytes:]
     return chksum
+
+
+def b32tob64(addr):
+    return base64.b64encode(base64.b32decode(correct_padding(addr))).decode()
 
 
 def correct_padding(a):

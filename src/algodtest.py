@@ -1,19 +1,20 @@
 from algod import AlgodClient
 import json
 import unittest
+import base64
 
 # change these after starting the node
 algodToken = "81f40d7c4c781557dfd2a7361986e6653c4be5c8df9ccdc8b866058854d10528"
 algodAddress = "http://localhost:8080"
-reason = "with on/off switch"
+
 # change this to False to test all or
 # True to test none (then comment out annotation
 # for the ones you want to test)
-skipAll = True
+skipAll = False
+reason = "with on/off switch"
 
 
 class TestAlgod(unittest.TestCase):
-    """Tests AlgodClient."""
     @classmethod
     def setUpClass(cls):
         cls.token = algodToken
@@ -23,7 +24,6 @@ class TestAlgod(unittest.TestCase):
     @unittest.skipIf(skipAll, reason)
     def test_status(self):
         result = self.client.status()["lastRound"]
-        print(result)
         self.assertTrue(isinstance(result, int))
 
     @unittest.skipIf(skipAll, reason)
@@ -43,7 +43,6 @@ class TestAlgod(unittest.TestCase):
     def test_pendingTransactions(self):
         result = self.client.pendingTransactions(0)
         self.assertIn("truncatedTxns", result)
-        print(result)
 
     @unittest.skipIf(skipAll, reason)
     def test_versions(self):
@@ -74,7 +73,6 @@ class TestAlgod(unittest.TestCase):
         addr = "2XQDFXOJ6OSTIF4ATCG6JRXKVBJ7IVZ6UBVDL53JP2MVQ3JCGUOPIPU3YU"
         result = self.client.transactionsByAddress(
             addr, lastRound-1, lastRound)
-        print(result)
         self.assertEqual(result, {})
 
     @unittest.skipIf(skipAll, reason)
@@ -130,7 +128,9 @@ class TestAlgod(unittest.TestCase):
 
     @unittest.skipIf(skipAll, reason)
     def test_sendRawTransaction(self):
-        print("NEED TO IMPLEMENT")
+        txn = "gqNzaWfEQOjzNCa+S+z/4A02dStCbahRoGak4pyfq/RQp9YcXysStPk6ZsUhNFf/sLlD9/uacFIOgy4b6/EhpSGi52ERHQ+jdHhuiaNhbXRko2ZlZc0D6KJmds0BLKNnZW6tdGVzdG5ldC12MzguMKJnaMQg4HkOQEL2o2bVh2P1wSpky3s6cwcEg/AAd5qlery942iibHbNAZCjcmN2xCA/vLZLNbGYqrhTHMP5qwLgwynTHozo4XaTX+x8QyJL9KNzbmTEIMd5Bq1d3mSyziaqANX9C6xgC2JEfK/xXJ8hPhKa499dpHR5cGWjcGF5"
+        result = self.client.sendRawTransaction(txn)
+        self.assertIn("missing round 300", result)
 
     @unittest.skipIf(skipAll, reason)
     def test_blockInfo(self):
