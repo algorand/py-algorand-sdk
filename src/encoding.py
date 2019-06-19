@@ -1,7 +1,6 @@
-import base64  # (may not need if just using x.decode*)
+import base64
 import umsgpack
 from collections import OrderedDict
-import json
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
 import transaction

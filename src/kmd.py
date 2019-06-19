@@ -121,12 +121,12 @@ class kmdClient:
             }
         return self.kmdRequest("POST", req, data=query)
 
-    def importKey(self, handle, secret_key):
+    def importKey(self, handle, private_key):
         """Imports an account into a wallet."""
         req = "/key/import"
         query = {
             "wallet_handle_token": handle,
-            "private_key": secret_key
+            "private_key": private_key
             }
         return self.kmdRequest("POST", req, data=query)
 
@@ -140,7 +140,7 @@ class kmdClient:
             }
         return self.kmdRequest("POST", req, data=query)
 
-    def generateKey(self, handle, display_mnemonic):
+    def generateKey(self, handle, display_mnemonic=False):
         """Generates a key in the wallet."""
         req = "/key"
         query = {
@@ -210,6 +210,17 @@ class kmdClient:
             "address": address
             }
         return self.kmdRequest("POST", req, data=query)
+
+    def deleteMultisig(self, handle, password, address):
+        """Deletes the given multisig account."""
+        req = "/multisig"
+        query = {
+            "wallet_handle_token": handle,
+            "wallet_password": password,
+            "address": address
+            }
+        return self.kmdRequest("DELETE", req, data=query)
+
 
     def signMultisigTransaction(self, handle, password, transaction, public_key, partial):
         """Given a public key, returns a signed multisig transaction.

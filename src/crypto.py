@@ -5,8 +5,10 @@ import transaction
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
 import umsgpack
+import auction
 
-txidPrefix = bytes("TX", "ASCII")
+txidPrefix = bytes("TX", "ascii")
+bidPrefix = bytes("aB", "ascii")
 checkSumLenBytes = 4
 
 def signTransaction(txn, private_key):
@@ -103,6 +105,20 @@ def mergeMultisigTransactions(partStxs):
     return stxbytes, txid
 
 
+def signBid(bid, private_key): # Bid obj, str
+    """
+    Given a bid and a private key, returns a signed bid object.
+    """
+    temp = encoding.msgpack_encode(bid)
+    to_sign = bidPrefix + base64.b64decode(bytes(temp, "ascii"))
+    private_key = base64.b64decode(bytes(private_key, "ascii"))
+    signing_key = SigningKey(private_key[:32])
+    signed = signing_key.sign(to_sign)
+    sig = signed.signature
+    signed = auction.SignedBid(bid, sig)
+    return signed
+
+
 def getTxid(txn):
     """
     Given a Transaction object, returns its transaction ID.
@@ -113,7 +129,7 @@ def getTxid(txn):
     txidbytes.update(to_sign)
     txid = txidbytes.finalize()
     txid = base64.b32encode(txid).decode()
-    return txid
+    return encoding.undo_padding(txid)
 
 
 def generateAccount():
@@ -124,3 +140,5 @@ def generateAccount():
     vk = sk.verify_key
     a = encoding.encodeAddress(vk.encode())
     return sk, vk, encoding.undo_padding(a)
+
+

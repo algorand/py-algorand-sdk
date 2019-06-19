@@ -87,7 +87,7 @@ class AlgodClient:
     def transactionsByAddress(self, address, first=1, last=None, limit=0, fromDate=None, toDate=None):
         """Returns transactions for an address."""
         if not last:
-            last = json.loads(self.status().decode("ASCII"))["lastRound"]
+            last = self.status()["lastRound"]
         query = {"firstRound": first, "lastRound": last}
         if limit != 0:
             query["max"] = limit

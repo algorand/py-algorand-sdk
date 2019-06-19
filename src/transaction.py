@@ -130,10 +130,11 @@ class KeyregTxn(Transaction):
         od["selkey"] = self.selkey
         od["snd"] = self.sender
         od["type"] = self.type
-        od["votefst"] = self.votefst,
-        od["votekd"] = self.votekd,
-        od["votekey"] = self.votepk,
+        od["votefst"] = self.votefst
+        od["votekd"] = self.votekd
+        od["votekey"] = self.votepk
         od["votelst"] = self.votelst
+        
         return od
     
     @staticmethod
