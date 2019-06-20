@@ -1,9 +1,10 @@
 from urllib.request import Request, urlopen
-from urllib import parse, error
+from urllib import parse
+import urllib.error
 import encoding
-import urllib
 import json
 import base64
+import error
 
 # change if version changes
 apiVersionPathPrefix = "/v1"
@@ -28,7 +29,22 @@ class AlgodClient:
         self.algodAddress = algodAddress
 
     def algodRequest(self, method, requrl, params=None, data=None):
-        """Executes a given request."""
+        """
+        Executes a given request.
+        
+        Parameters
+        ----------
+        method: string
+
+        requrl: string
+        
+        params: dict
+
+        data: dict
+
+        Returns
+        -------
+        dict: loaded from json response body """
         if requrl in noAuth:
             header = {}
         else:
@@ -45,9 +61,13 @@ class AlgodClient:
 
         try:
             resp = urlopen(req)
-        except error.HTTPError as e:
-            return e.read().decode("ASCII")
-        return json.loads(resp.read().decode("ASCII"))
+        except urllib.error.HTTPError as e:
+            e = e.read().decode("ascii")
+            try:
+                raise error.AlgodHTTPError(json.loads(e)["message"])
+            except:
+                raise error.AlgodHTTPError(e)
+        return json.loads(resp.read().decode("ascii"))
 
     def status(self):
         """Returns node status"""
@@ -129,10 +149,21 @@ class AlgodClient:
         return self.algodRequest("GET", req)
 
     def sendRawTransaction(self, signed_txn):
-        """Broadcasts a signed transaction (encoded using encoding.msgpack_encode, in base64) to the network."""
+        """
+        Broadcasts a signed transaction object to the network.
+        
+        Parameters
+        ----------
+        signed_txn: SignedTransaction
+
+        Returns
+        -------
+        string: transaction ID
+        """
+        signed_txn = encoding.msgpack_encode(signed_txn)
         signed_txn = base64.b64decode(signed_txn)
         req = "/transactions"
-        return self.algodRequest("POST", req, data=signed_txn)
+        return self.algodRequest("POST", req, data=signed_txn)["txId"]
 
     def blockInfo(self, round):
         """Returns block information."""

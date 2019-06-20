@@ -3,7 +3,7 @@ from collections import OrderedDict
 import encoding
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
-
+import error
 
 class Transaction:
     def __init__(self, sender, fee, first, last, note, gen, gh):
@@ -18,7 +18,7 @@ class Transaction:
 
 class PaymentTxn(Transaction):
     """
-    Parameters
+    Attributes
     ----------
     sender: string
 
@@ -37,11 +37,11 @@ class PaymentTxn(Transaction):
 
     amt: int
 
-    closeRemainderTo: string
+    closeRemainderTo: string, optional
         if nonempty, account will be closed and
         remaining algos will be sent to this address
 
-    note: byte[]
+    note: byte[], optional
     """
     def __init__(self, sender, fee, first, last, gen, gh, receiver, amt, closeRemainderTo=None, note=None):
         Transaction.__init__(self,  sender, fee, first, last, note, gen, gh)
@@ -82,7 +82,7 @@ class PaymentTxn(Transaction):
 
 class KeyregTxn(Transaction):
     """
-    Parameters
+    Attributes
     ----------
     sender: string
 
@@ -97,9 +97,9 @@ class KeyregTxn(Transaction):
         genesisID
     gh: string
         genesishash
-    votekey: byte[32]
+    votekey: string
 
-    selkey: byte[32]
+    selkey: string
 
     votefst: int
 
@@ -107,12 +107,12 @@ class KeyregTxn(Transaction):
 
     votekd: int
 
-    note: byte[]
+    note: byte[], optional
     """
     def __init__(self, sender, fee, first, last, gen, gh, votekey, selkey, votefst, votelst, votekd, note=None):
         Transaction.__init__(self, sender, fee, first, last, note, gen, gh)
-        self.votepk = votekey
-        self.selkey = selkey
+        self.votepk = encoding.decodeAddress(votekey)
+        self.selkey = encoding.decodeAddress(selkey)
         self.votefst = votefst
         self.votelst = votelst
         self.votekd = votekd
@@ -142,7 +142,7 @@ class KeyregTxn(Transaction):
         note = None
         if "note" in d:
             note = d["note"]
-        k = KeyregTxn(encoding.encodeAddress(d["snd"]), d["fee"], d["fv"], d["lv"], d["gen"], base64.b64encode(d["gh"]), d["votekey"], d["selkey"], d["votefst"], d["votelst"], d["votekd"], note)
+        k = KeyregTxn(encoding.encodeAddress(d["snd"]), d["fee"], d["fv"], d["lv"], d["gen"], base64.b64encode(d["gh"]), encoding.encodeAddress(d["votekey"]), encoding.encodeAddress(d["selkey"]), d["votefst"], d["votelst"], d["votekd"], note)
         return k
 
 
@@ -150,14 +150,16 @@ class SignedTransaction:
     """
     Parameters
     ----------
-    transaction: Transaction object
+    transaction: Transaction
 
-    signature: bytes
+    signature: string
 
-    multisig: Multisig object
+    multisig: Multisig
     """
     def __init__(self, transaction, signature=None, multisig=None):
-        self.signature = signature
+        self.signature = None
+        if signature:
+            self.signature = base64.b64decode(signature)
         self.transaction = transaction
         self.multisig = multisig
 
@@ -175,7 +177,7 @@ class SignedTransaction:
         msig = None
         sig = None
         if "sig" in d:
-            sig = d["sig"]
+            sig = base64.b64encode(d["sig"])
         if "msig" in d:
             msig = Multisig.undictify(d["msig"])
         txnType = d["txn"]["type"]
@@ -193,7 +195,7 @@ class Multisig:
     Parameters
     ----------
     version: int
-        is currently always 1
+        the version is currently 1
 
     threshold: int
 
@@ -208,9 +210,9 @@ class Multisig:
 
     def validate(self):
         if not self.version == 1:
-            return "multisig unknown version"
+            raise error.UnknownMsigVersionError
         if self.threshold <= 0 or len(self.subsigs) == 0 or self.threshold > len(self.subsigs):
-            return "invalid threshold"
+            raise error.InvalidThresholdError
 
     def address(self):
         msigBytes = bytes(msigAddrPrefix, "ascii") + bytes([self.version]) + bytes([self.threshold])
@@ -243,15 +245,15 @@ class Multisig:
         return msig
 
     def getAccountFromSig(self):
+        """Returns a Multisig object without signatures."""
         msig = Multisig(self.version, self.threshold, self.subsigs[:])
         for s in msig.subsigs:
             s.signature = None
         return msig
 
     def getPublicKeys(self):
-        pks = []
-        for s in self.subsigs:
-            pks.append(base64.b64encode(s.public_key).decode())
+        """Returns the base64 encoded addresses for the multisig account."""
+        pks = [encoding.encodeAddress(s.public_key) for s in self.subsigs]
         return pks
 
 class MultisigSubsig:

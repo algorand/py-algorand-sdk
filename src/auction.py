@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import encoding
+import base64
 
 class Bid:
     def __init__(self, bidder, bid_currency, max_price, bid_id, auction_key, auction_id):
@@ -23,7 +24,7 @@ class Bid:
 class SignedBid:
     def __init__(self, bid, signature):
         self.bid = bid
-        self.signature = signature # bytes
+        self.signature = base64.b64decode(signature)
     
     def dictify(self):
         od = OrderedDict()

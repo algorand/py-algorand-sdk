@@ -1,8 +1,8 @@
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
-import base64
 import wordlist
-
+import encoding
+import error
 # get the wordlist
 wordList = wordlist.wordListRaw().split("\n")
 
@@ -10,6 +10,9 @@ def fromKey(key):
     """
     Returns the mnemonic for the key or address (bytes).
     """
+    if not len(key) == 58:
+        raise error.WrongKeyLengthError
+    key = encoding.decodeAddress(key)
     chksum = checksum(key)
     nums = to11Bit(key)
     words = applyWords(nums)
@@ -21,16 +24,18 @@ def toKey(mnemonic):
     Gives the corresponding address (bytes) for the mnemonic.
     """
     mnemonic = mnemonic.split(" ")
+    if not len(mnemonic) == 25:
+        raise error.WrongMnemonicLengthError
     mChecksum = mnemonic[-1]
     mnemonic = fromWords(mnemonic[:-1])
     mBytes = toBytes(mnemonic)
     if not mBytes[-1:len(mBytes)] == bytes([0]):
-        return "wrong checksum"
+        raise error.WrongChecksumError
     chksum = checksum(mBytes[:32])
     if chksum.__eq__(mChecksum):
-        return mBytes[:32]
+        return encoding.encodeAddress(mBytes[:32])
     else:
-        return "wrong checksum"
+        raise error.WrongChecksumError
 
 
 def checksum(data):
