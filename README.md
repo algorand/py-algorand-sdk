@@ -31,8 +31,7 @@ $ ./goal wallet new [wallet name] -d [data directory]
 ```
 
 ```
-$ ./goal account new
-```
+$ ./goal account new -d [data directory] -w [wallet name]
 
 Now visit https://bank.testnet.algorand.network/ and enter the account address to fund your account.
 
