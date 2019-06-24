@@ -27,7 +27,7 @@ Then find the following files: algod.net, algod.token, kmd.net, kmd.token. These
 Next, create a wallet and an account:
 
 ```
-$ ./goal wallet new [wallet name]
+$ ./goal wallet new [wallet name] -d [data directory]
 ```
 
 ```
