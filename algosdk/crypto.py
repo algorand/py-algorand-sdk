@@ -1,12 +1,11 @@
 from nacl.signing import SigningKey, VerifyKey
 import base64
-import encoding
-import transaction
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
-import umsgpack
-import auction
-import error
+from . import auction
+from . import error
+from . import encoding
+from . import transaction
 
 txidPrefix = bytes("TX", "ascii")
 bidPrefix = bytes("aB", "ascii")
@@ -15,7 +14,7 @@ checkSumLenBytes = 4
 def signTransaction(txn, private_key):
     """
     Signs a transaction with a private key.
-
+    
     Parameters
     ----------
     txn: Transaction
@@ -57,6 +56,10 @@ def rawSignTransaction(txn, private_key):
     return sig
 
 
+
+# to sign another transaction, you can either overwrite the signatures in the 
+# current Multisig, or you can use Multisig.getAccountFromMultisig() to get
+# a new multisig object with the same addresses
 def signMultisigTransaction(private_key, preStx):
     """
     Signs a multisig transaction.
@@ -92,6 +95,8 @@ def signMultisigTransaction(private_key, preStx):
     preStx.multisig.subsigs[index].signature = sig
     return preStx
 
+# only use if you are given two partially signed multisig transactions;
+# to append a signature to a multisig transaction, just use signMultisigTransaction()
 def mergeMultisigTransactions(partStxs):
     """
     Merges partially signed multisig transactions.
@@ -152,7 +157,7 @@ def signBid(bid, private_key):
     signing_key = SigningKey(private_key[:32])
     signed = signing_key.sign(to_sign)
     sig = signed.signature
-    signed = auction.SignedBid(bid, sig)
+    signed = auction.SignedBid(bid, base64.b64encode(sig))
     return signed
 
 

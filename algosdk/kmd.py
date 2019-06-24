@@ -2,16 +2,13 @@ from urllib.request import Request, urlopen
 from urllib import parse
 import urllib.error
 import json
-import encoding
-import error
-import transaction
 import base64
-import responses
+from . import encoding
+from . import error
+from . import transaction
+from . import responses
+from . import constants
 
-kmdAuthHeader = "X-KMD-API-Token"
-apiVersionPathPrefix = "/v1"
-unversionedPaths = ["/health", "/versions", "/metrics"]
-noAuth = ["/health"]
 
 
 class kmdClient:
@@ -46,14 +43,14 @@ class kmdClient:
         -------
         dict: loaded from json response body 
         """
-        if requrl in noAuth:
+        if requrl in constants.noAuth:
             header = {}
         else:
             header = {
-                kmdAuthHeader: self.kmdToken
+                constants.kmdAuthHeader: self.kmdToken
                 }
-        if requrl not in unversionedPaths:
-            requrl = apiVersionPathPrefix + requrl
+        if requrl not in constants.unversionedPaths:
+            requrl = constants.apiVersionPathPrefix + requrl
         if params:
             requrl = requrl + "?" + parse.urlencode(params)
         if data:
@@ -232,7 +229,7 @@ class kmdClient:
             "wallet_password": password,
             "wallet_name": new_name
             }
-        result = self.kmdRequest("POST", req, data=query)
+        result = self.kmdRequest("POST", req, data=query)["wallet"]
         return responses.WalletResponse(result)
 
     def exportMasterDerivationKey(self, handle, password):

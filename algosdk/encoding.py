@@ -1,12 +1,12 @@
 import base64
-import umsgpack
+import msgpack
 from collections import OrderedDict
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
-import transaction
-import error
-
-checkSumLenBytes = 4
+from . import transaction
+from . import error
+from . import auction
+from . import constants
 
 
 def msgpack_encode(obj):
@@ -39,7 +39,7 @@ def msgpack_encode(obj):
     for key in obj:
         if obj[key]:
             od[key] = obj[key]
-    return base64.b64encode(umsgpack.dumps(od)).decode()
+    return base64.b64encode(msgpack.packb(od, use_bin_type=True)).decode()
 
 
 def msgpack_decode(enc):
@@ -54,7 +54,7 @@ def msgpack_decode(enc):
     -------
     Transaction, SignedTransaction, Multisig, Bid, or SignedBid: enc decoded
     """
-    decoded = umsgpack.loads(base64.b64decode(enc))
+    decoded = msgpack.unpackb(base64.b64decode(enc), raw=False)
     if "type" in decoded:
         if decoded["type"].__eq__("pay"):
             return transaction.PaymentTxn.undictify(decoded)
@@ -64,6 +64,12 @@ def msgpack_decode(enc):
         return transaction.SignedTransaction.undictify(decoded)
     if "subsig" in decoded:
         return transaction.Multisig.undictify(decoded)
+    if "t" in decoded:
+        return auction.NoteField.undictify(decoded)
+    if "bid" in decoded:
+        return auction.SignedBid.undictify(decoded)
+    if "auc" in decoded:
+        return auction.Bid.undictify(decoded)
 
 
 def isValidAddress(addr):
@@ -109,8 +115,8 @@ def decodeAddress(addr):
     if not len(addr) == 58:
         raise error.WrongKeyLengthError
     decoded = base64.b32decode(correct_padding(addr))
-    addr = decoded[:-checkSumLenBytes]
-    expectedChksum = decoded[-checkSumLenBytes:]
+    addr = decoded[:-constants.checkSumLenBytes]
+    expectedChksum = decoded[-constants.checkSumLenBytes:]
     chksum = checksum(addr)
     
     if chksum.__eq__(expectedChksum):
@@ -153,7 +159,7 @@ def checksum(addr):
     """
     hash = hashes.Hash(hashes.SHA512_256(), default_backend())
     hash.update(addr)
-    chksum = hash.finalize()[-checkSumLenBytes:]
+    chksum = hash.finalize()[-constants.checkSumLenBytes:]
     return chksum
 
 

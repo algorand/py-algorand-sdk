@@ -1,9 +1,12 @@
 import base64
+import msgpack
 from collections import OrderedDict
-import encoding
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
-import error
+from . import error
+from . import encoding
+from . import constants
+
 
 class Transaction:
     def __init__(self, sender, fee, first, last, note, gen, gh):
@@ -15,6 +18,11 @@ class Transaction:
         self.genesisID = gen  # str
         self.genesisHash = base64.b64decode(gh)  # str
 
+    def getSender(self):
+        return encoding.encodeAddress(self.sender)
+
+    def getGenesisHash(self):
+        return base64.b64encode(self.genesisHash).decode()
 
 class PaymentTxn(Transaction):
     """
@@ -78,6 +86,14 @@ class PaymentTxn(Transaction):
             note = d["note"]
         tr = PaymentTxn(encoding.encodeAddress(d["snd"]), d["fee"], d["fv"], d["lv"], d["gen"], base64.b64encode(d["gh"]), encoding.encodeAddress(d["rcv"]), d["amt"], crt, note)
         return tr
+
+    def getReceiver(self):
+        return encoding.encodeAddress(self.receiver)
+    
+    def getCloseRemainderTo(self):
+        if not self.closeRemainderTo:
+            return self.closeRemainderTo
+        return encoding.encodeAddress(self.closeRemainderTo)
 
 
 class KeyregTxn(Transaction):
@@ -145,6 +161,12 @@ class KeyregTxn(Transaction):
         k = KeyregTxn(encoding.encodeAddress(d["snd"]), d["fee"], d["fv"], d["lv"], d["gen"], base64.b64encode(d["gh"]), encoding.encodeAddress(d["votekey"]), encoding.encodeAddress(d["selkey"]), d["votefst"], d["votelst"], d["votekd"], note)
         return k
 
+    def getVotingKey(self):
+        return encoding.encodeAddress(self.votepk)
+
+    def getSelectionKey(self):
+        return encoding.encodeAddress(self.selkey)
+
 
 class SignedTransaction:
     """
@@ -188,7 +210,11 @@ class SignedTransaction:
         stx = SignedTransaction(txn, sig, msig)
         return stx
 
-msigAddrPrefix = "MultisigAddr"
+    def getSignature(self):
+        return base64.b64encode(self.signature).decode()
+
+
+
 
 class Multisig:
     """
@@ -215,7 +241,7 @@ class Multisig:
             raise error.InvalidThresholdError
 
     def address(self):
-        msigBytes = bytes(msigAddrPrefix, "ascii") + bytes([self.version]) + bytes([self.threshold])
+        msigBytes = bytes(constants.msigAddrPrefix, "ascii") + bytes([self.version]) + bytes([self.threshold])
         for s in self.subsigs:
             msigBytes += s.public_key
         hash = hashes.Hash(hashes.SHA512_256(), default_backend())
@@ -282,3 +308,63 @@ class MultisigSubsig:
             sig = d["s"]
         mss = MultisigSubsig(d["pk"], sig)
         return mss
+
+
+def writeToFile(txns, path, overwrite=True):
+    """
+    Writes signed or unsigned transactions to a file.
+
+    Parameters
+    ----------
+    txns: list of Transactions or SignedTransactions
+
+    path: string
+        file to write to
+
+    overwrite: boolean
+        whether or not to overwrite what's already in the file
+        if False, transactions will be appended to the file
+    """
+
+    f = None
+    if overwrite:
+        f = open(path, "wb")
+    else:
+        f = open(path, "ab")
+
+    for txn in txns:
+        if isinstance(txn, Transaction):
+            enc = msgpack.packb({"txn": txn.dictify()}, use_bin_type=True)
+            print(base64.b64encode(enc))
+            f.write(enc)
+        elif isinstance(txn, SignedTransaction):
+            enc = msgpack.packb(txn.dictify(), use_bin_type = True)
+            print(base64.b64encode(enc))
+            f.write(enc)
+
+
+def retrieveFromFile(path):
+    """
+    Retrieves signed or unsigned transactions from a file.
+
+    Parameters
+    ----------
+    path: string
+        file to read from
+
+    Returns
+    -------
+    list of Transactions or SignedTransactions
+    """
+
+    f = open(path, "rb")
+    txns = []
+    unp = msgpack.Unpacker(f, raw=False)
+    for txn in unp:
+        if "sig" in txn:
+            txns.append(SignedTransaction.undictify(txn))
+        elif txn["txn"]["type"].__eq__("pay"):
+            txns.append(PaymentTxn.undictify(txn["txn"]))
+        elif txn["txn"]["type"].__eq__("keyreg"):
+            txns.append(KeyregTxn.undictify(txn["txn"]))
+    return txns

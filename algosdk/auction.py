@@ -1,6 +1,6 @@
 from collections import OrderedDict
-import encoding
 import base64
+from . import encoding
 
 class Bid:
     def __init__(self, bidder, bid_currency, max_price, bid_id, auction_key, auction_id):
@@ -21,6 +21,10 @@ class Bid:
         od["price"] = self.max_price
         return od
     
+    @staticmethod
+    def undictify(d):
+        return Bid(encoding.encodeAddress(d["bidder"]), d["cur"], d["price"], d["id"], encoding.encodeAddress(d["auc"]), d["aid"])
+
 class SignedBid:
     def __init__(self, bid, signature):
         self.bid = bid
@@ -31,14 +35,11 @@ class SignedBid:
         od["bid"] = self.bid.dictify()
         od["sig"] = self.signature
         return od
+    
+    @staticmethod
+    def undictify(d):
+        return SignedBid(Bid.undictify(d["bid"]), base64.b64encode(d["sig"]))
 
-
-
-# note field types
-deposit = "d"
-bid = "b"
-settlement = "s"
-params = "p"
 
 class NoteField:
     def __init__(self, signed_bid, note_field_type):
@@ -50,6 +51,10 @@ class NoteField:
         od["b"] = self.signed_bid.dictify()
         od["t"] = self.note_field_type
         return od
+
+    @staticmethod
+    def undictify(d):
+        return NoteField(SignedBid.undictify(d["b"]), d["t"])
 
 
     

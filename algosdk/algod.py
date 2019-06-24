@@ -1,17 +1,11 @@
 from urllib.request import Request, urlopen
 from urllib import parse
 import urllib.error
-import encoding
 import json
 import base64
-import error
-
-# change if version changes
-apiVersionPathPrefix = "/v1"
-
-algodAuthHeader = "X-Algo-API-Token"
-unversionedPaths = ["/health", "/versions", "/metrics"]
-noAuth = ["/health"]
+from . import error
+from . import encoding
+from . import constants
 
 
 class AlgodClient:
@@ -45,15 +39,15 @@ class AlgodClient:
         Returns
         -------
         dict: loaded from json response body """
-        if requrl in noAuth:
+        if requrl in constants.noAuth:
             header = {}
         else:
             header = {
-                algodAuthHeader: self.algodToken
+                constants.algodAuthHeader: self.algodToken
                 }
 
-        if requrl not in unversionedPaths:
-            requrl = apiVersionPathPrefix + requrl
+        if requrl not in constants.unversionedPaths:
+            requrl = constants.apiVersionPathPrefix + requrl
         if params:
             requrl = requrl + "?" + parse.urlencode(params)
             

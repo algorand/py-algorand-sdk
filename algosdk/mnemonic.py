@@ -1,8 +1,9 @@
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
-import wordlist
-import encoding
-import error
+from . import wordlist
+from . import encoding
+from . import error
+
 # get the wordlist
 wordList = wordlist.wordListRaw().split("\n")
 

@@ -1,38 +1,83 @@
-import kmd
+import msgpack
+import time
+import base64
 import json
 import unittest
-import transaction
-import encoding
-import algod
-import base64
-import crypto
-import time
-import mnemonic
-import wordlist
-import error
+from algosdk import kmd
+from algosdk import transaction
+from algosdk import encoding
+from algosdk import algod
+from algosdk import crypto
+from algosdk import mnemonic
+from algosdk import wordlist
+from algosdk import error
+from algosdk import auction
+from algosdk import constants
 
-# change these after starting kmd
-kmdToken = "bb24002c179d5d7b1ddf0735b9cfd2cb2ed922517fcd74b511ee0d65fa6c277b"
-kmdAddress = "http://localhost:60187"
+# change these after starting the node and kmd
+kmdToken = "ddf94bd098816efcd2e47e12b5fe20285f48257201ca1fe4067000a15f3fbd69"
+kmdAddress = "http://localhost:59987"
 
-algodToken = "f40453efac65244a2763b195862aef0bea3abe21216b676d73936d2b4cc95518"
-algodAddress = "http://localhost:8080"
+algodToken = "d05db6ecec87954e747bd66668ec6dd3c3cef86d99ea88e8ca42a20f93f6be01"
+algodAddress = "http://localhost:61186"
 
 # change these to match a wallet
-wallet_name = "unencrypted-default-wallet"
+wallet_name = "Wallet"
 wallet_pswd = ""
 
 # account in the wallet that has a lot of algos
-account_0 = "DAXGIQRDRA7IUAHSNLX2A5DSC3MTN3C7Z46N2PDMBOPRUGPJ2AITQDZFNI"
+account_0 = "CCHVBXJ3YGYXZLRHAMTNYZ7OMTQX2PRUGP6NFQ5PBQISPLRSSTUF7JAMZY"
 
 minTxnFee = 1000
-
 
 class TestIntegration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.acl = algod.AlgodClient(algodToken, algodAddress)
         cls.kcl = kmd.kmdClient(kmdToken, kmdAddress)
+
+    def test_auction(self):
+        # get the default wallet
+        wallets = self.kcl.listWallets()
+        wallet_id = None
+        for w in wallets:
+            if w.name.__eq__(wallet_name):
+                wallet_id = w.id
+        
+        # get a new handle for the wallet
+        handle = self.kcl.initWalletHandle(wallet_id, wallet_pswd)
+
+        # generate account with kmd
+        account_1 = self.kcl.generateKey(handle, False)
+
+        # get suggested parameters and fee
+        params = self.acl.suggestedParams()
+        gen = params["genesisID"]
+        gh = params["genesishashb64"]
+        last_round = params["lastRound"]
+
+        # get account_0 private key
+        private_key_0 = self.kcl.exportKey(handle, wallet_pswd, account_0)
+
+        # create bid
+        bid = auction.Bid(account_0, 100000, 2.60, "bid_id", "6WMT26IGML3FOAOOUINGY7G7VCA3RCBXVZTVSHAMTNIQOVWIS4JLFQGLCQ", "auc_id")
+        sb = crypto.signBid(bid, private_key_0)
+        nf = auction.NoteField(sb, constants.note_field_type_bid)
+
+        # create transaction
+        txn = transaction.PaymentTxn(account_0, minTxnFee, last_round, last_round+100, gen, gh, account_1, 100000, note=base64.b64decode(encoding.msgpack_encode(nf)))
+
+        # sign transaction with crypto
+        signed_crypto, txid, sig = crypto.signTransaction(txn, private_key_0)
+        self.assertEqual(signed_crypto.getSignature(), sig)
+
+        # send the transaction
+        send = self.acl.sendRawTransaction(signed_crypto)
+        self.assertEqual(send, txid)
+
+        # delete accounts
+        del_1 = self.kcl.deleteKey(handle, wallet_pswd, account_1)
+        self.assertTrue(del_1)
 
     def test_handle(self):
         # create wallet; should raise error since wallet already exists
@@ -45,6 +90,12 @@ class TestIntegration(unittest.TestCase):
         for w in wallets:
             if w.name.__eq__(wallet_name):
                 wallet_id = w.id
+
+        # rename the wallet
+        self.assertEqual(wallet_name + "newname", self.kcl.renameWallet(wallet_id, wallet_pswd, wallet_name + "newname").name)
+
+        # change it back
+        self.assertEqual(wallet_name, self.kcl.renameWallet(wallet_id, wallet_pswd, wallet_name).name)
         
         # get a new handle for the wallet
         handle = self.kcl.initWalletHandle(wallet_id, wallet_pswd)
@@ -64,7 +115,7 @@ class TestIntegration(unittest.TestCase):
 
         # check that the handle has been released
         self.assertRaises(error.KmdHTTPError, self.kcl.getWallet, handle)
-    
+
     def test_transaction(self):
         # get the default wallet
         wallets = self.kcl.listWallets()
@@ -112,22 +163,8 @@ class TestIntegration(unittest.TestCase):
         send = self.acl.sendRawTransaction(signed_crypto)
         self.assertEqual(send, txid)
 
-        """
-        This part depends on how much traffic there is in the network;
-        the time may vary but as long as traffic is not so heavy as to 
-        max out blocks, this should work. This has been tested on a 
-        private network (no traffic except for transactions produced here).
-        """
-
         # wait for transaction to send
-        time.sleep(3)
-
-        # check for the transaction in pending transactions
-        txn_info = self.acl.pendingTransactionInfo(txid)
-        self.assertIn("type", txn_info)
-
-        # wait for transaction to process
-        time.sleep(6)
+        self.acl.statusAfterBlock(last_round+2)
 
         # get transaction info three different ways
         info_1 = self.acl.transactionsByAddress(account_0, last_round)
@@ -298,8 +335,7 @@ class TestUnit(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    to_run = [TestUnit, TestIntegration]
-    # to_run = [TestUnit]
+    to_run = [TestUnit, TestIntegration] # remove one to only test one of the classes
     loader = unittest.TestLoader()
     suites = [loader.loadTestsFromTestCase(test_class) for test_class in to_run]
     suite = unittest.TestSuite(suites)
