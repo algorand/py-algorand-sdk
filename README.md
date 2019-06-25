@@ -4,11 +4,9 @@ A python library for interacting with the Algorand network.
 
 ## Installation
 
-Download and unzip; then in the py-algorand-sdk directory, run 
+Run ```$ pip3 install algosdk``` to install the package.
 
-```
-$ python3 setup.py install
-```
+Alternatively, download and unzip the package; then in the py-algorand-sdk directory, run ```$ python3 setup.py install```.
 
 ## Node setup 
 
@@ -21,8 +19,6 @@ Before trying the examples, start kmd:
 ```
 $ ./goal kmd start -d [data directory]
 ```
-
-Then find the following files: algod.net, algod.token, kmd.net, kmd.token. These contain the addresses and token you need to update at the top of example.py.
 
 Next, create a wallet and an account:
 

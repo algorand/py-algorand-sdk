@@ -1,19 +1,56 @@
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
+from nacl import signing
+import base64
 from . import wordlist
 from . import encoding
 from . import error
+from . import encoding
+
 
 # get the wordlist
 wordList = wordlist.wordListRaw().split("\n")
 
+
+def fromMasterDerivationKey(key):
+    """
+    Returns the mnemonic for the master derivation key (base64).
+    """
+    key = base64.b64decode(key)
+    return fromKey(key)
+
+
+def toMasterDerivationKey(mnemonic):
+    """
+    Returns the master derivation key for the mnemonic.
+    """
+    keyBytes = toKey(mnemonic)
+    return base64.b64encode(keyBytes).decode()
+
+
+def fromPrivateKey(key):
+    """
+    Returns the mnemonic for the private key (base64).
+    """
+    key = base64.b64decode(key)
+    return fromKey(key[:32])
+
+
+def toPrivateKey(mnemonic):
+    """
+    Returns the private key for the mnemonic.
+    """
+    keyBytes = toKey(mnemonic)
+    key = signing.SigningKey(keyBytes)
+    return base64.b64encode(key.encode() + key.verify_key.encode()).decode()
+
+
 def fromKey(key):
     """
-    Returns the mnemonic for the key or address (bytes).
+    Returns the mnemonic for the key (bytes).
     """
-    if not len(key) == 58:
+    if not len(key) == 32:
         raise error.WrongKeyLengthError
-    key = encoding.decodeAddress(key)
     chksum = checksum(key)
     nums = to11Bit(key)
     words = applyWords(nums)
@@ -22,7 +59,7 @@ def fromKey(key):
 
 def toKey(mnemonic):
     """
-    Gives the corresponding address (bytes) for the mnemonic.
+    Gives the corresponding key (bytes) for the mnemonic.
     """
     mnemonic = mnemonic.split(" ")
     if not len(mnemonic) == 25:
@@ -34,7 +71,7 @@ def toKey(mnemonic):
         raise error.WrongChecksumError
     chksum = checksum(mBytes[:32])
     if chksum.__eq__(mChecksum):
-        return encoding.encodeAddress(mBytes[:32])
+        return mBytes[:32]
     else:
         raise error.WrongChecksumError
 

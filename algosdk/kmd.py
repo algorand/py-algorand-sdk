@@ -90,9 +90,10 @@ class kmdClient:
         WalletResponse[]: list of objects containing wallet information
         """
         req = "/wallets"
-        result = self.kmdRequest("GET", req)["wallets"]
-        return [responses.WalletResponse(w) for w in result]
-
+        result = self.kmdRequest("GET", req)
+        if result:
+            return [responses.WalletResponse(w) for w in result["wallets"]]
+        return []
 
     def createWallet(self, name, pswd, driver_name = "sqlite", master_deriv_key=None):
         """
@@ -366,7 +367,11 @@ class kmdClient:
         query = {
             "wallet_handle_token": handle
             }
-        return self.kmdRequest("POST", req, data=query)["addresses"]
+
+        result = self.kmdRequest("POST", req, data=query)
+        if result:
+            return result["addresses"]
+        return []
 
     def signTransaction(self, handle, password, txn):
         """

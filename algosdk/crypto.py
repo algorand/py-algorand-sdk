@@ -6,10 +6,7 @@ from . import auction
 from . import error
 from . import encoding
 from . import transaction
-
-txidPrefix = bytes("TX", "ascii")
-bidPrefix = bytes("aB", "ascii")
-checkSumLenBytes = 4
+from . import constants
 
 def signTransaction(txn, private_key):
     """
@@ -49,7 +46,7 @@ def rawSignTransaction(txn, private_key):
     """
     private_key = base64.b64decode(bytes(private_key, "ascii"))
     txn = encoding.msgpack_encode(txn)
-    to_sign = txidPrefix + base64.b64decode(bytes(txn, "ascii"))
+    to_sign = constants.txidPrefix + base64.b64decode(bytes(txn, "ascii"))
     signing_key = SigningKey(private_key[:32])
     signed = signing_key.sign(to_sign)
     sig = signed.signature
@@ -152,7 +149,7 @@ def signBid(bid, private_key):
     SignedBid: signed bid with the signature
     """
     temp = encoding.msgpack_encode(bid)
-    to_sign = bidPrefix + base64.b64decode(bytes(temp, "ascii"))
+    to_sign = constants.bidPrefix + base64.b64decode(bytes(temp, "ascii"))
     private_key = base64.b64decode(bytes(private_key, "ascii"))
     signing_key = SigningKey(private_key[:32])
     signed = signing_key.sign(to_sign)
@@ -174,7 +171,7 @@ def getTxid(txn):
     string: transaction ID
     """
     txn = encoding.msgpack_encode(txn)
-    to_sign = txidPrefix + base64.b64decode(bytes(txn, "ascii"))
+    to_sign = constants.txidPrefix + base64.b64decode(bytes(txn, "ascii"))
     txidbytes = hashes.Hash(hashes.SHA512_256(), default_backend())
     txidbytes.update(to_sign)
     txid = txidbytes.finalize()

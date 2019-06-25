@@ -14,6 +14,9 @@ note_field_type_params = "p"
 
 
 checkSumLenBytes = 4
-
-
 msigAddrPrefix = "MultisigAddr"
+handleRenewTime = 60
+minTxnFee = 1000
+
+txidPrefix = bytes("TX", "ascii")
+bidPrefix = bytes("aB", "ascii")

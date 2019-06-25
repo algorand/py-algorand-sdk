@@ -3,6 +3,7 @@ import time
 import base64
 import json
 import unittest
+import params
 from algosdk import kmd
 from algosdk import transaction
 from algosdk import encoding
@@ -14,27 +15,20 @@ from algosdk import error
 from algosdk import auction
 from algosdk import constants
 
-# change these after starting the node and kmd
-kmdToken = "ddf94bd098816efcd2e47e12b5fe20285f48257201ca1fe4067000a15f3fbd69"
-kmdAddress = "http://localhost:59987"
-
-algodToken = "d05db6ecec87954e747bd66668ec6dd3c3cef86d99ea88e8ca42a20f93f6be01"
-algodAddress = "http://localhost:61186"
 
 # change these to match a wallet
-wallet_name = "Wallet"
+wallet_name = "unencrypted-default-wallet"
 wallet_pswd = ""
 
 # account in the wallet that has a lot of algos
-account_0 = "CCHVBXJ3YGYXZLRHAMTNYZ7OMTQX2PRUGP6NFQ5PBQISPLRSSTUF7JAMZY"
+account_0 = "DAXGIQRDRA7IUAHSNLX2A5DSC3MTN3C7Z46N2PDMBOPRUGPJ2AITQDZFNI"
 
-minTxnFee = 1000
 
 class TestIntegration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.acl = algod.AlgodClient(algodToken, algodAddress)
-        cls.kcl = kmd.kmdClient(kmdToken, kmdAddress)
+        cls.acl = algod.AlgodClient(params.algodToken, params.algodAddress)
+        cls.kcl = kmd.kmdClient(params.kmdToken, params.kmdAddress)
 
     def test_auction(self):
         # get the default wallet
@@ -65,7 +59,7 @@ class TestIntegration(unittest.TestCase):
         nf = auction.NoteField(sb, constants.note_field_type_bid)
 
         # create transaction
-        txn = transaction.PaymentTxn(account_0, minTxnFee, last_round, last_round+100, gen, gh, account_1, 100000, note=base64.b64decode(encoding.msgpack_encode(nf)))
+        txn = transaction.PaymentTxn(account_0, constants.minTxnFee, last_round, last_round+100, gen, gh, account_1, 100000, note=base64.b64decode(encoding.msgpack_encode(nf)))
 
         # sign transaction with crypto
         signed_crypto, txid, sig = crypto.signTransaction(txn, private_key_0)
@@ -145,7 +139,7 @@ class TestIntegration(unittest.TestCase):
         last_round = params["lastRound"]
 
         # create transaction
-        txn = transaction.PaymentTxn(account_0, minTxnFee, last_round, last_round+100, gen, gh, account_1, 100000)
+        txn = transaction.PaymentTxn(account_0, constants.minTxnFee, last_round, last_round+100, gen, gh, account_1, 100000)
 
         # sign transaction with kmd
         signed_kmd = self.kcl.signTransaction(handle, wallet_pswd, txn)
@@ -207,7 +201,7 @@ class TestIntegration(unittest.TestCase):
 
         # create multisig account and transaction
         msig = transaction.Multisig(1, 2, [account_1, account_2])
-        txn = transaction.PaymentTxn(msig.address(), minTxnFee, last_round, last_round+100, gen, gh, account_0, 1000)
+        txn = transaction.PaymentTxn(msig.address(), constants.minTxnFee, last_round, last_round+100, gen, gh, account_0, 1000)
         
         # import multisig account
         msig_address = self.kcl.importMultisig(handle, msig)
@@ -267,17 +261,17 @@ class TestIntegration(unittest.TestCase):
 class TestUnit(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.acl = algod.AlgodClient(algodToken, algodAddress)
-        cls.kcl = kmd.kmdClient(kmdToken, kmdAddress)
+        cls.acl = algod.AlgodClient(params.algodToken, params.algodAddress)
+        cls.kcl = kmd.kmdClient(params.kmdToken, params.kmdAddress)
 
     def test_status(self):
-        result = self.acl.status()["lastRound"]
-        self.assertTrue(isinstance(result, int))
-
+        result = self.acl.status()
+        self.assertTrue(isinstance(result["lastRound"], int))
+        
     def test_health(self):
         result = self.acl.health()
         self.assertEqual(result, None)
-
+        
     def test_statusAfterBlock(self):
         lastRound = self.acl.status()["lastRound"]
         currRound = self.acl.statusAfterBlock(lastRound-1)["lastRound"]
@@ -286,20 +280,20 @@ class TestUnit(unittest.TestCase):
     def test_pendingTransactions(self):
         result = self.acl.pendingTransactions(0)
         self.assertIn("truncatedTxns", result)
-
+        
     def test_versions(self):
         result = self.acl.versions()
         self.assertIn("versions", result)
-
+        
     def test_ledgerSupply(self):
         result = self.acl.ledgerSupply()
         self.assertIn("totalMoney", result)
-
+        
     def test_blockInfo(self):
         lastRound = self.acl.status()["lastRound"]
         result = self.acl.blockInfo(lastRound)
         self.assertIn("hash", result)
-
+        
     def test_getVersion(self):
         result = self.kcl.getVersion()
         self.assertIn("v1", result)
@@ -311,23 +305,22 @@ class TestUnit(unittest.TestCase):
     def test_suggestedParams(self):
         result = self.acl.suggestedParams()
         self.assertIn("genesisID", result)
-
+        
     def test_accountInfo(self):
         result = self.acl.accountInfo(account_0)
         self.assertEqual(result["address"], account_0)
-
+        
     def test_zeroMnemonic(self):
         zero_bytes = bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-        addr = encoding.encodeAddress(zero_bytes)
         expected_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon invest"
-        result = mnemonic.fromKey(addr)
+        result = mnemonic.fromKey(zero_bytes)
         self.assertEqual(expected_mnemonic, result)
         result = mnemonic.toKey(result)
-        self.assertEqual(addr, result)
+        self.assertEqual(zero_bytes, result)
 
     def test_mnemonic(self):
-        result = mnemonic.toKey(mnemonic.fromKey(account_0))
-        self.assertEqual(result, account_0)
+        result = mnemonic.toKey(mnemonic.fromKey(encoding.decodeAddress(account_0)))
+        self.assertEqual(result, encoding.decodeAddress(account_0))
     
     def test_wordlist(self):
         result = mnemonic.checksum(bytes(wordlist.wordListRaw(), "ascii"))
