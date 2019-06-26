@@ -9,49 +9,59 @@ from . import constants
 
 
 class Transaction:
+    """
+    Superclass for PaymentTxn and KeyregTxn.
+    """
     def __init__(self, sender, fee, first, last, note, gen, gh):
-        self.sender = encoding.decodeAddress(sender)  # str, decode into bytes
-        self.fee = fee  # possibly min txn fee
-        self.firstValidRound = first  # num
-        self.lastValidRound = last  # num
-        self.note = note  # bytearray
-        self.genesisID = gen  # str
-        self.genesisHash = base64.b64decode(gh)  # str
+        self.sender = encoding.decodeAddress(sender)
+        self.fee = fee
+        self.firstValidRound = first
+        self.lastValidRound = last
+        self.note = note
+        self.genesisID = gen
+        self.genesisHash = base64.b64decode(gh)
 
     def getSender(self):
+        """Return the base32 encoding of the sender."""
         return encoding.encodeAddress(self.sender)
 
     def getGenesisHash(self):
+        """Return the base64 encoding of the genesis hash."""
         return base64.b64encode(self.genesisHash).decode()
+
 
 class PaymentTxn(Transaction):
     """
-    Attributes
-    ----------
-    sender: string
+    Represents a payment transaction.
 
-    fee: int
+    Args:
+        sender (str): address of the sender
+        fee (int): transaction fee
+        first (int): first round for which the transaction is valid
+        last (int): last round for which the transaction is valid
+        gen (str): genesisID
+        gh (str): genesishash
+        receiver (str): address of the receiver
+        amt (int): amount in microAlgos to be sent
+        closeRemainderTo (str, optional): if nonempty, account will be closed
+            and remaining algos will be sent to this address
+        note (bytes, optional): encoded NoteField object
 
-    first: int
-        first round for which the transaction is valid
-    last: int
-        last round for which the transaction is valid
-
-    gen: string
-        genesisID
-    gh: string
-        genesishash
-    receiver: string
-
-    amt: int
-
-    closeRemainderTo: string, optional
-        if nonempty, account will be closed and
-        remaining algos will be sent to this address
-
-    note: byte[], optional
+    Attributes:
+        sender (bytes)
+        fee (int)
+        first (int)
+        last (int)
+        gen (str)
+        gh (bytes)
+        receiver (bytes)
+        amt (int)
+        closeRemainderTo (bytes)
+        note (bytes)
     """
-    def __init__(self, sender, fee, first, last, gen, gh, receiver, amt, closeRemainderTo=None, note=None):
+
+    def __init__(self, sender, fee, first, last, gen, gh, receiver, amt,
+                 closeRemainderTo=None, note=None):
         Transaction.__init__(self,  sender, fee, first, last, note, gen, gh)
         self.receiver = encoding.decodeAddress(receiver)
         self.amt = amt
@@ -84,13 +94,17 @@ class PaymentTxn(Transaction):
             crt = encoding.encodeAddress(d["close"])
         if "note" in d:
             note = d["note"]
-        tr = PaymentTxn(encoding.encodeAddress(d["snd"]), d["fee"], d["fv"], d["lv"], d["gen"], base64.b64encode(d["gh"]), encoding.encodeAddress(d["rcv"]), d["amt"], crt, note)
+        tr = PaymentTxn(encoding.encodeAddress(d["snd"]), d["fee"], d["fv"],
+                        d["lv"], d["gen"], base64.b64encode(d["gh"]),
+                        encoding.encodeAddress(d["rcv"]), d["amt"], crt, note)
         return tr
 
     def getReceiver(self):
+        """Return the base32 encoding of the receiver."""
         return encoding.encodeAddress(self.receiver)
-    
+
     def getCloseRemainderTo(self):
+        """Return the base32 encoding of closeRemainderTo."""
         if not self.closeRemainderTo:
             return self.closeRemainderTo
         return encoding.encodeAddress(self.closeRemainderTo)
@@ -98,34 +112,39 @@ class PaymentTxn(Transaction):
 
 class KeyregTxn(Transaction):
     """
-    Attributes
-    ----------
-    sender: string
+    Represents a key registration transaction.
 
-    fee: int
+    Args:
+        sender (str): address of sender
+        fee (int): transaction fee
+        first (int): first round for which the transaction is valid
+        last (int): last round for which the transaction is valid
+        gen (str): genesisID
+        gh (str): genesishash
+        votekey (str): participation public key
+        selkey (str): VRF public key
+        votefst (int): first round to vote
+        votelst (int): last round to vote
+        votekd (int): vote key dilution
+        note (bytes, optional): encoded NoteField object
 
-    first: int
-        first round for which the transaction is valid
-    last: int
-        last round for which the transaction is valid
-
-    gen: string
-        genesisID
-    gh: string
-        genesishash
-    votekey: string
-
-    selkey: string
-
-    votefst: int
-
-    votelst: int
-
-    votekd: int
-
-    note: byte[], optional
+    Attributes:
+        sender (bytes)
+        fee (int)
+        first (int)
+        last (int)
+        gen (str)
+        gh (bytes)
+        votepk (bytes)
+        selkey (bytes)
+        votefst (int)
+        votelst (int)
+        votekd (int)
+        note (bytes)
     """
-    def __init__(self, sender, fee, first, last, gen, gh, votekey, selkey, votefst, votelst, votekd, note=None):
+
+    def __init__(self, sender, fee, first, last, gen, gh, votekey, selkey,
+                 votefst, votelst, votekd, note=None):
         Transaction.__init__(self, sender, fee, first, last, note, gen, gh)
         self.votepk = encoding.decodeAddress(votekey)
         self.selkey = encoding.decodeAddress(selkey)
@@ -150,33 +169,42 @@ class KeyregTxn(Transaction):
         od["votekd"] = self.votekd
         od["votekey"] = self.votepk
         od["votelst"] = self.votelst
-        
         return od
-    
+
     @staticmethod
     def undictify(d):
         note = None
         if "note" in d:
             note = d["note"]
-        k = KeyregTxn(encoding.encodeAddress(d["snd"]), d["fee"], d["fv"], d["lv"], d["gen"], base64.b64encode(d["gh"]), encoding.encodeAddress(d["votekey"]), encoding.encodeAddress(d["selkey"]), d["votefst"], d["votelst"], d["votekd"], note)
+        k = KeyregTxn(encoding.encodeAddress(d["snd"]), d["fee"], d["fv"],
+                      d["lv"], d["gen"], base64.b64encode(d["gh"]),
+                      encoding.encodeAddress(d["votekey"]),
+                      encoding.encodeAddress(d["selkey"]), d["votefst"],
+                      d["votelst"], d["votekd"], note)
         return k
 
-    def getVotingKey(self):
+    def getVoteKey(self):
+        """Return the base32 encoding of the vote key."""
         return encoding.encodeAddress(self.votepk)
 
     def getSelectionKey(self):
+        """Return the base32 encoding of the selection key."""
         return encoding.encodeAddress(self.selkey)
 
 
 class SignedTransaction:
     """
-    Parameters
-    ----------
-    transaction: Transaction
+    Represents a signed transaction.
 
-    signature: string
+    Args:
+        transaction (Transaction): transaction that was signed
+        signature (str, optional): signature of a single address
+        multisig (Multisig, optional): multisig account and signatures
 
-    multisig: Multisig
+    Attributes:
+        transaction (Transaction)
+        signature (str)
+        multisig (Multisig)
     """
     def __init__(self, transaction, signature=None, multisig=None):
         self.signature = None
@@ -211,37 +239,43 @@ class SignedTransaction:
         return stx
 
     def getSignature(self):
+        """Return the base64 encoding of the signature."""
         return base64.b64encode(self.signature).decode()
-
-
 
 
 class Multisig:
     """
-    Parameters
-    ----------
-    version: int
-        the version is currently 1
+    Represents a multisig account and signatures.
 
-    threshold: int
+    Args:
+        version (int): currently, the version is 1
+        threshold (int): how many signatures are necessary
+        addresses (str[]): addresses in the multisig account
 
-    addresses: string[]
+    Attributes:
+        version (int)
+        threshold (int)
+        subsigs (MultisigSubsig[])
     """
     def __init__(self, version, threshold, addresses):
-        self.version = version 
+        self.version = version
         self.threshold = threshold
         self.subsigs = []
-        for a in addresses: 
+        for a in addresses:
             self.subsigs.append(MultisigSubsig(encoding.decodeAddress(a)))
 
     def validate(self):
+        """Check if the multisig account is valid."""
         if not self.version == 1:
             raise error.UnknownMsigVersionError
-        if self.threshold <= 0 or len(self.subsigs) == 0 or self.threshold > len(self.subsigs):
+        if (self.threshold <= 0 or len(self.subsigs) == 0 or
+                self.threshold > len(self.subsigs)):
             raise error.InvalidThresholdError
 
     def address(self):
-        msigBytes = bytes(constants.msigAddrPrefix, "ascii") + bytes([self.version]) + bytes([self.threshold])
+        """Return the multisig account address."""
+        msigBytes = (bytes(constants.msigAddrPrefix, "ascii") +
+                     bytes([self.version]) + bytes([self.threshold]))
         for s in self.subsigs:
             msigBytes += s.public_key
         hash = hashes.Hash(hashes.SHA512_256(), default_backend())
@@ -255,7 +289,7 @@ class Multisig:
         od["thr"] = self.threshold
         od["v"] = self.version
         return od
-    
+
     def json_dictify(self):
         od = OrderedDict()
         od["subsig"] = [subsig.json_dictify() for subsig in self.subsigs]
@@ -271,21 +305,27 @@ class Multisig:
         return msig
 
     def getAccountFromSig(self):
-        """Returns a Multisig object without signatures."""
-        msig = Multisig(self.version, self.threshold, self.subsigs[:])
+        """Return a Multisig object without signatures."""
+        msig = Multisig(self.version, self.threshold, self.getPublicKeys())
         for s in msig.subsigs:
             s.signature = None
         return msig
 
     def getPublicKeys(self):
-        """Returns the base64 encoded addresses for the multisig account."""
+        """Return the base32 encoded addresses for the multisig account."""
         pks = [encoding.encodeAddress(s.public_key) for s in self.subsigs]
         return pks
 
+
 class MultisigSubsig:
-    def __init__(self, public_key, signature = None):
-        self.public_key = public_key # bytes
-        self.signature = signature # bytes
+    """
+    Attributes:
+        public_key (bytes)
+        signature (bytes)
+    """
+    def __init__(self, public_key, signature=None):
+        self.public_key = public_key
+        self.signature = signature
 
     def dictify(self):
         od = OrderedDict()
@@ -293,14 +333,14 @@ class MultisigSubsig:
         if self.signature:
             od["s"] = self.signature
         return od
-    
+
     def json_dictify(self):
         od = OrderedDict()
         od["pk"] = base64.b64encode(self.public_key).decode()
         if self.signature:
             od["s"] = base64.b64encode(self.signature).decode()
         return od
-    
+
     @staticmethod
     def undictify(d):
         sig = None
@@ -312,18 +352,13 @@ class MultisigSubsig:
 
 def writeToFile(txns, path, overwrite=True):
     """
-    Writes signed or unsigned transactions to a file.
+    Write signed or unsigned transactions to a file.
 
-    Parameters
-    ----------
-    txns: list of Transactions or SignedTransactions
-
-    path: string
-        file to write to
-
-    overwrite: boolean
-        whether or not to overwrite what's already in the file
-        if False, transactions will be appended to the file
+    Args:
+        txns (Transaction[] or SignedTransaction[]): can be a mix of both
+        path (str): file to write to
+        overwrite (bool): whether or not to overwrite what's already in the
+            file; if False, transactions will be appended to the file
     """
 
     f = None
@@ -335,26 +370,21 @@ def writeToFile(txns, path, overwrite=True):
     for txn in txns:
         if isinstance(txn, Transaction):
             enc = msgpack.packb({"txn": txn.dictify()}, use_bin_type=True)
-            print(base64.b64encode(enc))
             f.write(enc)
         elif isinstance(txn, SignedTransaction):
-            enc = msgpack.packb(txn.dictify(), use_bin_type = True)
-            print(base64.b64encode(enc))
+            enc = msgpack.packb(txn.dictify(), use_bin_type=True)
             f.write(enc)
 
 
 def retrieveFromFile(path):
     """
-    Retrieves signed or unsigned transactions from a file.
+    Retrieve signed or unsigned transactions from a file.
 
-    Parameters
-    ----------
-    path: string
-        file to read from
+    Args:
+        path (str): file to read from
 
     Returns
-    -------
-    list of Transactions or SignedTransactions
+        Transaction[] or SignedTransaction[]: can be a mix of both
     """
 
     f = open(path, "rb")

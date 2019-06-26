@@ -5,11 +5,17 @@ with open("README.md", "r") as f:
     long_description = f.read()
 
 setuptools.setup(
-    name="algosdk",
+    name="py-algorand-sdk",
     description="Algorand SDK in Python",
+    author="Algorand",
+    author_email="pypiservice@algorand.com",
+    version="0.0.0",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/algorand/py-algorand-sdk",
+    license="MIT",
+    project_urls={
+        "Source": "https://github.com/algorand/py-algorand-sdk"
+    },
     install_requires=["pynacl", "cryptography", "msgpack"],
     packages=["algosdk"]
 )

@@ -15,7 +15,3 @@ import time
 
 kcl = kmd.kmdClient(params.kmdToken, params.kmdAddress)
 acl = algod.AlgodClient(params.algodToken, params.algodAddress)
-
-
-w = wallet.Wallet("Wallet", "", kcl)
-print(w.generateKey())

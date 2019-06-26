@@ -11,27 +11,24 @@ from . import constants
 
 def msgpack_encode(obj):
     """
-    Encodes the object using canonical msgpack.
-    
-    Parameters
-    ----------
-    obj: Transaction, SignedTransaction, Multisig, Bid, or SignedBid
+    Encode the object using canonical msgpack.
 
-    Returns
-    -------
-    string: msgpack encoded obj
-        
-    Canonical Msgpack
-    -----------------
-    Maps must contain keys in lexicographic order;
+    Args:
+        obj (Transaction, SignedTransaction, Multisig, Bid, or SignedBid):
+            object to be encoded
 
-    Maps must omit key-value pairs where the value is a zero-value;
+    Returns:
+        str: msgpack encoded object
 
-    Positive integer values must be encoded as "unsigned" in msgpack, regardless of whether the value space is semantically signed or unsigned;
-
-    Integer values must be represented in the shortest possible encoding;
-
-    Binary arrays must be represented using the "bin" format family (that is, use the most recent version of msgpack rather than the older msgpack version that had no "bin" family).
+    Note:
+        Canonical Msgpack: maps must contain keys in lexicographic order; maps
+        must omit key-value pairs where the value is a zero-value; positive
+        integer values must be encoded as "unsigned" in msgpack, regardless of
+        whether the value space is semantically signed or unsigned; integer
+        values must be represented in the shortest possible encoding; binary
+        arrays must be represented using the "bin" format family (that is, use
+        the most recent version of msgpack rather than the older msgpack
+        version that had no "bin" family).
     """
     if not isinstance(obj, dict):
         obj = obj.dictify()
@@ -44,15 +41,14 @@ def msgpack_encode(obj):
 
 def msgpack_decode(enc):
     """
-    Decodes a msgpack encoded object from a string.
+    Decode a msgpack encoded object from a string.
 
-    Parameters
-    ----------
-    enc: string
+    Args:
+        enc (str): string to be decoded
 
-    Returns
-    -------
-    Transaction, SignedTransaction, Multisig, Bid, or SignedBid: enc decoded
+    Returns:
+        Transaction, SignedTransaction, Multisig, Bid, or SignedBid:
+            decoded object
     """
     decoded = msgpack.unpackb(base64.b64decode(enc), raw=False)
     if "type" in decoded:
@@ -74,15 +70,13 @@ def msgpack_decode(enc):
 
 def isValidAddress(addr):
     """
-    Checks if the string address is a valid Algorand address.
+    Check if the string address is a valid Algorand address.
 
-    Parameters
-    ----------
-    addr: string
+    Args:
+        addr (str): base32 address
 
-    Returns
-    -------
-    boolean: whether or not the address is valid
+    Returns:
+        bool: whether or not the address is valid
     """
     if not isinstance(addr, str):
         return False
@@ -99,15 +93,13 @@ def isValidAddress(addr):
 
 def decodeAddress(addr):
     """
-    Decodes a string address into its address bytes and checksum.
+    Decode a string address into its address bytes and checksum.
 
-    Parameters
-    ----------
-    addr: string
+    Args:
+        addr (str): base32 address
 
-    Returns
-    -------
-    byte[]: address decoded into bytes
+    Returns:
+        bytes: address decoded into bytes
 
     """
     if not addr:
@@ -118,7 +110,7 @@ def decodeAddress(addr):
     addr = decoded[:-constants.checkSumLenBytes]
     expectedChksum = decoded[-constants.checkSumLenBytes:]
     chksum = checksum(addr)
-    
+
     if chksum.__eq__(expectedChksum):
         return addr
     else:
@@ -127,15 +119,14 @@ def decodeAddress(addr):
 
 def encodeAddress(addrBytes):
     """
-    Encodes a byte address into a string composed of the encoded bytes and the checksum.
+    Encode a byte address into a string composed of the encoded bytes and the
+    checksum.
 
-    Parameters
-    ----------
-    addrBytes: byte[]
+    Args:
+        addrBytes (bytes): address in bytes
 
-    Returns
-    -------
-    string: base32 encoded address
+    Returns:
+        str: base32 encoded address
     """
     if not addrBytes:
         return addrBytes
@@ -148,14 +139,13 @@ def encodeAddress(addrBytes):
 
 def checksum(addr):
     """
-    Returns the checksum of size checkSumLenBytes for the address.
+    Compute the checksum of size checkSumLenBytes for the address.
 
-    Parameters
-    ----------
-    addr: byte[]
+    Args:
+        addr (bytes): address in bytes
 
     Returns:
-    byte[]: checksum of the address
+        bytes: checksum of the address
     """
     hash = hashes.Hash(hashes.SHA512_256(), default_backend())
     hash.update(addr)
@@ -164,9 +154,9 @@ def checksum(addr):
 
 
 def correct_padding(a):
-    if len(a)%8 == 0:
+    if len(a) % 8 == 0:
         return a
-    return a + "="*(8-len(a)%8)
+    return a + "="*(8-len(a) % 8)
 
 
 def undo_padding(a):

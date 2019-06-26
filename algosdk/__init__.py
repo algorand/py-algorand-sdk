@@ -1,4 +1,3 @@
-name = "algosdk"
 from . import algod
 from . import auction
 from . import constants
@@ -9,5 +8,7 @@ from . import kmd
 from . import mnemonic
 from . import responses
 from . import transaction
+from . import wallet
 from . import wordlist
 
+name = "algosdk"

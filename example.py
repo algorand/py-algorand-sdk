@@ -6,6 +6,7 @@ from algosdk import crypto
 from algosdk import mnemonic
 from algosdk import constants
 from algosdk import wallet
+from algosdk import responses
 import params
 
 # create kmd and algod clients
@@ -13,10 +14,11 @@ kcl = kmd.kmdClient(params.kmdToken, params.kmdAddress)
 acl = algod.AlgodClient(params.algodToken, params.algodAddress)
 
 # enter existing wallet and account info here
-existing_wallet_name = input("Existing wallet name? ")
-existing_wallet_pswd = input("Existing wallet password? ")
+existing_wallet_name = input("Name of an existing wallet? ")
+existing_wallet_pswd = input("Password for " + existing_wallet_name + "? ")
 existing_account = input("Address of an account in the wallet? ")
 
+# get the wallet ID
 wallets = kcl.listWallets()
 existing_wallet_id = None
 for w in wallets:
@@ -25,14 +27,14 @@ for w in wallets:
         break
 
 # get a handle for the existing wallet
-existing_handle = kcl.initWalletHandle(existing_wallet_id, existing_wallet_pswd)
+existing_handle = kcl.initWalletHandle(existing_wallet_id,
+                                       existing_wallet_pswd)
 print("Got the wallet's handle: " + existing_handle)
 
 # new wallet to create
 print("Now we'll create a new wallet.")
 wallet_name = input("New wallet name? ")
 wallet_pswd = input("New wallet password? ")
-
 
 # check if the wallet already exists
 wallet_id = None
@@ -75,14 +77,16 @@ gh = params["genesishashb64"]
 last_round = params["lastRound"]
 
 # create a transaction
-txn = transaction.PaymentTxn(existing_account, constants.minTxnFee, last_round, last_round+100, gen, gh, address_1, 100000)
+txn = transaction.PaymentTxn(existing_account, constants.minTxnFee, last_round,
+                             last_round+100, gen, gh, address_1, 100000)
 print("Encoded transaction:", encoding.msgpack_encode(txn), "\n")
 
 # sign transaction with kmd
 signed_kmd = kcl.signTransaction(existing_handle, existing_wallet_pswd, txn)
 
 # get the private key for the existing account
-private_key = kcl.exportKey(existing_handle, existing_wallet_pswd, existing_account)
+private_key = kcl.exportKey(existing_handle, existing_wallet_pswd,
+                            existing_account)
 
 # sign transaction with crypto
 signed_crypto, txid, sig = crypto.signTransaction(txn, private_key)
@@ -99,10 +103,8 @@ transaction_id = acl.sendRawTransaction(signed_kmd)
 print("\nTransaction was sent!")
 print("Transaction ID: " + transaction_id + "\n")
 
-# Seeing the results: 
-    # To see the new wallet and accounts that we've created, use goal:
-    # $ ./goal wallet list
-    # $ ./goal account list
+# To see the new wallet and accounts that we've created, use goal:
+# $ ./goal wallet list
+# $ ./goal account list
 
 # now write your own in main.py!
-

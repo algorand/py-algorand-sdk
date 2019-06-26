@@ -8,23 +8,18 @@ from . import encoding
 from . import transaction
 from . import constants
 
+
 def signTransaction(txn, private_key):
     """
-    Signs a transaction with a private key.
-    
-    Parameters
-    ----------
-    txn: Transaction
+    Sign a transaction with a private key.
 
-    private_key: string
+    Args:
+        txn (Transaction): the transaction to be signed
+        private_key (str): the private key of the signing account
 
-    Returns
-    -------
-    SignedTransaction: signed transaction with the signature
-
-    string: transaction ID
-
-    string: base64 encoded signature
+    Returns:
+        (SignedTransaction, str, str): signed transaction with the signature,
+            transaction ID, base64 encoded signature
     """
     sig = rawSignTransaction(txn, private_key)
     sig = base64.b64encode(sig).decode()
@@ -32,17 +27,17 @@ def signTransaction(txn, private_key):
     txid = getTxid(txn)
     return stx, txid, sig
 
-def rawSignTransaction(txn, private_key): 
+
+def rawSignTransaction(txn, private_key):
     """
-    Parameters
-    ----------
-    txn: Transaction
+    Sign a transaction.
 
-    private_key: string
+    Args:
+        txn (Transaction): the transaction to be signed
+        private_key (str): the private key of the signing account
 
-    Returns
-    -------
-    byte[]: signature
+    Returns:
+        bytes: signature
     """
     private_key = base64.b64decode(bytes(private_key, "ascii"))
     txn = encoding.msgpack_encode(txn)
@@ -53,26 +48,26 @@ def rawSignTransaction(txn, private_key):
     return sig
 
 
-
-# to sign another transaction, you can either overwrite the signatures in the 
-# current Multisig, or you can use Multisig.getAccountFromMultisig() to get
-# a new multisig object with the same addresses
 def signMultisigTransaction(private_key, preStx):
     """
-    Signs a multisig transaction.
-    
-    Parameters
-    ----------
-    private_key: string
+    Sign a multisig transaction.
 
-    preStx: SignedTransaction
-        the multisig in the signed transaction can be partially 
-        or fully signed; new signature will replace old if there 
-        is already a signature for the address
+    Args:
+        private_key (str): private key of signing account
+        preStx (SignedTransaction): object containing unsigned or partially
+            signed multisig
 
-    Returns
-    -------
-    SignedTransaction: signed transaction with multisig
+    Returns:
+        SignedTransaction: signed transaction with multisig containing
+            signature
+
+    Note:
+        The multisig in the preStx can be partially or fully signed; a new
+        signature will replace the old if there is already a signature for the
+        address. To sign another transaction, you can either overwrite the
+        signatures in the current Multisig, or you can use
+        Multisig.getAccountFromMultisig() to get a new multisig object with
+        the same addresses.
     """
     err = preStx.multisig.validate()
     if err:
@@ -92,21 +87,22 @@ def signMultisigTransaction(private_key, preStx):
     preStx.multisig.subsigs[index].signature = sig
     return preStx
 
-# only use if you are given two partially signed multisig transactions;
-# to append a signature to a multisig transaction, just use signMultisigTransaction()
+
 def mergeMultisigTransactions(partStxs):
     """
-    Merges partially signed multisig transactions.
+    Merge partially signed multisig transactions.
 
-    Parameters
-    ----------
-    partStxs: SignedTransaction[]
+    Args:
+        partStxs (SignedTransaction[]): list of partially signed transactions
 
-    Returns
-    -------
-    SignedTransaction: signed transaction with the signature
+    Returns:
+        (SignedTransaction, str): signed transaction with multisig containing
+            signatures, transaction ID
 
-    string: transaction ID
+    Note:
+        Only use this if you are given two partially signed multisig
+        transactions. To append a signature to a multisig transaction, just
+        use signMultisigTransaction()
     """
     if len(partStxs) < 2:
         return "tried to merge less than two multisig transactions"
@@ -127,26 +123,25 @@ def mergeMultisigTransactions(partStxs):
             for s in range(len(stx.multisig.subsigs)):
                 if stx.multisig.subsigs[s].signature:
                     if not msigstx.multisig.subsigs[s].signature:
-                        msigstx.multisig.subsigs[s].signature = stx.multisig.subsigs[s].signature
-                    elif not msigstx.multisig.subsigs[s].signature == stx.multisig.subsigs[s].signature:
+                        msigstx.multisig.subsigs[s].signature = \
+                            stx.multisig.subsigs[s].signature
+                    elif not msigstx.multisig.subsigs[s].signature == \
+                            stx.multisig.subsigs[s].signature:
                         raise error.DuplicateSigMismatchError
     txid = getTxid(refTxn)
     return msigstx, txid
 
 
-def signBid(bid, private_key): 
+def signBid(bid, private_key):
     """
-    Signs a bid.
+    Sign a bid.
 
-    Parameters
-    ----------
-    txn: Bid
+    Args:
+        bid (Bid): bid to be signed
+        private_key (str): private_key of the bidder
 
-    private_key: string
-
-    Returns
-    -------
-    SignedBid: signed bid with the signature
+    Returns:
+        SignedBid: signed bid with the signature
     """
     temp = encoding.msgpack_encode(bid)
     to_sign = constants.bidPrefix + base64.b64decode(bytes(temp, "ascii"))
@@ -160,15 +155,13 @@ def signBid(bid, private_key):
 
 def getTxid(txn):
     """
-    Returns a transaction's ID.
+    Get a transaction's ID.
 
-    Parameters
-    ----------
-    txn: Transaction
+    Args:
+        txn (Transaction): transaction to compute the ID of
 
-    Returns
-    -------
-    string: transaction ID
+    Returns:
+        str: transaction ID
     """
     txn = encoding.msgpack_encode(txn)
     to_sign = constants.txidPrefix + base64.b64decode(bytes(txn, "ascii"))
@@ -181,18 +174,13 @@ def getTxid(txn):
 
 def generateAccount():
     """
-    Generates an account.
+    Generate an account.
 
-    Returns
-    -------
-    string: private key
-
-    string: account address
+    Returns:
+        (str, str): private key, account address
     """
     sk = SigningKey.generate()
     vk = sk.verify_key
     a = encoding.encodeAddress(vk.encode())
     private_key = base64.b64encode(sk.encode() + vk.encode()).decode()
     return private_key, encoding.undo_padding(a)
-
-

@@ -9,14 +9,16 @@ from . import constants
 
 
 class AlgodClient:
-    """Client class for kmd. Handles all kmd requests.
+    """
+    Client class for kmd. Handles all algod requests.
 
-    Parameters
-    ----------
-    algodToken: string
-        see algod.token
-    algodAddress: string
-        see algod.net
+    Args:
+        algodToken (str): algod API token
+        algodAddress (str): algod address
+
+    Attributes:
+        algodToken (str)
+        algodAddress (str)
     """
     def __init__(self, algodToken, algodAddress):
         self.algodToken = algodToken
@@ -24,21 +26,17 @@ class AlgodClient:
 
     def algodRequest(self, method, requrl, params=None, data=None):
         """
-        Executes a given request.
-        
-        Parameters
-        ----------
-        method: string
+        Execute a given request.
 
-        requrl: string
-        
-        params: dict
+        Args:
+            method (str): request method
+            requrl (str): url for the request
+            params (dict, optional): parameters for the request
+            data (dict, optional): data in the body of the request
 
-        data: dict
-
-        Returns
-        -------
-        dict: loaded from json response body """
+        Returns:
+            dict: loaded from json response body
+        """
         if requrl in constants.noAuth:
             header = {}
         else:
@@ -50,8 +48,9 @@ class AlgodClient:
             requrl = constants.apiVersionPathPrefix + requrl
         if params:
             requrl = requrl + "?" + parse.urlencode(params)
-            
-        req = Request(self.algodAddress+requrl, headers=header, method=method, data=data)
+
+        req = Request(self.algodAddress+requrl, headers=header, method=method,
+                      data=data)
 
         try:
             resp = urlopen(req)
@@ -64,42 +63,70 @@ class AlgodClient:
         return json.loads(resp.read().decode("ascii"))
 
     def status(self):
-        """Returns node status"""
+        """
+        Return node status.
+        """
         req = "/status"
         return self.algodRequest("GET", req)
 
     def health(self):
-        """If the node is running, returns null"""
+        """
+        Return null if the node is running.
+        """
         req = "/health"
         return self.algodRequest("GET", req)
 
     def statusAfterBlock(self, blockNum):
-        """Returns node status immediately after blockNum."""
+        """
+        Return node status immediately after blockNum.
+
+        Args:
+            blockNum: block number
+        """
         req = "/status/wait-for-block-after/" + str(blockNum)
         return self.algodRequest("GET", req)
 
     def pendingTransactions(self, maxTxns=0):
-        """Returns up to maxTxns pending transactions; if maxTxns is 0,
-        returns all pending transactions."""
+        """
+        Return up to maxTxns pending transactions;
+
+        Args:
+            maxTxns (int): maximum number of transactions to return;
+                if maxTxns is 0, return all pending transactions
+        """
         query = {"max": maxTxns}
         req = "/transactions/pending"
         return self.algodRequest("GET", req, params=query)
 
     def versions(self):
-        """Returns algod versions."""
+        """Return algod versions."""
         req = "/versions"
         return self.algodRequest("GET", req)
 
     def ledgerSupply(self):
-        """Returns supply details for node's ledger."""
+        """Return supply details for node's ledger."""
         req = "/ledger/supply"
         return self.algodRequest("GET", req)
 
-    # need to make sure to stay within current block if not archival node
-    # can only specify by date when indexer is enabled
-    # maybe split into several functions depending on situation
-    def transactionsByAddress(self, address, first=1, last=None, limit=0, fromDate=None, toDate=None):
-        """Returns transactions for an address."""
+    def transactionsByAddress(self, address, first=1, last=None, limit=0,
+                              fromDate=None, toDate=None):
+        """
+        Return transactions for an address. If indexer is enabled, can search
+        by date.
+
+        Args:
+            address (str): account public key
+            first (int, optional): no transactions before this block will be
+                returned
+            last (int, optional): no transactions after this block will be
+                returned; defaults to last round
+            limit (int, optional): maximum number of transactions to return;
+                if limit is 0, return all
+            fromDate (str, optional): no transactions before this date will be
+                returned; format YYYY-MM-DD
+            toDate (str, optional): no transactions after this date will be
+                returned; format YYYY-MM-DD
+        """
         if not last:
             last = self.status()["lastRound"]
         query = {"firstRound": first, "lastRound": last}
@@ -113,46 +140,65 @@ class AlgodClient:
         return self.algodRequest("GET", req, params=query)
 
     def accountInfo(self, address):
-        """Returns account information."""
+        """
+        Return account information.
+
+        Args:
+            address (str): account public key
+        """
         req = "/account/" + address
         return self.algodRequest("GET", req)
 
     def transactionInfo(self, address, transaction_id):
-        """Returns transaction information."""
+        """
+        Return transaction information.
+
+        Args:
+            address (str): account public key
+            transaction_id (str): transaction ID
+        """
         req = "/account/" + address + "/transaction/" + transaction_id
         return self.algodRequest("GET", req)
 
     def pendingTransactionInfo(self, transaction_id):
-        """Returns transaction information for a pending transaction."""
+        """
+        Return transaction information for a pending transaction.
+
+        Args:
+            transaction_id (str): transaction ID
+        """
         req = "/transactions/pending/" + transaction_id
         return self.algodRequest("GET", req)
 
     def transactionByID(self, transaction_id):
-        """Returns transaction information given its ID."""
+        """
+        Return transaction information; only works if indexer is enabled.
+
+        Args:
+            transaction_id (str): transaction ID
+        """
         req = "/transaction/" + transaction_id
         return self.algodRequest("GET", req)
 
     def suggestedFee(self):
-        """Returns suggested transaction fee."""
+        """Return suggested transaction fee."""
         req = "/transactions/fee"
         return self.algodRequest("GET", req)
 
     def suggestedParams(self):
-        """Returns suggested transaction paramters."""
+        """Return suggested transaction paramters."""
         req = "/transactions/params"
         return self.algodRequest("GET", req)
 
     def sendRawTransaction(self, signed_txn):
         """
-        Broadcasts a signed transaction object to the network.
-        
-        Parameters
-        ----------
-        signed_txn: SignedTransaction
+        Broadcast a signed transaction object to the network.
 
-        Returns
-        -------
-        string: transaction ID
+        Args:
+            signed_txn (SignedTransaction): transaction to be sent
+
+        Returns:
+            str: transaction ID
         """
         signed_txn = encoding.msgpack_encode(signed_txn)
         signed_txn = base64.b64decode(signed_txn)
@@ -160,7 +206,12 @@ class AlgodClient:
         return self.algodRequest("POST", req, data=signed_txn)["txId"]
 
     def blockInfo(self, round):
-        """Returns block information."""
+        """
+        Return block information.
+
+        Args:
+            round (int): block number
+        """
         req = "/block/" + str(round)
         return self.algodRequest("GET", req)
 

@@ -28,7 +28,10 @@ $ ./goal wallet new [wallet name] -d [data directory]
 
 ```
 $ ./goal account new -d [data directory] -w [wallet name]
+```
 
 Now visit https://bank.testnet.algorand.network/ and enter the account address to fund your account.
+
+Next, in params.py, either update the tokens and addresses, or provide a path to the data directory.
 
 You're now ready to run example.py!

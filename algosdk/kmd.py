@@ -10,16 +10,17 @@ from . import responses
 from . import constants
 
 
-
 class kmdClient:
-    """Client class for kmd. Handles all kmd requests.
+    """
+    Client class for kmd. Handles all kmd requests.
 
-    Parameters
-    ----------
-    kmdToken: string
-        see kmd.token
-    kmdAddress: string
-        see kmd.net
+    Args:
+        kmdToken (str): kmd API token
+        kmdAddress (str): kmd address
+
+    Attributes:
+        kmdToken (str)
+        kmdAddress (str)
     """
     def __init__(self, kmdToken, kmdAddress):
         self.kmdToken = kmdToken
@@ -27,21 +28,16 @@ class kmdClient:
 
     def kmdRequest(self, method, requrl, params=None, data=None):
         """
-        Executes a given request.
+        Execute a given request.
 
-        Parameters
-        ----------
-        method: string
+        Args:
+            method (str): request method
+            requrl (str): url for the request
+            params (dict, optional): parameters for the request
+            data (dict, optional): data in the body of the request
 
-        requrl: string
-        
-        params: dict
-
-        data: dict
-
-        Returns
-        -------
-        dict: loaded from json response body 
+        Returns:
+            dict: loaded from json response body
         """
         if requrl in constants.noAuth:
             header = {}
@@ -72,22 +68,20 @@ class kmdClient:
 
     def getVersion(self):
         """
-        Gets kmd versions.
-        
-        Returns
-        -------
-        string[]: list of versions
+        Get kmd versions.
+
+        Returns:
+            str[]: list of versions
         """
         req = "/versions"
         return self.kmdRequest("GET", req)["versions"]
 
     def listWallets(self):
         """
-        Lists all wallets hosted on node.
+        List all wallets hosted on node.
 
-        Returns
-        -------
-        WalletResponse[]: list of objects containing wallet information
+        Returns:
+            WalletResponse[]: list of objects containing wallet information
         """
         req = "/wallets"
         result = self.kmdRequest("GET", req)
@@ -95,25 +89,19 @@ class kmdClient:
             return [responses.WalletResponse(w) for w in result["wallets"]]
         return []
 
-    def createWallet(self, name, pswd, driver_name = "sqlite", master_deriv_key=None):
+    def createWallet(self, name, pswd, driver_name="sqlite",
+                     master_deriv_key=None):
         """
-        Creates a new wallet.
+        Create a new wallet.
 
-        Parameters
-        ----------
-        name: string
-            wallet name
-        
-        pswd: string
-            wallet password
+        Args:
+            name (str): wallet name
+            pswd (str): wallet password
+            driver_name (str, optional): name of the driver
+            master_deriv_key (str, optional): if recovering a wallet, include
 
-        driver_name: string
-
-        master_deriv_key: string
-        
-        Returns
-        -------
-        WalletResponse: object containing wallet information
+        Returns:
+            WalletResponse: object containing wallet information
         """
         req = "/wallet"
         query = {
@@ -128,17 +116,14 @@ class kmdClient:
 
     def getWallet(self, handle):
         """
-        Gets wallet information.
-        
-        Parameters
-        ----------
-        handle: string
-            wallet handle token
+        Get wallet information.
 
-        Returns
-        -------
-        WalletHandleResponse: object containing wallet handle information and wallet information
-        
+        Args:
+            handle (str): wallet handle token
+
+        Returns:
+            WalletHandleResponse: object containing wallet handle information
+                and wallet information
         """
         req = "/wallet/info"
         query = {"wallet_handle_token": handle}
@@ -147,19 +132,14 @@ class kmdClient:
 
     def initWalletHandle(self, id, password):
         """
-        Initializes a handle for the wallet.
-        
-        Parameters
-        ----------
-        id: string
-            wallet ID
-        
-        password: string
-            wallet password
+        Initialize a handle for the wallet.
 
-        Returns
-        -------
-        string: wallet handle token
+        Args:
+            id (str): wallet ID
+            password (str): wallet password
+
+        Returns:
+            str: wallet handle token
         """
         req = "/wallet/init"
         query = {
@@ -170,16 +150,13 @@ class kmdClient:
 
     def releaseWalletHandle(self, handle):
         """
-        Deactivates the handle for the wallet.
-        
-        Parameters
-        ----------
-        handle: string
-            wallet handle token
+        Deactivate the handle for the wallet.
 
-        Returns
-        -------
-        boolean: True if the handle has been deactivated
+        Args:
+        handle (str): wallet handle token
+
+        Returns:
+            bool: True if the handle has been deactivated
         """
         req = "/wallet/release"
         query = {"wallet_handle_token": handle}
@@ -188,16 +165,14 @@ class kmdClient:
 
     def renewWalletHandle(self, handle):
         """
-        Renews the wallet handle.
-        
-        Parameters
-        ----------
-        handle: string
-            wallet handle token
+        Renew the wallet handle.
 
-        Returns
-        -------
-        WalletHandleResponse: object containing wallet handle information and wallet information
+        Args:
+            handle (str): wallet handle token
+
+        Returns:
+            WalletHandleResponse: object containing wallet handle information
+                and wallet information
         """
         req = "/wallet/renew"
         query = {
@@ -208,21 +183,15 @@ class kmdClient:
 
     def renameWallet(self, id, password, new_name):
         """
-        Renames the wallet.
-        
-        Parameters
-        ----------
-        id: string
-            wallet ID
+        Rename the wallet.
 
-        password: string
-            wallet password
+        Args:
+            id (str): wallet ID
+            password (str): wallet password
+            new_name (str): new name for the wallet
 
-        new_name: string
-
-        Returns
-        -------
-        WalletResponse: object containing wallet information
+        Returns:
+            WalletResponse: object containing wallet information
         """
         req = "/wallet/rename"
         query = {
@@ -235,37 +204,33 @@ class kmdClient:
 
     def exportMasterDerivationKey(self, handle, password):
         """
-        Gets the wallet's master derivation key.
-        
-        Parameters
-        ----------
-        handle: string
-            wallet handle token
+        Get the wallet's master derivation key.
 
-        password: string
-            wallet password
+        Args:
+            handle (str): wallet handle token
+            password (str): wallet password
+
+        Returns:
+            str: master derivation key
         """
         req = "/master-key/export"
         query = {
             "wallet_handle_token": handle,
             "wallet_password": password
             }
-        return self.kmdRequest("POST", req, data=query)["master_derivation_key"]
+        result = self.kmdRequest("POST", req, data=query)
+        return result["master_derivation_key"]
 
     def importKey(self, handle, private_key):
         """
-        Imports an account into a wallet.
-        
-        Parameters
-        ----------
-        handle: string
-            wallet handle token
+        Import an account into a wallet.
 
-        private_key: string
+        Args:
+            handle (str): wallet handle token
+            private_key (str): private key of account to be imported
 
-        Returns
-        -------
-        string: base32 address of the account
+        Returns:
+            str: base32 address of the account
         """
         req = "/key/import"
         query = {
@@ -276,22 +241,15 @@ class kmdClient:
 
     def exportKey(self, handle, password, address):
         """
-        Returns an account private key.
-        
-        Parameters
-        ----------
-        handle: string
-            wallet handle token
+        Return an account private key.
 
-        password: string
-            wallet password
+        Args:
+            handle (str): wallet handle token
+            password (str): wallet password
+            address (str): base32 address of the account
 
-        address: string
-            base32 address of the account
-        
-        Returns
-        -------
-        string: private key
+        Returns:
+            str: private key
         """
         req = "/key/export"
         query = {
@@ -303,18 +261,15 @@ class kmdClient:
 
     def generateKey(self, handle, display_mnemonic=True):
         """
-        Generates a key in the wallet.
-        
-        Parameters
-        ----------
-        handle: string
-            wallet handle token
-        
-        display_mnemonic: boolean
+        Generate a key in the wallet.
 
-        Returns
-        -------
-        string: base32 address of the generated account
+        Args:
+            handle (str): wallet handle token
+            display_mnemonic (bool, optional): whether or not the mnemonic
+                should be displayed
+
+        Returns:
+            str: base32 address of the generated account
         """
         req = "/key"
         query = {
@@ -324,22 +279,15 @@ class kmdClient:
 
     def deleteKey(self, handle, password, address):
         """
-        Deletes a key in the wallet.
-        
-        Parameters
-        ----------
-        handle: string
-            wallet handle token
+        Delete a key in the wallet.
 
-        password: string
-            wallet password
-        
-        address: string
-            base32 address of account to be deleted
-        
-        Returns
-        -------
-        boolean: True if the account has been deleted
+        Args:
+            handle (str): wallet handle token
+            password (str): wallet password
+            address (str): base32 address of account to be deleted
+
+        Returns:
+            bool: True if the account has been deleted
         """
         req = "/key"
         query = {
@@ -352,16 +300,13 @@ class kmdClient:
 
     def listKeys(self, handle):
         """
-        Lists all keys in the wallet.
+        List all keys in the wallet.
 
-        Parameters
-        ----------
-        handle: string
-            wallet handle token
+        Args:
+            handle (str): wallet handle token
 
-        Returns
-        -------
-        string[]: list of base32 addresses in the wallet
+        Returns:
+            str[]: list of base32 addresses in the wallet
         """
         req = "/key/list"
         query = {
@@ -375,21 +320,15 @@ class kmdClient:
 
     def signTransaction(self, handle, password, txn):
         """
-        Signs a transaction.
-        
-        Parameters
-        ----------
-        handle: string
-            wallet handle token
-        
-        password: string
-            wallet password
+        Sign a transaction.
 
-        txn: Transaction
+        Args:
+            handle (str): wallet handle token
+            password (str): wallet password
+            txn (Transaction): transaction to be signed
 
-        Returns
-        -------
-        SignedTransaction
+        Returns:
+            SignedTransaction: signed transaction with signature of sender
         """
         # transaction is a Transaction object
         txn = encoding.msgpack_encode(txn)
@@ -404,16 +343,13 @@ class kmdClient:
 
     def listMultisig(self, handle):
         """
-        Lists all multisig accounts in the wallet.
-        
-        Parameters
-        ----------
-        handle: string
-            wallet handle token
-        
-        Returns
-        -------
-        string[]: list of base32 multisig account addresses
+        List all multisig accounts in the wallet.
+
+        Args:
+            handle (str): wallet handle token
+
+        Returns:
+            str[]: list of base32 multisig account addresses
         """
         req = "/multisig/list"
         query = {
@@ -426,44 +362,35 @@ class kmdClient:
 
     def importMultisig(self, handle, multisig):
         """
-        Imports a multisig account into the wallet.
-        
-        Parameters
-        ----------
-        handle: string
-            wallet handle token
+        Import a multisig account into the wallet.
 
-        multisig: Multisig
-            multisig account to be imported
-        
-        Returns
-        -------
-        string: base32 address of the imported multisig account
+        Args:
+            handle (str): wallet handle token
+            multisig (Multisig): multisig account to be imported
+
+        Returns:
+            str: base32 address of the imported multisig account
         """
         req = "/multisig/import"
         query = {
             "wallet_handle_token": handle,
             "multisig_version": multisig.version,
             "threshold": multisig.threshold,
-            "pks": [base64.b64encode(s.public_key).decode() for s in multisig.subsigs]
+            "pks": [base64.b64encode(s.public_key).decode()
+                    for s in multisig.subsigs]
             }
         return self.kmdRequest("POST", req, data=query)["address"]
 
     def exportMultisig(self, handle, address):
         """
-        Exports a multisig account.
+        Export a multisig account.
 
-        Parameters
-        ----------
-        handle: string
-            wallet token handle
+        Args:
+            handle (str): wallet token handle
+            address (str): base32 address of the multisig account
 
-        address: string
-            base32 address of the multisig account
-
-        Returns
-        -------
-        Multisig: multisig object corresponding to the address
+        Returns:
+            Multisig: multisig object corresponding to the address
         """
         req = "/multisig/export"
         query = {
@@ -473,27 +400,21 @@ class kmdClient:
         result = self.kmdRequest("POST", req, data=query)
         pks = result["pks"]
         pks = [encoding.encodeAddress(base64.b64decode(p)) for p in pks]
-        msig = transaction.Multisig(result["multisig_version"], result["threshold"], pks)
+        msig = transaction.Multisig(result["multisig_version"],
+                                    result["threshold"], pks)
         return msig
 
     def deleteMultisig(self, handle, password, address):
         """
-        Deletes a multisig account.
-        
-        Parameters
-        ----------
-        handle: string
-            wallet handle token
+        Delete a multisig account.
 
-        password: string
-            wallet password
+        Args:
+            handle (str): wallet handle token
+            password (str): wallet password
+            address (str): base32 address of the multisig account to delete
 
-        address: string
-            base32 address of the multisig account to delete
-
-        Returns
-        -------
-        boolean: True if the multisig account has been deleted
+        Returns:
+            bool: True if the multisig account has been deleted
         """
         req = "/multisig"
         query = {
@@ -504,33 +425,25 @@ class kmdClient:
         result = self.kmdRequest("DELETE", req, data=query)
         return result == {}
 
-
     def signMultisigTransaction(self, handle, password, public_key, preStx):
         """
-        Signs a multisig transaction for the given public key.
+        Sign a multisig transaction for the given public key.
 
-        Parameters
-        ----------
-        handle: string
-            wallet handle token
-        
-        password: string
-            wallet password
+        Args:
+            handle (str): wallet handle token
+            password (str): wallet password
+            public_key (str): base32 address that is signing the transaction
+            preStx (SignedTransaction): object containing unsigned or
+                partially signed multisig
 
-        public_key: string
-            base32 address that is signing the transaction
-
-        preStx: SignedTransaction
-            object containing unsigned or partially signed multisig
-        
-        Returns
-        -------
-        SignedTransaction
+        Returns:
+            SignedTransaction: signed transaction with multisig containing
+                public_key's signature
         """
         partial = preStx.multisig.json_dictify()
         txn = encoding.msgpack_encode(preStx.transaction)
-        public_key = base64.b64encode(encoding.decodeAddress(public_key)).decode()
-        
+        public_key = base64.b64encode(encoding.decodeAddress(public_key))
+        public_key = public_key.decode()
         req = "/multisig/sign"
         query = {
             "wallet_handle_token": handle,
