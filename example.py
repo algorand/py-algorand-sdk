@@ -8,6 +8,7 @@ from algosdk import constants
 from algosdk import wallet
 from algosdk import responses
 import params
+import json
 
 # create kmd and algod clients
 kcl = kmd.kmdClient(params.kmdToken, params.kmdAddress)
@@ -17,6 +18,11 @@ acl = algod.AlgodClient(params.algodToken, params.algodAddress)
 existing_wallet_name = input("Name of an existing wallet? ")
 existing_wallet_pswd = input("Password for " + existing_wallet_name + "? ")
 existing_account = input("Address of an account in the wallet? ")
+
+# or enter info here
+# existing_wallet_name = "unencrypted-default-wallet"
+# existing_wallet_pswd = ""
+# existing_account = "account_address"
 
 # get the wallet ID
 wallets = kcl.listWallets()
@@ -35,6 +41,10 @@ print("Got the wallet's handle: " + existing_handle)
 print("Now we'll create a new wallet.")
 wallet_name = input("New wallet name? ")
 wallet_pswd = input("New wallet password? ")
+
+# or enter wallet info here
+# wallet_name = "Wallet"
+# wallet_pswd = "password"
 
 # check if the wallet already exists
 wallet_id = None
@@ -76,9 +86,13 @@ gen = params["genesisID"]
 gh = params["genesishashb64"]
 last_round = params["lastRound"]
 
+# get last block info
+block_info = acl.blockInfo(last_round)
+print("Block", last_round, "info:", json.dumps(block_info, indent=2))
+
 # create a transaction
 txn = transaction.PaymentTxn(existing_account, constants.minTxnFee, last_round,
-                             last_round+100, gen, gh, address_1, 100000)
+                             last_round+100, gh, address_1, 100000, gen=gen)
 print("Encoded transaction:", encoding.msgpack_encode(txn), "\n")
 
 # sign transaction with kmd
@@ -102,6 +116,12 @@ else:
 transaction_id = acl.sendRawTransaction(signed_kmd)
 print("\nTransaction was sent!")
 print("Transaction ID: " + transaction_id + "\n")
+
+# wait 2 rounds and then try to see the transaction
+print("Now let's wait a bit for the transaction to process.")
+acl.statusAfterBlock(last_round+2)
+print("Transaction info:", acl.transactionInfo(existing_account,
+                                               transaction_id))
 
 # To see the new wallet and accounts that we've created, use goal:
 # $ ./goal wallet list

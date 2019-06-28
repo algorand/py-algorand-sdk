@@ -10,7 +10,7 @@ algodToken = ""
 algodAddress = "http://localhost:8080"
 
 # path to the data directory (for example, "/Users/[user_name]/node/data/")
-data_dir_path = "/Users/user/node/data"
+data_dir_path = "/Users/Michelle/node/network/Primary"
 kmd_folder_name = "kmd-v0.5"  # name of the kmd folder in the data directory
 
 

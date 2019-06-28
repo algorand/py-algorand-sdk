@@ -13,5 +13,10 @@ from algosdk import wallet
 import params
 import time
 
-kcl = kmd.kmdClient(params.kmdToken, params.kmdAddress)
-acl = algod.AlgodClient(params.algodToken, params.algodAddress)
+# to run tests:
+import unittest
+suite = unittest.TestLoader().discover("algosdk.tests")
+result = unittest.TextTestRunner(verbosity=2).run(suite)
+
+# acl = algod.AlgodClient(params.algodToken, params.algodAddress)
+# kcl = kmd.kmdClient(params.kmdToken, params.kmdAddress)

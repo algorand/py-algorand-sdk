@@ -62,9 +62,9 @@ class TestIntegration(unittest.TestCase):
 
         # create transaction
         txn = transaction.PaymentTxn(account_0, constants.minTxnFee,
-                                     last_round, last_round+100, gen, gh,
+                                     last_round, last_round+100, gh,
                                      account_1, 100000, note=base64.b64decode(
-                                         encoding.msgpack_encode(nf)))
+                                         encoding.msgpack_encode(nf)), gen=gen)
 
         # sign transaction with crypto
         signed_crypto, txid, sig = crypto.signTransaction(txn, private_key_0)
@@ -148,8 +148,8 @@ class TestIntegration(unittest.TestCase):
 
         # create transaction
         txn = transaction.PaymentTxn(account_0, constants.minTxnFee,
-                                     last_round, last_round+100, gen, gh,
-                                     account_1, 100000)
+                                     last_round, last_round+100, gh,
+                                     account_1, 100000, gen=gen)
 
         # sign transaction with kmd
         signed_kmd = self.kcl.signTransaction(handle, wallet_pswd, txn)
@@ -216,8 +216,8 @@ class TestIntegration(unittest.TestCase):
         # create multisig account and transaction
         msig = transaction.Multisig(1, 2, [account_1, account_2])
         txn = transaction.PaymentTxn(msig.address(), constants.minTxnFee,
-                                     last_round, last_round+100, gen, gh,
-                                     account_0, 1000)
+                                     last_round, last_round+100, gh,
+                                     account_0, 1000, gen=gen)
 
         # check that the multisig account is valid
         msig.validate()
@@ -315,8 +315,8 @@ class TestIntegration(unittest.TestCase):
 
         # create transaction
         txn = transaction.PaymentTxn(account_0, constants.minTxnFee,
-                                     last_round, last_round+100, gen, gh,
-                                     account_1, 100000)
+                                     last_round, last_round+100, gh,
+                                     account_1, 100000, gen=gen)
 
         # sign transaction with wallet
         signed_kmd = w.signTransaction(txn)
@@ -334,8 +334,8 @@ class TestIntegration(unittest.TestCase):
         # create multisig account and transaction
         msig = transaction.Multisig(1, 2, [account_1, account_2])
         txn = transaction.PaymentTxn(msig.address(), constants.minTxnFee,
-                                     last_round, last_round+100, gen, gh,
-                                     account_0, 1000)
+                                     last_round, last_round+100, gh,
+                                     account_0, 1000, gen=gen)
 
         # import multisig account
         msig_address = w.importMultisig(msig)
@@ -396,8 +396,8 @@ class TestIntegration(unittest.TestCase):
 
         # create transaction
         txn = transaction.PaymentTxn(account_0, constants.minTxnFee,
-                                     last_round, last_round+100, gen, gh,
-                                     account_0, 1000)
+                                     last_round, last_round+100, gh,
+                                     account_0, 1000, gen=gen)
 
         # try to send transaction without signing
         self.assertRaises(error.AlgodHTTPError,
@@ -453,7 +453,10 @@ class TestIntegration(unittest.TestCase):
                           [preStx_2, preStx_3])
 
         # mnemonic with wrong checksum
-        mn = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon"
+        mn = ("abandon abandon abandon abandon abandon abandon abandon " +
+              "abandon abandon abandon abandon abandon abandon abandon " +
+              "abandon abandon abandon abandon abandon abandon abandon " +
+              "abandon abandon abandon abandon")
         self.assertRaises(error.WrongChecksumError, mnemonic.toKey, mn)
 
         # mnemonic of wrong length
@@ -480,7 +483,7 @@ class TestIntegration(unittest.TestCase):
 
         # create keyreg transaction
         txn = transaction.KeyregTxn(account_0, constants.minTxnFee, last_round,
-                                    last_round+100, gen, gh, account_0,
+                                    last_round+100, gh, account_0,
                                     account_0, last_round, last_round+100, 100)
         # test get functions
         self.assertEqual(account_0, txn.getSelectionKey())
@@ -488,7 +491,7 @@ class TestIntegration(unittest.TestCase):
 
         # create transaction
         txn = transaction.PaymentTxn(account_0, constants.minTxnFee,
-                                     last_round, last_round+100, gen, gh,
+                                     last_round, last_round+100, gh,
                                      account_0, 100000, account_0)
 
         # get private key
@@ -514,7 +517,7 @@ class TestIntegration(unittest.TestCase):
 
         # create transaction
         txn = transaction.PaymentTxn(account_0, constants.minTxnFee,
-                                     last_round, last_round+100, gen, gh,
+                                     last_round, last_round+100, gh,
                                      account_0, 1000)
 
         # get private key
@@ -591,7 +594,11 @@ class TestUnit(unittest.TestCase):
     def test_zeroMnemonic(self):
         zero_bytes = bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-        expected_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon invest"
+        expected_mnemonic = ("abandon abandon abandon abandon abandon " +
+                             "abandon abandon abandon abandon abandon " +
+                             "abandon abandon abandon abandon abandon " +
+                             "abandon abandon abandon abandon abandon " +
+                             "abandon abandon abandon abandon invest")
         result = mnemonic.fromKey(zero_bytes)
         self.assertEqual(expected_mnemonic, result)
         result = mnemonic.toKey(result)
@@ -613,11 +620,37 @@ class TestUnit(unittest.TestCase):
         self.assertEqual(result, "venue")
 
     def test_msgpack(self):
-        bid = "gqFigqNiaWSGo2FpZAGjYXVjxCCokNFWl9DCqHrP9trjPICAMGOaRoX/OR+M6tHWhfUBkKZiaWRkZXLEIP1rCXe2x5+exPBfU3CZwGPMY8mzwvglET+QtgfCPdCmo2N1cs8AAADN9kTOAKJpZM5JeDcCpXByaWNlzQMgo3NpZ8RAiR06J4suAixy13BKHlw4VrORKzLT5CJr9n3YSj0Ao6byV23JHGU0yPf7u9/o4ECw4Xy9hc9pWopLW97xKXRfA6F0oWI="
-        stxn = "gqNzaWfEQGdpjnStb70k2iXzOlu+RSMgCYLe25wkUfbgRsXs7jx6rbW61ivCs6/zGs3gZAZf4L2XAQak7OjMh3lw9MTCIQijdHhuiaNhbXTOAAGGoKNmZWXNA+iiZnbNcl+jZ2Vuq25ldHdvcmstdjM4omdoxCBN/+nfiNPXLbuigk8M/TXsMUfMK7dV//xB1wkoOhNu9qJsds1yw6NyY3bEIPRUuVDPVUFC7Jk3+xDjHJfwWFDp+Wjy+Hx3cwL9ncVYo3NuZMQgGC5kQiOIPooA8mrvoHRyFtk27F/PPN08bAufGhnp0BGkdHlwZaNwYXk="
-        paytxn = "iaNhbXTOAAGGoKNmZWXNA+iiZnbNcq2jZ2Vuq25ldHdvcmstdjM4omdoxCBN/+nfiNPXLbuigk8M/TXsMUfMK7dV//xB1wkoOhNu9qJsds1zEaNyY3bEIAZ2cvp4J0OiBy5eAHIX/njaRko955rEdN4AUNEl4rxTo3NuZMQgGC5kQiOIPooA8mrvoHRyFtk27F/PPN08bAufGhnp0BGkdHlwZaNwYXk="
-        msigtxn = "gqRtc2lng6ZzdWJzaWeSgqJwa8Qg1ke3gkLuR0MUN/Ku0oyiRVIm9P1QFDaiEhT5vtfLmd+hc8RAIEbfnhccjWfYQFQp/P4aJjATFdgaDDpnhyJF0tU/37CO5I5hhoCvUCRH/A/6X94Ewz9YEtk5dANEGKQW+/WyAIKicGvEIKgAZfZ4iDC+UY/P5F3tgs5rqeyYt08LT0c/D78u0V7KoXPEQCxUkQgTVC9lLpKVzcZGKesSCQcZL9UjXTzrteADicvcca7KT3WP0crGgAfJ3a17Na5cykJzFEn7pq2SHgwD/QujdGhyAqF2AaN0eG6Jo2FtdM0D6KNmZWXNA+iiZnbNexSjZ2Vuq25ldHdvcmstdjM4omdoxCBN/+nfiNPXLbuigk8M/TXsMUfMK7dV//xB1wkoOhNu9qJsds17eKNyY3bEIBguZEIjiD6KAPJq76B0chbZNuxfzzzdPGwLnxoZ6dARo3NuZMQgpuIJvJzW8E4uxsQGCW0S3n1u340PbHTB2zhtXo/AiI6kdHlwZaNwYXk="
-        keyregtxn = "jKNmZWXNA+iiZnbNcoqjZ2Vuq25ldHdvcmstdjM4omdoxCBN/+nfiNPXLbuigk8M/TXsMUfMK7dV//xB1wkoOhNu9qJsds1y7qZzZWxrZXnEIBguZEIjiD6KAPJq76B0chbZNuxfzzzdPGwLnxoZ6dARo3NuZMQgGC5kQiOIPooA8mrvoHRyFtk27F/PPN08bAufGhnp0BGkdHlwZaZrZXlyZWendm90ZWZzdM1yiqZ2b3Rla2TNMDmndm90ZWtlecQgGC5kQiOIPooA8mrvoHRyFtk27F/PPN08bAufGhnp0BGndm90ZWxzdM1y7g=="
+        bid = ("gqFigqNiaWSGo2FpZAGjYXVjxCCokNFWl9DCqHrP9trjPICAMGOaRoX/OR+" +
+               "M6tHWhfUBkKZiaWRkZXLEIP1rCXe2x5+exPBfU3CZwGPMY8mzwvglET+Qtg" +
+               "fCPdCmo2N1cs8AAADN9kTOAKJpZM5JeDcCpXByaWNlzQMgo3NpZ8RAiR06J" +
+               "4suAixy13BKHlw4VrORKzLT5CJr9n3YSj0Ao6byV23JHGU0yPf7u9/o4ECw" +
+               "4Xy9hc9pWopLW97xKXRfA6F0oWI=")
+        stxn = ("gqNzaWfEQGdpjnStb70k2iXzOlu+RSMgCYLe25wkUfbgRsXs7jx6rbW61i" +
+                "vCs6/zGs3gZAZf4L2XAQak7OjMh3lw9MTCIQijdHhuiaNhbXTOAAGGoKNm" +
+                "ZWXNA+iiZnbNcl+jZ2Vuq25ldHdvcmstdjM4omdoxCBN/+nfiNPXLbuigk" +
+                "8M/TXsMUfMK7dV//xB1wkoOhNu9qJsds1yw6NyY3bEIPRUuVDPVUFC7Jk3" +
+                "+xDjHJfwWFDp+Wjy+Hx3cwL9ncVYo3NuZMQgGC5kQiOIPooA8mrvoHRyFt" +
+                "k27F/PPN08bAufGhnp0BGkdHlwZaNwYXk=")
+        paytxn = ("iaNhbXTOAAGGoKNmZWXNA+iiZnbNcq2jZ2Vuq25ldHdvcmstdjM4omdo" +
+                  "xCBN/+nfiNPXLbuigk8M/TXsMUfMK7dV//xB1wkoOhNu9qJsds1zEaNy" +
+                  "Y3bEIAZ2cvp4J0OiBy5eAHIX/njaRko955rEdN4AUNEl4rxTo3NuZMQg" +
+                  "GC5kQiOIPooA8mrvoHRyFtk27F/PPN08bAufGhnp0BGkdHlwZaNwYXk=")
+        msigtxn = ("gqRtc2lng6ZzdWJzaWeSgqJwa8Qg1ke3gkLuR0MUN/Ku0oyiRVIm9P1" +
+                   "QFDaiEhT5vtfLmd+hc8RAIEbfnhccjWfYQFQp/P4aJjATFdgaDDpnhy" +
+                   "JF0tU/37CO5I5hhoCvUCRH/A/6X94Ewz9YEtk5dANEGKQW+/WyAIKic" +
+                   "GvEIKgAZfZ4iDC+UY/P5F3tgs5rqeyYt08LT0c/D78u0V7KoXPEQCxU" +
+                   "kQgTVC9lLpKVzcZGKesSCQcZL9UjXTzrteADicvcca7KT3WP0crGgAf" +
+                   "J3a17Na5cykJzFEn7pq2SHgwD/QujdGhyAqF2AaN0eG6Jo2FtdM0D6K" +
+                   "NmZWXNA+iiZnbNexSjZ2Vuq25ldHdvcmstdjM4omdoxCBN/+nfiNPXL" +
+                   "buigk8M/TXsMUfMK7dV//xB1wkoOhNu9qJsds17eKNyY3bEIBguZEIj" +
+                   "iD6KAPJq76B0chbZNuxfzzzdPGwLnxoZ6dARo3NuZMQgpuIJvJzW8E4" +
+                   "uxsQGCW0S3n1u340PbHTB2zhtXo/AiI6kdHlwZaNwYXk=")
+        keyregtxn = ("jKNmZWXNA+iiZnbNcoqjZ2Vuq25ldHdvcmstdjM4omdoxCBN/+nfi" +
+                     "NPXLbuigk8M/TXsMUfMK7dV//xB1wkoOhNu9qJsds1y7qZzZWxrZX" +
+                     "nEIBguZEIjiD6KAPJq76B0chbZNuxfzzzdPGwLnxoZ6dARo3NuZMQ" +
+                     "gGC5kQiOIPooA8mrvoHRyFtk27F/PPN08bAufGhnp0BGkdHlwZaZr" +
+                     "ZXlyZWendm90ZWZzdM1yiqZ2b3Rla2TNMDmndm90ZWtlecQgGC5kQ" +
+                     "iOIPooA8mrvoHRyFtk27F/PPN08bAufGhnp0BGndm90ZWxzdM1y7g==")
         self.assertEqual(bid, encoding.msgpack_encode(
                          encoding.msgpack_decode(bid)))
         self.assertEqual(stxn, encoding.msgpack_encode(

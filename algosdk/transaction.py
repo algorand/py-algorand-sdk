@@ -26,7 +26,7 @@ class Transaction:
         return encoding.encodeAddress(self.sender)
 
     def getGenesisHash(self):
-        """Return the base64 encoding of the genesis hash."""
+        """Return the base64 encodi ng of the genesis hash."""
         return base64.b64encode(self.genesisHash).decode()
 
 
@@ -39,29 +39,29 @@ class PaymentTxn(Transaction):
         fee (int): transaction fee
         first (int): first round for which the transaction is valid
         last (int): last round for which the transaction is valid
-        gen (str): genesisID
         gh (str): genesishash
         receiver (str): address of the receiver
         amt (int): amount in microAlgos to be sent
         closeRemainderTo (str, optional): if nonempty, account will be closed
             and remaining algos will be sent to this address
         note (bytes, optional): encoded NoteField object
+        gen (str, optional): genesisID
 
     Attributes:
         sender (bytes)
         fee (int)
         first (int)
         last (int)
-        gen (str)
         gh (bytes)
         receiver (bytes)
         amt (int)
         closeRemainderTo (bytes)
         note (bytes)
+        gen (str)
     """
 
-    def __init__(self, sender, fee, first, last, gen, gh, receiver, amt,
-                 closeRemainderTo=None, note=None):
+    def __init__(self, sender, fee, first, last, gh, receiver, amt,
+                 closeRemainderTo=None, note=None, gen=None):
         Transaction.__init__(self,  sender, fee, first, last, note, gen, gh)
         self.receiver = encoding.decodeAddress(receiver)
         self.amt = amt
@@ -75,7 +75,8 @@ class PaymentTxn(Transaction):
             od["close"] = self.closeRemainderTo
         od["fee"] = self.fee
         od["fv"] = self.firstValidRound
-        od["gen"] = self.genesisID
+        if self.genesisID:
+            od["gen"] = self.genesisID
         od["gh"] = self.genesisHash
         od["lv"] = self.lastValidRound
         if self.note:
@@ -90,13 +91,17 @@ class PaymentTxn(Transaction):
     def undictify(d):
         crt = None
         note = None
+        gen = None
         if "close" in d:
             crt = encoding.encodeAddress(d["close"])
         if "note" in d:
             note = d["note"]
+        if "gen" in d:
+            gen = d["gen"]
         tr = PaymentTxn(encoding.encodeAddress(d["snd"]), d["fee"], d["fv"],
-                        d["lv"], d["gen"], base64.b64encode(d["gh"]),
-                        encoding.encodeAddress(d["rcv"]), d["amt"], crt, note)
+                        d["lv"], base64.b64encode(d["gh"]),
+                        encoding.encodeAddress(d["rcv"]),
+                        d["amt"], crt, note, gen)
         return tr
 
     def getReceiver(self):
@@ -119,7 +124,6 @@ class KeyregTxn(Transaction):
         fee (int): transaction fee
         first (int): first round for which the transaction is valid
         last (int): last round for which the transaction is valid
-        gen (str): genesisID
         gh (str): genesishash
         votekey (str): participation public key
         selkey (str): VRF public key
@@ -127,13 +131,13 @@ class KeyregTxn(Transaction):
         votelst (int): last round to vote
         votekd (int): vote key dilution
         note (bytes, optional): encoded NoteField object
+        gen (str): genesisID
 
     Attributes:
         sender (bytes)
         fee (int)
         first (int)
         last (int)
-        gen (str)
         gh (bytes)
         votepk (bytes)
         selkey (bytes)
@@ -141,10 +145,11 @@ class KeyregTxn(Transaction):
         votelst (int)
         votekd (int)
         note (bytes)
+        gen (str)
     """
 
-    def __init__(self, sender, fee, first, last, gen, gh, votekey, selkey,
-                 votefst, votelst, votekd, note=None):
+    def __init__(self, sender, fee, first, last, gh, votekey, selkey,
+                 votefst, votelst, votekd, note=None, gen=None):
         Transaction.__init__(self, sender, fee, first, last, note, gen, gh)
         self.votepk = encoding.decodeAddress(votekey)
         self.selkey = encoding.decodeAddress(selkey)
@@ -157,7 +162,8 @@ class KeyregTxn(Transaction):
         od = OrderedDict()
         od["fee"] = self.fee
         od["fv"] = self.firstValidRound
-        od["gen"] = self.genesisID
+        if self.genesisID:
+            od["gen"] = self.genesisID
         od["gh"] = self.genesisHash
         od["lv"] = self.lastValidRound
         if self.note:
@@ -174,13 +180,16 @@ class KeyregTxn(Transaction):
     @staticmethod
     def undictify(d):
         note = None
+        gen = None
         if "note" in d:
             note = d["note"]
+        if "gen" in d:
+            gen = d["gen"]
         k = KeyregTxn(encoding.encodeAddress(d["snd"]), d["fee"], d["fv"],
-                      d["lv"], d["gen"], base64.b64encode(d["gh"]),
+                      d["lv"], base64.b64encode(d["gh"]),
                       encoding.encodeAddress(d["votekey"]),
                       encoding.encodeAddress(d["selkey"]), d["votefst"],
-                      d["votelst"], d["votekd"], note)
+                      d["votelst"], d["votekd"], note, gen)
         return k
 
     def getVoteKey(self):
@@ -391,7 +400,7 @@ def retrieveFromFile(path):
     txns = []
     unp = msgpack.Unpacker(f, raw=False)
     for txn in unp:
-        if "sig" in txn:
+        if "sig" in txn or "msig" in txn:
             txns.append(SignedTransaction.undictify(txn))
         elif txn["txn"]["type"].__eq__("pay"):
             txns.append(PaymentTxn.undictify(txn["txn"]))

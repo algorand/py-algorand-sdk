@@ -2,6 +2,7 @@ import time
 from . import constants
 from . import mnemonic
 
+
 class Wallet:
     """
     Represents a wallet.
@@ -36,11 +37,11 @@ class Wallet:
             if w.name.__eq__(self.name):
                 self.id = w.id
         if not self.id:
-            w = self.kcl.createWallet(self.name, self.pswd, mdk)
+            w = self.kcl.createWallet(self.name, self.pswd,
+                                      master_deriv_key=mdk)
             self.id = w.id
-
-        self.handle = self.kcl.initWalletHandle(self.id, self.pswd)
         self.last_handle_renew = time.time()
+        self.handle = self.kcl.initWalletHandle(self.id, self.pswd)
 
     def info(self):
         """
@@ -237,7 +238,7 @@ class Wallet:
             bool: True if a handle is active
         """
         t = time.time()
-        if t - self.last_handle_renew > 59:
+        if t - self.last_handle_renew >= constants.handleRenewTime:
             self.initHandle()
         else:
             self.renewHandle()
@@ -250,8 +251,8 @@ class Wallet:
         Returns:
             bool: True if a handle is active
         """
-        self.handle = self.kcl.initWalletHandle(self.id, self.pswd)
         self.last_handle_renew = time.time()
+        self.handle = self.kcl.initWalletHandle(self.id, self.pswd)
         return True
 
     def renewHandle(self):
@@ -262,8 +263,8 @@ class Wallet:
             WalletHandleResponse: object containing wallet handle information
                 and wallet information
         """
-        resp = self.kcl.renewWalletHandle(self.handle)
         self.last_handle_renew = time.time()
+        resp = self.kcl.renewWalletHandle(self.handle)
         return resp
 
     def releaseHandle(self):
