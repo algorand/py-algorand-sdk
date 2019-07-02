@@ -70,7 +70,8 @@ class PaymentTxn(Transaction):
 
     def dictify(self):
         od = OrderedDict()
-        od["amt"] = self.amt
+        if self.amt:
+            od["amt"] = self.amt
         if self.closeRemainderTo:
             od["close"] = self.closeRemainderTo
         od["fee"] = self.fee
@@ -92,16 +93,18 @@ class PaymentTxn(Transaction):
         crt = None
         note = None
         gen = None
+        amt = 0
         if "close" in d:
             crt = encoding.encodeAddress(d["close"])
         if "note" in d:
             note = d["note"]
         if "gen" in d:
             gen = d["gen"]
+        if "amt" in d:
+            amt = d["amt"]
         tr = PaymentTxn(encoding.encodeAddress(d["snd"]), d["fee"], d["fv"],
                         d["lv"], base64.b64encode(d["gh"]),
-                        encoding.encodeAddress(d["rcv"]),
-                        d["amt"], crt, note, gen)
+                        encoding.encodeAddress(d["rcv"]), amt, crt, note, gen)
         return tr
 
     def getReceiver(self):

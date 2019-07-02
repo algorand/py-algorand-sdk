@@ -104,6 +104,7 @@ def mergeMultisigTransactions(partStxs):
         transactions. To append a signature to a multisig transaction, just
         use signMultisigTransaction()
     """
+
     if len(partStxs) < 2:
         return "tried to merge less than two multisig transactions"
     # check that multisig parameters match
@@ -114,7 +115,7 @@ def mergeMultisigTransactions(partStxs):
             refAddr = stx.multisig.address()
             refTxn = stx.transaction
         elif not stx.multisig.address() == refAddr:
-                raise error.MergeKeysMismatchError
+            raise error.MergeKeysMismatchError
     msigstx = None
     for stx in partStxs:
         if not msigstx:

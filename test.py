@@ -22,15 +22,21 @@ from algosdk import wallet
 wallet_name = "unencrypted-default-wallet"
 wallet_pswd = ""
 
-# account in the wallet that has a lot of algos
-account_0 = "DAXGIQRDRA7IUAHSNLX2A5DSC3MTN3C7Z46N2PDMBOPRUGPJ2AITQDZFNI"
-
 
 class TestIntegration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.acl = algod.AlgodClient(params.algodToken, params.algodAddress)
         cls.kcl = kmd.kmdClient(params.kmdToken, params.kmdAddress)
+        w = wallet.Wallet(wallet_name, wallet_pswd, cls.kcl)
+        keys = w.listKeys()
+        max_balance = 0
+        cls.account_0 = ""
+        for k in keys:
+            account_info = cls.acl.accountInfo(k)
+            if account_info["amount"] > max_balance:
+                max_balance = account_info["amount"]
+                cls.account_0 = k
 
     def test_auction(self):
         # get the default wallet
@@ -52,16 +58,17 @@ class TestIntegration(unittest.TestCase):
         gh = params["genesishashb64"]
         last_round = params["lastRound"]
 
-        # get account_0 private key
-        private_key_0 = self.kcl.exportKey(handle, wallet_pswd, account_0)
+        # get self.account_0 private key
+        private_key_0 = self.kcl.exportKey(handle, wallet_pswd, self.account_0)
 
         # create bid
-        bid = auction.Bid(account_0, 10000, 260, "bid_id", account_1, "auc_id")
+        bid = auction.Bid(self.account_0, 10000, 260,
+                          "bid_id", account_1, "auc_id")
         sb = crypto.signBid(bid, private_key_0)
         nf = auction.NoteField(sb, constants.note_field_type_bid)
 
         # create transaction
-        txn = transaction.PaymentTxn(account_0, constants.minTxnFee,
+        txn = transaction.PaymentTxn(self.account_0, constants.minTxnFee,
                                      last_round, last_round+100, gh,
                                      account_1, 100000, note=base64.b64decode(
                                          encoding.msgpack_encode(nf)), gen=gen)
@@ -147,15 +154,15 @@ class TestIntegration(unittest.TestCase):
         last_round = params["lastRound"]
 
         # create transaction
-        txn = transaction.PaymentTxn(account_0, constants.minTxnFee,
+        txn = transaction.PaymentTxn(self.account_0, constants.minTxnFee,
                                      last_round, last_round+100, gh,
                                      account_1, 100000, gen=gen)
 
         # sign transaction with kmd
         signed_kmd = self.kcl.signTransaction(handle, wallet_pswd, txn)
 
-        # get account_0 private key
-        private_key_0 = self.kcl.exportKey(handle, wallet_pswd, account_0)
+        # get self.account_0 private key
+        private_key_0 = self.kcl.exportKey(handle, wallet_pswd, self.account_0)
 
         # sign transaction with crypto
         signed_crypto, txid, sig = crypto.signTransaction(txn, private_key_0)
@@ -175,12 +182,10 @@ class TestIntegration(unittest.TestCase):
         self.acl.statusAfterBlock(last_round+2)
 
         # get transaction info three different ways
-        info_1 = self.acl.transactionsByAddress(account_0, last_round)
-        info_2 = self.acl.transactionInfo(account_0, txid)
-        info_3 = self.acl.transactionByID(txid)
+        info_1 = self.acl.transactionsByAddress(self.account_0, last_round)
+        info_2 = self.acl.transactionInfo(self.account_0, txid)
         self.assertIn("transactions", info_1)
         self.assertIn("type", info_2)
-        self.assertIn("type", info_3)
 
         # delete accounts
         del_1 = self.kcl.deleteKey(handle, wallet_pswd, account_1)
@@ -217,7 +222,7 @@ class TestIntegration(unittest.TestCase):
         msig = transaction.Multisig(1, 2, [account_1, account_2])
         txn = transaction.PaymentTxn(msig.address(), constants.minTxnFee,
                                      last_round, last_round+100, gh,
-                                     account_0, 1000, gen=gen)
+                                     self.account_0, 1000, gen=gen)
 
         # check that the multisig account is valid
         msig.validate()
@@ -268,7 +273,7 @@ class TestIntegration(unittest.TestCase):
 
         # test listKeys
         listKeys = self.kcl.listKeys(handle)
-        self.assertIn(account_0, listKeys)
+        self.assertIn(self.account_0, listKeys)
 
         # test listMultisig
         listMultisig = self.kcl.listMultisig(handle)
@@ -314,15 +319,15 @@ class TestIntegration(unittest.TestCase):
         last_round = params["lastRound"]
 
         # create transaction
-        txn = transaction.PaymentTxn(account_0, constants.minTxnFee,
+        txn = transaction.PaymentTxn(self.account_0, constants.minTxnFee,
                                      last_round, last_round+100, gh,
                                      account_1, 100000, gen=gen)
 
         # sign transaction with wallet
         signed_kmd = w.signTransaction(txn)
 
-        # get account_0 private key
-        private_key_0 = w.exportKey(account_0)
+        # get self.account_0 private key
+        private_key_0 = w.exportKey(self.account_0)
 
         # sign transaction with crypto
         signed_crypto, txid, sig = crypto.signTransaction(txn, private_key_0)
@@ -335,7 +340,7 @@ class TestIntegration(unittest.TestCase):
         msig = transaction.Multisig(1, 2, [account_1, account_2])
         txn = transaction.PaymentTxn(msig.address(), constants.minTxnFee,
                                      last_round, last_round+100, gh,
-                                     account_0, 1000, gen=gen)
+                                     self.account_0, 1000, gen=gen)
 
         # import multisig account
         msig_address = w.importMultisig(msig)
@@ -395,16 +400,16 @@ class TestIntegration(unittest.TestCase):
         random_private_key, account_1 = crypto.generateAccount()
 
         # create transaction
-        txn = transaction.PaymentTxn(account_0, constants.minTxnFee,
+        txn = transaction.PaymentTxn(self.account_0, constants.minTxnFee,
                                      last_round, last_round+100, gh,
-                                     account_0, 1000, gen=gen)
+                                     self.account_0, 1000, gen=gen)
 
         # try to send transaction without signing
         self.assertRaises(error.AlgodHTTPError,
                           self.acl.sendRawTransaction, txn)
 
         # create multisig account with invalid version
-        msig = transaction.Multisig(2, 2, [account_0, account_0])
+        msig = transaction.Multisig(2, 2, [self.account_0, self.account_0])
         self.assertRaises(error.UnknownMsigVersionError, msig.validate)
 
         # change it to have invalid threshold
@@ -429,10 +434,10 @@ class TestIntegration(unittest.TestCase):
 
         # get account private key
         w = wallet.Wallet(wallet_name, wallet_pswd, self.kcl)
-        private_key_0 = w.exportKey(account_0)
+        private_key_0 = w.exportKey(self.account_0)
 
         # create another multisig with different address
-        msig_2 = transaction.Multisig(1, 2, [account_0, account_1])
+        msig_2 = transaction.Multisig(1, 2, [self.account_0, account_1])
 
         # try to merge with different addresses
         preStx_2 = transaction.SignedTransaction(txn, multisig=msig_2)
@@ -482,30 +487,31 @@ class TestIntegration(unittest.TestCase):
         last_round = params["lastRound"]
 
         # create keyreg transaction
-        txn = transaction.KeyregTxn(account_0, constants.minTxnFee, last_round,
-                                    last_round+100, gh, account_0,
-                                    account_0, last_round, last_round+100, 100)
+        txn = transaction.KeyregTxn(self.account_0, constants.minTxnFee,
+                                    last_round, last_round+100, gh,
+                                    self.account_0, self.account_0, last_round,
+                                    last_round+100, 100)
         # test get functions
-        self.assertEqual(account_0, txn.getSelectionKey())
-        self.assertEqual(account_0, txn.getVoteKey())
+        self.assertEqual(self.account_0, txn.getSelectionKey())
+        self.assertEqual(self.account_0, txn.getVoteKey())
 
         # create transaction
-        txn = transaction.PaymentTxn(account_0, constants.minTxnFee,
+        txn = transaction.PaymentTxn(self.account_0, constants.minTxnFee,
                                      last_round, last_round+100, gh,
-                                     account_0, 100000, account_0)
+                                     self.account_0, 100000, self.account_0)
 
         # get private key
         w = wallet.Wallet(wallet_name, wallet_pswd, self.kcl)
-        private_key = w.exportKey(account_0)
+        private_key = w.exportKey(self.account_0)
 
         # sign transaction
         stx, txid, sig = crypto.signTransaction(txn, private_key)
 
         # test get functions
-        self.assertEqual(account_0, txn.getSender())
-        self.assertEqual(account_0, txn.getReceiver())
+        self.assertEqual(self.account_0, txn.getSender())
+        self.assertEqual(self.account_0, txn.getReceiver())
         self.assertEqual(gh, txn.getGenesisHash())
-        self.assertEqual(account_0, txn.getCloseRemainderTo())
+        self.assertEqual(self.account_0, txn.getCloseRemainderTo())
         self.assertEqual(stx.getSignature(), sig)
 
     def test_fileReadWrite(self):
@@ -516,13 +522,13 @@ class TestIntegration(unittest.TestCase):
         last_round = params["lastRound"]
 
         # create transaction
-        txn = transaction.PaymentTxn(account_0, constants.minTxnFee,
+        txn = transaction.PaymentTxn(self.account_0, constants.minTxnFee,
                                      last_round, last_round+100, gh,
-                                     account_0, 1000)
+                                     self.account_0, 1000)
 
         # get private key
         w = wallet.Wallet(wallet_name, wallet_pswd, self.kcl)
-        private_key = w.exportKey(account_0)
+        private_key = w.exportKey(self.account_0)
 
         # sign transaction
         stx, txid, sig = crypto.signTransaction(txn, private_key)
@@ -548,6 +554,15 @@ class TestUnit(unittest.TestCase):
     def setUpClass(cls):
         cls.acl = algod.AlgodClient(params.algodToken, params.algodAddress)
         cls.kcl = kmd.kmdClient(params.kmdToken, params.kmdAddress)
+        w = wallet.Wallet(wallet_name, wallet_pswd, cls.kcl)
+        keys = w.listKeys()
+        max_balance = 0
+        cls.account_0 = ""
+        for k in keys:
+            account_info = cls.acl.accountInfo(k)
+            if account_info["amount"] > max_balance:
+                max_balance = account_info["amount"]
+                cls.account_0 = k
 
     def test_health(self):
         result = self.acl.health()
@@ -555,8 +570,8 @@ class TestUnit(unittest.TestCase):
 
     def test_statusAfterBlock(self):
         lastRound = self.acl.status()["lastRound"]
-        currRound = self.acl.statusAfterBlock(lastRound-1)["lastRound"]
-        self.assertEqual(lastRound, currRound)
+        currRound = self.acl.statusAfterBlock(lastRound)["lastRound"]
+        self.assertEqual(lastRound+1, currRound)
 
     def test_pendingTransactions(self):
         result = self.acl.pendingTransactions(0)
@@ -588,8 +603,8 @@ class TestUnit(unittest.TestCase):
         self.assertIn("genesisID", result)
 
     def test_accountInfo(self):
-        result = self.acl.accountInfo(account_0)
-        self.assertEqual(result["address"], account_0)
+        result = self.acl.accountInfo(self.account_0)
+        self.assertEqual(result["address"], self.account_0)
 
     def test_zeroMnemonic(self):
         zero_bytes = bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -606,8 +621,8 @@ class TestUnit(unittest.TestCase):
 
     def test_mnemonic(self):
         result = mnemonic.toKey(mnemonic.fromKey(
-                                encoding.decodeAddress(account_0)))
-        self.assertEqual(result, encoding.decodeAddress(account_0))
+                                encoding.decodeAddress(self.account_0)))
+        self.assertEqual(result, encoding.decodeAddress(self.account_0))
 
     def test_mnemonicPrivateKey(self):
         priv_key, address = crypto.generateAccount()

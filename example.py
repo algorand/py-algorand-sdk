@@ -88,7 +88,7 @@ last_round = params["lastRound"]
 
 # get last block info
 block_info = acl.blockInfo(last_round)
-print("Block", last_round, "info:", json.dumps(block_info, indent=2))
+print("Block", last_round, "info:", json.dumps(block_info, indent=2), "\n")
 
 # create a transaction
 txn = transaction.PaymentTxn(existing_account, constants.minTxnFee, last_round,

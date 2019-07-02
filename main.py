@@ -12,11 +12,8 @@ from algosdk import wordlist
 from algosdk import wallet
 import params
 import time
-
-# to run tests:
-import unittest
-suite = unittest.TestLoader().discover("algosdk.tests")
-result = unittest.TextTestRunner(verbosity=2).run(suite)
+import base64
+import msgpack
 
 # acl = algod.AlgodClient(params.algodToken, params.algodAddress)
 # kcl = kmd.kmdClient(params.kmdToken, params.kmdAddress)

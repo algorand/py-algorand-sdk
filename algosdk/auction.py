@@ -9,7 +9,7 @@ class Bid:
     Args:
         bidder (str): address of the bidder
         bid_currency (int): how much external currency is being spent
-        max_price (float): the maximum price the bidder is willing to pay
+        max_price (int): the maximum price the bidder is willing to pay
         bid_id (int): bid ID
         auction_key (str): address of the auction
         auction_id (int): auction ID
@@ -17,7 +17,7 @@ class Bid:
     Attributes:
         bidder (bytes)
         bid_currency (int)
-        max_price (float)
+        max_price (int)
         bid_id (int)
         auction_key (bytes)
         auction_id (int)

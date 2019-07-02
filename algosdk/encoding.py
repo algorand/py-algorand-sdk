@@ -30,7 +30,7 @@ def msgpack_encode(obj):
         the most recent version of msgpack rather than the older msgpack
         version that had no "bin" family).
     """
-    if not isinstance(obj, dict):
+    if not isinstance(obj, OrderedDict):
         obj = obj.dictify()
     od = OrderedDict()
     for key in obj:
