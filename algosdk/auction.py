@@ -25,11 +25,11 @@ class Bid:
     """
     def __init__(self, bidder, bid_currency, max_price, bid_id, auction_key,
                  auction_id):
-        self.bidder = encoding.decodeAddress(bidder)
+        self.bidder = encoding.decode_address(bidder)
         self.bid_currency = bid_currency
         self.max_price = max_price
         self.bid_id = bid_id
-        self.auction_key = encoding.decodeAddress(auction_key)
+        self.auction_key = encoding.decode_address(auction_key)
         self.auction_id = auction_id
 
     def dictify(self):
@@ -44,8 +44,8 @@ class Bid:
 
     @staticmethod
     def undictify(d):
-        return Bid(encoding.encodeAddress(d["bidder"]), d["cur"], d["price"],
-                   d["id"], encoding.encodeAddress(d["auc"]), d["aid"])
+        return Bid(encoding.encode_address(d["bidder"]), d["cur"], d["price"],
+                   d["id"], encoding.encode_address(d["auc"]), d["aid"])
 
 
 class SignedBid:

@@ -46,7 +46,7 @@ from algosdk import kmd
 from algosdk.wallet import Wallet
 
 # create a kmd client
-kcl = kmd.kmdClient(params.kmdToken, params.kmdAddress)
+kcl = kmd.KMDClient(params.kmd_token, params.kmd_address)
 
 # create a wallet object
 wallet = Wallet("wallet_name", "wallet_password", kcl)
@@ -56,11 +56,11 @@ info = wallet.info()
 print("Wallet name:", info.wallet.name)
 
 # create an account
-address = wallet.generateKey()
+address = wallet.generate_key()
 print("New account:", address)
 
 # delete the account
-delete = wallet.deleteKey(address)
+delete = wallet.delete_key(address)
 print("Account deleted:", delete)
 ```
 
@@ -72,17 +72,17 @@ from algosdk import kmd, mnemonic
 from algosdk.wallet import Wallet
 
 # create a kmd client
-kcl = kmd.kmdClient(params.kmdToken, params.kmdAddress)
+kcl = kmd.KMDClient(params.kmd_token, params.kmd_address)
 
 # create a wallet object
 wallet = Wallet("wallet_name", "wallet_password", kcl)
 
 # get the wallet's master derivation key
-mdk = wallet.exportMasterDerivationKey()
+mdk = wallet.export_master_derivation_key()
 print("Master Derivation Key:", mdk)
 
 # get the backup phrase
-backup = mnemonic.fromMasterDerivationKey(mdk)
+backup = mnemonic.from_master_derivation_key(mdk)
 print("Wallet backup phrase:", backup)
 ```
 You can also back up accounts using mnemonic.fromPrivateKey().
@@ -94,13 +94,13 @@ from algosdk import kmd, mnemonic
 
 # get the master derivation key from the mnemonic
 backup = "such chapter crane ugly uncover fun kitten duty culture giant skirt reunion pizza pill web monster upon dolphin aunt close marble dune kangaroo ability merit"
-mdk = mnemonic.toMasterDerivationKey(backup)
+mdk = mnemonic.to_master_derivation_key(backup)
 
 # create a kmd client
-kcl = kmd.kmdClient(params.kmdToken, params.kmdAddress)
+kcl = kmd.KMDClient(params.kmd_token, params.kmd_address)
 
 # recover the wallet by passing mdk when creating a wallet
-kcl.createWallet("wallet_name", "wallet_password", master_deriv_key=mdk)
+kcl.create_wallet("wallet_name", "wallet_password", master_deriv_key=mdk)
 ```
 You can also recover accounts using mnemonic.toPrivateKey().
 ### writing transactions to file
@@ -114,28 +114,28 @@ sender = "sender_address"
 receiver = "receiver_address"
 
 # create an algod and kmd client
-acl = algod.AlgodClient(params.algodToken, params.algodAddress)
-kcl = kmd.kmdClient(params.kmdToken, params.kmdAddress)
+acl = algod.AlgodClient(params.algod_token, params.algod_address)
+kcl = kmd.KMDClient(params.kmd_token, params.kmd_address)
 
 # get suggested parameters
-params = acl.suggestedParams()
+params = acl.suggested_params()
 gen = params["genesisID"]
 gh = params["genesishashb64"]
 last_round = params["lastRound"]
 
 # create a transaction
-txn = transaction.PaymentTxn(sender, 1000, last_round, last_round+100, gh, receiver, 10000)
+txn = transaction.PaymentTxn(sender, 1, last_round, last_round+100, gh, receiver, 10000)
 
 # write to file
 txns = [txn]
-transaction.writeToFile([txn], "pathtofile.tx")
+transaction.write_to_file([txn], "pathtofile.tx")
 ```
 
 We can also read transactions after writing them to file.
 
 ```
 # read from file
-read_txns = transaction.retrieveFromFile("pathtofile.tx")
+read_txns = transaction.retrieve_from_file("pathtofile.tx")
 ```
 
 ### manipulating multisig transactions
@@ -144,18 +144,18 @@ read_txns = transaction.retrieveFromFile("pathtofile.tx")
 import params
 from algosdk import crypto, transaction, algod
 
-acl = algod.AlgodClient(params.algodToken, params.algodAddress)
+acl = algod.AlgodClient(params.algod_token, params.algod_address)
 
 # generate three accounts
-private_key_1, account_1 = crypto.generateAccount()
-private_key_2, account_2 = crypto.generateAccount()
-private_key_3, account_3 = crypto.generateAccount()
+private_key_1, account_1 = crypto.generate_account()
+private_key_2, account_2 = crypto.generate_account()
+private_key_3, account_3 = crypto.generate_account()
 
 # create a multisig account
 msig = transaction.Multisig(1, 2, [account_1, account_2])
 
 # get suggested parameters
-params = acl.suggestedParams()
+params = acl.suggested_params()
 gen = params["genesisID"]
 gh = params["genesishashb64"]
 last_round = params["lastRound"]
@@ -168,7 +168,7 @@ txn = transaction.PaymentTxn(sender, 1000, last_round, last_round+100, gh, accou
 stx = transaction.SignedTransaction(txn, multisig=msig)
 
 # sign the transaction
-signed_by_first = crypto.signMultisigTransaction(private_key_1, stx)
-signed_by_both = crypto.signMultisigTransaction(private_key_2, signed_by_first)
+signed_by_first = crypto.sign_multisig_transaction(private_key_1, stx)
+signed_by_both = crypto.sign_multisig_transaction(private_key_2, signed_by_first)
 ```
 

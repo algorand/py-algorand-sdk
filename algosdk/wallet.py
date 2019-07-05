@@ -10,7 +10,7 @@ class Wallet:
     Args:
         wallet_name (str): wallet name
         wallet_pswd (str): wallet password
-        kmd_client (kmdClient): a kmdClient to handle wallet requests
+        kmd_client (KMDClient): a KMDClient to handle wallet requests
         mdk (str, optional): master derivation key if recovering wallet
 
     Note:
@@ -20,7 +20,7 @@ class Wallet:
     Attributes:
         name (str)
         pswd (str)
-        kcl (kmdClient)
+        kcl (KMDClient)
         id (str)
         handle (str)
         last_handle_renew (float): time of last handle renew
@@ -32,16 +32,16 @@ class Wallet:
         self.kcl = kmd_client
         self.id = None
 
-        wallets = self.kcl.listWallets()
+        wallets = self.kcl.list_wallets()
         for w in wallets:
             if w.name.__eq__(self.name):
                 self.id = w.id
         if not self.id:
-            w = self.kcl.createWallet(self.name, self.pswd,
+            w = self.kcl.create_wallet(self.name, self.pswd,
                                       master_deriv_key=mdk)
             self.id = w.id
         self.last_handle_renew = time.time()
-        self.handle = self.kcl.initWalletHandle(self.id, self.pswd)
+        self.handle = self.kcl.init_wallet_handle(self.id, self.pswd)
 
     def info(self):
         """
@@ -51,18 +51,18 @@ class Wallet:
             WalletHandleResponse: object containing wallet handle information
                 and wallet information
         """
-        self.automateHandle()
-        return self.kcl.getWallet(self.handle)
+        self.automate_handle()
+        return self.kcl.get_wallet(self.handle)
 
-    def listKeys(self):
+    def list_keys(self):
         """
         List all keys in the wallet.
 
         Returns:
             str[]: list of base32 addresses in the wallet
         """
-        self.automateHandle()
-        return self.kcl.listKeys(self.handle)
+        self.automate_handle()
+        return self.kcl.list_keys(self.handle)
 
     def rename(self, new_name):
         """
@@ -74,31 +74,31 @@ class Wallet:
         Returns:
             WalletResponse: object containing wallet information
         """
-        resp = self.kcl.renameWallet(self.id, self.pswd, new_name)
+        resp = self.kcl.rename_wallet(self.id, self.pswd, new_name)
         self.name = new_name
         return resp
 
-    def getRecoveryPhrase(self):
+    def get_mnemonic(self):
         """
         Get recovery phrase mnemonic for the wallet.
 
         Returns:
             str: mnemonic converted from the wallet's master derivation key
         """
-        mdk = self.exportMasterDerivationKey()
-        return mnemonic.fromMasterDerivationKey(mdk)
+        mdk = self.export_master_derivation_key()
+        return mnemonic.from_master_derivation_key(mdk)
 
-    def exportMasterDerivationKey(self):
+    def export_master_derivation_key(self):
         """
         Get the wallet's master derivation key.
 
         Returns:
             str: master derivation key
         """
-        self.automateHandle()
-        return self.kcl.exportMasterDerivationKey(self.handle, self.pswd)
+        self.automate_handle()
+        return self.kcl.export_master_derivation_key(self.handle, self.pswd)
 
-    def importKey(self, private_key):
+    def import_key(self, private_key):
         """
         Import an account into a wallet.
 
@@ -108,10 +108,10 @@ class Wallet:
         Returns:
             str: base32 address of the account
         """
-        self.automateHandle()
-        return self.kcl.importKey(self.handle, private_key)
+        self.automate_handle()
+        return self.kcl.import_key(self.handle, private_key)
 
-    def exportKey(self, address):
+    def export_key(self, address):
         """
         Return an account private key.
 
@@ -121,10 +121,10 @@ class Wallet:
         Returns:
             str: private key
         """
-        self.automateHandle()
-        return self.kcl.exportKey(self.handle, self.pswd, address)
+        self.automate_handle()
+        return self.kcl.export_key(self.handle, self.pswd, address)
 
-    def generateKey(self, display_mnemonic=True):
+    def generate_key(self, display_mnemonic=True):
         """
         Generate a key in the wallet.
 
@@ -135,10 +135,10 @@ class Wallet:
         Returns:
             str: base32 address of the generated account
         """
-        self.automateHandle()
-        return self.kcl.generateKey(self.handle)
+        self.automate_handle()
+        return self.kcl.generate_key(self.handle)
 
-    def deleteKey(self, address):
+    def delete_key(self, address):
         """
         Delete a key in the wallet.
 
@@ -148,10 +148,10 @@ class Wallet:
         Returns:
             bool: True if the account has been deleted
         """
-        self.automateHandle()
-        return self.kcl.deleteKey(self.handle, self.pswd, address)
+        self.automate_handle()
+        return self.kcl.delete_key(self.handle, self.pswd, address)
 
-    def signTransaction(self, txn):
+    def sign_transaction(self, txn):
         """
         Sign a transaction.
 
@@ -161,20 +161,20 @@ class Wallet:
         Returns:
             SignedTransaction: signed transaction with signature of sender
         """
-        self.automateHandle()
-        return self.kcl.signTransaction(self.handle, self.pswd, txn)
+        self.automate_handle()
+        return self.kcl.sign_transaction(self.handle, self.pswd, txn)
 
-    def listMultisig(self):
+    def list_multisig(self):
         """
         List all multisig accounts in the wallet.
 
         Returns:
             str[]: list of base32 multisig account addresses
         """
-        self.automateHandle()
-        return self.kcl.listMultisig(self.handle)
+        self.automate_handle()
+        return self.kcl.list_multisig(self.handle)
 
-    def importMultisig(self, multisig):
+    def import_multisig(self, multisig):
         """
         Import a multisig account into the wallet.
 
@@ -184,10 +184,10 @@ class Wallet:
         Returns:
             str: base32 address of the imported multisig account
         """
-        self.automateHandle()
-        return self.kcl.importMultisig(self.handle, multisig)
+        self.automate_handle()
+        return self.kcl.import_multisig(self.handle, multisig)
 
-    def exportMultisig(self, address):
+    def export_multisig(self, address):
         """
         Export a multisig account.
 
@@ -197,10 +197,10 @@ class Wallet:
         Returns:
             Multisig: multisig object corresponding to the address
         """
-        self.automateHandle()
-        return self.kcl.exportMultisig(self.handle, address)
+        self.automate_handle()
+        return self.kcl.export_multisig(self.handle, address)
 
-    def deleteMultisig(self, address):
+    def delete_multisig(self, address):
         """
         Delete a multisig account.
 
@@ -210,27 +210,27 @@ class Wallet:
         Returns:
             bool: True if the multisig account has been deleted
         """
-        self.automateHandle()
-        return self.kcl.deleteMultisig(self.handle, self.pswd, address)
+        self.automate_handle()
+        return self.kcl.delete_multisig(self.handle, self.pswd, address)
 
-    def signMultisigTransaction(self, public_key, preStx):
+    def sign_multisig_transaction(self, public_key, pre_stx):
         """
         Sign a multisig transaction for the given public key.
 
         Args:
             public_key (str): base32 address that is signing the transaction
-            preStx (SignedTransaction): object containing unsigned or
+            pre_stx (SignedTransaction): object containing unsigned or
                 partially signed multisig
 
         Returns:
             SignedTransaction: signed transaction with multisig containing
                 public_key's signature
         """
-        self.automateHandle()
-        return self.kcl.signMultisigTransaction(self.handle, self.pswd,
-                                                public_key, preStx)
+        self.automate_handle()
+        return self.kcl.sign_multisig_transaction(self.handle, self.pswd,
+                                                public_key, pre_stx)
 
-    def automateHandle(self):
+    def automate_handle(self):
         """
         Get a new handle or renews the current one.
 
@@ -238,13 +238,13 @@ class Wallet:
             bool: True if a handle is active
         """
         t = time.time()
-        if t - self.last_handle_renew >= constants.handleRenewTime:
-            self.initHandle()
+        if t - self.last_handle_renew >= constants.handle_renew_time:
+            self.init_handle()
         else:
-            self.renewHandle()
+            self.renew_handle()
         return True
 
-    def initHandle(self):
+    def init_handle(self):
         """
         Get a new handle.
 
@@ -252,10 +252,10 @@ class Wallet:
             bool: True if a handle is active
         """
         self.last_handle_renew = time.time()
-        self.handle = self.kcl.initWalletHandle(self.id, self.pswd)
+        self.handle = self.kcl.init_wallet_handle(self.id, self.pswd)
         return True
 
-    def renewHandle(self):
+    def renew_handle(self):
         """
         Renew the current handle.
 
@@ -264,17 +264,17 @@ class Wallet:
                 and wallet information
         """
         self.last_handle_renew = time.time()
-        resp = self.kcl.renewWalletHandle(self.handle)
+        resp = self.kcl.renew_wallet_handle(self.handle)
         return resp
 
-    def releaseHandle(self):
+    def release_handle(self):
         """
         Deactivate the current handle.
 
         Returns:
             bool: True if the handle has been deactivated
         """
-        resp = self.kcl.releaseWalletHandle(self.handle)
+        resp = self.kcl.release_wallet_handle(self.handle)
         self.handle = None
-        self.last_handle_renew = time.time() - constants.handleRenewTime
+        self.last_handle_renew = time.time() - constants.handle_renew_time
         return resp

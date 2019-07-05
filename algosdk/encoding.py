@@ -68,7 +68,7 @@ def msgpack_decode(enc):
         return auction.Bid.undictify(decoded)
 
 
-def isValidAddress(addr):
+def is_valid_address(addr):
     """
     Check if the string address is a valid Algorand address.
 
@@ -83,7 +83,7 @@ def isValidAddress(addr):
     if not len(undo_padding(addr)) == 58:
         return False
     try:
-        decoded = decodeAddress(addr)
+        decoded = decode_address(addr)
         if isinstance(decoded, str):
             return False
         return True
@@ -91,7 +91,7 @@ def isValidAddress(addr):
         return False
 
 
-def decodeAddress(addr):
+def decode_address(addr):
     """
     Decode a string address into its address bytes and checksum.
 
@@ -107,33 +107,33 @@ def decodeAddress(addr):
     if not len(addr) == 58:
         raise error.WrongKeyLengthError
     decoded = base64.b32decode(correct_padding(addr))
-    addr = decoded[:-constants.checkSumLenBytes]
-    expectedChksum = decoded[-constants.checkSumLenBytes:]
+    addr = decoded[:-constants.check_sum_len_bytes]
+    expected_checksum = decoded[-constants.check_sum_len_bytes:]
     chksum = checksum(addr)
 
-    if chksum.__eq__(expectedChksum):
+    if chksum.__eq__(expected_checksum):
         return addr
     else:
         raise error.WrongChecksumError
 
 
-def encodeAddress(addrBytes):
+def encode_address(addr_bytes):
     """
     Encode a byte address into a string composed of the encoded bytes and the
     checksum.
 
     Args:
-        addrBytes (bytes): address in bytes
+        addr_bytes (bytes): address in bytes
 
     Returns:
         str: base32 encoded address
     """
-    if not addrBytes:
-        return addrBytes
-    if not len(addrBytes) == 32:
+    if not addr_bytes:
+        return addr_bytes
+    if not len(addr_bytes) == 32:
         raise error.WrongKeyBytesLengthError
-    chksum = checksum(addrBytes)
-    addr = base64.b32encode(addrBytes+chksum)
+    chksum = checksum(addr_bytes)
+    addr = base64.b32encode(addr_bytes+chksum)
     return undo_padding(addr.decode())
 
 
@@ -149,7 +149,7 @@ def checksum(addr):
     """
     hash = hashes.Hash(hashes.SHA512_256(), default_backend())
     hash.update(addr)
-    chksum = hash.finalize()[-constants.checkSumLenBytes:]
+    chksum = hash.finalize()[-constants.check_sum_len_bytes:]
     return chksum
 
 

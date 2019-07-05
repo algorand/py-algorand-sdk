@@ -1,4 +1,4 @@
-from nacl.signing import SigningKey, VerifyKey
+from nacl.signing import SigningKey
 import base64
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
@@ -9,7 +9,7 @@ from . import transaction
 from . import constants
 
 
-def signTransaction(txn, private_key):
+def sign_transaction(txn, private_key):
     """
     Sign a transaction with a private key.
 
@@ -21,14 +21,14 @@ def signTransaction(txn, private_key):
         (SignedTransaction, str, str): signed transaction with the signature,
             transaction ID, base64 encoded signature
     """
-    sig = rawSignTransaction(txn, private_key)
+    sig = raw_sign_transaction(txn, private_key)
     sig = base64.b64encode(sig).decode()
     stx = transaction.SignedTransaction(txn, signature=sig)
-    txid = getTxid(txn)
+    txid = get_txid(txn)
     return stx, txid, sig
 
 
-def rawSignTransaction(txn, private_key):
+def raw_sign_transaction(txn, private_key):
     """
     Sign a transaction.
 
@@ -41,20 +41,20 @@ def rawSignTransaction(txn, private_key):
     """
     private_key = base64.b64decode(bytes(private_key, "ascii"))
     txn = encoding.msgpack_encode(txn)
-    to_sign = constants.txidPrefix + base64.b64decode(bytes(txn, "ascii"))
+    to_sign = constants.txid_prefix + base64.b64decode(bytes(txn, "ascii"))
     signing_key = SigningKey(private_key[:32])
     signed = signing_key.sign(to_sign)
     sig = signed.signature
     return sig
 
 
-def signMultisigTransaction(private_key, preStx):
+def sign_multisig_transaction(private_key, pre_stx):
     """
     Sign a multisig transaction.
 
     Args:
         private_key (str): private key of signing account
-        preStx (SignedTransaction): object containing unsigned or partially
+        pre_stx (SignedTransaction): object containing unsigned or partially
             signed multisig
 
     Returns:
@@ -62,38 +62,38 @@ def signMultisigTransaction(private_key, preStx):
             signature
 
     Note:
-        The multisig in the preStx can be partially or fully signed; a new
+        The multisig in the pre_stx can be partially or fully signed; a new
         signature will replace the old if there is already a signature for the
         address. To sign another transaction, you can either overwrite the
         signatures in the current Multisig, or you can use
-        Multisig.getAccountFromMultisig() to get a new multisig object with
+        Multisig.get_account_from_multisig() to get a new multisig object with
         the same addresses.
     """
-    err = preStx.multisig.validate()
+    err = pre_stx.multisig.validate()
     if err:
         return err
-    addr = preStx.multisig.address()
-    if not encoding.encodeAddress(preStx.transaction.sender) == addr:
+    addr = pre_stx.multisig.address()
+    if not encoding.encode_address(pre_stx.transaction.sender) == addr:
         raise error.BadTxnSenderError
     index = -1
     public_key = base64.b64decode(bytes(private_key, "ascii"))[32:]
-    for s in range(len(preStx.multisig.subsigs)):
-        if preStx.multisig.subsigs[s].public_key == public_key:
+    for s in range(len(pre_stx.multisig.subsigs)):
+        if pre_stx.multisig.subsigs[s].public_key == public_key:
             index = s
             break
     if index == -1:
         raise error.InvalidSecretKeyError
-    sig = rawSignTransaction(preStx.transaction, private_key)
-    preStx.multisig.subsigs[index].signature = sig
-    return preStx
+    sig = raw_sign_transaction(pre_stx.transaction, private_key)
+    pre_stx.multisig.subsigs[index].signature = sig
+    return pre_stx
 
 
-def mergeMultisigTransactions(partStxs):
+def merge_multisig_transactions(part_stxs):
     """
     Merge partially signed multisig transactions.
 
     Args:
-        partStxs (SignedTransaction[]): list of partially signed transactions
+        part_stxs (SignedTransaction[]): list of partially signed transactions
 
     Returns:
         (SignedTransaction, str): signed transaction with multisig containing
@@ -102,22 +102,22 @@ def mergeMultisigTransactions(partStxs):
     Note:
         Only use this if you are given two partially signed multisig
         transactions. To append a signature to a multisig transaction, just
-        use signMultisigTransaction()
+        use sign_multisig_transaction()
     """
 
-    if len(partStxs) < 2:
+    if len(part_stxs) < 2:
         return "tried to merge less than two multisig transactions"
-    # check that multisig parameters match
-    refAddr = None
-    refTxn = None
-    for stx in partStxs:
-        if not refAddr:
-            refAddr = stx.multisig.address()
-            refTxn = stx.transaction
-        elif not stx.multisig.address() == refAddr:
+
+    ref_addr = None
+    ref_txn = None
+    for stx in part_stxs:
+        if not ref_addr:
+            ref_addr = stx.multisig.address()
+            ref_txn = stx.transaction
+        elif not stx.multisig.address() == ref_addr:
             raise error.MergeKeysMismatchError
     msigstx = None
-    for stx in partStxs:
+    for stx in part_stxs:
         if not msigstx:
             msigstx = stx
         else:
@@ -129,11 +129,11 @@ def mergeMultisigTransactions(partStxs):
                     elif not msigstx.multisig.subsigs[s].signature == \
                             stx.multisig.subsigs[s].signature:
                         raise error.DuplicateSigMismatchError
-    txid = getTxid(refTxn)
+    txid = get_txid(ref_txn)
     return msigstx, txid
 
 
-def signBid(bid, private_key):
+def sign_bid(bid, private_key):
     """
     Sign a bid.
 
@@ -145,7 +145,7 @@ def signBid(bid, private_key):
         SignedBid: signed bid with the signature
     """
     temp = encoding.msgpack_encode(bid)
-    to_sign = constants.bidPrefix + base64.b64decode(bytes(temp, "ascii"))
+    to_sign = constants.bid_prefix + base64.b64decode(bytes(temp, "ascii"))
     private_key = base64.b64decode(bytes(private_key, "ascii"))
     signing_key = SigningKey(private_key[:32])
     signed = signing_key.sign(to_sign)
@@ -154,7 +154,7 @@ def signBid(bid, private_key):
     return signed
 
 
-def getTxid(txn):
+def get_txid(txn):
     """
     Get a transaction's ID.
 
@@ -165,7 +165,7 @@ def getTxid(txn):
         str: transaction ID
     """
     txn = encoding.msgpack_encode(txn)
-    to_sign = constants.txidPrefix + base64.b64decode(bytes(txn, "ascii"))
+    to_sign = constants.txid_prefix + base64.b64decode(bytes(txn, "ascii"))
     txidbytes = hashes.Hash(hashes.SHA512_256(), default_backend())
     txidbytes.update(to_sign)
     txid = txidbytes.finalize()
@@ -173,7 +173,7 @@ def getTxid(txn):
     return encoding.undo_padding(txid)
 
 
-def generateAccount():
+def generate_account():
     """
     Generate an account.
 
@@ -182,6 +182,27 @@ def generateAccount():
     """
     sk = SigningKey.generate()
     vk = sk.verify_key
-    a = encoding.encodeAddress(vk.encode())
+    a = encoding.encode_address(vk.encode())
     private_key = base64.b64encode(sk.encode() + vk.encode()).decode()
     return private_key, encoding.undo_padding(a)
+
+
+def address_from_private_key(private_key):
+    """
+    Return the address for the private key.
+
+    Args:
+        private_key (str): private key of the account
+
+    Returns:
+        str: address of the account
+    """
+    pk = base64.b64decode(private_key)[32:]
+    address = encoding.encode_address(pk)
+    return address
+
+
+def estimate_size(txn):
+    sk, address = generate_account()
+    stx, txid, sig = sign_transaction(txn, sk)
+    return len(base64.b64decode(encoding.msgpack_encode(stx)))

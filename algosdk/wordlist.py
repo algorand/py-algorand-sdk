@@ -1,10 +1,8 @@
-"""
-Contains the wordlist used for mnemonics.
-"""
-
-
 # This wordlist was taken from https://git.io/fhZUO
-def wordListRaw():
+def word_list_raw():
+    """
+    Return the wordlist used for mnemonics.
+    """
     return """abandon
 ability
 able

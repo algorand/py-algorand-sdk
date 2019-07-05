@@ -1,6 +1,8 @@
 algosdk package
 ===============
 
+Submodules
+----------
 
 algosdk.algod module
 --------------------
@@ -98,3 +100,11 @@ algosdk.wordlist module
    :undoc-members:
    :show-inheritance:
 
+
+Module contents
+---------------
+
+.. automodule:: algosdk
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -3,15 +3,15 @@ Contains useful constants.
 """
 
 # change if version changes
-apiVersionPathPrefix = "/v1"
+api_version_path_prefix = "/v1"
 """str: current path prefix for requests"""
-kmdAuthHeader = "X-KMD-API-Token"
+kmd_auth_header = "X-KMD-API-Token"
 """str: header key for kmd requests"""
-algodAuthHeader = "X-Algo-API-Token"
+algod_auth_header = "X-Algo-API-Token"
 """str: header key for algod requests"""
-unversionedPaths = ["/health", "/versions", "/metrics"]
+unversioned_paths = ["/health", "/versions", "/metrics"]
 """str[]: paths that don't use the version path prefix"""
-noAuth = ["/health"]
+no_auth = ["/health"]
 """str[]: requests that don't require authentication"""
 
 
@@ -26,17 +26,17 @@ note_field_type_params = "p"
 """str: indicates signed params in NoteField"""
 
 
-checkSumLenBytes = 4
+check_sum_len_bytes = 4
 """int: how long checksums should be"""
-msigAddrPrefix = "MultisigAddr"
+msig_addr_prefix = "MultisigAddr"
 """str: prefix for multisig addresses"""
-handleRenewTime = 60
+handle_renew_time = 60
 """int: how long it takes for a wallet handle to expire"""
-minTxnFee = 1000
+min_txn_fee = 1000
 """int: minimum transaction fee"""
 
 
-txidPrefix = bytes("TX", "ascii")
+txid_prefix = bytes("TX", "ascii")
 """bytes: transaction prefix when signing"""
-bidPrefix = bytes("aB", "ascii")
+bid_prefix = bytes("aB", "ascii")
 """bytes: bid prefix when signing"""

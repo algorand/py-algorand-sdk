@@ -6,11 +6,11 @@ home = expanduser("~")
 # kmd info is in the kmd.net and kmd.token files in the kmd directory in data
 # change these after starting the node and kmd
 
-kmdToken = ""
-kmdAddress = "http://localhost:7833"
+kmd_token = ""
+kmd_address = "http://localhost:7833"
 
-algodToken = ""
-algodAddress = "http://localhost:8080"
+algod_token = ""
+algod_address = "http://localhost:8080"
 
 # path to the data directory (for example, "/Users/[user_name]/node/data/")
 data_dir_path = home + "/node/network/Primary"
@@ -22,10 +22,10 @@ if data_dir_path and kmd_folder_name:
         data_dir_path += "/"
     if not kmd_folder_name[-1].__eq__("/"):
         kmd_folder_name += "/"
-    algodToken = open(data_dir_path + "algod.token", "r").read().strip("\n")
-    algodAddress = "http://" + open(data_dir_path + "algod.net",
+    algod_token = open(data_dir_path + "algod.token", "r").read().strip("\n")
+    algod_address = "http://" + open(data_dir_path + "algod.net",
                                     "r").read().strip("\n")
-    kmdToken = open(data_dir_path + kmd_folder_name + "kmd.token",
+    kmd_token = open(data_dir_path + kmd_folder_name + "kmd.token",
                     "r").read().strip("\n")
-    kmdAddress = "http://" + open(data_dir_path + kmd_folder_name + "kmd.net",
+    kmd_address = "http://" + open(data_dir_path + kmd_folder_name + "kmd.net",
                                   "r").read().strip("\n")

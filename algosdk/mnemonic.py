@@ -3,16 +3,14 @@ from cryptography.hazmat.backends import default_backend
 from nacl import signing
 import base64
 from . import wordlist
-from . import encoding
 from . import error
-from . import encoding
 
 
 # get the wordlist
-wordList = wordlist.wordListRaw().split("\n")
+word_list = wordlist.word_list_raw().split("\n")
 
 
-def fromMasterDerivationKey(key):
+def from_master_derivation_key(key):
     """
     Return the mnemonic for the master derivation key (base64).
 
@@ -24,10 +22,10 @@ def fromMasterDerivationKey(key):
 
     """
     key = base64.b64decode(key)
-    return fromKey(key)
+    return from_key(key)
 
 
-def toMasterDerivationKey(mnemonic):
+def to_master_derivation_key(mnemonic):
     """
     Return the master derivation key for the mnemonic.
 
@@ -37,11 +35,11 @@ def toMasterDerivationKey(mnemonic):
     Returns:
         str: master derivation key
     """
-    keyBytes = toKey(mnemonic)
-    return base64.b64encode(keyBytes).decode()
+    key_bytes = to_key(mnemonic)
+    return base64.b64encode(key_bytes).decode()
 
 
-def fromPrivateKey(key):
+def from_private_key(key):
     """
     Return the mnemonic for the private key.
 
@@ -52,10 +50,10 @@ def fromPrivateKey(key):
         str: mnemonic
     """
     key = base64.b64decode(key)
-    return fromKey(key[:32])
+    return from_key(key[:32])
 
 
-def toPrivateKey(mnemonic):
+def to_private_key(mnemonic):
     """
     Return the private key for the mnemonic.
 
@@ -65,12 +63,12 @@ def toPrivateKey(mnemonic):
     Returns:
         str: private key in base64
     """
-    keyBytes = toKey(mnemonic)
-    key = signing.SigningKey(keyBytes)
+    key_bytes = to_key(mnemonic)
+    key = signing.SigningKey(key_bytes)
     return base64.b64encode(key.encode() + key.verify_key.encode()).decode()
 
 
-def fromKey(key):
+def from_key(key):
     """
     Return the mnemonic for the key.
 
@@ -83,12 +81,12 @@ def fromKey(key):
     if not len(key) == 32:
         raise error.WrongKeyBytesLengthError
     chksum = checksum(key)
-    nums = to11Bit(key)
-    words = applyWords(nums)
+    nums = to_11_bit(key)
+    words = apply_words(nums)
     return " ".join(words) + " " + chksum
 
 
-def toKey(mnemonic):
+def to_key(mnemonic):
     """
     Give the corresponding key for the mnemonic.
 
@@ -101,14 +99,14 @@ def toKey(mnemonic):
     mnemonic = mnemonic.split(" ")
     if not len(mnemonic) == 25:
         raise error.WrongMnemonicLengthError
-    mChecksum = mnemonic[-1]
-    mnemonic = fromWords(mnemonic[:-1])
-    mBytes = toBytes(mnemonic)
-    if not mBytes[-1:len(mBytes)] == bytes([0]):
+    m_checksum = mnemonic[-1]
+    mnemonic = from_words(mnemonic[:-1])
+    m_bytes = to_bytes(mnemonic)
+    if not m_bytes[-1:len(m_bytes)] == bytes([0]):
         raise error.WrongChecksumError
-    chksum = checksum(mBytes[:32])
-    if chksum.__eq__(mChecksum):
-        return mBytes[:32]
+    chksum = checksum(m_bytes[:32])
+    if chksum.__eq__(m_checksum):
+        return m_bytes[:32]
     else:
         raise error.WrongChecksumError
 
@@ -127,11 +125,11 @@ def checksum(data):
     hash.update(data)
     chksum = hash.finalize()
     temp = chksum[0:2]
-    nums = to11Bit(temp)
-    return applyWords(nums)[0]
+    nums = to_11_bit(temp)
+    return apply_words(nums)[0]
 
 
-def applyWords(nums):
+def apply_words(nums):
     """
     Get the corresponding words for a list of 11-bit numbers.
 
@@ -143,11 +141,11 @@ def applyWords(nums):
     """
     words = []
     for n in nums:
-        words.append(wordList[n])
+        words.append(word_list[n])
     return words
 
 
-def fromWords(words):
+def from_words(words):
     """
     Get the corresponding 11-bit numbers for a list of words.
 
@@ -159,11 +157,11 @@ def fromWords(words):
     """
     nums = []
     for w in words:
-        nums.append(wordList.index(w))
+        nums.append(word_list.index(w))
     return nums
 
 
-def to11Bit(data):
+def to_11_bit(data):
     """
     Convert a bytearray to an list of 11-bit numbers.
 
@@ -188,7 +186,7 @@ def to11Bit(data):
     return output
 
 
-def toBytes(nums):
+def to_bytes(nums):
     """
     Convert a list of 11-bit numbers to a bytearray.
 
