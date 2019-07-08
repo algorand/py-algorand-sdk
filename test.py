@@ -1,7 +1,5 @@
-import msgpack
 import time
 import base64
-import json
 import unittest
 import params
 import os
@@ -60,7 +58,8 @@ class TestIntegration(unittest.TestCase):
         fee = params["fee"]
 
         # get self.account_0 private key
-        private_key_0 = self.kcl.export_key(handle, wallet_pswd, self.account_0)
+        private_key_0 = self.kcl.export_key(handle, wallet_pswd,
+                                            self.account_0)
 
         # create bid
         bid = auction.Bid(self.account_0, 10000, 260,
@@ -84,7 +83,8 @@ class TestIntegration(unittest.TestCase):
         del_1 = self.kcl.delete_key(handle, wallet_pswd, account_1)
         self.assertTrue(del_1)
 
-    def test_handle(self):     # create wallet; should raise error since wallet already exists
+    def test_handle(self):
+        # create wallet; should raise error since wallet already exists
         self.assertRaises(error.KmdHTTPError, self.kcl.create_wallet,
                           wallet_name, wallet_pswd)
 
@@ -96,7 +96,7 @@ class TestIntegration(unittest.TestCase):
             if w.name.__eq__(wallet_name):
                 wallet_id = w.id
 
-        # renamautomate_handle       
+        # rename wallet
         self.assertEqual(wallet_name + "newname", self.kcl.rename_wallet(
                          wallet_id, wallet_pswd, wallet_name + "newname").name)
 
@@ -114,8 +114,8 @@ class TestIntegration(unittest.TestCase):
         # renew the handle
         renewed_handle = self.kcl.renew_wallet_handle(handle)
         new_exp_time = renewed_handle.expires_seconds
-        self.assertGreaterEqual(new_exp_time, exp_time)        # release the handle
-        released = self.kcl.release_wallet_handle(handle)
+        self.assertGreaterEqual(new_exp_time, exp_time)
+        released = self.kcl.release_wallet_handle(handle)  # release the handle
         self.assertTrue(released)
 
         # check that the handle has been released
@@ -132,7 +132,7 @@ class TestIntegration(unittest.TestCase):
         # get a new handle for the wallet
         handle = self.kcl.init_wallet_handle(wallet_id, wallet_pswd)
 
-        # generate account wautomate_handle check if it's valid
+        # generate account and check if it's valid
         private_key_1, account_1 = crypto.generate_account()
         self.assertTrue(encoding.is_valid_address(account_1))
 
@@ -159,7 +159,8 @@ class TestIntegration(unittest.TestCase):
         signed_kmd = self.kcl.sign_transaction(handle, wallet_pswd, txn)
 
         # get self.account_0 private key
-        private_key_0 = self.kcl.export_key(handle, wallet_pswd, self.account_0)
+        private_key_0 = self.kcl.export_key(handle, wallet_pswd,
+                                            self.account_0)
         # sign transaction with crypto
         signed_crypto, txid, sig = crypto.sign_transaction(txn, private_key_0)
 
@@ -232,17 +233,17 @@ class TestIntegration(unittest.TestCase):
         self.assertEqual(len(exported.subsigs), 2)
 
         # create the preimage for the signed transaction
-        preStx = transaction.SignedTransaction(txn, multisig=msig)
+        pre_stx = transaction.SignedTransaction(txn, multisig=msig)
 
         # sign the multisig using kmd
         msig_1 = self.kcl.sign_multisig_transaction(handle, wallet_pswd,
-                                                  account_1, preStx)
+                                                    account_1, pre_stx)
         signed_kmd = self.kcl.sign_multisig_transaction(handle, wallet_pswd,
-                                                      account_2, msig_1)
+                                                        account_2, msig_1)
 
         # sign the multisig using crypto
-        stx1 = crypto.sign_multisig_transaction(private_key_1, preStx)
-        stx2 = crypto.sign_multisig_transaction(private_key_2, preStx)
+        stx1 = crypto.sign_multisig_transaction(private_key_1, pre_stx)
+        stx2 = crypto.sign_multisig_transaction(private_key_2, pre_stx)
         signed_crypto, txid = crypto.merge_multisig_transactions([stx1, stx2])
 
         # check that they are the same
@@ -269,8 +270,8 @@ class TestIntegration(unittest.TestCase):
         handle = self.kcl.init_wallet_handle(wallet_id, wallet_pswd)
 
         # test listKeys
-        listKeys = self.kcl.list_keys(handle)
-        self.assertIn(self.account_0, listKeys)
+        list_keys = self.kcl.list_keys(handle)
+        self.assertIn(self.account_0, list_keys)
 
         # test listMultisig
         list_multisig = self.kcl.list_multisig(handle)
@@ -352,14 +353,14 @@ class TestIntegration(unittest.TestCase):
         self.assertEqual(len(exported.subsigs), 2)
 
         # create the preimage for the signed transaction
-        preStx = transaction.SignedTransaction(txn, multisig=msig)
+        pre_stx = transaction.SignedTransaction(txn, multisig=msig)
 
         # sign the multisig using kmd
-        msig_1 = w.sign_multisig_transaction(account_1, preStx)
+        msig_1 = w.sign_multisig_transaction(account_1, pre_stx)
         signed_kmd = w.sign_multisig_transaction(account_2, msig_1)
 
         # sign the multisig using crypto
-        stx1 = crypto.sign_multisig_transaction(private_key_1, preStx)
+        stx1 = crypto.sign_multisig_transaction(private_key_1, pre_stx)
         signed_crypto = crypto.sign_multisig_transaction(private_key_2, stx1)
 
         # check that they are the same
@@ -424,24 +425,21 @@ class TestIntegration(unittest.TestCase):
 
         # change sender address to be correct
         txn.sender = encoding.decode_address(msig.address())
-        preStx = transaction.SignedTransaction(txn, multisig=msig)
+        pre_stx = transaction.SignedTransaction(txn, multisig=msig)
 
         # try to sign with incorrect private key
         self.assertRaises(error.InvalidSecretKeyError,
                           crypto.sign_multisig_transaction, random_private_key,
                           transaction.SignedTransaction(txn, multisig=msig))
 
-        # get account private key
-        w = wallet.Wallet(wallet_name, wallet_pswd, self.kcl)
-        private_key_0 = w.export_key(self.account_0)
-
         # create another multisig with different address
         msig_2 = transaction.Multisig(1, 2, [self.account_0, account_1])
 
         # try to merge with different addresses
-        preStx_2 = transaction.SignedTransaction(txn, multisig=msig_2)
+        pre_stx_2 = transaction.SignedTransaction(txn, multisig=msig_2)
         self.assertRaises(error.MergeKeysMismatchError,
-                          crypto.merge_multisig_transactions, [preStx, preStx_2])
+                          crypto.merge_multisig_transactions,
+                          [pre_stx, pre_stx_2])
 
         # create another multisig with same address
         msig_3 = msig_2.get_account_from_sig()
@@ -451,10 +449,10 @@ class TestIntegration(unittest.TestCase):
         msig_3.subsigs[0].signature = "sig3"
 
         # try to merge
-        preStx_3 = transaction.SignedTransaction(txn, multisig=msig_3)
+        pre_stx_3 = transaction.SignedTransaction(txn, multisig=msig_3)
         self.assertRaises(error.DuplicateSigMismatchError,
                           crypto.merge_multisig_transactions,
-                          [preStx_2, preStx_3])
+                          [pre_stx_2, pre_stx_3])
 
         # mnemonic with wrong checksum
         mn = ("abandon abandon abandon abandon abandon abandon abandon " +
@@ -481,7 +479,6 @@ class TestIntegration(unittest.TestCase):
     def test_get(self):
         # get suggested parameters and fee
         params = self.acl.suggested_params()
-        gen = params["genesisID"]
         gh = params["genesishashb64"]
         last_round = params["lastRound"]
         fee = params["fee"]
@@ -517,7 +514,6 @@ class TestIntegration(unittest.TestCase):
     def test_file_read_write(self):
         # get suggested parameters and fee
         params = self.acl.suggested_params()
-        gen = params["genesisID"]
         gh = params["genesishashb64"]
         last_round = params["lastRound"]
         fee = params["fee"]
@@ -570,9 +566,9 @@ class TestUnit(unittest.TestCase):
         self.assertEqual(result, None)
 
     def test_status_after_block(self):
-        lastRound = self.acl.status()["lastRound"]
-        currRound = self.acl.status_after_block(lastRound)["lastRound"]
-        self.assertEqual(lastRound+1, currRound)
+        last_round = self.acl.status()["lastRound"]
+        curr_round = self.acl.status_after_block(last_round)["lastRound"]
+        self.assertEqual(last_round+1, curr_round)
 
     def test_pending_transactions(self):
         result = self.acl.pending_transactions(0)
@@ -587,15 +583,15 @@ class TestUnit(unittest.TestCase):
         self.assertIn("totalMoney", result)
 
     def test_block_info(self):
-        lastRound = self.acl.status()["lastRound"]
-        result = self.acl.block_info(lastRound)
+        last_round = self.acl.status()["lastRound"]
+        result = self.acl.block_info(last_round)
         self.assertIn("hash", result)
 
     def test_get_version(self):
         result = self.kcl.get_version()
         self.assertIn("v1", result)
 
-    def test_suggestedFee(self):
+    def test_suggested_fee(self):
         result = self.acl.suggested_fee()
         self.assertIn("fee", result)
 

@@ -122,9 +122,10 @@ params = acl.suggested_params()
 gen = params["genesisID"]
 gh = params["genesishashb64"]
 last_round = params["lastRound"]
+fee = params["fee"]
 
 # create a transaction
-txn = transaction.PaymentTxn(sender, 1, last_round, last_round+100, gh, receiver, 10000)
+txn = transaction.PaymentTxn(sender, fee, last_round, last_round+100, gh, receiver, 10000)
 
 # write to file
 txns = [txn]
@@ -159,10 +160,11 @@ params = acl.suggested_params()
 gen = params["genesisID"]
 gh = params["genesishashb64"]
 last_round = params["lastRound"]
+fee = params["fee"]
 
 # create a transaction
 sender = msig.address()
-txn = transaction.PaymentTxn(sender, 1000, last_round, last_round+100, gh, account_3, 10000)
+txn = transaction.PaymentTxn(sender, fee, last_round, last_round+100, gh, account_3, 10000)
 
 # create a SignedTransaction object
 stx = transaction.SignedTransaction(txn, multisig=msig)

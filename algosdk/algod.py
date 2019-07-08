@@ -63,16 +63,12 @@ class AlgodClient:
         return json.loads(resp.read().decode("ascii"))
 
     def status(self):
-        """
-        Return node status.
-        """
+        """Return node status."""
         req = "/status"
         return self.algod_request("GET", req)
 
     def health(self):
-        """
-        Return null if the node is running.
-        """
+        """Return null if the node is running."""
         req = "/health"
         return self.algod_request("GET", req)
 
