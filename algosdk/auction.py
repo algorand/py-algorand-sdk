@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import base64
-from . import encoding
+from . import encoding, constants
+from nacl.signing import SigningKey
 
 
 class Bid:
@@ -32,7 +33,7 @@ class Bid:
         self.auction_key = encoding.decode_address(auction_key)
         self.auction_id = auction_id
 
-    def dictify(self):
+    def _dictify(self):
         od = OrderedDict()
         od["aid"] = self.auction_id
         od["auc"] = self.auction_key
@@ -42,8 +43,27 @@ class Bid:
         od["price"] = self.max_price
         return od
 
+    def sign(self, private_key):
+        """
+        Sign a bid.
+
+        Args:
+            private_key (str): private_key of the bidder
+
+        Returns:
+            SignedBid: signed bid with the signature
+        """
+        temp = encoding.msgpack_encode(self)
+        to_sign = constants.bid_prefix + base64.b64decode(bytes(temp, "ascii"))
+        private_key = base64.b64decode(bytes(private_key, "ascii"))
+        signing_key = SigningKey(private_key[:constants.address_len_bytes])
+        signed = signing_key.sign(to_sign)
+        sig = signed.signature
+        signed = SignedBid(self, base64.b64encode(sig))
+        return signed
+
     @staticmethod
-    def undictify(d):
+    def _undictify(d):
         return Bid(encoding.encode_address(d["bidder"]), d["cur"], d["price"],
                    d["id"], encoding.encode_address(d["auc"]), d["aid"])
 
@@ -64,15 +84,15 @@ class SignedBid:
         self.bid = bid
         self.signature = base64.b64decode(signature)
 
-    def dictify(self):
+    def _dictify(self):
         od = OrderedDict()
-        od["bid"] = self.bid.dictify()
+        od["bid"] = self.bid._dictify()
         od["sig"] = self.signature
         return od
 
     @staticmethod
-    def undictify(d):
-        return SignedBid(Bid.undictify(d["bid"]), base64.b64encode(d["sig"]))
+    def _undictify(d):
+        return SignedBid(Bid._undictify(d["bid"]), base64.b64encode(d["sig"]))
 
 
 class NoteField:
@@ -92,12 +112,12 @@ class NoteField:
         self.signed_bid = signed_bid
         self.note_field_type = note_field_type
 
-    def dictify(self):
+    def _dictify(self):
         od = OrderedDict()
-        od["b"] = self.signed_bid.dictify()
+        od["b"] = self.signed_bid._dictify()
         od["t"] = self.note_field_type
         return od
 
     @staticmethod
-    def undictify(d):
-        return NoteField(SignedBid.undictify(d["b"]), d["t"])
+    def _undictify(d):
+        return NoteField(SignedBid._undictify(d["b"]), d["t"])

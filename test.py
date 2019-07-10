@@ -41,7 +41,7 @@ class TestIntegration(unittest.TestCase):
         wallets = self.kcl.list_wallets()
         wallet_id = None
         for w in wallets:
-            if w.name.__eq__(wallet_name):
+            if w.name == wallet_name:
                 wallet_id = w.id
 
         # get a new handle for the wallet
@@ -64,7 +64,7 @@ class TestIntegration(unittest.TestCase):
         # create bid
         bid = auction.Bid(self.account_0, 10000, 260,
                           "bid_id", account_1, "auc_id")
-        sb = crypto.sign_bid(bid, private_key_0)
+        sb = bid.sign(private_key_0)
         nf = auction.NoteField(sb, constants.note_field_type_bid)
 
         # create transaction
@@ -74,18 +74,17 @@ class TestIntegration(unittest.TestCase):
                                         encoding.msgpack_encode(nf)), gen=gen)
 
         # sign transaction with crypto
-        signed_crypto, txid, sig = crypto.sign_transaction(txn, private_key_0)
-        self.assertEqual(signed_crypto.get_signature(), sig)
+        signed_crypto = txn.sign(private_key_0)
 
-        # seautomate_handletion
+        # send transaction
         send = self.acl.send_raw_transaction(signed_crypto)
-        self.assertEqual(send, crypto.get_txid(txn))
+        self.assertEqual(send, txn.get_txid())
         del_1 = self.kcl.delete_key(handle, wallet_pswd, account_1)
         self.assertTrue(del_1)
 
     def test_handle(self):
         # create wallet; should raise error since wallet already exists
-        self.assertRaises(error.KmdHTTPError, self.kcl.create_wallet,
+        self.assertRaises(error.KMDHTTPError, self.kcl.create_wallet,
                           wallet_name, wallet_pswd)
 
         # get the wallet ID
@@ -93,7 +92,7 @@ class TestIntegration(unittest.TestCase):
 
         wallet_id = None
         for w in wallets:
-            if w.name.__eq__(wallet_name):
+            if w.name == wallet_name:
                 wallet_id = w.id
 
         # rename wallet
@@ -119,14 +118,14 @@ class TestIntegration(unittest.TestCase):
         self.assertTrue(released)
 
         # check that the handle has been released
-        self.assertRaises(error.KmdHTTPError, self.kcl.get_wallet, handle)
+        self.assertRaises(error.KMDHTTPError, self.kcl.get_wallet, handle)
 
     def test_transaction(self):
         # get the default wallet
         wallets = self.kcl.list_wallets()
         wallet_id = None
         for w in wallets:
-            if w.name.__eq__(wallet_name):
+            if w.name == wallet_name:
                 wallet_id = w.id
 
         # get a new handle for the wallet
@@ -162,7 +161,8 @@ class TestIntegration(unittest.TestCase):
         private_key_0 = self.kcl.export_key(handle, wallet_pswd,
                                             self.account_0)
         # sign transaction with crypto
-        signed_crypto, txid, sig = crypto.sign_transaction(txn, private_key_0)
+        signed_crypto = txn.sign(private_key_0)
+        txid = txn.get_txid()
 
         # check that signing both ways results in the same thing
         self.assertEqual(encoding.msgpack_encode(signed_crypto),
@@ -195,7 +195,7 @@ class TestIntegration(unittest.TestCase):
         wallets = self.kcl.list_wallets()
         wallet_id = None
         for w in wallets:
-            if w.name.__eq__(wallet_name):
+            if w.name == wallet_name:
                 wallet_id = w.id
 
         # get a new handle for the wallet
@@ -232,19 +232,21 @@ class TestIntegration(unittest.TestCase):
         exported = self.kcl.export_multisig(handle, msig_address)
         self.assertEqual(len(exported.subsigs), 2)
 
-        # create the preimage for the signed transaction
-        pre_stx = transaction.SignedTransaction(txn, multisig=msig)
+        # create multisig transaction
+        mtx = transaction.MultisigTransaction(txn, msig)
 
-        # sign the multisig using kmd
+        # sign using kmd
         msig_1 = self.kcl.sign_multisig_transaction(handle, wallet_pswd,
-                                                    account_1, pre_stx)
+                                                    account_1, mtx)
         signed_kmd = self.kcl.sign_multisig_transaction(handle, wallet_pswd,
                                                         account_2, msig_1)
 
-        # sign the multisig using crypto
-        stx1 = crypto.sign_multisig_transaction(private_key_1, pre_stx)
-        stx2 = crypto.sign_multisig_transaction(private_key_2, pre_stx)
-        signed_crypto, txid = crypto.merge_multisig_transactions([stx1, stx2])
+        # sign using crypto
+        mtx1 = transaction.MultisigTransaction(txn, msig)
+        mtx1.sign(private_key_1)
+        mtx2 = transaction.MultisigTransaction(txn, msig)
+        mtx2.sign(private_key_2)
+        signed_crypto = transaction.MultisigTransaction.merge([mtx1, mtx2])
 
         # check that they are the same
         self.assertEqual(encoding.msgpack_encode(signed_crypto),
@@ -263,7 +265,7 @@ class TestIntegration(unittest.TestCase):
         wallets = self.kcl.list_wallets()
         wallet_id = None
         for w in wallets:
-            if w.name.__eq__(wallet_name):
+            if w.name == wallet_name:
                 wallet_id = w.id
 
         # get a new handle for the wallet
@@ -329,7 +331,7 @@ class TestIntegration(unittest.TestCase):
         private_key_0 = w.export_key(self.account_0)
 
         # sign transaction with crypto
-        signed_crypto, txid, sig = crypto.sign_transaction(txn, private_key_0)
+        signed_crypto = txn.sign(private_key_0)
 
         # check that signing both ways results in the same thing
         self.assertEqual(encoding.msgpack_encode(signed_crypto),
@@ -352,16 +354,19 @@ class TestIntegration(unittest.TestCase):
         exported = w.export_multisig(msig_address)
         self.assertEqual(len(exported.subsigs), 2)
 
-        # create the preimage for the signed transaction
-        pre_stx = transaction.SignedTransaction(txn, multisig=msig)
+        # create multisig transaction
+        mtx = transaction.MultisigTransaction(txn, msig)
 
         # sign the multisig using kmd
-        msig_1 = w.sign_multisig_transaction(account_1, pre_stx)
+        msig_1 = w.sign_multisig_transaction(account_1, mtx)
         signed_kmd = w.sign_multisig_transaction(account_2, msig_1)
 
         # sign the multisig using crypto
-        stx1 = crypto.sign_multisig_transaction(private_key_1, pre_stx)
-        signed_crypto = crypto.sign_multisig_transaction(private_key_2, stx1)
+        mtx1 = transaction.MultisigTransaction(txn, msig)
+        mtx1.sign(private_key_1)
+        mtx2 = transaction.MultisigTransaction(txn, msig)
+        mtx2.sign(private_key_2)
+        signed_crypto = transaction.MultisigTransaction.merge([mtx1, mtx2])
 
         # check that they are the same
         self.assertEqual(encoding.msgpack_encode(signed_crypto),
@@ -383,7 +388,7 @@ class TestIntegration(unittest.TestCase):
 
         # test releasing the handle
         w.release_handle()
-        self.assertRaises(error.KmdHTTPError, self.kcl.get_wallet, w.handle)
+        self.assertRaises(error.KMDHTTPError, self.kcl.get_wallet, w.handle)
 
         # test handle automation
         w.info()
@@ -419,27 +424,26 @@ class TestIntegration(unittest.TestCase):
 
         # try to sign multisig transaction
         msig.threshold = 2
+        mtx = transaction.MultisigTransaction(txn, msig)
         self.assertRaises(error.BadTxnSenderError,
-                          crypto.sign_multisig_transaction, random_private_key,
-                          transaction.SignedTransaction(txn, multisig=msig))
+                          mtx.sign, random_private_key)
 
         # change sender address to be correct
         txn.sender = encoding.decode_address(msig.address())
-        pre_stx = transaction.SignedTransaction(txn, multisig=msig)
+        mtx = transaction.MultisigTransaction(txn, msig)
 
         # try to sign with incorrect private key
         self.assertRaises(error.InvalidSecretKeyError,
-                          crypto.sign_multisig_transaction, random_private_key,
-                          transaction.SignedTransaction(txn, multisig=msig))
+                          mtx.sign, random_private_key)
 
         # create another multisig with different address
         msig_2 = transaction.Multisig(1, 2, [self.account_0, account_1])
 
         # try to merge with different addresses
-        pre_stx_2 = transaction.SignedTransaction(txn, multisig=msig_2)
+        mtx_2 = transaction.MultisigTransaction(txn, msig_2)
         self.assertRaises(error.MergeKeysMismatchError,
-                          crypto.merge_multisig_transactions,
-                          [pre_stx, pre_stx_2])
+                          transaction.MultisigTransaction.merge,
+                          [mtx, mtx_2])
 
         # create another multisig with same address
         msig_3 = msig_2.get_account_from_sig()
@@ -449,27 +453,27 @@ class TestIntegration(unittest.TestCase):
         msig_3.subsigs[0].signature = "sig3"
 
         # try to merge
-        pre_stx_3 = transaction.SignedTransaction(txn, multisig=msig_3)
         self.assertRaises(error.DuplicateSigMismatchError,
-                          crypto.merge_multisig_transactions,
-                          [pre_stx_2, pre_stx_3])
+                          transaction.MultisigTransaction.merge,
+                          [transaction.MultisigTransaction(txn, msig_2),
+                           transaction.MultisigTransaction(txn, msig_3)])
 
         # mnemonic with wrong checksum
         mn = ("abandon abandon abandon abandon abandon abandon abandon " +
               "abandon abandon abandon abandon abandon abandon abandon " +
               "abandon abandon abandon abandon abandon abandon abandon " +
               "abandon abandon abandon abandon")
-        self.assertRaises(error.WrongChecksumError, mnemonic.to_key, mn)
+        self.assertRaises(error.WrongChecksumError, mnemonic._to_key, mn)
 
         # mnemonic of wrong length
         mn = "abandon abandon abandon"
-        self.assertRaises(error.WrongMnemonicLengthError, mnemonic.to_key, mn)
+        self.assertRaises(error.WrongMnemonicLengthError, mnemonic._to_key, mn)
 
         # key bytes of wrong length
         key = bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
         self.assertRaises(error.WrongKeyBytesLengthError,
-                          mnemonic.from_key, key)
+                          mnemonic._from_key, key)
 
         # key of wrong length
         address = "WRONG_LENGTH_TOO_SHORT"
@@ -502,7 +506,8 @@ class TestIntegration(unittest.TestCase):
         private_key = w.export_key(self.account_0)
 
         # sign transaction
-        stx, txid, sig = crypto.sign_transaction(txn, private_key)
+        stx = txn.sign(private_key)
+        sig = stx.get_signature()
 
         # test get functions
         self.assertEqual(self.account_0, txn.get_sender())
@@ -528,7 +533,7 @@ class TestIntegration(unittest.TestCase):
         private_key = w.export_key(self.account_0)
 
         # sign transaction
-        stx, txid, sig = crypto.sign_transaction(txn, private_key)
+        stx = txn.sign(private_key)
 
         # write to file
         transaction.write_to_file([txn, stx], "raw.tx")
@@ -603,24 +608,29 @@ class TestUnit(unittest.TestCase):
                              "abandon abandon abandon abandon abandon " +
                              "abandon abandon abandon abandon abandon " +
                              "abandon abandon abandon abandon invest")
-        result = mnemonic.from_key(zero_bytes)
+        result = mnemonic._from_key(zero_bytes)
         self.assertEqual(expected_mnemonic, result)
-        result = mnemonic.to_key(result)
+        result = mnemonic._to_key(result)
         self.assertEqual(zero_bytes, result)
 
     def test_mnemonic(self):
-        result = mnemonic.to_key(mnemonic.from_key(
+        result = mnemonic._to_key(mnemonic._from_key(
                                 encoding.decode_address(self.account_0)))
         self.assertEqual(result, encoding.decode_address(self.account_0))
 
     def test_mnemonic_private_key(self):
         priv_key, address = crypto.generate_account()
         mn = mnemonic.from_private_key(priv_key)
-        self.assertEqual(len(mn.split(" ")), 25)
+        self.assertEqual(len(mn.split(" ")), constants.mnemonic_len)
         self.assertEqual(priv_key, mnemonic.to_private_key(mn))
 
+    def test_address_from_private_key(self):
+        priv_key, expected_address = crypto.generate_account()
+        address = crypto.address_from_private_key(priv_key)
+        self.assertEqual(address, expected_address)
+
     def test_wordlist(self):
-        result = mnemonic.checksum(bytes(wordlist.word_list_raw(), "ascii"))
+        result = mnemonic._checksum(bytes(wordlist.word_list_raw(), "ascii"))
         self.assertEqual(result, "venue")
 
     def test_msgpack(self):

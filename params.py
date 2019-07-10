@@ -13,14 +13,14 @@ algod_token = ""
 algod_address = "http://localhost:8080"
 
 # path to the data directory
-data_dir_path = home + "/node/network/Primary"
+data_dir_path = home + "/node/network/Node"
 kmd_folder_name = "kmd-v0.5"  # name of the kmd folder in the data directory
 
 # get tokens and addresses automatically, if data_dir_path is not empty
 if data_dir_path and kmd_folder_name:
-    if not data_dir_path[-1].__eq__("/"):
+    if not data_dir_path[-1] == "/":
         data_dir_path += "/"
-    if not kmd_folder_name[-1].__eq__("/"):
+    if not kmd_folder_name[-1] == "/":
         kmd_folder_name += "/"
     algod_token = open(data_dir_path + "algod.token", "r").read().strip("\n")
     algod_address = "http://" + open(data_dir_path + "algod.net",

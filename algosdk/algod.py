@@ -186,20 +186,20 @@ class AlgodClient:
         req = "/transactions/params"
         return self.algod_request("GET", req)
 
-    def send_raw_transaction(self, signed_txn):
+    def send_raw_transaction(self, txn):
         """
         Broadcast a signed transaction object to the network.
 
         Args:
-            signed_txn (SignedTransaction): transaction to be sent
+            txn (SignedTransaction or MultisigTransaction): transaction to send
 
         Returns:
             str: transaction ID
         """
-        signed_txn = encoding.msgpack_encode(signed_txn)
-        signed_txn = base64.b64decode(signed_txn)
+        txn = encoding.msgpack_encode(txn)
+        txn = base64.b64decode(txn)
         req = "/transactions"
-        return self.algod_request("POST", req, data=signed_txn)["txId"]
+        return self.algod_request("POST", req, data=txn)["txId"]
 
     def block_info(self, round):
         """

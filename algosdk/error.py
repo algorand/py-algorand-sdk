@@ -48,7 +48,7 @@ class UnknownMsigVersionError(Exception):
         Exception.__init__(self, "unknown multisig version != 1")
 
 
-class KmdHTTPError(Exception):
+class KMDHTTPError(Exception):
     pass
 
 

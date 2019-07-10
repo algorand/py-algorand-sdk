@@ -7,6 +7,7 @@ from . import error
 from . import encoding
 from . import constants
 from . import crypto
+from nacl.signing import SigningKey
 
 
 class Transaction:
@@ -29,6 +30,59 @@ class Transaction:
     def get_genesis_hash(self):
         """Return the base64 encodi ng of the genesis hash."""
         return base64.b64encode(self.genesis_hash).decode()
+
+    def get_txid(self):
+        """
+        Get a transaction's ID.
+
+        Returns:
+            str: transaction ID
+        """
+        txn = encoding.msgpack_encode(self)
+        to_sign = constants.txid_prefix + base64.b64decode(bytes(txn, "ascii"))
+        txidbytes = hashes.Hash(hashes.SHA512_256(), default_backend())
+        txidbytes.update(to_sign)
+        txid = txidbytes.finalize()
+        txid = base64.b32encode(txid).decode()
+        return encoding._undo_padding(txid)
+
+    def sign(self, private_key):
+        """
+        Sign a transaction with a private key.
+
+        Args:
+            private_key (str): the private key of the signing account
+
+        Returns:
+            SignedTransaction: signed transaction with the signature
+        """
+        sig = self.raw_sign(private_key)
+        sig = base64.b64encode(sig).decode()
+        stx = SignedTransaction(self, sig)
+        return stx
+
+    def raw_sign(self, private_key):
+        """
+        Sign a transaction.
+
+        Args:
+            private_key (str): the private key of the signing account
+
+        Returns:
+            bytes: signature
+        """
+        private_key = base64.b64decode(bytes(private_key, "ascii"))
+        txn = encoding.msgpack_encode(self)
+        to_sign = constants.txid_prefix + base64.b64decode(bytes(txn, "ascii"))
+        signing_key = SigningKey(private_key[:constants.address_len_bytes])
+        signed = signing_key.sign(to_sign)
+        sig = signed.signature
+        return sig
+
+    def estimate_size(self):
+        sk, address = crypto.generate_account()
+        stx = self.sign(sk)
+        return len(base64.b64decode(encoding.msgpack_encode(stx)))
 
 
 class PaymentTxn(Transaction):
@@ -69,9 +123,9 @@ class PaymentTxn(Transaction):
         self.amt = amt
         self.close_remainder_to = encoding.decode_address(close_remainder_to)
         self.type = "pay"
-        self.fee = max(crypto.estimate_size(self)*self.fee, constants.min_txn_fee)
+        self.fee = max(self.estimate_size()*self.fee, constants.min_txn_fee)
 
-    def dictify(self):
+    def _dictify(self):
         od = OrderedDict()
         if self.amt:
             od["amt"] = self.amt
@@ -92,7 +146,7 @@ class PaymentTxn(Transaction):
         return od
 
     @staticmethod
-    def undictify(d):
+    def _undictify(d):
         crt = None
         note = None
         gen = None
@@ -164,9 +218,9 @@ class KeyregTxn(Transaction):
         self.votelst = votelst
         self.votekd = votekd
         self.type = "keyreg"
-        self.fee = max(crypto.estimate_size(self)*self.fee, constants.min_txn_fee)
+        self.fee = max(self.estimate_size()*self.fee, constants.min_txn_fee)
 
-    def dictify(self):
+    def _dictify(self):
         od = OrderedDict()
         od["fee"] = self.fee
         od["fv"] = self.first_valid_round
@@ -186,7 +240,7 @@ class KeyregTxn(Transaction):
         return od
 
     @staticmethod
-    def undictify(d):
+    def _undictify(d):
         note = None
         gen = None
         if "note" in d:
@@ -216,49 +270,143 @@ class SignedTransaction:
 
     Args:
         transaction (Transaction): transaction that was signed
-        signature (str, optional): signature of a single address
-        multisig (Multisig, optional): multisig account and signatures
+        signature (str): signature of a single address
 
     Attributes:
         transaction (Transaction)
         signature (str)
-        multisig (Multisig)
     """
-    def __init__(self, transaction, signature=None, multisig=None):
-        self.signature = None
-        if signature:
-            self.signature = base64.b64decode(signature)
+    def __init__(self, transaction, signature):
+        self.signature = base64.b64decode(signature)
         self.transaction = transaction
-        self.multisig = multisig
 
-    def dictify(self):
+    def _dictify(self):
         od = OrderedDict()
-        if self.multisig:
-            od["msig"] = self.multisig.dictify()
-        if self.signature:
-            od["sig"] = self.signature
-        od["txn"] = self.transaction.dictify()
+        od["sig"] = self.signature
+        od["txn"] = self.transaction._dictify()
         return od
 
     @staticmethod
-    def undictify(d):
-        msig = None
+    def _undictify(d):
         sig = None
         if "sig" in d:
             sig = base64.b64encode(d["sig"])
-        if "msig" in d:
-            msig = Multisig.undictify(d["msig"])
         txn_type = d["txn"]["type"]
-        if txn_type.__eq__("pay"):
-            txn = PaymentTxn.undictify(d["txn"])
+        if txn_type == "pay":
+            txn = PaymentTxn._undictify(d["txn"])
         else:
-            txn = KeyregTxn.undictify(d["txn"])
-        stx = SignedTransaction(txn, sig, msig)
+            txn = KeyregTxn._undictify(d["txn"])
+        stx = SignedTransaction(txn, sig)
         return stx
 
     def get_signature(self):
         """Return the base64 encoding of the signature."""
         return base64.b64encode(self.signature).decode()
+
+
+class MultisigTransaction:
+    """
+    Represents a signed transaction.
+
+    Args:
+        transaction (Transaction): transaction that was signed
+        multisig (Multisig): multisig account and signatures
+
+    Attributes:
+        transaction (Transaction)
+        multisig (Multisig)
+    """
+    def __init__(self, transaction, multisig):
+        self.transaction = transaction
+        self.multisig = multisig
+
+    def sign(self, private_key):
+        """
+        Sign a multisig transaction.
+
+        Args:
+            private_key (str): private key of signing account
+
+        Note:
+            A new signature will replace the old if there is already a
+            signature for the address. To sign another transaction, you can
+            either overwrite the signatures in the current Multisig, or you
+            can use Multisig.get_account_from_multisig() to get a new multisig
+            object with the same addresses.
+        """
+        self.multisig.validate()
+        addr = self.multisig.address()
+        if not encoding.encode_address(self.transaction.sender) == addr:
+            raise error.BadTxnSenderError
+        index = -1
+        public_key = base64.b64decode(bytes(private_key,
+                                      "ascii"))[constants.address_len_bytes:]
+        for s in range(len(self.multisig.subsigs)):
+            if self.multisig.subsigs[s].public_key == public_key:
+                index = s
+                break
+        if index == -1:
+            raise error.InvalidSecretKeyError
+        sig = self.transaction.raw_sign(private_key)
+        self.multisig.subsigs[index].signature = sig
+
+    def _dictify(self):
+        od = OrderedDict()
+        if self.multisig:
+            od["msig"] = self.multisig._dictify()
+        od["txn"] = self.transaction._dictify()
+        return od
+
+    @staticmethod
+    def _undictify(d):
+        msig = None
+        if "msig" in d:
+            msig = Multisig._undictify(d["msig"])
+        txn_type = d["txn"]["type"]
+        if txn_type == "pay":
+            txn = PaymentTxn._undictify(d["txn"])
+        else:
+            txn = KeyregTxn._undictify(d["txn"])
+        mtx = MultisigTransaction(txn, msig)
+        return mtx
+
+    @staticmethod
+    def merge(part_stxs):
+        """
+        Merge partially signed multisig transactions.
+
+        Args:
+            part_stxs (MultisigTransaction[]): list of partially signed
+                multisig transactions
+
+        Returns:
+            MultisigTransaction: multisig transaction containing signatures
+
+        Note:
+            Only use this if you are given two partially signed multisig
+            transactions. To append a signature to a multisig transaction, just
+            use MultisigTransaction.sign()
+        """
+        ref_addr = None
+        for stx in part_stxs:
+            if not ref_addr:
+                ref_addr = stx.multisig.address()
+            elif not stx.multisig.address() == ref_addr:
+                raise error.MergeKeysMismatchError
+        msigstx = None
+        for stx in part_stxs:
+            if not msigstx:
+                msigstx = stx
+            else:
+                for s in range(len(stx.multisig.subsigs)):
+                    if stx.multisig.subsigs[s].signature:
+                        if not msigstx.multisig.subsigs[s].signature:
+                            msigstx.multisig.subsigs[s].signature = \
+                                stx.multisig.subsigs[s].signature
+                        elif not msigstx.multisig.subsigs[s].signature == \
+                                stx.multisig.subsigs[s].signature:
+                            raise error.DuplicateSigMismatchError
+        return msigstx
 
 
 class Multisig:
@@ -301,23 +449,23 @@ class Multisig:
         addr = hash.finalize()
         return encoding.encode_address(addr)
 
-    def dictify(self):
+    def _dictify(self):
         od = OrderedDict()
-        od["subsig"] = [subsig.dictify() for subsig in self.subsigs]
+        od["subsig"] = [subsig._dictify() for subsig in self.subsigs]
         od["thr"] = self.threshold
         od["v"] = self.version
         return od
 
-    def json_dictify(self):
+    def _json_dictify(self):
         od = OrderedDict()
-        od["subsig"] = [subsig.json_dictify() for subsig in self.subsigs]
+        od["subsig"] = [subsig._json_dictify() for subsig in self.subsigs]
         od["thr"] = self.threshold
         od["v"] = self.version
         return od
 
     @staticmethod
-    def undictify(d):
-        subsigs = [MultisigSubsig.undictify(s) for s in d["subsig"]]
+    def _undictify(d):
+        subsigs = [MultisigSubsig._undictify(s) for s in d["subsig"]]
         msig = Multisig(d["v"], d["thr"], [])
         msig.subsigs = subsigs
         return msig
@@ -345,14 +493,14 @@ class MultisigSubsig:
         self.public_key = public_key
         self.signature = signature
 
-    def dictify(self):
+    def _dictify(self):
         od = OrderedDict()
         od["pk"] = self.public_key
         if self.signature:
             od["s"] = self.signature
         return od
 
-    def json_dictify(self):
+    def _json_dictify(self):
         od = OrderedDict()
         od["pk"] = base64.b64encode(self.public_key).decode()
         if self.signature:
@@ -360,7 +508,7 @@ class MultisigSubsig:
         return od
 
     @staticmethod
-    def undictify(d):
+    def _undictify(d):
         sig = None
         if "s" in d:
             sig = d["s"]
@@ -373,7 +521,8 @@ def write_to_file(txns, path, overwrite=True):
     Write signed or unsigned transactions to a file.
 
     Args:
-        txns (Transaction[] or SignedTransaction[]): can be a mix of both
+        txns (Transaction[], SignedTransaction[], or MultisigTransaction[]):
+            can be a mix of the three
         path (str): file to write to
         overwrite (bool): whether or not to overwrite what's already in the
             file; if False, transactions will be appended to the file
@@ -387,10 +536,10 @@ def write_to_file(txns, path, overwrite=True):
 
     for txn in txns:
         if isinstance(txn, Transaction):
-            enc = msgpack.packb({"txn": txn.dictify()}, use_bin_type=True)
+            enc = msgpack.packb({"txn": txn._dictify()}, use_bin_type=True)
             f.write(enc)
-        elif isinstance(txn, SignedTransaction):
-            enc = msgpack.packb(txn.dictify(), use_bin_type=True)
+        else:
+            enc = msgpack.packb(txn._dictify(), use_bin_type=True)
             f.write(enc)
 
 
@@ -402,17 +551,20 @@ def retrieve_from_file(path):
         path (str): file to read from
 
     Returns
-        Transaction[] or SignedTransaction[]: can be a mix of both
+        Transaction[], SignedTransaction[], or MultisigTransaction[]:
+            can be a mix of the three
     """
 
     f = open(path, "rb")
     txns = []
     unp = msgpack.Unpacker(f, raw=False)
     for txn in unp:
-        if "sig" in txn or "msig" in txn:
-            txns.append(SignedTransaction.undictify(txn))
-        elif txn["txn"]["type"].__eq__("pay"):
-            txns.append(PaymentTxn.undictify(txn["txn"]))
-        elif txn["txn"]["type"].__eq__("keyreg"):
-            txns.append(KeyregTxn.undictify(txn["txn"]))
+        if "msig" in txn:
+            txns.append(MultisigTransaction._undictify(txn))
+        elif "sig" in txn:
+            txns.append(SignedTransaction._undictify(txn))
+        elif txn["txn"]["type"] == "pay":
+            txns.append(PaymentTxn._undictify(txn["txn"]))
+        elif txn["txn"]["type"] == "keyreg":
+            txns.append(KeyregTxn._undictify(txn["txn"]))
     return txns

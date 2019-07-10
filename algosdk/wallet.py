@@ -34,11 +34,11 @@ class Wallet:
 
         wallets = self.kcl.list_wallets()
         for w in wallets:
-            if w.name.__eq__(self.name):
+            if w.name == self.name:
                 self.id = w.id
         if not self.id:
             w = self.kcl.create_wallet(self.name, self.pswd,
-                                      master_deriv_key=mdk)
+                                       master_deriv_key=mdk)
             self.id = w.id
         self.last_handle_renew = time.time()
         self.handle = self.kcl.init_wallet_handle(self.id, self.pswd)
@@ -228,7 +228,7 @@ class Wallet:
         """
         self.automate_handle()
         return self.kcl.sign_multisig_transaction(self.handle, self.pswd,
-                                                public_key, pre_stx)
+                                                  public_key, pre_stx)
 
     def automate_handle(self):
         """

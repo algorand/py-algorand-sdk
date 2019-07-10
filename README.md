@@ -167,10 +167,10 @@ sender = msig.address()
 txn = transaction.PaymentTxn(sender, fee, last_round, last_round+100, gh, account_3, 10000)
 
 # create a SignedTransaction object
-stx = transaction.SignedTransaction(txn, multisig=msig)
+mtx = transaction.MultisigTransaction(txn, msig)
 
 # sign the transaction
-signed_by_first = crypto.sign_multisig_transaction(private_key_1, stx)
-signed_by_both = crypto.sign_multisig_transaction(private_key_2, signed_by_first)
+mtx.sign(private_key_1)
+mtx.sign(private_key_2)
 ```
 

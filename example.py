@@ -25,7 +25,7 @@ existing_account = input("Address of an account in the wallet? ")
 wallets = kcl.list_wallets()
 existing_wallet_id = None
 for w in wallets:
-    if w.name.__eq__(existing_wallet_name):
+    if w.name == existing_wallet_name:
         existing_wallet_id = w.id
         break
 
@@ -46,7 +46,7 @@ wallet_pswd = input("New wallet password? ")
 # check if the wallet already exists
 wallet_id = None
 for w in wallets:
-    if w.name.__eq__(wallet_name):
+    if w.name == wallet_name:
         wallet_id = w.id
         print("The wallet already exists, but let's just go with it!")
         break
@@ -101,11 +101,11 @@ private_key = kcl.export_key(existing_handle, existing_wallet_pswd,
                              existing_account)
 
 # sign transaction with crypto
-signed_crypto, txid, sig = crypto.sign_transaction(txn, private_key)
+signed_crypto = txn.sign(private_key)
 print("Signature: " + signed_crypto.get_signature() + "\n")
 
 # check that they're the same
-if signed_crypto.dictify().__eq__(signed_kmd.dictify()):
+if signed_crypto._dictify() == signed_kmd._dictify():
     print("Signed transactions are the same!")
 else:
     print("Well that's not good...")

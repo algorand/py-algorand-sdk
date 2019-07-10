@@ -28,6 +28,12 @@ note_field_type_params = "p"
 
 check_sum_len_bytes = 4
 """int: how long checksums should be"""
+address_len_bytes = 32
+"""int: how long addresses are in bytes"""
+address_len = 58
+"""int: how long addresses are in base32"""
+mnemonic_len = 25
+"""int: how long mnemonic phrases are"""
 msig_addr_prefix = "MultisigAddr"
 """str: prefix for multisig addresses"""
 handle_renew_time = 60

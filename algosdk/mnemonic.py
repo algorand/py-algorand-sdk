@@ -4,6 +4,7 @@ from nacl import signing
 import base64
 from . import wordlist
 from . import error
+from . import constants
 
 
 # get the wordlist
@@ -22,7 +23,7 @@ def from_master_derivation_key(key):
 
     """
     key = base64.b64decode(key)
-    return from_key(key)
+    return _from_key(key)
 
 
 def to_master_derivation_key(mnemonic):
@@ -35,7 +36,7 @@ def to_master_derivation_key(mnemonic):
     Returns:
         str: master derivation key
     """
-    key_bytes = to_key(mnemonic)
+    key_bytes = _to_key(mnemonic)
     return base64.b64encode(key_bytes).decode()
 
 
@@ -50,7 +51,7 @@ def from_private_key(key):
         str: mnemonic
     """
     key = base64.b64decode(key)
-    return from_key(key[:32])
+    return _from_key(key[:constants.address_len_bytes])
 
 
 def to_private_key(mnemonic):
@@ -63,12 +64,12 @@ def to_private_key(mnemonic):
     Returns:
         str: private key in base64
     """
-    key_bytes = to_key(mnemonic)
+    key_bytes = _to_key(mnemonic)
     key = signing.SigningKey(key_bytes)
     return base64.b64encode(key.encode() + key.verify_key.encode()).decode()
 
 
-def from_key(key):
+def _from_key(key):
     """
     Return the mnemonic for the key.
 
@@ -78,15 +79,15 @@ def from_key(key):
     Returns:
         str: mnemonic
     """
-    if not len(key) == 32:
+    if not len(key) == constants.address_len_bytes:
         raise error.WrongKeyBytesLengthError
-    chksum = checksum(key)
-    nums = to_11_bit(key)
-    words = apply_words(nums)
+    chksum = _checksum(key)
+    nums = _to_11_bit(key)
+    words = _apply_words(nums)
     return " ".join(words) + " " + chksum
 
 
-def to_key(mnemonic):
+def _to_key(mnemonic):
     """
     Give the corresponding key for the mnemonic.
 
@@ -97,21 +98,21 @@ def to_key(mnemonic):
         bytes: key
     """
     mnemonic = mnemonic.split(" ")
-    if not len(mnemonic) == 25:
+    if not len(mnemonic) == constants.mnemonic_len:
         raise error.WrongMnemonicLengthError
     m_checksum = mnemonic[-1]
-    mnemonic = from_words(mnemonic[:-1])
-    m_bytes = to_bytes(mnemonic)
-    if not m_bytes[-1:len(m_bytes)] == bytes([0]):
+    mnemonic = _from_words(mnemonic[:-1])
+    m_bytes = _to_bytes(mnemonic)
+    if not m_bytes[-1:len(m_bytes)] == b'\x00':
         raise error.WrongChecksumError
-    chksum = checksum(m_bytes[:32])
-    if chksum.__eq__(m_checksum):
-        return m_bytes[:32]
+    chksum = _checksum(m_bytes[:constants.address_len_bytes])
+    if chksum == m_checksum:
+        return m_bytes[:constants.address_len_bytes]
     else:
         raise error.WrongChecksumError
 
 
-def checksum(data):
+def _checksum(data):
     """
     Compute the mnemonic checksum.
 
@@ -125,11 +126,11 @@ def checksum(data):
     hash.update(data)
     chksum = hash.finalize()
     temp = chksum[0:2]
-    nums = to_11_bit(temp)
-    return apply_words(nums)[0]
+    nums = _to_11_bit(temp)
+    return _apply_words(nums)[0]
 
 
-def apply_words(nums):
+def _apply_words(nums):
     """
     Get the corresponding words for a list of 11-bit numbers.
 
@@ -145,7 +146,7 @@ def apply_words(nums):
     return words
 
 
-def from_words(words):
+def _from_words(words):
     """
     Get the corresponding 11-bit numbers for a list of words.
 
@@ -161,7 +162,7 @@ def from_words(words):
     return nums
 
 
-def to_11_bit(data):
+def _to_11_bit(data):
     """
     Convert a bytearray to an list of 11-bit numbers.
 
@@ -186,7 +187,7 @@ def to_11_bit(data):
     return output
 
 
-def to_bytes(nums):
+def _to_bytes(nums):
     """
     Convert a list of 11-bit numbers to a bytearray.
 

@@ -3,10 +3,7 @@ import msgpack
 from collections import OrderedDict
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
-from . import transaction
-from . import error
-from . import auction
-from . import constants
+from . import transaction, error, auction, constants
 
 
 def msgpack_encode(obj):
@@ -14,8 +11,8 @@ def msgpack_encode(obj):
     Encode the object using canonical msgpack.
 
     Args:
-        obj (Transaction, SignedTransaction, Multisig, Bid, or SignedBid):
-            object to be encoded
+        obj (Transaction, SignedTransaction, MultisigTransaction, Multisig,
+            Bid, or SignedBid): object to be encoded
 
     Returns:
         str: msgpack encoded object
@@ -31,7 +28,7 @@ def msgpack_encode(obj):
         version that had no "bin" family).
     """
     if not isinstance(obj, OrderedDict):
-        obj = obj.dictify()
+        obj = obj._dictify()
     od = OrderedDict()
     for key in obj:
         if obj[key]:
@@ -52,20 +49,22 @@ def msgpack_decode(enc):
     """
     decoded = msgpack.unpackb(base64.b64decode(enc), raw=False)
     if "type" in decoded:
-        if decoded["type"].__eq__("pay"):
-            return transaction.PaymentTxn.undictify(decoded)
+        if decoded["type"] == "pay":
+            return transaction.PaymentTxn._undictify(decoded)
         else:
-            return transaction.KeyregTxn.undictify(decoded)
+            return transaction.KeyregTxn._undictify(decoded)
+    if "msig" in decoded:
+        return transaction.MultisigTransaction._undictify(decoded)
     if "txn" in decoded:
-        return transaction.SignedTransaction.undictify(decoded)
+        return transaction.SignedTransaction._undictify(decoded)
     if "subsig" in decoded:
-        return transaction.Multisig.undictify(decoded)
+        return transaction.Multisig._undictify(decoded)
     if "t" in decoded:
-        return auction.NoteField.undictify(decoded)
+        return auction.NoteField._undictify(decoded)
     if "bid" in decoded:
-        return auction.SignedBid.undictify(decoded)
+        return auction.SignedBid._undictify(decoded)
     if "auc" in decoded:
-        return auction.Bid.undictify(decoded)
+        return auction.Bid._undictify(decoded)
 
 
 def is_valid_address(addr):
@@ -80,7 +79,7 @@ def is_valid_address(addr):
     """
     if not isinstance(addr, str):
         return False
-    if not len(undo_padding(addr)) == 58:
+    if not len(_undo_padding(addr)) == constants.address_len:
         return False
     try:
         decoded = decode_address(addr)
@@ -104,14 +103,14 @@ def decode_address(addr):
     """
     if not addr:
         return addr
-    if not len(addr) == 58:
+    if not len(addr) == constants.address_len:
         raise error.WrongKeyLengthError
-    decoded = base64.b32decode(correct_padding(addr))
+    decoded = base64.b32decode(_correct_padding(addr))
     addr = decoded[:-constants.check_sum_len_bytes]
     expected_checksum = decoded[-constants.check_sum_len_bytes:]
-    chksum = checksum(addr)
+    chksum = _checksum(addr)
 
-    if chksum.__eq__(expected_checksum):
+    if chksum == expected_checksum:
         return addr
     else:
         raise error.WrongChecksumError
@@ -130,14 +129,14 @@ def encode_address(addr_bytes):
     """
     if not addr_bytes:
         return addr_bytes
-    if not len(addr_bytes) == 32:
+    if not len(addr_bytes) == constants.address_len_bytes:
         raise error.WrongKeyBytesLengthError
-    chksum = checksum(addr_bytes)
+    chksum = _checksum(addr_bytes)
     addr = base64.b32encode(addr_bytes+chksum)
-    return undo_padding(addr.decode())
+    return _undo_padding(addr.decode())
 
 
-def checksum(addr):
+def _checksum(addr):
     """
     Compute the checksum of size checkSumLenBytes for the address.
 
@@ -153,11 +152,11 @@ def checksum(addr):
     return chksum
 
 
-def correct_padding(a):
+def _correct_padding(a):
     if len(a) % 8 == 0:
         return a
     return a + "="*(8-len(a) % 8)
 
 
-def undo_padding(a):
+def _undo_padding(a):
     return a.strip("=")

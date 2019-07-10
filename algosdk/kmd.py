@@ -61,9 +61,9 @@ class KMDClient:
         except urllib.error.HTTPError as e:
             e = e.read().decode("ascii")
             try:
-                raise error.KmdHTTPError(json.loads(e)["message"])
+                raise error.KMDHTTPError(json.loads(e)["message"])
             except:
-                raise error.KmdHTTPError(e)
+                raise error.KMDHTTPError(e)
         return json.loads(resp.read().decode("ascii"))
 
     def get_version(self):
@@ -424,7 +424,7 @@ class KMDClient:
         result = self.kmd_request("DELETE", req, data=query)
         return result == {}
 
-    def sign_multisig_transaction(self, handle, password, public_key, pre_stx):
+    def sign_multisig_transaction(self, handle, password, public_key, mtx):
         """
         Sign a multisig transaction for the given public key.
 
@@ -432,15 +432,14 @@ class KMDClient:
             handle (str): wallet handle token
             password (str): wallet password
             public_key (str): base32 address that is signing the transaction
-            pre_stx (SignedTransaction): object containing unsigned or
-                partially signed multisig
+            mtx (MultisigTransaction): multisig transaction containing
+                unsigned or partially signed multisig
 
         Returns:
-            SignedTransaction: signed transaction with multisig containing
-                public_key's signature
+            MultisigTransaction: multisig transaction with added signature
         """
-        partial = pre_stx.multisig.json_dictify()
-        txn = encoding.msgpack_encode(pre_stx.transaction)
+        partial = mtx.multisig._json_dictify()
+        txn = encoding.msgpack_encode(mtx.transaction)
         public_key = base64.b64encode(encoding.decode_address(public_key))
         public_key = public_key.decode()
         req = "/multisig/sign"
@@ -453,5 +452,5 @@ class KMDClient:
             }
         result = self.kmd_request("POST", req, data=query)["multisig"]
         msig = encoding.msgpack_decode(result)
-        pre_stx.multisig = msig
-        return pre_stx
+        mtx.multisig = msig
+        return mtx
