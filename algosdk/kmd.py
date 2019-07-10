@@ -6,7 +6,6 @@ import base64
 from . import encoding
 from . import error
 from . import transaction
-from . import responses
 from . import constants
 
 
@@ -81,13 +80,10 @@ class KMDClient:
         List all wallets hosted on node.
 
         Returns:
-            WalletResponse[]: list of objects containing wallet information
+            dict[]: list of dictionaries containing wallet information
         """
         req = "/wallets"
-        result = self.kmd_request("GET", req)
-        if result:
-            return [responses.WalletResponse(w) for w in result["wallets"]]
-        return []
+        return self.kmd_request("GET", req)["wallets"]
 
     def create_wallet(self, name, pswd, driver_name="sqlite",
                       master_deriv_key=None):
@@ -101,7 +97,7 @@ class KMDClient:
             master_deriv_key (str, optional): if recovering a wallet, include
 
         Returns:
-            WalletResponse: object containing wallet information
+            dict: dictionary containing wallet information
         """
         req = "/wallet"
         query = {
@@ -111,8 +107,7 @@ class KMDClient:
             }
         if master_deriv_key:
             query["master_derivation_key"] = master_deriv_key
-        result = self.kmd_request("POST", req, data=query)["wallet"]
-        return responses.WalletResponse(result)
+        return self.kmd_request("POST", req, data=query)["wallet"]
 
     def get_wallet(self, handle):
         """
@@ -122,13 +117,11 @@ class KMDClient:
             handle (str): wallet handle token
 
         Returns:
-            WalletHandleResponse: object containing wallet handle information
-                and wallet information
+            dict: dictionary containing wallet handle and wallet information
         """
         req = "/wallet/info"
         query = {"wallet_handle_token": handle}
-        result = self.kmd_request("POST", req, data=query)
-        return responses.WalletHandleResponse(result)
+        return self.kmd_request("POST", req, data=query)["wallet_handle"]
 
     def init_wallet_handle(self, id, password):
         """
@@ -171,15 +164,13 @@ class KMDClient:
             handle (str): wallet handle token
 
         Returns:
-            WalletHandleResponse: object containing wallet handle information
-                and wallet information
+            dict: dictionary containing wallet handle and wallet information
         """
         req = "/wallet/renew"
         query = {
             "wallet_handle_token": handle
             }
-        result = self.kmd_request("POST", req, data=query)
-        return responses.WalletHandleResponse(result)
+        return self.kmd_request("POST", req, data=query)["wallet_handle"]
 
     def rename_wallet(self, id, password, new_name):
         """
@@ -191,7 +182,7 @@ class KMDClient:
             new_name (str): new name for the wallet
 
         Returns:
-            WalletResponse: object containing wallet information
+            dict: dictionary containing wallet information
         """
         req = "/wallet/rename"
         query = {
@@ -199,8 +190,7 @@ class KMDClient:
             "wallet_password": password,
             "wallet_name": new_name
             }
-        result = self.kmd_request("POST", req, data=query)["wallet"]
-        return responses.WalletResponse(result)
+        return self.kmd_request("POST", req, data=query)["wallet"]
 
     def export_master_derivation_key(self, handle, password):
         """
@@ -438,7 +428,7 @@ class KMDClient:
         Returns:
             MultisigTransaction: multisig transaction with added signature
         """
-        partial = mtx.multisig._json_dictify()
+        partial = mtx.multisig.json_dictify()
         txn = encoding.msgpack_encode(mtx.transaction)
         public_key = base64.b64encode(encoding.decode_address(public_key))
         public_key = public_key.decode()

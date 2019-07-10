@@ -26,7 +26,7 @@ class Wallet:
         last_handle_renew (float): time of last handle renew
     """
 
-    def __init__(self, wallet_name, wallet_pswd, kmd_client, mdk=None):
+    def __init__(self, wallet_name, wallet_pswd, kmd_client, driver_name = "sqlite", mdk=None):
         self.name = wallet_name
         self.pswd = wallet_pswd
         self.kcl = kmd_client
@@ -34,12 +34,12 @@ class Wallet:
 
         wallets = self.kcl.list_wallets()
         for w in wallets:
-            if w.name == self.name:
-                self.id = w.id
+            if w["name"] == self.name:
+                self.id = w["id"]
         if not self.id:
-            w = self.kcl.create_wallet(self.name, self.pswd,
+            w = self.kcl.create_wallet(self.name, self.pswd, driver_name,
                                        master_deriv_key=mdk)
-            self.id = w.id
+            self.id = w["id"]
         self.last_handle_renew = time.time()
         self.handle = self.kcl.init_wallet_handle(self.id, self.pswd)
 
@@ -48,8 +48,7 @@ class Wallet:
         Get wallet information.
 
         Returns:
-            WalletHandleResponse: object containing wallet handle information
-                and wallet information
+            dict: dictionary containing wallet handle and wallet information
         """
         self.automate_handle()
         return self.kcl.get_wallet(self.handle)
@@ -72,7 +71,7 @@ class Wallet:
             new_name (str) : new name for the wallet
 
         Returns:
-            WalletResponse: object containing wallet information
+            dict: dictionary containing wallet information
         """
         resp = self.kcl.rename_wallet(self.id, self.pswd, new_name)
         self.name = new_name
@@ -260,8 +259,7 @@ class Wallet:
         Renew the current handle.
 
         Returns:
-            WalletHandleResponse: object containing wallet handle information
-                and wallet information
+            dict: dictionary containing wallet handle and wallet information
         """
         self.last_handle_renew = time.time()
         resp = self.kcl.renew_wallet_handle(self.handle)

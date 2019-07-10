@@ -28,7 +28,7 @@ note_field_type_params = "p"
 
 check_sum_len_bytes = 4
 """int: how long checksums should be"""
-address_len_bytes = 32
+signing_key_len_bytes = 32
 """int: how long addresses are in bytes"""
 address_len = 58
 """int: how long addresses are in base32"""

@@ -15,21 +15,13 @@ class Transaction:
     Superclass for PaymentTxn and KeyregTxn.
     """
     def __init__(self, sender, fee, first, last, note, gen, gh):
-        self.sender = encoding.decode_address(sender)
+        self.sender = sender
         self.fee = fee
         self.first_valid_round = first
         self.last_valid_round = last
         self.note = note
         self.genesis_id = gen
-        self.genesis_hash = base64.b64decode(gh)
-
-    def get_sender(self):
-        """Return the base32 encoding of the sender."""
-        return encoding.encode_address(self.sender)
-
-    def get_genesis_hash(self):
-        """Return the base64 encodi ng of the genesis hash."""
-        return base64.b64encode(self.genesis_hash).decode()
+        self.genesis_hash = gh
 
     def get_txid(self):
         """
@@ -74,7 +66,7 @@ class Transaction:
         private_key = base64.b64decode(bytes(private_key, "ascii"))
         txn = encoding.msgpack_encode(self)
         to_sign = constants.txid_prefix + base64.b64decode(bytes(txn, "ascii"))
-        signing_key = SigningKey(private_key[:constants.address_len_bytes])
+        signing_key = SigningKey(private_key[:constants.signing_key_len_bytes])
         signed = signing_key.sign(to_sign)
         sig = signed.signature
         return sig
@@ -107,10 +99,10 @@ class PaymentTxn(Transaction):
         fee (int)
         first_valid_round (int)
         last_valid_round (int)
-        genesis_hash (bytes)
-        receiver (bytes)
+        genesis_hash (str)
+        receiver (str)
         amt (int)
-        close_remainder_to (bytes)
+        close_remainder_to (str)
         note (bytes)
         genesis_id (str)
         type (str)
@@ -119,34 +111,34 @@ class PaymentTxn(Transaction):
     def __init__(self, sender, fee, first, last, gh, receiver, amt,
                  close_remainder_to=None, note=None, gen=None):
         Transaction.__init__(self,  sender, fee, first, last, note, gen, gh)
-        self.receiver = encoding.decode_address(receiver)
+        self.receiver = receiver
         self.amt = amt
-        self.close_remainder_to = encoding.decode_address(close_remainder_to)
+        self.close_remainder_to = close_remainder_to
         self.type = "pay"
         self.fee = max(self.estimate_size()*self.fee, constants.min_txn_fee)
 
-    def _dictify(self):
+    def dictify(self):
         od = OrderedDict()
         if self.amt:
             od["amt"] = self.amt
         if self.close_remainder_to:
-            od["close"] = self.close_remainder_to
+            od["close"] = encoding.decode_address(self.close_remainder_to)
         od["fee"] = self.fee
         od["fv"] = self.first_valid_round
         if self.genesis_id:
             od["gen"] = self.genesis_id
-        od["gh"] = self.genesis_hash
+        od["gh"] = base64.b64decode(self.genesis_hash)
         od["lv"] = self.last_valid_round
         if self.note:
             od["note"] = self.note
-        od["rcv"] = self.receiver
-        od["snd"] = self.sender
+        od["rcv"] = encoding.decode_address(self.receiver)
+        od["snd"] = encoding.decode_address(self.sender)
         od["type"] = self.type
 
         return od
 
     @staticmethod
-    def _undictify(d):
+    def undictify(d):
         crt = None
         note = None
         gen = None
@@ -160,20 +152,10 @@ class PaymentTxn(Transaction):
         if "amt" in d:
             amt = d["amt"]
         tr = PaymentTxn(encoding.encode_address(d["snd"]), d["fee"], d["fv"],
-                        d["lv"], base64.b64encode(d["gh"]),
+                        d["lv"], base64.b64encode(d["gh"]).decode(),
                         encoding.encode_address(d["rcv"]), amt, crt, note, gen)
         tr.fee = d["fee"]
         return tr
-
-    def get_receiver(self):
-        """Return the base32 encoding of the receiver."""
-        return encoding.encode_address(self.receiver)
-
-    def get_close_remainder_to(self):
-        """Return the base32 encoding of closeRemainderTo."""
-        if not self.close_remainder_to:
-            return self.close_remainder_to
-        return encoding.encode_address(self.close_remainder_to)
 
 
 class KeyregTxn(Transaction):
@@ -195,13 +177,13 @@ class KeyregTxn(Transaction):
         gen (str): genesis_id
 
     Attributes:
-        sender (bytes)
+        sender (str)
         fee (int)
         first_valid_round (int)
         last_valid_round (int)
-        genesis_hash (bytes)
-        votepk (bytes)
-        selkey (bytes)
+        genesis_hash (str)
+        votepk (str)
+        selkey (str)
         votefst (int)
         votelst (int)
         votekd (int)
@@ -212,35 +194,35 @@ class KeyregTxn(Transaction):
     def __init__(self, sender, fee, first, last, gh, votekey, selkey,
                  votefst, votelst, votekd, note=None, gen=None):
         Transaction.__init__(self, sender, fee, first, last, note, gen, gh)
-        self.votepk = encoding.decode_address(votekey)
-        self.selkey = encoding.decode_address(selkey)
+        self.votepk = votekey
+        self.selkey = selkey
         self.votefst = votefst
         self.votelst = votelst
         self.votekd = votekd
         self.type = "keyreg"
         self.fee = max(self.estimate_size()*self.fee, constants.min_txn_fee)
 
-    def _dictify(self):
+    def dictify(self):
         od = OrderedDict()
         od["fee"] = self.fee
         od["fv"] = self.first_valid_round
         if self.genesis_id:
             od["gen"] = self.genesis_id
-        od["gh"] = self.genesis_hash
+        od["gh"] = base64.b64decode(self.genesis_hash)
         od["lv"] = self.last_valid_round
         if self.note:
             od["note"] = self.note
-        od["selkey"] = self.selkey
-        od["snd"] = self.sender
+        od["selkey"] = encoding.decode_address(self.selkey)
+        od["snd"] = encoding.decode_address(self.sender)
         od["type"] = self.type
         od["votefst"] = self.votefst
         od["votekd"] = self.votekd
-        od["votekey"] = self.votepk
+        od["votekey"] = encoding.decode_address(self.votepk)
         od["votelst"] = self.votelst
         return od
 
     @staticmethod
-    def _undictify(d):
+    def undictify(d):
         note = None
         gen = None
         if "note" in d:
@@ -248,21 +230,12 @@ class KeyregTxn(Transaction):
         if "gen" in d:
             gen = d["gen"]
         k = KeyregTxn(encoding.encode_address(d["snd"]), d["fee"], d["fv"],
-                      d["lv"], base64.b64encode(d["gh"]),
+                      d["lv"], base64.b64encode(d["gh"]).decode(),
                       encoding.encode_address(d["votekey"]),
                       encoding.encode_address(d["selkey"]), d["votefst"],
                       d["votelst"], d["votekd"], note, gen)
         k.fee = d["fee"]
         return k
-
-    def get_vote_key(self):
-        """Return the base32 encoding of the vote key."""
-        return encoding.encode_address(self.votepk)
-
-    def get_selection_key(self):
-        """Return the base32 encoding of the selection key."""
-        return encoding.encode_address(self.selkey)
-
 
 class SignedTransaction:
     """
@@ -277,31 +250,27 @@ class SignedTransaction:
         signature (str)
     """
     def __init__(self, transaction, signature):
-        self.signature = base64.b64decode(signature)
+        self.signature = signature
         self.transaction = transaction
 
-    def _dictify(self):
+    def dictify(self):
         od = OrderedDict()
-        od["sig"] = self.signature
-        od["txn"] = self.transaction._dictify()
+        od["sig"] = base64.b64decode(self.signature)
+        od["txn"] = self.transaction.dictify()
         return od
 
     @staticmethod
-    def _undictify(d):
+    def undictify(d):
         sig = None
         if "sig" in d:
-            sig = base64.b64encode(d["sig"])
+            sig = base64.b64encode(d["sig"]).decode()
         txn_type = d["txn"]["type"]
         if txn_type == "pay":
-            txn = PaymentTxn._undictify(d["txn"])
+            txn = PaymentTxn.undictify(d["txn"])
         else:
-            txn = KeyregTxn._undictify(d["txn"])
+            txn = KeyregTxn.undictify(d["txn"])
         stx = SignedTransaction(txn, sig)
         return stx
-
-    def get_signature(self):
-        """Return the base64 encoding of the signature."""
-        return base64.b64encode(self.signature).decode()
 
 
 class MultisigTransaction:
@@ -336,11 +305,11 @@ class MultisigTransaction:
         """
         self.multisig.validate()
         addr = self.multisig.address()
-        if not encoding.encode_address(self.transaction.sender) == addr:
+        if not self.transaction.sender == addr:
             raise error.BadTxnSenderError
         index = -1
         public_key = base64.b64decode(bytes(private_key,
-                                      "ascii"))[constants.address_len_bytes:]
+                                      "ascii"))[constants.signing_key_len_bytes:]
         for s in range(len(self.multisig.subsigs)):
             if self.multisig.subsigs[s].public_key == public_key:
                 index = s
@@ -350,23 +319,23 @@ class MultisigTransaction:
         sig = self.transaction.raw_sign(private_key)
         self.multisig.subsigs[index].signature = sig
 
-    def _dictify(self):
+    def dictify(self):
         od = OrderedDict()
         if self.multisig:
-            od["msig"] = self.multisig._dictify()
-        od["txn"] = self.transaction._dictify()
+            od["msig"] = self.multisig.dictify()
+        od["txn"] = self.transaction.dictify()
         return od
 
     @staticmethod
-    def _undictify(d):
+    def undictify(d):
         msig = None
         if "msig" in d:
-            msig = Multisig._undictify(d["msig"])
+            msig = Multisig.undictify(d["msig"])
         txn_type = d["txn"]["type"]
         if txn_type == "pay":
-            txn = PaymentTxn._undictify(d["txn"])
+            txn = PaymentTxn.undictify(d["txn"])
         else:
-            txn = KeyregTxn._undictify(d["txn"])
+            txn = KeyregTxn.undictify(d["txn"])
         mtx = MultisigTransaction(txn, msig)
         return mtx
 
@@ -449,23 +418,23 @@ class Multisig:
         addr = hash.finalize()
         return encoding.encode_address(addr)
 
-    def _dictify(self):
+    def dictify(self):
         od = OrderedDict()
-        od["subsig"] = [subsig._dictify() for subsig in self.subsigs]
+        od["subsig"] = [subsig.dictify() for subsig in self.subsigs]
         od["thr"] = self.threshold
         od["v"] = self.version
         return od
 
-    def _json_dictify(self):
+    def json_dictify(self):
         od = OrderedDict()
-        od["subsig"] = [subsig._json_dictify() for subsig in self.subsigs]
+        od["subsig"] = [subsig.json_dictify() for subsig in self.subsigs]
         od["thr"] = self.threshold
         od["v"] = self.version
         return od
 
     @staticmethod
-    def _undictify(d):
-        subsigs = [MultisigSubsig._undictify(s) for s in d["subsig"]]
+    def undictify(d):
+        subsigs = [MultisigSubsig.undictify(s) for s in d["subsig"]]
         msig = Multisig(d["v"], d["thr"], [])
         msig.subsigs = subsigs
         return msig
@@ -493,14 +462,14 @@ class MultisigSubsig:
         self.public_key = public_key
         self.signature = signature
 
-    def _dictify(self):
+    def dictify(self):
         od = OrderedDict()
         od["pk"] = self.public_key
         if self.signature:
             od["s"] = self.signature
         return od
 
-    def _json_dictify(self):
+    def json_dictify(self):
         od = OrderedDict()
         od["pk"] = base64.b64encode(self.public_key).decode()
         if self.signature:
@@ -508,7 +477,7 @@ class MultisigSubsig:
         return od
 
     @staticmethod
-    def _undictify(d):
+    def undictify(d):
         sig = None
         if "s" in d:
             sig = d["s"]
@@ -536,10 +505,10 @@ def write_to_file(txns, path, overwrite=True):
 
     for txn in txns:
         if isinstance(txn, Transaction):
-            enc = msgpack.packb({"txn": txn._dictify()}, use_bin_type=True)
+            enc = msgpack.packb({"txn": txn.dictify()}, use_bin_type=True)
             f.write(enc)
         else:
-            enc = msgpack.packb(txn._dictify(), use_bin_type=True)
+            enc = msgpack.packb(txn.dictify(), use_bin_type=True)
             f.write(enc)
 
 
@@ -560,11 +529,11 @@ def retrieve_from_file(path):
     unp = msgpack.Unpacker(f, raw=False)
     for txn in unp:
         if "msig" in txn:
-            txns.append(MultisigTransaction._undictify(txn))
+            txns.append(MultisigTransaction.undictify(txn))
         elif "sig" in txn:
-            txns.append(SignedTransaction._undictify(txn))
+            txns.append(SignedTransaction.undictify(txn))
         elif txn["txn"]["type"] == "pay":
-            txns.append(PaymentTxn._undictify(txn["txn"]))
+            txns.append(PaymentTxn.undictify(txn["txn"]))
         elif txn["txn"]["type"] == "keyreg":
-            txns.append(KeyregTxn._undictify(txn["txn"]))
+            txns.append(KeyregTxn.undictify(txn["txn"]))
     return txns

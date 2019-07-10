@@ -53,7 +53,7 @@ wallet = Wallet("wallet_name", "wallet_password", kcl)
 
 # get wallet information
 info = wallet.info()
-print("Wallet name:", info.wallet.name)
+print("Wallet name:", info["wallet"]["name"])
 
 # create an account
 address = wallet.generate_key()

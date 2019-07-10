@@ -25,8 +25,8 @@ existing_account = input("Address of an account in the wallet? ")
 wallets = kcl.list_wallets()
 existing_wallet_id = None
 for w in wallets:
-    if w.name == existing_wallet_name:
-        existing_wallet_id = w.id
+    if w["name"] == existing_wallet_name:
+        existing_wallet_id = w["id"]
         break
 
 # get a handle for the existing wallet
@@ -46,14 +46,14 @@ wallet_pswd = input("New wallet password? ")
 # check if the wallet already exists
 wallet_id = None
 for w in wallets:
-    if w.name == wallet_name:
-        wallet_id = w.id
+    if w["name"] == wallet_name:
+        wallet_id = w["id"]
         print("The wallet already exists, but let's just go with it!")
         break
 
 # if it doesn't exist, create the wallet and get its ID
 if not wallet_id:
-    wallet_id = kcl.create_wallet(wallet_name, wallet_pswd).id
+    wallet_id = kcl.create_wallet(wallet_name, wallet_pswd)["id"]
     print("Wallet created!")
     print("Wallet ID: " + wallet_id)
 
@@ -102,10 +102,10 @@ private_key = kcl.export_key(existing_handle, existing_wallet_pswd,
 
 # sign transaction with crypto
 signed_crypto = txn.sign(private_key)
-print("Signature: " + signed_crypto.get_signature() + "\n")
+print("Signature: " + signed_crypto.signature + "\n")
 
 # check that they're the same
-if signed_crypto._dictify() == signed_kmd._dictify():
+if signed_crypto.dictify() == signed_kmd.dictify():
     print("Signed transactions are the same!")
 else:
     print("Well that's not good...")
@@ -116,7 +116,7 @@ print("\nTransaction was sent!")
 print("Transaction ID: " + transaction_id + "\n")
 
 # wait 2 rounds and then try to see the transaction
-print("Now let's wait a bit for the transaction to process.")
+print("Now let's wait a bit for the transaction to process.\n")
 acl.status_after_block(last_round+2)
 print("Transaction info:", acl.transaction_info(existing_account,
                                                 transaction_id))

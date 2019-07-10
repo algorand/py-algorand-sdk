@@ -41,8 +41,8 @@ class TestIntegration(unittest.TestCase):
         wallets = self.kcl.list_wallets()
         wallet_id = None
         for w in wallets:
-            if w.name == wallet_name:
-                wallet_id = w.id
+            if w["name"] == wallet_name:
+                wallet_id = w["id"]
 
         # get a new handle for the wallet
         handle = self.kcl.init_wallet_handle(wallet_id, wallet_pswd)
@@ -92,27 +92,27 @@ class TestIntegration(unittest.TestCase):
 
         wallet_id = None
         for w in wallets:
-            if w.name == wallet_name:
-                wallet_id = w.id
+            if w["name"] == wallet_name:
+                wallet_id = w["id"]
 
         # rename wallet
         self.assertEqual(wallet_name + "newname", self.kcl.rename_wallet(
-                         wallet_id, wallet_pswd, wallet_name + "newname").name)
+                         wallet_id, wallet_pswd, wallet_name + "newname")["name"])
 
         # change it back
         self.assertEqual(wallet_name, self.kcl.rename_wallet(wallet_id,
-                         wallet_pswd, wallet_name).name)
+                         wallet_pswd, wallet_name)["name"])
 
         # get a new handle for the wallet
         handle = self.kcl.init_wallet_handle(wallet_id, wallet_pswd)
 
         # get expiration time of handle
         time.sleep(1)
-        exp_time = self.kcl.get_wallet(handle).expires_seconds
+        exp_time = self.kcl.get_wallet(handle)["expires_seconds"]
 
         # renew the handle
         renewed_handle = self.kcl.renew_wallet_handle(handle)
-        new_exp_time = renewed_handle.expires_seconds
+        new_exp_time = renewed_handle["expires_seconds"]
         self.assertGreaterEqual(new_exp_time, exp_time)
         released = self.kcl.release_wallet_handle(handle)  # release the handle
         self.assertTrue(released)
@@ -125,8 +125,8 @@ class TestIntegration(unittest.TestCase):
         wallets = self.kcl.list_wallets()
         wallet_id = None
         for w in wallets:
-            if w.name == wallet_name:
-                wallet_id = w.id
+            if w["name"] == wallet_name:
+                wallet_id = w["id"]
 
         # get a new handle for the wallet
         handle = self.kcl.init_wallet_handle(wallet_id, wallet_pswd)
@@ -195,8 +195,8 @@ class TestIntegration(unittest.TestCase):
         wallets = self.kcl.list_wallets()
         wallet_id = None
         for w in wallets:
-            if w.name == wallet_name:
-                wallet_id = w.id
+            if w["name"] == wallet_name:
+                wallet_id = w["id"]
 
         # get a new handle for the wallet
         handle = self.kcl.init_wallet_handle(wallet_id, wallet_pswd)
@@ -265,8 +265,8 @@ class TestIntegration(unittest.TestCase):
         wallets = self.kcl.list_wallets()
         wallet_id = None
         for w in wallets:
-            if w.name == wallet_name:
-                wallet_id = w.id
+            if w["name"] == wallet_name:
+                wallet_id = w["id"]
 
         # get a new handle for the wallet
         handle = self.kcl.init_wallet_handle(wallet_id, wallet_pswd)
@@ -382,9 +382,9 @@ class TestIntegration(unittest.TestCase):
 
         # test renaming the wallet
         w.rename(wallet_name + "1")
-        self.assertEqual(wallet_name + "1", w.info().wallet.name)
+        self.assertEqual(wallet_name + "1", w.info()["wallet"]["name"])
         w.rename(wallet_name)
-        self.assertEqual(wallet_name, w.info().wallet.name)
+        self.assertEqual(wallet_name, w.info()["wallet"]["name"])
 
         # test releasing the handle
         w.release_handle()
@@ -429,7 +429,7 @@ class TestIntegration(unittest.TestCase):
                           mtx.sign, random_private_key)
 
         # change sender address to be correct
-        txn.sender = encoding.decode_address(msig.address())
+        txn.sender = msig.address()
         mtx = transaction.MultisigTransaction(txn, msig)
 
         # try to sign with incorrect private key
@@ -479,42 +479,6 @@ class TestIntegration(unittest.TestCase):
         address = "WRONG_LENGTH_TOO_SHORT"
         self.assertRaises(error.WrongKeyLengthError,
                           encoding.decode_address, address)
-
-    def test_get(self):
-        # get suggested parameters and fee
-        params = self.acl.suggested_params()
-        gh = params["genesishashb64"]
-        last_round = params["lastRound"]
-        fee = params["fee"]
-
-        # create keyreg transaction
-        txn = transaction.KeyregTxn(self.account_0, fee,
-                                    last_round, last_round+100, gh,
-                                    self.account_0, self.account_0, last_round,
-                                    last_round+100, 100)
-        # test get functions
-        self.assertEqual(self.account_0, txn.get_selection_key())
-        self.assertEqual(self.account_0, txn.get_vote_key())
-
-        # create transaction
-        txn = transaction.PaymentTxn(self.account_0, fee,
-                                     last_round, last_round+100, gh,
-                                     self.account_0, 100000, self.account_0)
-
-        # get private key
-        w = wallet.Wallet(wallet_name, wallet_pswd, self.kcl)
-        private_key = w.export_key(self.account_0)
-
-        # sign transaction
-        stx = txn.sign(private_key)
-        sig = stx.get_signature()
-
-        # test get functions
-        self.assertEqual(self.account_0, txn.get_sender())
-        self.assertEqual(self.account_0, txn.get_receiver())
-        self.assertEqual(gh, txn.get_genesis_hash())
-        self.assertEqual(self.account_0, txn.get_close_remainder_to())
-        self.assertEqual(stx.get_signature(), sig)
 
     def test_file_read_write(self):
         # get suggested parameters and fee

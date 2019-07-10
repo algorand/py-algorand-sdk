@@ -28,7 +28,7 @@ def msgpack_encode(obj):
         version that had no "bin" family).
     """
     if not isinstance(obj, OrderedDict):
-        obj = obj._dictify()
+        obj = obj.dictify()
     od = OrderedDict()
     for key in obj:
         if obj[key]:
@@ -50,21 +50,21 @@ def msgpack_decode(enc):
     decoded = msgpack.unpackb(base64.b64decode(enc), raw=False)
     if "type" in decoded:
         if decoded["type"] == "pay":
-            return transaction.PaymentTxn._undictify(decoded)
+            return transaction.PaymentTxn.undictify(decoded)
         else:
-            return transaction.KeyregTxn._undictify(decoded)
+            return transaction.KeyregTxn.undictify(decoded)
     if "msig" in decoded:
-        return transaction.MultisigTransaction._undictify(decoded)
+        return transaction.MultisigTransaction.undictify(decoded)
     if "txn" in decoded:
-        return transaction.SignedTransaction._undictify(decoded)
+        return transaction.SignedTransaction.undictify(decoded)
     if "subsig" in decoded:
-        return transaction.Multisig._undictify(decoded)
+        return transaction.Multisig.undictify(decoded)
     if "t" in decoded:
-        return auction.NoteField._undictify(decoded)
+        return auction.NoteField.undictify(decoded)
     if "bid" in decoded:
-        return auction.SignedBid._undictify(decoded)
+        return auction.SignedBid.undictify(decoded)
     if "auc" in decoded:
-        return auction.Bid._undictify(decoded)
+        return auction.Bid.undictify(decoded)
 
 
 def is_valid_address(addr):
@@ -129,7 +129,7 @@ def encode_address(addr_bytes):
     """
     if not addr_bytes:
         return addr_bytes
-    if not len(addr_bytes) == constants.address_len_bytes:
+    if not len(addr_bytes) == constants.signing_key_len_bytes:
         raise error.WrongKeyBytesLengthError
     chksum = _checksum(addr_bytes)
     addr = base64.b32encode(addr_bytes+chksum)

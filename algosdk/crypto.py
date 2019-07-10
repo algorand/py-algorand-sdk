@@ -27,6 +27,6 @@ def address_from_private_key(private_key):
     Returns:
         str: address of the account
     """
-    pk = base64.b64decode(private_key)[constants.address_len_bytes:]
+    pk = base64.b64decode(private_key)[constants.signing_key_len_bytes:]
     address = encoding.encode_address(pk)
     return address
