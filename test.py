@@ -543,7 +543,7 @@ class TestUnit(unittest.TestCase):
         result = self.acl.pending_transactions(0)
         self.assertIn("truncatedTxns", result)
 
-    def test_versions(self):
+    def test_algod_versions(self):
         result = self.acl.versions()
         self.assertIn("versions", result)
 
@@ -556,8 +556,8 @@ class TestUnit(unittest.TestCase):
         result = self.acl.block_info(last_round)
         self.assertIn("hash", result)
 
-    def test_get_version(self):
-        result = self.kcl.get_version()
+    def test_kmd_versions(self):
+        result = self.kcl.versions()
         self.assertIn("v1", result)
 
     def test_suggested_fee(self):

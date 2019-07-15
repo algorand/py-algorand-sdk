@@ -65,7 +65,7 @@ class KMDClient:
                 raise error.KMDHTTPError(e)
         return json.loads(resp.read().decode("ascii"))
 
-    def get_version(self):
+    def versions(self):
         """
         Get kmd versions.
 

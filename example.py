@@ -125,4 +125,4 @@ print("Transaction info:", acl.transaction_info(existing_account,
 # $ ./goal wallet list
 # $ ./goal account list
 
-# now write your own in main.py!
+# now write your own!

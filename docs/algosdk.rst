@@ -68,14 +68,6 @@ algosdk.mnemonic module
    :undoc-members:
    :show-inheritance:
 
-algosdk.responses module
-------------------------
-
-.. automodule:: algosdk.responses
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 algosdk.transaction module
 --------------------------
 

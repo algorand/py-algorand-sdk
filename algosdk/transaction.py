@@ -143,6 +143,7 @@ class PaymentTxn(Transaction):
         note = None
         gen = None
         amt = 0
+        fv = 0
         if "close" in d:
             crt = encoding.encode_address(d["close"])
         if "note" in d:
@@ -151,7 +152,9 @@ class PaymentTxn(Transaction):
             gen = d["gen"]
         if "amt" in d:
             amt = d["amt"]
-        tr = PaymentTxn(encoding.encode_address(d["snd"]), d["fee"], d["fv"],
+        if "fv" in d:
+            fv = d["fv"]
+        tr = PaymentTxn(encoding.encode_address(d["snd"]), d["fee"], fv,
                         d["lv"], base64.b64encode(d["gh"]).decode(),
                         encoding.encode_address(d["rcv"]), amt, crt, note, gen)
         tr.fee = d["fee"]
@@ -225,11 +228,14 @@ class KeyregTxn(Transaction):
     def undictify(d):
         note = None
         gen = None
+        fv = 0
         if "note" in d:
             note = d["note"]
         if "gen" in d:
             gen = d["gen"]
-        k = KeyregTxn(encoding.encode_address(d["snd"]), d["fee"], d["fv"],
+        if "fv" in d:
+            fv = d["fv"]
+        k = KeyregTxn(encoding.encode_address(d["snd"]), d["fee"], fv,
                       d["lv"], base64.b64encode(d["gh"]).decode(),
                       encoding.encode_address(d["votekey"]),
                       encoding.encode_address(d["selkey"]), d["votefst"],

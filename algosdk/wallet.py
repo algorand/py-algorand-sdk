@@ -212,13 +212,13 @@ class Wallet:
         self.automate_handle()
         return self.kcl.delete_multisig(self.handle, self.pswd, address)
 
-    def sign_multisig_transaction(self, public_key, pre_stx):
+    def sign_multisig_transaction(self, public_key, mtx):
         """
         Sign a multisig transaction for the given public key.
 
         Args:
             public_key (str): base32 address that is signing the transaction
-            pre_stx (SignedTransaction): object containing unsigned or
+            mtx (MultisigTransaction): object containing unsigned or
                 partially signed multisig
 
         Returns:
@@ -227,7 +227,7 @@ class Wallet:
         """
         self.automate_handle()
         return self.kcl.sign_multisig_transaction(self.handle, self.pswd,
-                                                  public_key, pre_stx)
+                                                  public_key, mtx)
 
     def automate_handle(self):
         """
@@ -236,8 +236,7 @@ class Wallet:
         Returns:
             bool: True if a handle is active
         """
-        t = time.time()
-        if t - self.last_handle_renew >= constants.handle_renew_time:
+        if time.time() - self.last_handle_renew >= constants.handle_renew_time:
             self.init_handle()
         else:
             self.renew_handle()
