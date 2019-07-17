@@ -40,7 +40,7 @@ You're now ready to run example.py!
 
 ### using the Wallet class
 Instead of always having to keep track of handles, IDs, and passwords for wallets, create a Wallet object to manage everything for you.
-```
+```python
 import params
 from algosdk import kmd
 from algosdk.wallet import Wallet
@@ -66,7 +66,7 @@ print("Account deleted:", delete)
 
 ### backing up a wallet with mnemonic
 
-```
+```python
 import params
 from algosdk import kmd, mnemonic
 from algosdk.wallet import Wallet
@@ -88,7 +88,7 @@ print("Wallet backup phrase:", backup)
 You can also back up accounts using mnemonic.fromPrivateKey().
 ### recovering a wallet using a backup phrase
 
-```
+```python
 import params
 from algosdk import kmd, mnemonic
 
@@ -106,7 +106,7 @@ You can also recover accounts using mnemonic.toPrivateKey().
 ### writing transactions to file
 
 If you don't want to send your transactions now, you can write them to file. This works with both signed and unsigned transactions.
-```
+```python
 import params
 from algosdk import algod, kmd, transaction
 
@@ -134,14 +134,14 @@ transaction.write_to_file([txn], "pathtofile.tx")
 
 We can also read transactions after writing them to file.
 
-```
+```python
 # read from file
 read_txns = transaction.retrieve_from_file("pathtofile.tx")
 ```
 
 ### manipulating multisig transactions
 
-```
+```python
 import params
 from algosdk import crypto, transaction, algod
 
@@ -153,7 +153,9 @@ private_key_2, account_2 = crypto.generate_account()
 private_key_3, account_3 = crypto.generate_account()
 
 # create a multisig account
-msig = transaction.Multisig(1, 2, [account_1, account_2])
+version = 1  # multisig version
+threshold = 2  # how many signatures are necessary
+msig = transaction.Multisig(version, threshold, [account_1, account_2])
 
 # get suggested parameters
 params = acl.suggested_params()
