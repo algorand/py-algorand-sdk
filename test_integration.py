@@ -7,7 +7,7 @@ from algosdk import kmd
 from algosdk import transaction
 from algosdk import encoding
 from algosdk import algod
-from algosdk import crypto
+from algosdk import account
 from algosdk import mnemonic
 from algosdk import error
 from algosdk import auction
@@ -71,11 +71,11 @@ class TestIntegration(unittest.TestCase):
                                      account_1, 100000, note=base64.b64decode(
                                         encoding.msgpack_encode(nf)), gen=gen)
 
-        # sign transaction with crypto
-        signed_crypto = txn.sign(private_key_0)
+        # sign transaction with account
+        signed_account = txn.sign(private_key_0)
 
         # send transaction
-        send = self.acl.send_raw_transaction(signed_crypto)
+        send = self.acl.send_raw_transaction(signed_account)
         self.assertEqual(send, txn.get_txid())
         del_1 = self.kcl.delete_key(handle, wallet_pswd, account_1)
         self.assertTrue(del_1)
@@ -131,7 +131,7 @@ class TestIntegration(unittest.TestCase):
         handle = self.kcl.init_wallet_handle(wallet_id, wallet_pswd)
 
         # generate account and check if it's valid
-        private_key_1, account_1 = crypto.generate_account()
+        private_key_1, account_1 = account.generate_account()
         self.assertTrue(encoding.is_valid_address(account_1))
 
         # import generated account
@@ -159,16 +159,16 @@ class TestIntegration(unittest.TestCase):
         # get self.account_0 private key
         private_key_0 = self.kcl.export_key(handle, wallet_pswd,
                                             self.account_0)
-        # sign transaction with crypto
-        signed_crypto = txn.sign(private_key_0)
+        # sign transaction with account
+        signed_account = txn.sign(private_key_0)
         txid = txn.get_txid()
 
         # check that signing both ways results in the same thing
-        self.assertEqual(encoding.msgpack_encode(signed_crypto),
+        self.assertEqual(encoding.msgpack_encode(signed_account),
                          encoding.msgpack_encode(signed_kmd))
 
         # send the transaction
-        send = self.acl.send_raw_transaction(signed_crypto)
+        send = self.acl.send_raw_transaction(signed_account)
         self.assertEqual(send, txid)
 
         # get transaction info in pending transactions
@@ -240,15 +240,15 @@ class TestIntegration(unittest.TestCase):
         signed_kmd = self.kcl.sign_multisig_transaction(handle, wallet_pswd,
                                                         account_2, msig_1)
 
-        # sign using crypto
+        # sign using account
         mtx1 = transaction.MultisigTransaction(txn, msig)
         mtx1.sign(private_key_1)
         mtx2 = transaction.MultisigTransaction(txn, msig)
         mtx2.sign(private_key_2)
-        signed_crypto = transaction.MultisigTransaction.merge([mtx1, mtx2])
+        signed_account = transaction.MultisigTransaction.merge([mtx1, mtx2])
 
         # check that they are the same
-        self.assertEqual(encoding.msgpack_encode(signed_crypto),
+        self.assertEqual(encoding.msgpack_encode(signed_account),
                          encoding.msgpack_encode(signed_kmd))
 
         # delete accounts
@@ -296,8 +296,8 @@ class TestIntegration(unittest.TestCase):
         # make sure mnemonic can be converted back to mdk
         self.assertEqual(mdk, mnemonic.to_master_derivation_key(mn))
 
-        # generate account with crypto and check if it's valid
-        private_key_1, account_1 = crypto.generate_account()
+        # generate account with account and check if it's valid
+        private_key_1, account_1 = account.generate_account()
 
         # import generated account
         import_key = w.import_key(private_key_1)
@@ -329,11 +329,11 @@ class TestIntegration(unittest.TestCase):
         # get self.account_0 private key
         private_key_0 = w.export_key(self.account_0)
 
-        # sign transaction with crypto
-        signed_crypto = txn.sign(private_key_0)
+        # sign transaction with account
+        signed_account = txn.sign(private_key_0)
 
         # check that signing both ways results in the same thing
-        self.assertEqual(encoding.msgpack_encode(signed_crypto),
+        self.assertEqual(encoding.msgpack_encode(signed_account),
                          encoding.msgpack_encode(signed_kmd))
 
         # create multisig account and transaction
@@ -360,15 +360,15 @@ class TestIntegration(unittest.TestCase):
         msig_1 = w.sign_multisig_transaction(account_1, mtx)
         signed_kmd = w.sign_multisig_transaction(account_2, msig_1)
 
-        # sign the multisig using crypto
+        # sign the multisig using account
         mtx1 = transaction.MultisigTransaction(txn, msig)
         mtx1.sign(private_key_1)
         mtx2 = transaction.MultisigTransaction(txn, msig)
         mtx2.sign(private_key_2)
-        signed_crypto = transaction.MultisigTransaction.merge([mtx1, mtx2])
+        signed_account = transaction.MultisigTransaction.merge([mtx1, mtx2])
 
         # check that they are the same
-        self.assertEqual(encoding.msgpack_encode(signed_crypto),
+        self.assertEqual(encoding.msgpack_encode(signed_account),
                          encoding.msgpack_encode(signed_kmd))
 
         # delete accounts

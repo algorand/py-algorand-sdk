@@ -3,10 +3,10 @@ algosdk
 
 .. toctree::
 
+   algosdk.account
    algosdk.algod
    algosdk.auction
    algosdk.constants
-   algosdk.crypto
    algosdk.encoding
    algosdk.error
    algosdk.kmd

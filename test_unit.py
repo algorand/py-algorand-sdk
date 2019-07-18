@@ -2,7 +2,7 @@ import base64
 import unittest
 from algosdk import transaction
 from algosdk import encoding
-from algosdk import crypto
+from algosdk import account
 from algosdk import mnemonic
 from algosdk import wordlist
 from algosdk import error
@@ -11,36 +11,36 @@ from algosdk import constants
 
 class TestTransaction(unittest.TestCase):
     def test_min_txn_fee(self):
-        account = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
-        txn = transaction.PaymentTxn(account, 0, 1, 100, gh, account,
+        txn = transaction.PaymentTxn(address, 0, 1, 100, gh, address,
                                      1000, note=b'\x00')
         self.assertEqual(constants.min_txn_fee, txn.fee)
 
     def test_serialize(self):
-        account = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
-        txn = transaction.PaymentTxn(account, 3, 1, 100, gh, account,
+        txn = transaction.PaymentTxn(address, 3, 1, 100, gh, address,
                                      1000, note=bytes([1, 32, 200]))
         enc = encoding.msgpack_encode(txn)
         re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
         self.assertEqual(enc, re_enc)
 
     def test_serialize_zero_amt(self):
-        account = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
-        txn = transaction.PaymentTxn(account, 3, 1, 100, gh, account,
+        txn = transaction.PaymentTxn(address, 3, 1, 100, gh, address,
                                      0, note=bytes([1, 32, 200]))
         enc = encoding.msgpack_encode(txn)
         re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
         self.assertEqual(enc, re_enc)
 
     def test_serialize_gen(self):
-        account = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
-        txn = transaction.PaymentTxn(account, 3, 1, 100, gh, account,
+        txn = transaction.PaymentTxn(address, 3, 1, 100, gh, address,
                                      1000, gen="testnet-v1.0",
-                                     close_remainder_to=account)
+                                     close_remainder_to=address)
         enc = encoding.msgpack_encode(txn)
         re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
         self.assertEqual(enc, re_enc)
@@ -50,11 +50,11 @@ class TestTransaction(unittest.TestCase):
               "electric quit surface sunny dismiss leader blood seat " +
               "clown cost exist hospital century reform able sponsor")
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
-        account = "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI"
+        address = "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI"
         close = "IDUTJEUIEVSMXTU4LGTJWZ2UE2E6TIODUKU6UW3FU3UKIQQ77RLUBBBFLA"
         sk = mnemonic.to_private_key(mn)
-        pk = crypto.address_from_private_key(sk)
-        txn = transaction.PaymentTxn(pk, 4, 12466, 13466, gh, account, 1000,
+        pk = account.address_from_private_key(sk)
+        txn = transaction.PaymentTxn(pk, 4, 12466, 13466, gh, address, 1000,
                                      note=base64.b64decode("6gAVR0Nsv5Y="),
                                      gen="devnet-v33.0",
                                      close_remainder_to=close)
@@ -73,7 +73,7 @@ class TestTransaction(unittest.TestCase):
 
 class TestMnemonic(unittest.TestCase):
     def test_mnemonic_private_key(self):
-        priv_key, address = crypto.generate_account()
+        priv_key, address = account.generate_account()
         mn = mnemonic.from_private_key(priv_key)
         self.assertEqual(len(mn.split(" ")), constants.mnemonic_len)
         self.assertEqual(priv_key, mnemonic.to_private_key(mn))
@@ -133,10 +133,10 @@ class TestAddress(unittest.TestCase):
         self.assertFalse(encoding.is_valid_address(invalid))
 
     def test_encode_decode(self):
-        sk, pk = crypto.generate_account()
+        sk, pk = account.generate_account()
         self.assertEqual(pk, encoding.encode_address(
                          encoding.decode_address(pk)))
-        self.assertEqual(pk, crypto.address_from_private_key(sk))
+        self.assertEqual(pk, account.address_from_private_key(sk))
 
 
 class TestMultisig(unittest.TestCase):
@@ -253,16 +253,16 @@ class TestMultisig(unittest.TestCase):
     def test_errors(self):
 
         # get random private key
-        private_key_1, account_1 = crypto.generate_account()
-        private_key_2, account_2 = crypto.generate_account()
-        private_key_3, account_3 = crypto.generate_account()
+        private_key_1, account_1 = account.generate_account()
+        private_key_2, account_2 = account.generate_account()
+        private_key_3, account_3 = account.generate_account()
 
         # create transaction
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         txn = transaction.PaymentTxn(account_2, 3, 1234, 1334,
                                      gh, account_2, 1000)
 
-        # create multisig account with invalid version
+        # create multisig address with invalid version
         msig = transaction.Multisig(2, 2, [account_1, account_2])
         self.assertRaises(error.UnknownMsigVersionError, msig.validate)
 

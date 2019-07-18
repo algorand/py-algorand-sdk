@@ -12,10 +12,10 @@ word_list = wordlist.word_list_raw().split("\n")
 
 def from_master_derivation_key(key):
     """
-    Return the mnemonic for the master derivation key (base64).
+    Return the mnemonic for the master derivation key.
 
     Args:
-        key (str): master derivation key
+        key (str): master derivation key in base64
 
     Returns:
         str: mnemonic
@@ -33,7 +33,7 @@ def to_master_derivation_key(mnemonic):
         mnemonic (str): mnemonic of the master derivation key
 
     Returns:
-        str: master derivation key
+        str: master derivation key in base64
     """
     key_bytes = _to_key(mnemonic)
     return base64.b64encode(key_bytes).decode()

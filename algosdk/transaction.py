@@ -6,7 +6,7 @@ from cryptography.hazmat.backends import default_backend
 from . import error
 from . import encoding
 from . import constants
-from . import crypto
+from . import account
 from nacl.signing import SigningKey
 
 
@@ -72,7 +72,7 @@ class Transaction:
         return sig
 
     def estimate_size(self):
-        sk, address = crypto.generate_account()
+        sk, address = account.generate_account()
         stx = self.sign(sk)
         return len(base64.b64decode(encoding.msgpack_encode(stx)))
 

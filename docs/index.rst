@@ -1,13 +1,14 @@
-Welcome to py-algorand-sdk
-==========================
+.. mdinclude:: ../README.md
 
+Modules
+=======
 .. toctree::
    :maxdepth: 4
 
+   algosdk.account
    algosdk.algod
    algosdk.auction
    algosdk.constants
-   algosdk.crypto
    algosdk.encoding
    algosdk.error
    algosdk.kmd

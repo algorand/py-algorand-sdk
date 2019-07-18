@@ -9,15 +9,15 @@ Run ```$ pip3 install py-algorand-sdk``` to install the package.
 
 Alternatively, visit https://pypi.org/project/py-algorand-sdk/#files, download a file, and run ```$ pip3 install [file name]``` to install the package.
 
-##Quick start
+## Quick start
 
 Here's a simple example you can run without a node.
 
 ```python
-from algosdk import crypto, encoding
+from algosdk import account, encoding
 
-# generate an offline account
-private_key, address = crypto.generate_account()
+# generate an account
+private_key, address = account.generate_account()
 print("Private key:", private_key)
 print("Address:", address)
 
@@ -50,7 +50,7 @@ $ ./goal wallet new [wallet name] -d [data directory]
 $ ./goal account new -d [data directory] -w [wallet name]
 ```
 
-Visit https://bank.testnet.algorand.network/ and enter the account address to fund your account.
+Visit the algo dispenser at https://bank.testnet.algorand.network/ and enter the account address to fund your account.
 
 Next, in params.py, either update the tokens and addresses, or provide a path to the data directory.
 
@@ -105,7 +105,7 @@ print("Master Derivation Key:", mdk)
 backup = mnemonic.from_master_derivation_key(mdk)
 print("Wallet backup phrase:", backup)
 ```
-You can also back up accounts using mnemonic.fromPrivateKey().
+You can also back up accounts using mnemonic.from_private_key().
 ### recovering a wallet using a backup phrase
 
 ```python
@@ -122,7 +122,8 @@ kcl = kmd.KMDClient(params.kmd_token, params.kmd_address)
 # recover the wallet by passing mdk when creating a wallet
 kcl.create_wallet("wallet_name", "wallet_password", master_deriv_key=mdk)
 ```
-You can also recover accounts using mnemonic.toPrivateKey().
+You can also recover accounts using mnemonic.to_private_key().
+
 ### writing transactions to file
 
 If you don't want to send your transactions now, you can write them to file. This works with both signed and unsigned transactions.
@@ -163,14 +164,14 @@ read_txns = transaction.retrieve_from_file("pathtofile.tx")
 
 ```python
 import params
-from algosdk import crypto, transaction, algod
+from algosdk import account, transaction, algod, encoding
 
 acl = algod.AlgodClient(params.algod_token, params.algod_address)
 
 # generate three accounts
-private_key_1, account_1 = crypto.generate_account()
-private_key_2, account_2 = crypto.generate_account()
-private_key_3, account_3 = crypto.generate_account()
+private_key_1, account_1 = account.generate_account()
+private_key_2, account_2 = account.generate_account()
+private_key_3, account_3 = account.generate_account()
 
 # create a multisig account
 version = 1  # multisig version
@@ -186,7 +187,8 @@ fee = params["fee"]
 
 # create a transaction
 sender = msig.address()
-txn = transaction.PaymentTxn(sender, fee, last_round, last_round+100, gh, account_3, 10000)
+amount = 10000
+txn = transaction.PaymentTxn(sender, fee, last_round, last_round+100, gh, account_3, amount)
 
 # create a SignedTransaction object
 mtx = transaction.MultisigTransaction(txn, msig)
@@ -194,5 +196,10 @@ mtx = transaction.MultisigTransaction(txn, msig)
 # sign the transaction
 mtx.sign(private_key_1)
 mtx.sign(private_key_2)
+
+# print encoded transaction
+print(encoding.msgpack_encode(mtx))
 ```
 
+## License
+py-algorand-sdk is licensed under a MIT license. See the [LICENSE](https://github.com/algorand/py-algorand-sdk/blob/master/LICENSE) file for details.

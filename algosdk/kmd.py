@@ -213,7 +213,7 @@ class KMDClient:
 
     def import_key(self, handle, private_key):
         """
-        Import an account into a wallet.
+        Import an account into the wallet.
 
         Args:
             handle (str): wallet handle token
@@ -327,7 +327,8 @@ class KMDClient:
             "wallet_password": password,
             "transaction": txn
             }
-        result = self.kmd_request("POST", req, data=query)["signed_transaction"]
+        result = self.kmd_request("POST", req, data=query)
+        result = result["signed_transaction"]
         return encoding.msgpack_decode(result)
 
     def list_multisig(self, handle):

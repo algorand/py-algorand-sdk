@@ -22,7 +22,7 @@ def address_from_private_key(private_key):
     Return the address for the private key.
 
     Args:
-        private_key (str): private key of the account
+        private_key (str): private key of the account in base64
 
     Returns:
         str: address of the account

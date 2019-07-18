@@ -2,7 +2,7 @@ from algosdk import encoding
 from algosdk import transaction
 from algosdk import kmd
 from algosdk import algod
-from algosdk import crypto
+from algosdk import account
 from algosdk import mnemonic
 import params
 import json
@@ -61,8 +61,8 @@ if not wallet_id:
 handle = kcl.init_wallet_handle(wallet_id, wallet_pswd)
 print("Wallet handle token: " + handle + "\n")
 
-# generate account with crypto and check if it's valid
-private_key_1, address_1 = crypto.generate_account()
+# generate account with account and check if it's valid
+private_key_1, address_1 = account.generate_account()
 print("Private key: " + private_key_1 + "\n")
 print("First account: " + address_1)
 
@@ -100,12 +100,12 @@ signed_kmd = kcl.sign_transaction(existing_handle, existing_wallet_pswd, txn)
 private_key = kcl.export_key(existing_handle, existing_wallet_pswd,
                              existing_account)
 
-# sign transaction with crypto
-signed_crypto = txn.sign(private_key)
-print("Signature: " + signed_crypto.signature + "\n")
+# sign transaction with account
+signed_account = txn.sign(private_key)
+print("Signature: " + signed_account.signature + "\n")
 
 # check that they're the same
-if signed_crypto.dictify() == signed_kmd.dictify():
+if signed_account.dictify() == signed_kmd.dictify():
     print("Signed transactions are the same!")
 else:
     print("Well that's not good...")
