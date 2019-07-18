@@ -1,4 +1,5 @@
 # py-algorand-sdk
+[![Build Status](https://travis-ci.com/algorand/py-algorand-sdk.svg?token=T43Tcse3Cxcyi7xtqmyQ&branch=master)](https://travis-ci.com/algorand/py-algorand-sdk)
 
 A python library for interacting with the Algorand network.
 
