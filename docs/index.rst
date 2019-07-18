@@ -1,20 +1,18 @@
-.. algosdk documentation master file, created by
-   sphinx-quickstart on Wed Jun 26 09:33:08 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Welcome to algosdk's documentation!
-===================================
+Welcome to py-algorand-sdk
+==========================
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 4
 
+   algosdk.algod
+   algosdk.auction
+   algosdk.constants
+   algosdk.crypto
+   algosdk.encoding
+   algosdk.error
+   algosdk.kmd
+   algosdk.mnemonic
+   algosdk.transaction
+   algosdk.wallet
+   algosdk.wordlist
 
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
