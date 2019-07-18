@@ -26,7 +26,8 @@ class Wallet:
         last_handle_renew (float): time of last handle renew
     """
 
-    def __init__(self, wallet_name, wallet_pswd, kmd_client, driver_name = "sqlite", mdk=None):
+    def __init__(self, wallet_name, wallet_pswd, kmd_client,
+                 driver_name="sqlite", mdk=None):
         self.name = wallet_name
         self.pswd = wallet_pswd
         self.kcl = kmd_client

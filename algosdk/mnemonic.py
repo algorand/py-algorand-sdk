@@ -7,7 +7,6 @@ from . import error
 from . import constants
 
 
-# get the wordlist
 word_list = wordlist.word_list_raw().split("\n")
 
 

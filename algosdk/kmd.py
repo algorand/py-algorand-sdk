@@ -50,7 +50,7 @@ class KMDClient:
             requrl = requrl + "?" + parse.urlencode(params)
         if data:
             data = json.dumps(data, indent=2)
-            data = bytearray(data, "ascii")
+            data = bytearray(data, "utf-8")
         req = Request(
             self.kmd_address+requrl, headers=header,
             method=method, data=data)
@@ -58,12 +58,12 @@ class KMDClient:
         try:
             resp = urlopen(req)
         except urllib.error.HTTPError as e:
-            e = e.read().decode("ascii")
+            e = e.read().decode("utf-8")
             try:
                 raise error.KMDHTTPError(json.loads(e)["message"])
             except:
                 raise error.KMDHTTPError(e)
-        return json.loads(resp.read().decode("ascii"))
+        return json.loads(resp.read().decode("utf-8"))
 
     def versions(self):
         """

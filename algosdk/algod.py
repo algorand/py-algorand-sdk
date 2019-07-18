@@ -55,12 +55,12 @@ class AlgodClient:
         try:
             resp = urlopen(req)
         except urllib.error.HTTPError as e:
-            e = e.read().decode("ascii")
+            e = e.read().decode("utf-8")
             try:
                 raise error.AlgodHTTPError(json.loads(e)["message"])
             except:
                 raise error.AlgodHTTPError(e)
-        return json.loads(resp.read().decode("ascii"))
+        return json.loads(resp.read().decode("utf-8"))
 
     def status(self):
         """Return node status."""
@@ -84,7 +84,7 @@ class AlgodClient:
 
     def pending_transactions(self, max_txns=0):
         """
-        Return up to max_txns pending transactions;
+        Return pending transactions.
 
         Args:
             max_txns (int): maximum number of transactions to return;

@@ -1,0 +1,13 @@
+language: python
+python:
+  - "3.5"
+  - "3.6"
+  - "3.7"
+
+install:
+  - pip3 install pynacl
+  - pip3 install msgpack
+  - pip3 install cryptography
+
+script:
+  - python3 test_unit.py

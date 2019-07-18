@@ -9,14 +9,12 @@ from algosdk import encoding
 from algosdk import algod
 from algosdk import crypto
 from algosdk import mnemonic
-from algosdk import wordlist
 from algosdk import error
 from algosdk import auction
 from algosdk import constants
 from algosdk import wallet
 
 
-# change these to match a wallet
 wallet_name = "unencrypted-default-wallet"
 wallet_pswd = ""
 
@@ -97,7 +95,8 @@ class TestIntegration(unittest.TestCase):
 
         # rename wallet
         self.assertEqual(wallet_name + "newname", self.kcl.rename_wallet(
-                         wallet_id, wallet_pswd, wallet_name + "newname")["name"])
+                         wallet_id, wallet_pswd,
+                         wallet_name + "newname")["name"])
 
         # change it back
         self.assertEqual(wallet_name, self.kcl.rename_wallet(wallet_id,
@@ -393,93 +392,6 @@ class TestIntegration(unittest.TestCase):
         # test handle automation
         w.info()
 
-    def test_errors(self):
-        # get suggested parameters and fee
-        params = self.acl.suggested_params()
-        gen = params["genesisID"]
-        gh = params["genesishashb64"]
-        last_round = params["lastRound"]
-        fee = params["fee"]
-
-        # get random private key
-        random_private_key, account_1 = crypto.generate_account()
-
-        # create transaction
-        txn = transaction.PaymentTxn(self.account_0, fee,
-                                     last_round, last_round+100, gh,
-                                     self.account_0, 1000, gen=gen)
-
-        # try to send transaction without signing
-        self.assertRaises(error.AlgodHTTPError,
-                          self.acl.send_raw_transaction, txn)
-
-        # create multisig account with invalid version
-        msig = transaction.Multisig(2, 2, [self.account_0, self.account_0])
-        self.assertRaises(error.UnknownMsigVersionError, msig.validate)
-
-        # change it to have invalid threshold
-        msig.version = 1
-        msig.threshold = 3
-        self.assertRaises(error.InvalidThresholdError, msig.validate)
-
-        # try to sign multisig transaction
-        msig.threshold = 2
-        mtx = transaction.MultisigTransaction(txn, msig)
-        self.assertRaises(error.BadTxnSenderError,
-                          mtx.sign, random_private_key)
-
-        # change sender address to be correct
-        txn.sender = msig.address()
-        mtx = transaction.MultisigTransaction(txn, msig)
-
-        # try to sign with incorrect private key
-        self.assertRaises(error.InvalidSecretKeyError,
-                          mtx.sign, random_private_key)
-
-        # create another multisig with different address
-        msig_2 = transaction.Multisig(1, 2, [self.account_0, account_1])
-
-        # try to merge with different addresses
-        mtx_2 = transaction.MultisigTransaction(txn, msig_2)
-        self.assertRaises(error.MergeKeysMismatchError,
-                          transaction.MultisigTransaction.merge,
-                          [mtx, mtx_2])
-
-        # create another multisig with same address
-        msig_3 = msig_2.get_account_from_sig()
-
-        # add mismatched signatures
-        msig_2.subsigs[0].signature = "sig2"
-        msig_3.subsigs[0].signature = "sig3"
-
-        # try to merge
-        self.assertRaises(error.DuplicateSigMismatchError,
-                          transaction.MultisigTransaction.merge,
-                          [transaction.MultisigTransaction(txn, msig_2),
-                           transaction.MultisigTransaction(txn, msig_3)])
-
-        # mnemonic with wrong checksum
-        mn = ("abandon abandon abandon abandon abandon abandon abandon " +
-              "abandon abandon abandon abandon abandon abandon abandon " +
-              "abandon abandon abandon abandon abandon abandon abandon " +
-              "abandon abandon abandon abandon")
-        self.assertRaises(error.WrongChecksumError, mnemonic._to_key, mn)
-
-        # mnemonic of wrong length
-        mn = "abandon abandon abandon"
-        self.assertRaises(error.WrongMnemonicLengthError, mnemonic._to_key, mn)
-
-        # key bytes of wrong length
-        key = bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-        self.assertRaises(error.WrongKeyBytesLengthError,
-                          mnemonic._from_key, key)
-
-        # key of wrong length
-        address = "WRONG_LENGTH_TOO_SHORT"
-        self.assertRaises(error.WrongKeyLengthError,
-                          encoding.decode_address, address)
-
     def test_file_read_write(self):
         # get suggested parameters and fee
         params = self.acl.suggested_params()
@@ -513,22 +425,6 @@ class TestIntegration(unittest.TestCase):
 
         # delete the file
         os.remove("raw.tx")
-
-
-class TestUnit(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.acl = algod.AlgodClient(params.algod_token, params.algod_address)
-        cls.kcl = kmd.KMDClient(params.kmd_token, params.kmd_address)
-        w = wallet.Wallet(wallet_name, wallet_pswd, cls.kcl)
-        keys = w.list_keys()
-        max_balance = 0
-        cls.account_0 = ""
-        for k in keys:
-            account_info = cls.acl.account_info(k)
-            if account_info["amount"] > max_balance:
-                max_balance = account_info["amount"]
-                cls.account_0 = k
 
     def test_health(self):
         result = self.acl.health()
@@ -564,86 +460,9 @@ class TestUnit(unittest.TestCase):
         result = self.acl.suggested_fee()
         self.assertIn("fee", result)
 
-    def test_zero_mnemonic(self):
-        zero_bytes = bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-        expected_mnemonic = ("abandon abandon abandon abandon abandon " +
-                             "abandon abandon abandon abandon abandon " +
-                             "abandon abandon abandon abandon abandon " +
-                             "abandon abandon abandon abandon abandon " +
-                             "abandon abandon abandon abandon invest")
-        result = mnemonic._from_key(zero_bytes)
-        self.assertEqual(expected_mnemonic, result)
-        result = mnemonic._to_key(result)
-        self.assertEqual(zero_bytes, result)
-
-    def test_mnemonic(self):
-        result = mnemonic._to_key(mnemonic._from_key(
-                                encoding.decode_address(self.account_0)))
-        self.assertEqual(result, encoding.decode_address(self.account_0))
-
-    def test_mnemonic_private_key(self):
-        priv_key, address = crypto.generate_account()
-        mn = mnemonic.from_private_key(priv_key)
-        self.assertEqual(len(mn.split(" ")), constants.mnemonic_len)
-        self.assertEqual(priv_key, mnemonic.to_private_key(mn))
-
-    def test_address_from_private_key(self):
-        priv_key, expected_address = crypto.generate_account()
-        address = crypto.address_from_private_key(priv_key)
-        self.assertEqual(address, expected_address)
-
-    def test_wordlist(self):
-        result = mnemonic._checksum(bytes(wordlist.word_list_raw(), "ascii"))
-        self.assertEqual(result, "venue")
-
-    def test_msgpack(self):
-        self.maxDiff = None
-        bid = ("gqFigqNiaWSGo2FpZAGjYXVjxCCokNFWl9DCqHrP9trjPICAMGOaRoX/OR+" +
-               "M6tHWhfUBkKZiaWRkZXLEIP1rCXe2x5+exPBfU3CZwGPMY8mzwvglET+Qtg" +
-               "fCPdCmo2N1cs8AAADN9kTOAKJpZM5JeDcCpXByaWNlzQMgo3NpZ8RAiR06J" +
-               "4suAixy13BKHlw4VrORKzLT5CJr9n3YSj0Ao6byV23JHGU0yPf7u9/o4ECw" +
-               "4Xy9hc9pWopLW97xKXRfA6F0oWI=")
-        stxn = ("gqNzaWfEQGdpjnStb70k2iXzOlu+RSMgCYLe25wkUfbgRsXs7jx6rbW61i" +
-                "vCs6/zGs3gZAZf4L2XAQak7OjMh3lw9MTCIQijdHhuiaNhbXTOAAGGoKNm" +
-                "ZWXNA+iiZnbNcl+jZ2Vuq25ldHdvcmstdjM4omdoxCBN/+nfiNPXLbuigk" +
-                "8M/TXsMUfMK7dV//xB1wkoOhNu9qJsds1yw6NyY3bEIPRUuVDPVUFC7Jk3" +
-                "+xDjHJfwWFDp+Wjy+Hx3cwL9ncVYo3NuZMQgGC5kQiOIPooA8mrvoHRyFt" +
-                "k27F/PPN08bAufGhnp0BGkdHlwZaNwYXk=")
-        paytxn = ("iaNhbXTOAAGGoKNmZWXNA+iiZnbNcq2jZ2Vuq25ldHdvcmstdjM4omdo" +
-                  "xCBN/+nfiNPXLbuigk8M/TXsMUfMK7dV//xB1wkoOhNu9qJsds1zEaNy" +
-                  "Y3bEIAZ2cvp4J0OiBy5eAHIX/njaRko955rEdN4AUNEl4rxTo3NuZMQg" +
-                  "GC5kQiOIPooA8mrvoHRyFtk27F/PPN08bAufGhnp0BGkdHlwZaNwYXk=")
-        msigtxn = ("gqRtc2lng6ZzdWJzaWeSgqJwa8Qg1ke3gkLuR0MUN/Ku0oyiRVIm9P1" +
-                   "QFDaiEhT5vtfLmd+hc8RAIEbfnhccjWfYQFQp/P4aJjATFdgaDDpnhy" +
-                   "JF0tU/37CO5I5hhoCvUCRH/A/6X94Ewz9YEtk5dANEGKQW+/WyAIKic" +
-                   "GvEIKgAZfZ4iDC+UY/P5F3tgs5rqeyYt08LT0c/D78u0V7KoXPEQCxU" +
-                   "kQgTVC9lLpKVzcZGKesSCQcZL9UjXTzrteADicvcca7KT3WP0crGgAf" +
-                   "J3a17Na5cykJzFEn7pq2SHgwD/QujdGhyAqF2AaN0eG6Jo2FtdM0D6K" +
-                   "NmZWXNA+iiZnbNexSjZ2Vuq25ldHdvcmstdjM4omdoxCBN/+nfiNPXL" +
-                   "buigk8M/TXsMUfMK7dV//xB1wkoOhNu9qJsds17eKNyY3bEIBguZEIj" +
-                   "iD6KAPJq76B0chbZNuxfzzzdPGwLnxoZ6dARo3NuZMQgpuIJvJzW8E4" +
-                   "uxsQGCW0S3n1u340PbHTB2zhtXo/AiI6kdHlwZaNwYXk=")
-        keyregtxn = ("jKNmZWXNA+iiZnbNcoqjZ2Vuq25ldHdvcmstdjM4omdoxCBN/+nfi" +
-                     "NPXLbuigk8M/TXsMUfMK7dV//xB1wkoOhNu9qJsds1y7qZzZWxrZX" +
-                     "nEIBguZEIjiD6KAPJq76B0chbZNuxfzzzdPGwLnxoZ6dARo3NuZMQ" +
-                     "gGC5kQiOIPooA8mrvoHRyFtk27F/PPN08bAufGhnp0BGkdHlwZaZr" +
-                     "ZXlyZWendm90ZWZzdM1yiqZ2b3Rla2TNMDmndm90ZWtlecQgGC5kQ" +
-                     "iOIPooA8mrvoHRyFtk27F/PPN08bAufGhnp0BGndm90ZWxzdM1y7g==")
-        self.assertEqual(bid, encoding.msgpack_encode(
-                         encoding.msgpack_decode(bid)))
-        self.assertEqual(stxn, encoding.msgpack_encode(
-                         encoding.msgpack_decode(stxn)))
-        self.assertEqual(paytxn, encoding.msgpack_encode(
-                         encoding.msgpack_decode(paytxn)))
-        self.assertEqual(msigtxn, encoding.msgpack_encode(
-                         encoding.msgpack_decode(msigtxn)))
-        self.assertEqual(keyregtxn, encoding.msgpack_encode(
-                         encoding.msgpack_decode(keyregtxn)))
-
 
 if __name__ == "__main__":
-    to_run = [TestUnit, TestIntegration]  # remove one to only one
+    to_run = [TestIntegration]
     loader = unittest.TestLoader()
     suites = [loader.loadTestsFromTestCase(test_class)
               for test_class in to_run]

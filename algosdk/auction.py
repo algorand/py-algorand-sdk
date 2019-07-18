@@ -54,8 +54,8 @@ class Bid:
             SignedBid: signed bid with the signature
         """
         temp = encoding.msgpack_encode(self)
-        to_sign = constants.bid_prefix + base64.b64decode(bytes(temp, "ascii"))
-        private_key = base64.b64decode(bytes(private_key, "ascii"))
+        to_sign = constants.bid_prefix + base64.b64decode(bytes(temp, "utf-8"))
+        private_key = base64.b64decode(bytes(private_key, "utf-8"))
         signing_key = SigningKey(private_key[:constants.signing_key_len_bytes])
         signed = signing_key.sign(to_sign)
         sig = signed.signature
@@ -92,7 +92,8 @@ class SignedBid:
 
     @staticmethod
     def undictify(d):
-        return SignedBid(Bid.undictify(d["bid"]), base64.b64encode(d["sig"]).decode())
+        return SignedBid(Bid.undictify(d["bid"]),
+                         base64.b64encode(d["sig"]).decode())
 
 
 class NoteField:

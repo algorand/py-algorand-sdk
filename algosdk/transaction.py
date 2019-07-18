@@ -31,7 +31,7 @@ class Transaction:
             str: transaction ID
         """
         txn = encoding.msgpack_encode(self)
-        to_sign = constants.txid_prefix + base64.b64decode(bytes(txn, "ascii"))
+        to_sign = constants.txid_prefix + base64.b64decode(bytes(txn, "utf-8"))
         txidbytes = hashes.Hash(hashes.SHA512_256(), default_backend())
         txidbytes.update(to_sign)
         txid = txidbytes.finalize()
@@ -63,9 +63,9 @@ class Transaction:
         Returns:
             bytes: signature
         """
-        private_key = base64.b64decode(bytes(private_key, "ascii"))
+        private_key = base64.b64decode(bytes(private_key, "utf-8"))
         txn = encoding.msgpack_encode(self)
-        to_sign = constants.txid_prefix + base64.b64decode(bytes(txn, "ascii"))
+        to_sign = constants.txid_prefix + base64.b64decode(bytes(txn, "utf-8"))
         signing_key = SigningKey(private_key[:constants.signing_key_len_bytes])
         signed = signing_key.sign(to_sign)
         sig = signed.signature
@@ -243,6 +243,7 @@ class KeyregTxn(Transaction):
         k.fee = d["fee"]
         return k
 
+
 class SignedTransaction:
     """
     Represents a signed transaction.
@@ -314,8 +315,8 @@ class MultisigTransaction:
         if not self.transaction.sender == addr:
             raise error.BadTxnSenderError
         index = -1
-        public_key = base64.b64decode(bytes(private_key,
-                                      "ascii"))[constants.signing_key_len_bytes:]
+        public_key = base64.b64decode(bytes(private_key, "utf-8"))
+        public_key = public_key[constants.signing_key_len_bytes:]
         for s in range(len(self.multisig.subsigs)):
             if self.multisig.subsigs[s].public_key == public_key:
                 index = s
@@ -415,7 +416,7 @@ class Multisig:
 
     def address(self):
         """Return the multisig account address."""
-        msig_bytes = (bytes(constants.msig_addr_prefix, "ascii") +
+        msig_bytes = (bytes(constants.msig_addr_prefix, "utf-8") +
                       bytes([self.version]) + bytes([self.threshold]))
         for s in self.subsigs:
             msig_bytes += s.public_key
@@ -516,6 +517,8 @@ def write_to_file(txns, path, overwrite=True):
         else:
             enc = msgpack.packb(txn.dictify(), use_bin_type=True)
             f.write(enc)
+    f.close()
+    return True
 
 
 def retrieve_from_file(path):
@@ -542,4 +545,5 @@ def retrieve_from_file(path):
             txns.append(PaymentTxn.undictify(txn["txn"]))
         elif txn["txn"]["type"] == "keyreg":
             txns.append(KeyregTxn.undictify(txn["txn"]))
+    f.close()
     return txns

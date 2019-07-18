@@ -8,13 +8,32 @@ Run ```$ pip3 install py-algorand-sdk``` to install the package.
 
 Alternatively, visit https://pypi.org/project/py-algorand-sdk/#files, download a file, and run ```$ pip3 install [file name]``` to install the package.
 
+##Quick start
+
+Here's a simple example you can run without a node.
+
+```python
+from algosdk import crypto, encoding
+
+# generate an offline account
+private_key, address = crypto.generate_account()
+print("Private key:", private_key)
+print("Address:", address)
+
+# check if the address is valid
+if encoding.is_valid_address(address):
+    print("The address is valid!")
+else:
+    print("The address is invalid.")
+```
+
 ## Node setup 
 
 Follow the instructions at https://developer.algorand.org/docs/introduction-installing-node to install a node on your computer. 
 
 ## Running example.py
 
-Before trying the examples, start kmd:
+Before running example.py, start kmd:
 
 ```
 $ ./goal kmd start -d [data directory]
@@ -30,7 +49,7 @@ $ ./goal wallet new [wallet name] -d [data directory]
 $ ./goal account new -d [data directory] -w [wallet name]
 ```
 
-Now visit https://bank.testnet.algorand.network/ and enter the account address to fund your account.
+Visit https://bank.testnet.algorand.network/ and enter the account address to fund your account.
 
 Next, in params.py, either update the tokens and addresses, or provide a path to the data directory.
 

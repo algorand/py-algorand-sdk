@@ -1,6 +1,7 @@
 class BadTxnSenderError(Exception):
     def __init__(self):
-        Exception.__init__(self, "transaction sender does not match multisig parameters")
+        Exception.__init__(self, "transaction sender does not " +
+                                 "match multisig parameters")
 
 
 class InvalidThresholdError(Exception):
@@ -10,7 +11,8 @@ class InvalidThresholdError(Exception):
 
 class InvalidSecretKeyError(Exception):
     def __init__(self):
-        Exception.__init__(self, "secret key has no corresponding public key in multisig ")
+        Exception.__init__(self, "secret key has no corresponding " +
+                                 "public key in multisig ")
 
 
 class MergeKeysMismatchError(Exception):
