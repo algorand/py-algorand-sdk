@@ -7,7 +7,7 @@ A python library for interacting with the Algorand network.
 
 Run ```$ pip3 install py-algorand-sdk``` to install the package.
 
-Alternatively, visit https://pypi.org/project/py-algorand-sdk/#files, download a file, and run ```$ pip3 install [file name]``` to install the package.
+Alternatively, choose a [distribution file](https://pypi.org/project/py-algorand-sdk/#files), and run ```$ pip3 install [file name]```.
 
 ## Quick start
 
@@ -30,11 +30,11 @@ else:
 
 ## Node setup 
 
-Follow the instructions at https://developer.algorand.org/docs/introduction-installing-node to install a node on your computer. 
+Follow the instructions in Algorand's [developer resources](https://developer.algorand.org/docs/introduction-installing-node) to install a node on your computer. 
 
 ## Running example.py
 
-Before running example.py, start kmd:
+Before running [example.py](https://github.com/algorand/py-algorand-sdk/blob/master/example.py), start kmd:
 
 ```
 $ ./goal kmd start -d [data directory]
@@ -50,9 +50,9 @@ $ ./goal wallet new [wallet name] -d [data directory]
 $ ./goal account new -d [data directory] -w [wallet name]
 ```
 
-Visit the algo dispenser at https://bank.testnet.algorand.network/ and enter the account address to fund your account.
+Visit the [Algorand dispenser](https://bank.testnet.algorand.network/) and enter the account address to fund your account.
 
-Next, in params.py, either update the tokens and addresses, or provide a path to the data directory.
+Next, in [params.py](https://github.com/algorand/py-algorand-sdk/blob/master/params.py), either update the tokens and addresses, or provide a path to the data directory.
 
 You're now ready to run example.py!
 
@@ -146,7 +146,8 @@ last_round = params["lastRound"]
 fee = params["fee"]
 
 # create a transaction
-txn = transaction.PaymentTxn(sender, fee, last_round, last_round+100, gh, receiver, 10000)
+amount = 10000
+txn = transaction.PaymentTxn(sender, fee, last_round, last_round+100, gh, receiver, amount)
 
 # write to file
 txns = [txn]
