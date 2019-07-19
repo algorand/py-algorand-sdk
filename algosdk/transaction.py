@@ -83,7 +83,7 @@ class PaymentTxn(Transaction):
 
     Args:
         sender (str): address of the sender
-        fee (int): transaction fee
+        fee (int): transaction fee per byte
         first (int): first round for which the transaction is valid
         last (int): last round for which the transaction is valid
         gh (str): genesis_hash
@@ -167,7 +167,7 @@ class KeyregTxn(Transaction):
 
     Args:
         sender (str): address of sender
-        fee (int): transaction fee
+        fee (int): transaction fee per byte
         first (int): first round for which the transaction is valid
         last (int): last round for which the transaction is valid
         gh (str): genesis_hash

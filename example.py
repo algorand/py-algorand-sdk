@@ -89,8 +89,9 @@ block_info = acl.block_info(last_round)
 print("Block", last_round, "info:", json.dumps(block_info, indent=2), "\n")
 
 # create a transaction
+amount = 100000
 txn = transaction.PaymentTxn(existing_account, fee, last_round,
-                             last_round+100, gh, address_1, 100000, gen=gen)
+                             last_round+100, gh, address_1, amount, gen=gen)
 print("Encoded transaction:", encoding.msgpack_encode(txn), "\n")
 
 # sign transaction with kmd

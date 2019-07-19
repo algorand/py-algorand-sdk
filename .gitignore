@@ -105,7 +105,3 @@ venv.bak/
 
 # vscode
 .vscode/
-
-# playground
-main.py
-playground.py
