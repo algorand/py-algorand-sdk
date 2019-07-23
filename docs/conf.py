@@ -28,6 +28,7 @@ author = 'Algorand'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.napoleon', 'm2r']
+source_suffix = ['.rst', '.md']
 
 napoleon_google_docstring = True
 napoleon_numpy_docstring = False

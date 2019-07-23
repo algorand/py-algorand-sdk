@@ -433,11 +433,12 @@ class Multisig:
         return od
 
     def json_dictify(self):
-        od = OrderedDict()
-        od["subsig"] = [subsig.json_dictify() for subsig in self.subsigs]
-        od["thr"] = self.threshold
-        od["v"] = self.version
-        return od
+        d = {
+            "subsig": [subsig.json_dictify() for subsig in self.subsigs],
+            "thr": self.threshold,
+            "v": self.version
+        }
+        return d
 
     @staticmethod
     def undictify(d):
@@ -477,11 +478,13 @@ class MultisigSubsig:
         return od
 
     def json_dictify(self):
-        od = OrderedDict()
-        od["pk"] = base64.b64encode(self.public_key).decode()
+        d = {
+            "pk": base64.b64encode(self.public_key).decode()
+
+        }
         if self.signature:
-            od["s"] = base64.b64encode(self.signature).decode()
-        return od
+            d["s"] = base64.b64encode(self.signature).decode()
+        return d
 
     @staticmethod
     def undictify(d):

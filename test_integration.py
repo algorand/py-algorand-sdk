@@ -240,7 +240,7 @@ class TestIntegration(unittest.TestCase):
         signed_kmd = self.kcl.sign_multisig_transaction(handle, wallet_pswd,
                                                         account_2, msig_1)
 
-        # sign using account
+        # sign offline
         mtx1 = transaction.MultisigTransaction(txn, msig)
         mtx1.sign(private_key_1)
         mtx2 = transaction.MultisigTransaction(txn, msig)
@@ -360,7 +360,7 @@ class TestIntegration(unittest.TestCase):
         msig_1 = w.sign_multisig_transaction(account_1, mtx)
         signed_kmd = w.sign_multisig_transaction(account_2, msig_1)
 
-        # sign the multisig using account
+        # sign the multisig offline
         mtx1 = transaction.MultisigTransaction(txn, msig)
         mtx1.sign(private_key_1)
         mtx2 = transaction.MultisigTransaction(txn, msig)
