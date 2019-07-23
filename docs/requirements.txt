@@ -1,1 +1,2 @@
 m2r==0.2.1
+py-algorand-sdk==1.0.0
