@@ -29,6 +29,7 @@ author = 'Algorand'
 # ones.
 extensions = ['sphinx.ext.napoleon', 'm2r']
 source_suffix = ['.rst', '.md']
+master_doc = 'index'
 
 napoleon_google_docstring = True
 napoleon_numpy_docstring = False
