@@ -15,7 +15,6 @@ setuptools.setup(
     license="MIT",
     project_urls={
         "Source": "https://github.com/algorand/py-algorand-sdk",
-        "Documentation": "py-algorand-sdk.readthedocs.io"
     },
     install_requires=["pynacl", "cryptography", "msgpack"],
     packages=["algosdk"]
