@@ -75,7 +75,7 @@ class TestIntegration(unittest.TestCase):
         signed_account = txn.sign(private_key_0)
 
         # send transaction
-        send = self.acl.send_raw_transaction(signed_account)
+        send = self.acl.send_transaction(signed_account)
         self.assertEqual(send, txn.get_txid())
         del_1 = self.kcl.delete_key(handle, wallet_pswd, account_1)
         self.assertTrue(del_1)
@@ -168,7 +168,7 @@ class TestIntegration(unittest.TestCase):
                          encoding.msgpack_encode(signed_kmd))
 
         # send the transaction
-        send = self.acl.send_raw_transaction(signed_account)
+        send = self.acl.send_transaction(signed_account)
         self.assertEqual(send, txid)
 
         # get transaction info in pending transactions
@@ -412,10 +412,11 @@ class TestIntegration(unittest.TestCase):
         stx = txn.sign(private_key)
 
         # write to file
-        transaction.write_to_file([txn, stx], "raw.tx")
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        transaction.write_to_file([txn, stx], dir_path + "/raw.tx")
 
         # read from file
-        txns = transaction.retrieve_from_file("raw.tx")
+        txns = transaction.retrieve_from_file(dir_path + "/raw.tx")
 
         # check that the transactions are still the same
         self.assertEqual(encoding.msgpack_encode(txn),

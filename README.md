@@ -202,5 +202,48 @@ mtx.sign(private_key_2)
 print(encoding.msgpack_encode(mtx))
 ```
 
+### working with NoteField
+We can put things in the "note" field of a transaction; here's an example with an auction bid. Note that you can put any bytes you want in the "note" field; you don't have to use the NoteField object.
+
+```python
+from algosdk import auction, transaction, encoding, account, constants
+import base64
+
+# generate account
+private_key, address = account.generate_account()
+auction_address = "string address"
+
+# create bid
+external_currency = 10000  # how much external currency you're willing to spend
+max_price = 260  # maximum price for one algo
+bid = auction.Bid(address, external_currency, max_price,
+                  "bid_id", auction_address, "auc_id")
+
+# sign bid
+sb = bid.sign(private_key)
+
+# create notefield
+note_field = auction.NoteField(sb, constants.note_field_type_bid)
+
+# create transaction; you can sign and send this like any other transaction
+fee = 1
+first_valid_round = 567
+gh = "genesis hash"
+note_field_bytes = base64.b64decode(encoding.msgpack_encode(note_field))
+txn = transaction.PaymentTxn(address, fee, first_valid_round,
+                             first_valid_round+100, gh, auction_address,
+                             100000, note=note_field_bytes)
+```
+
+We can also get the NoteField object back from its bytes:
+```python
+# decode notefield
+decoded = encoding.msgpack_decode(base64.b64encode(note_field_bytes))
+print(decoded.dictify())
+```
+
+## Documentation
+Documentation for the Python SDK is available at [py-algorand-sdk.readthedocs.io](https://py-algorand-sdk.readthedocs.io/en/latest/).
+
 ## License
 py-algorand-sdk is licensed under a MIT license. See the [LICENSE](https://github.com/algorand/py-algorand-sdk/blob/master/LICENSE) file for details.

@@ -112,7 +112,7 @@ else:
     print("Well that's not good...")
 
 # send the transaction
-transaction_id = acl.send_raw_transaction(signed_kmd)
+transaction_id = acl.send_transaction(signed_kmd)
 print("\nTransaction was sent!")
 print("Transaction ID: " + transaction_id + "\n")
 

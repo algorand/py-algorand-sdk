@@ -176,7 +176,7 @@ class TestMultisig(unittest.TestCase):
         self.assertEqual(golden, encoding.msgpack_encode(mtx))
 
         mtx_2 = transaction.MultisigTransaction(txn,
-                                                msig.get_account_from_sig())
+                                                msig.get_multisig_account())
         mn2 = ("since during average anxiety protect cherry club long " +
                "lawsuit loan expand embark forum theory winter park twenty " +
                "ball kangaroo cram burst board host ability left")
@@ -295,7 +295,7 @@ class TestMultisig(unittest.TestCase):
                           [mtx, mtx_2])
 
         # create another multisig with same address
-        msig_3 = msig_2.get_account_from_sig()
+        msig_3 = msig_2.get_multisig_account()
 
         # add mismatched signatures
         msig_2.subsigs[0].signature = "sig2"

@@ -307,7 +307,7 @@ class MultisigTransaction:
             A new signature will replace the old if there is already a
             signature for the address. To sign another transaction, you can
             either overwrite the signatures in the current Multisig, or you
-            can use Multisig.get_account_from_multisig() to get a new multisig
+            can use Multisig.get_multisig_account() to get a new multisig
             object with the same addresses.
         """
         self.multisig.validate()
@@ -447,7 +447,7 @@ class Multisig:
         msig.subsigs = subsigs
         return msig
 
-    def get_account_from_sig(self):
+    def get_multisig_account(self):
         """Return a Multisig object without signatures."""
         msig = Multisig(self.version, self.threshold, self.get_public_keys())
         for s in msig.subsigs:

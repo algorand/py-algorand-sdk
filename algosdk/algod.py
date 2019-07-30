@@ -188,6 +188,20 @@ class AlgodClient:
 
     def send_raw_transaction(self, txn):
         """
+        Broadcast a signed transaction to the network.
+
+        Args:
+            txn (str): transaction to send, encoded in base64
+
+        Returns:
+            str: transaction ID
+        """
+        txn = base64.b64decode(txn)
+        req = "/transactions"
+        return self.algod_request("POST", req, data=txn)["txId"]
+
+    def send_transaction(self, txn):
+        """
         Broadcast a signed transaction object to the network.
 
         Args:
