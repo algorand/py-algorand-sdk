@@ -8,6 +8,9 @@ install:
   - pip3 install pynacl
   - pip3 install msgpack
   - pip3 install cryptography
+  - curl https://raw.githubusercontent.com/algorand/algorand-sdk-testing/master/scripts/sdkupdate.sh -o ~/sdkupdate.sh
+  - chmod +x ~/sdkupdate.sh
 
 script:
   - python3 test_unit.py
+  - ~/sdkupdate.sh --py
