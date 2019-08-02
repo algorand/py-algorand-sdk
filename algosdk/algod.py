@@ -13,11 +13,11 @@ class AlgodClient:
     Client class for kmd. Handles all algod requests.
 
     Args:
-        algod_token (str): algod API token
+        algod_token (str|dict): algod API token
         algod_address (str): algod address
 
     Attributes:
-        algod_token (str)
+        algod_token (str|dict)
         algod_address (str)
     """
     def __init__(self, algod_token, algod_address):
@@ -37,12 +37,15 @@ class AlgodClient:
         Returns:
             dict: loaded from json response body
         """
-        if requrl in constants.no_auth:
-            header = {}
+        if isinstance(self.algod_token, dict):
+            header = self.algod_token
         else:
-            header = {
-                constants.algod_auth_header: self.algod_token
-                }
+            if requrl in constants.no_auth:
+                header = {}
+            else:
+                header = {
+                    constants.algod_auth_header: self.algod_token
+                    }
 
         if requrl not in constants.unversioned_paths:
             requrl = constants.api_version_path_prefix + requrl
