@@ -8,7 +8,7 @@ def microalgos_to_algos(microalgos):
     Args:
         microalgos (int): how many microalgos
 
-    Re turns:
+    Returns:
         int or float: how many algos
     """
     return microalgos/constants.microalgos_to_algos_ratio
