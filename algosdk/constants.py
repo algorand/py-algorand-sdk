@@ -46,3 +46,7 @@ txid_prefix = bytes("TX", "ascii")
 """bytes: transaction prefix when signing"""
 bid_prefix = bytes("aB", "ascii")
 """bytes: bid prefix when signing"""
+
+
+microalgos_to_algos_ratio = 1000000
+"""int: how many microalgos per algo"""
