@@ -12,5 +12,6 @@ algosdk
    algosdk.kmd
    algosdk.mnemonic
    algosdk.transaction
+   algosdk.util
    algosdk.wallet
    algosdk.wordlist
