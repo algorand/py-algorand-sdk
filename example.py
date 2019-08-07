@@ -95,24 +95,25 @@ txn = transaction.PaymentTxn(existing_account, fee, last_round,
 print("Encoded transaction:", encoding.msgpack_encode(txn), "\n")
 
 # sign transaction with kmd
-signed_kmd = kcl.sign_transaction(existing_handle, existing_wallet_pswd, txn)
+signed_with_kmd = kcl.sign_transaction(existing_handle,
+                                       existing_wallet_pswd, txn)
 
 # get the private key for the existing account
 private_key = kcl.export_key(existing_handle, existing_wallet_pswd,
                              existing_account)
 
-# sign transaction with account
-signed_account = txn.sign(private_key)
-print("Signature: " + signed_account.signature + "\n")
+# sign transaction offline
+signed_offline = txn.sign(private_key)
+print("Signature: " + signed_offline.signature + "\n")
 
 # check that they're the same
-if signed_account.dictify() == signed_kmd.dictify():
+if signed_offline.dictify() == signed_with_kmd.dictify():
     print("Signed transactions are the same!")
 else:
     print("Well that's not good...")
 
 # send the transaction
-transaction_id = acl.send_transaction(signed_kmd)
+transaction_id = acl.send_transaction(signed_with_kmd)
 print("\nTransaction was sent!")
 print("Transaction ID: " + transaction_id + "\n")
 

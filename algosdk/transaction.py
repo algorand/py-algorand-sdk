@@ -72,7 +72,7 @@ class Transaction:
         return sig
 
     def estimate_size(self):
-        sk, address = account.generate_account()
+        sk, _ = account.generate_account()
         stx = self.sign(sk)
         return len(base64.b64decode(encoding.msgpack_encode(stx)))
 
@@ -93,6 +93,7 @@ class PaymentTxn(Transaction):
             and remaining algos will be sent to this address
         note (bytes, optional): encoded NoteField object
         gen (str, optional): genesis_id
+        flat_fee (bool): whether the specified fee is a flat fee
 
     Attributes:
         sender (bytes)
@@ -109,13 +110,17 @@ class PaymentTxn(Transaction):
     """
 
     def __init__(self, sender, fee, first, last, gh, receiver, amt,
-                 close_remainder_to=None, note=None, gen=None):
+                 close_remainder_to=None, note=None, gen=None, flat_fee=False):
         Transaction.__init__(self,  sender, fee, first, last, note, gen, gh)
         self.receiver = receiver
         self.amt = amt
         self.close_remainder_to = close_remainder_to
         self.type = "pay"
-        self.fee = max(self.estimate_size()*self.fee, constants.min_txn_fee)
+        if flat_fee:
+            self.fee = max(constants.min_txn_fee, self.fee)
+        else:
+            self.fee = max(self.estimate_size()*self.fee,
+                           constants.min_txn_fee)
 
     def dictify(self):
         od = OrderedDict()
@@ -156,8 +161,8 @@ class PaymentTxn(Transaction):
             fv = d["fv"]
         tr = PaymentTxn(encoding.encode_address(d["snd"]), d["fee"], fv,
                         d["lv"], base64.b64encode(d["gh"]).decode(),
-                        encoding.encode_address(d["rcv"]), amt, crt, note, gen)
-        tr.fee = d["fee"]
+                        encoding.encode_address(d["rcv"]), amt,
+                        crt, note, gen, True)
         return tr
 
 
@@ -178,6 +183,7 @@ class KeyregTxn(Transaction):
         votekd (int): vote key dilution
         note (bytes, optional): encoded NoteField object
         gen (str): genesis_id
+        flat_fee (bool): whether the specified fee is a flat fee
 
     Attributes:
         sender (str)
@@ -194,8 +200,8 @@ class KeyregTxn(Transaction):
         genesis_id (str)
     """
 
-    def __init__(self, sender, fee, first, last, gh, votekey, selkey,
-                 votefst, votelst, votekd, note=None, gen=None):
+    def __init__(self, sender, fee, first, last, gh, votekey, selkey, votefst,
+                 votelst, votekd, note=None, gen=None, flat_fee=False):
         Transaction.__init__(self, sender, fee, first, last, note, gen, gh)
         self.votepk = votekey
         self.selkey = selkey
@@ -203,7 +209,11 @@ class KeyregTxn(Transaction):
         self.votelst = votelst
         self.votekd = votekd
         self.type = "keyreg"
-        self.fee = max(self.estimate_size()*self.fee, constants.min_txn_fee)
+        if flat_fee:
+            self.fee = max(constants.min_txn_fee, self.fee)
+        else:
+            self.fee = max(self.estimate_size()*self.fee,
+                           constants.min_txn_fee)
 
     def dictify(self):
         od = OrderedDict()
@@ -239,8 +249,7 @@ class KeyregTxn(Transaction):
                       d["lv"], base64.b64encode(d["gh"]).decode(),
                       encoding.encode_address(d["votekey"]),
                       encoding.encode_address(d["selkey"]), d["votefst"],
-                      d["votelst"], d["votekd"], note, gen)
-        k.fee = d["fee"]
+                      d["votelst"], d["votekd"], note, gen, True)
         return k
 
 
