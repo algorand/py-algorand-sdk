@@ -7,6 +7,7 @@ from . import error
 from . import kmd
 from . import mnemonic
 from . import transaction
+from . import util
 from . import wallet
 from . import wordlist
 

@@ -25,7 +25,7 @@ class Transaction:
 
     def get_txid(self):
         """
-        Get a transaction's ID.
+        Get the transaction's ID.
 
         Returns:
             str: transaction ID
@@ -40,7 +40,7 @@ class Transaction:
 
     def sign(self, private_key):
         """
-        Sign a transaction with a private key.
+        Sign the transaction with a private key.
 
         Args:
             private_key (str): the private key of the signing account
@@ -55,7 +55,7 @@ class Transaction:
 
     def raw_sign(self, private_key):
         """
-        Sign a transaction.
+        Sign the transaction.
 
         Args:
             private_key (str): the private key of the signing account
@@ -83,7 +83,7 @@ class PaymentTxn(Transaction):
 
     Args:
         sender (str): address of the sender
-        fee (int): transaction fee per byte
+        fee (int): transaction fee (per byte if flat_fee is false)
         first (int): first round for which the transaction is valid
         last (int): last round for which the transaction is valid
         gh (str): genesis_hash
@@ -172,7 +172,7 @@ class KeyregTxn(Transaction):
 
     Args:
         sender (str): address of sender
-        fee (int): transaction fee per byte
+        fee (int): transaction fee (per byte if flat_fee is false)
         first (int): first round for which the transaction is valid
         last (int): last round for which the transaction is valid
         gh (str): genesis_hash
@@ -307,7 +307,7 @@ class MultisigTransaction:
 
     def sign(self, private_key):
         """
-        Sign a multisig transaction.
+        Sign the multisig transaction.
 
         Args:
             private_key (str): private key of signing account
@@ -489,7 +489,6 @@ class MultisigSubsig:
     def json_dictify(self):
         d = {
             "pk": base64.b64encode(self.public_key).decode()
-
         }
         if self.signature:
             d["s"] = base64.b64encode(self.signature).decode()

@@ -5,6 +5,7 @@ import base64
 from . import wordlist
 from . import error
 from . import constants
+from . import encoding
 
 
 word_list = wordlist.word_list_raw().split("\n")
@@ -66,6 +67,21 @@ def to_private_key(mnemonic):
     key_bytes = _to_key(mnemonic)
     key = signing.SigningKey(key_bytes)
     return base64.b64encode(key.encode() + key.verify_key.encode()).decode()
+
+
+def to_public_key(mnemonic):
+    """
+    Return the public key for the mnemonic.
+
+    Args:
+        mnemonic (str): mnemonic of the public key
+
+    Returns:
+        str: public key in base32
+    """
+    key_bytes = _to_key(mnemonic)
+    key = signing.SigningKey(key_bytes)
+    return encoding.encode_address(key.verify_key.encode())
 
 
 def _from_key(key):
