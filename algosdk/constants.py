@@ -42,11 +42,12 @@ min_txn_fee = 1000
 """int: minimum transaction fee"""
 
 
-txid_prefix = bytes("TX", "ascii")
+txid_prefix = b"TX"
 """bytes: transaction prefix when signing"""
-bid_prefix = bytes("aB", "ascii")
+bid_prefix = b"aB"
 """bytes: bid prefix when signing"""
-bytes_prefix = bytes("Ab", "ascii")
+bytes_prefix = b"NF"
+"""bytes: bytes prefix when signing"""
 
 
 microalgos_to_algos_ratio = 1000000

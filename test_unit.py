@@ -1,5 +1,6 @@
 import base64
 import unittest
+import random
 from algosdk import transaction
 from algosdk import encoding
 from algosdk import account
@@ -7,6 +8,7 @@ from algosdk import mnemonic
 from algosdk import wordlist
 from algosdk import error
 from algosdk import constants
+from algosdk import util
 
 
 class TestTransaction(unittest.TestCase):
@@ -361,12 +363,30 @@ class TestMsgpack(unittest.TestCase):
                          encoding.msgpack_decode(keyregtxn)))
 
 
+class TestSignBytes(unittest.TestCase):
+    def test_sign(self):
+        sk, pk = account.generate_account()
+        message = bytes([random.randint(0, 255) for x in range(15)])
+        signature = util.sign_bytes(message, sk)
+        self.assertTrue(util.verify_bytes(message, signature, pk))
+
+    def test_verify_negative(self):
+        sk, pk = account.generate_account()
+        intarray = [random.randint(0, 255) for x in range(15)]
+        message = bytes(intarray)
+        signature = util.sign_bytes(message, sk)
+        intarray[0] = (intarray[0]+1) % 256
+        changed_message = bytes(intarray)
+        self.assertFalse(util.verify_bytes(changed_message, signature, pk))
+
+
 if __name__ == "__main__":
     to_run = [TestTransaction,
               TestMnemonic,
               TestAddress,
               TestMultisig,
-              TestMsgpack]
+              TestMsgpack,
+              TestSignBytes]
     loader = unittest.TestLoader()
     suites = [loader.loadTestsFromTestCase(test_class)
               for test_class in to_run]
