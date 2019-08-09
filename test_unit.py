@@ -1,5 +1,6 @@
 import base64
 import unittest
+import random
 from algosdk import transaction
 from algosdk import encoding
 from algosdk import account
@@ -7,6 +8,7 @@ from algosdk import mnemonic
 from algosdk import wordlist
 from algosdk import error
 from algosdk import constants
+from algosdk import util
 
 
 class TestTransaction(unittest.TestCase):
@@ -44,31 +46,6 @@ class TestTransaction(unittest.TestCase):
         enc = encoding.msgpack_encode(txn)
         re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
         self.assertEqual(enc, re_enc)
-
-    def test_sign(self):
-        mn = ("advice pudding treat near rule blouse same whisper inner " +
-              "electric quit surface sunny dismiss leader blood seat " +
-              "clown cost exist hospital century reform able sponsor")
-        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
-        address = "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI"
-        close = "IDUTJEUIEVSMXTU4LGTJWZ2UE2E6TIODUKU6UW3FU3UKIQQ77RLUBBBFLA"
-        sk = mnemonic.to_private_key(mn)
-        pk = account.address_from_private_key(sk)
-        txn = transaction.PaymentTxn(pk, 4, 12466, 13466, gh, address, 1000,
-                                     note=base64.b64decode("6gAVR0Nsv5Y="),
-                                     gen="devnet-v33.0",
-                                     close_remainder_to=close)
-        stx = txn.sign(sk)
-        golden = ("gqNzaWfEQPhUAZ3xkDDcc8FvOVo6UinzmKBCqs0woYSfodlmBMfQvGbeU" +
-                  "x3Srxy3dyJDzv7rLm26BRv9FnL2/AuT7NYfiAWjdHhui6NhbXTNA+ilY2" +
-                  "xvc2XEIEDpNJKIJWTLzpxZpptnVCaJ6aHDoqnqW2Wm6KRCH/xXo2ZlZc0" +
-                  "EmKJmds0wsqNnZW6sZGV2bmV0LXYzMy4womdoxCAmCyAJoJOohot5WHIv" +
-                  "peVG7eftF+TYXEx4r7BFJpDt0qJsds00mqRub3RlxAjqABVHQ2y/lqNyY" +
-                  "3bEIHts4k/rW6zAsWTinCIsV/X2PcOH1DkEglhBHF/hD3wCo3NuZMQg5/" +
-                  "D4TQaBHfnzHI2HixFV9GcdUaGFwgCQhmf0SVhwaKGkdHlwZaNwYXk=")
-        self.assertEqual(golden, encoding.msgpack_encode(stx))
-        txid_golden = "5FJDJD5LMZC3EHUYYJNH5I23U4X6H2KXABNDGPIL557ZMJ33GZHQ"
-        self.assertEqual(txn.get_txid(), txid_golden)
 
 
 class TestMnemonic(unittest.TestCase):
@@ -199,42 +176,6 @@ class TestMultisig(unittest.TestCase):
                    "AXOgTfpDWaNmamr86ixCoF3Zwfc+66VHgDfppHR5cGWjcGF5")
         self.assertEqual(golden2, encoding.msgpack_encode(mtx_final))
 
-    def test_sign(self):
-        msig = transaction.Multisig(1, 2, [
-            "DN7MBMCL5JQ3PFUQS7TMX5AH4EEKOBJVDUF4TCV6WERATKFLQF4MQUPZTA",
-            "BFRTECKTOOE7A5LHCF3TTEOH2A7BW46IYT2SX5VP6ANKEXHZYJY77SJTVM",
-            "47YPQTIGQEO7T4Y4RWDYWEKV6RTR2UNBQXBABEEGM72ESWDQNCQ52OPASU"
-        ])
-        mn = ("advice pudding treat near rule blouse same whisper inner " +
-              "electric quit surface sunny dismiss leader blood seat clown " +
-              "cost exist hospital century reform able sponsor")
-        sk = mnemonic.to_private_key(mn)
-
-        rcv = "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI"
-        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
-        close = "IDUTJEUIEVSMXTU4LGTJWZ2UE2E6TIODUKU6UW3FU3UKIQQ77RLUBBBFLA"
-        txn = transaction.PaymentTxn(msig.address(), 4, 12466, 13466, gh,
-                                     rcv, 1000,
-                                     note=base64.b64decode("X4Bl4wQ9rCo="),
-                                     gen="devnet-v33.0",
-                                     close_remainder_to=close)
-        mtx = transaction.MultisigTransaction(txn, msig)
-        mtx.sign(sk)
-        golden = ("gqRtc2lng6ZzdWJzaWeTgaJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC" +
-                  "8mKvrEiCairgXiBonBrxCAJYzIJU3OJ8HVnEXc5kcfQPhtzyMT1K/av8B" +
-                  "qiXPnCcYKicGvEIOfw+E0GgR358xyNh4sRVfRnHVGhhcIAkIZn9ElYcGi" +
-                  "hoXPEQF6nXZ7CgInd1h7NVspIPFZNhkPL+vGFpTNwH3Eh9gwPM8pf1EPT" +
-                  "HfPvjf14sS7xN7mTK+wrz7Odhp4rdWBNUASjdGhyAqF2AaN0eG6Lo2Ftd" +
-                  "M0D6KVjbG9zZcQgQOk0koglZMvOnFmmm2dUJonpocOiqepbZabopEIf/F" +
-                  "ejZmVlzQSYomZ2zTCyo2dlbqxkZXZuZXQtdjMzLjCiZ2jEICYLIAmgk6i" +
-                  "Gi3lYci+l5Ubt5+0X5NhcTHivsEUmkO3Somx2zTSapG5vdGXECF+AZeME" +
-                  "Pawqo3JjdsQge2ziT+tbrMCxZOKcIixX9fY9w4fUOQSCWEEcX+EPfAKjc" +
-                  "25kxCCNkrSJkAFzoE36Q1mjZmpq/OosQqBd2cH3PuulR4A36aR0eXBlo3" +
-                  "BheQ==")
-        self.assertEqual(golden, encoding.msgpack_encode(mtx))
-        txid_golden = "TDIO6RJWJIVDDJZELMSX5CPJW7MUNM3QR4YAHYAKHF3W2CFRTI7A"
-        self.assertEqual(txn.get_txid(), txid_golden)
-
     def test_msig_address(self):
         msig = transaction.Multisig(1, 2, [
             "XMHLMNAVJIMAW2RHJXLXKKK4G3J3U6VONNO3BTAQYVDC3MHTGDP3J5OCRU",
@@ -361,12 +302,82 @@ class TestMsgpack(unittest.TestCase):
                          encoding.msgpack_decode(keyregtxn)))
 
 
+class TestSign(unittest.TestCase):
+    def test_sign_bytes(self):
+        sk, pk = account.generate_account()
+        message = bytes([random.randint(0, 255) for x in range(15)])
+        signature = util.sign_bytes(message, sk)
+        self.assertTrue(util.verify_bytes(message, signature, pk))
+
+    def test_sign_transaction(self):
+        mn = ("advice pudding treat near rule blouse same whisper inner " +
+              "electric quit surface sunny dismiss leader blood seat " +
+              "clown cost exist hospital century reform able sponsor")
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        address = "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI"
+        close = "IDUTJEUIEVSMXTU4LGTJWZ2UE2E6TIODUKU6UW3FU3UKIQQ77RLUBBBFLA"
+        sk = mnemonic.to_private_key(mn)
+        pk = account.address_from_private_key(sk)
+        txn = transaction.PaymentTxn(pk, 4, 12466, 13466, gh, address, 1000,
+                                     note=base64.b64decode("6gAVR0Nsv5Y="),
+                                     gen="devnet-v33.0",
+                                     close_remainder_to=close)
+        stx = txn.sign(sk)
+        golden = ("gqNzaWfEQPhUAZ3xkDDcc8FvOVo6UinzmKBCqs0woYSfodlmBMfQvGbeU" +
+                  "x3Srxy3dyJDzv7rLm26BRv9FnL2/AuT7NYfiAWjdHhui6NhbXTNA+ilY2" +
+                  "xvc2XEIEDpNJKIJWTLzpxZpptnVCaJ6aHDoqnqW2Wm6KRCH/xXo2ZlZc0" +
+                  "EmKJmds0wsqNnZW6sZGV2bmV0LXYzMy4womdoxCAmCyAJoJOohot5WHIv" +
+                  "peVG7eftF+TYXEx4r7BFJpDt0qJsds00mqRub3RlxAjqABVHQ2y/lqNyY" +
+                  "3bEIHts4k/rW6zAsWTinCIsV/X2PcOH1DkEglhBHF/hD3wCo3NuZMQg5/" +
+                  "D4TQaBHfnzHI2HixFV9GcdUaGFwgCQhmf0SVhwaKGkdHlwZaNwYXk=")
+        self.assertEqual(golden, encoding.msgpack_encode(stx))
+        txid_golden = "5FJDJD5LMZC3EHUYYJNH5I23U4X6H2KXABNDGPIL557ZMJ33GZHQ"
+        self.assertEqual(txn.get_txid(), txid_golden)
+
+    def test_sign_multisig(self):
+        msig = transaction.Multisig(1, 2, [
+            "DN7MBMCL5JQ3PFUQS7TMX5AH4EEKOBJVDUF4TCV6WERATKFLQF4MQUPZTA",
+            "BFRTECKTOOE7A5LHCF3TTEOH2A7BW46IYT2SX5VP6ANKEXHZYJY77SJTVM",
+            "47YPQTIGQEO7T4Y4RWDYWEKV6RTR2UNBQXBABEEGM72ESWDQNCQ52OPASU"
+        ])
+        mn = ("advice pudding treat near rule blouse same whisper inner " +
+              "electric quit surface sunny dismiss leader blood seat clown " +
+              "cost exist hospital century reform able sponsor")
+        sk = mnemonic.to_private_key(mn)
+
+        rcv = "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        close = "IDUTJEUIEVSMXTU4LGTJWZ2UE2E6TIODUKU6UW3FU3UKIQQ77RLUBBBFLA"
+        txn = transaction.PaymentTxn(msig.address(), 4, 12466, 13466, gh,
+                                     rcv, 1000,
+                                     note=base64.b64decode("X4Bl4wQ9rCo="),
+                                     gen="devnet-v33.0",
+                                     close_remainder_to=close)
+        mtx = transaction.MultisigTransaction(txn, msig)
+        mtx.sign(sk)
+        golden = ("gqRtc2lng6ZzdWJzaWeTgaJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC" +
+                  "8mKvrEiCairgXiBonBrxCAJYzIJU3OJ8HVnEXc5kcfQPhtzyMT1K/av8B" +
+                  "qiXPnCcYKicGvEIOfw+E0GgR358xyNh4sRVfRnHVGhhcIAkIZn9ElYcGi" +
+                  "hoXPEQF6nXZ7CgInd1h7NVspIPFZNhkPL+vGFpTNwH3Eh9gwPM8pf1EPT" +
+                  "HfPvjf14sS7xN7mTK+wrz7Odhp4rdWBNUASjdGhyAqF2AaN0eG6Lo2Ftd" +
+                  "M0D6KVjbG9zZcQgQOk0koglZMvOnFmmm2dUJonpocOiqepbZabopEIf/F" +
+                  "ejZmVlzQSYomZ2zTCyo2dlbqxkZXZuZXQtdjMzLjCiZ2jEICYLIAmgk6i" +
+                  "Gi3lYci+l5Ubt5+0X5NhcTHivsEUmkO3Somx2zTSapG5vdGXECF+AZeME" +
+                  "Pawqo3JjdsQge2ziT+tbrMCxZOKcIixX9fY9w4fUOQSCWEEcX+EPfAKjc" +
+                  "25kxCCNkrSJkAFzoE36Q1mjZmpq/OosQqBd2cH3PuulR4A36aR0eXBlo3" +
+                  "BheQ==")
+        self.assertEqual(golden, encoding.msgpack_encode(mtx))
+        txid_golden = "TDIO6RJWJIVDDJZELMSX5CPJW7MUNM3QR4YAHYAKHF3W2CFRTI7A"
+        self.assertEqual(txn.get_txid(), txid_golden)
+
+
 if __name__ == "__main__":
     to_run = [TestTransaction,
               TestMnemonic,
               TestAddress,
               TestMultisig,
-              TestMsgpack]
+              TestMsgpack,
+              TestSign]
     loader = unittest.TestLoader()
     suites = [loader.loadTestsFromTestCase(test_class)
               for test_class in to_run]

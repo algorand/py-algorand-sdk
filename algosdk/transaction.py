@@ -31,7 +31,7 @@ class Transaction:
             str: transaction ID
         """
         txn = encoding.msgpack_encode(self)
-        to_sign = constants.txid_prefix + base64.b64decode(bytes(txn, "utf-8"))
+        to_sign = constants.txid_prefix + base64.b64decode(txn)
         txidbytes = hashes.Hash(hashes.SHA512_256(), default_backend())
         txidbytes.update(to_sign)
         txid = txidbytes.finalize()
@@ -63,9 +63,9 @@ class Transaction:
         Returns:
             bytes: signature
         """
-        private_key = base64.b64decode(bytes(private_key, "utf-8"))
+        private_key = base64.b64decode(private_key)
         txn = encoding.msgpack_encode(self)
-        to_sign = constants.txid_prefix + base64.b64decode(bytes(txn, "utf-8"))
+        to_sign = constants.txid_prefix + base64.b64decode(txn)
         signing_key = SigningKey(private_key[:constants.signing_key_len_bytes])
         signed = signing_key.sign(to_sign)
         sig = signed.signature
