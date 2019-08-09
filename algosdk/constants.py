@@ -47,6 +47,7 @@ txid_prefix = b"TX"
 bid_prefix = b"aB"
 """bytes: bid prefix when signing"""
 bytes_prefix = b"NF"
+"""bytes: bytes prefix when signing"""
 
 
 microalgos_to_algos_ratio = 1000000

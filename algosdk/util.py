@@ -55,7 +55,7 @@ def verify_bytes(message, signature, public_key):
 
     Args:
         message (bytes): message that was signed
-        signature (str): signature in base64
+        signature (str): base64 signature
         public_key (str): base32 address
 
     Returns:
