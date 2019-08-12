@@ -46,7 +46,7 @@ txid_prefix = b"TX"
 """bytes: transaction prefix when signing"""
 bid_prefix = b"aB"
 """bytes: bid prefix when signing"""
-bytes_prefix = b"NF"
+bytes_prefix = b"MX"
 """bytes: bytes prefix when signing"""
 
 
