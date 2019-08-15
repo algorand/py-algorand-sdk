@@ -67,6 +67,16 @@ class Bid:
         return Bid(encoding.encode_address(d["bidder"]), d["cur"], d["price"],
                    d["id"], encoding.encode_address(d["auc"]), d["aid"])
 
+    def __eq__(self, other):
+        if not isinstance(other, Bid):
+            return False
+        return (self.bidder == other.bidder and
+                self.bid_currency == other.bid_currency and
+                self.max_price == other.max_price and
+                self.bid_id == other.bid_id and
+                self.auction_key == other.auction_key and
+                self.auction_id == other.auction_id)
+
 
 class SignedBid:
     """
@@ -95,6 +105,12 @@ class SignedBid:
         return SignedBid(Bid.undictify(d["bid"]),
                          base64.b64encode(d["sig"]).decode())
 
+    def __eq__(self, other):
+        if not isinstance(other, SignedBid):
+            return False
+        return (self.bid == other.bid and
+                self.signature == other.signature)
+
 
 class NoteField:
     """
@@ -122,3 +138,9 @@ class NoteField:
     @staticmethod
     def undictify(d):
         return NoteField(SignedBid.undictify(d["b"]), d["t"])
+
+    def __eq__(self, other):
+        if not isinstance(other, NoteField):
+            return False
+        return (self.signed_bid == other.signed_bid and
+                self.note_field_type == other.note_field_type)

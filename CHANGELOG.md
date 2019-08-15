@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.3
+### Added
+- signing and verifying signatures for arbitrary bytes
+
+## 1.0.2
+### Added
+- option for flat fee when creating transactions
+- functions for converting from microalgos to algos and from algos to microalgos
+
 ## 1.0.1
 ### Added
 - algod.send_transaction(): sends SignedTransaction

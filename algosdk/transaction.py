@@ -76,6 +76,17 @@ class Transaction:
         stx = self.sign(sk)
         return len(base64.b64decode(encoding.msgpack_encode(stx)))
 
+    def __eq__(self, other):
+        if not isinstance(other, Transaction):
+            return False
+        return (self.sender == other.sender and
+                self.fee == other.fee and
+                self.first_valid_round == other.first_valid_round and
+                self.last_valid_round == other.last_valid_round and
+                self.genesis_hash == other.genesis_hash and
+                self.genesis_id == other.genesis_id and
+                self.note == other.note)
+
 
 class PaymentTxn(Transaction):
     """
@@ -165,6 +176,15 @@ class PaymentTxn(Transaction):
                         crt, note, gen, True)
         return tr
 
+    def __eq__(self, other):
+        if not isinstance(other, PaymentTxn):
+            return False
+        return (super(PaymentTxn, self).__eq__(other) and
+                self.receiver == other.receiver and
+                self.amt == other.amt and
+                self.close_remainder_to == other.close_remainder_to and
+                self.type == other.type)
+
 
 class KeyregTxn(Transaction):
     """
@@ -198,6 +218,7 @@ class KeyregTxn(Transaction):
         votekd (int)
         note (bytes)
         genesis_id (str)
+        type (str)
     """
 
     def __init__(self, sender, fee, first, last, gh, votekey, selkey, votefst,
@@ -252,6 +273,17 @@ class KeyregTxn(Transaction):
                       d["votelst"], d["votekd"], note, gen, True)
         return k
 
+    def __eq__(self, other):
+        if not isinstance(other, KeyregTxn):
+            return False
+        return (super(KeyregTxn, self).__eq__(self, other) and
+                self.votepk == other.votepk and
+                self.selkey == other.selkey and
+                self.votefst == other.votefst and
+                self.votelst == other.votelst and
+                self.votekd == other.votekd and
+                self.type == other.type)
+
 
 class SignedTransaction:
     """
@@ -287,6 +319,12 @@ class SignedTransaction:
             txn = KeyregTxn.undictify(d["txn"])
         stx = SignedTransaction(txn, sig)
         return stx
+
+    def __eq__(self, other):
+        if not isinstance(other, SignedTransaction):
+            return False
+        return (self.transaction == other.transaction and
+                self.signature == other.signature)
 
 
 class MultisigTransaction:
@@ -393,6 +431,12 @@ class MultisigTransaction:
                             raise error.DuplicateSigMismatchError
         return msigstx
 
+    def __eq__(self, other):
+        if not isinstance(other, MultisigTransaction):
+            return False
+        return (self.transaction == other.transaction and
+                self.multisig == other.multisig)
+
 
 class Multisig:
     """
@@ -468,6 +512,13 @@ class Multisig:
         pks = [encoding.encode_address(s.public_key) for s in self.subsigs]
         return pks
 
+    def __eq__(self, other):
+        if not isinstance(other, Multisig):
+            return False
+        return (self.version == other.version and
+                self.threshold == other.threshold and
+                self.subsigs == other.subsigs)
+
 
 class MultisigSubsig:
     """
@@ -501,6 +552,12 @@ class MultisigSubsig:
             sig = d["s"]
         mss = MultisigSubsig(d["pk"], sig)
         return mss
+
+    def __eq__(self, other):
+        if not isinstance(other, MultisigSubsig):
+            return False
+        return (self.public_key == other.public_key and
+                self.signature == other.signature)
 
 
 def write_to_file(txns, path, overwrite=True):
