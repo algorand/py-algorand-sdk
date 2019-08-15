@@ -1,5 +1,6 @@
 from . import constants
 from . import encoding
+import decimal
 import base64
 from nacl.signing import SigningKey, VerifyKey
 from nacl.exceptions import BadSignatureError
@@ -15,7 +16,7 @@ def microalgos_to_algos(microalgos):
     Returns:
         int or float: how many algos
     """
-    return microalgos/constants.microalgos_to_algos_ratio
+    return decimal.Decimal(microalgos)/constants.microalgos_to_algos_ratio
 
 
 def algos_to_microalgos(algos):
@@ -28,7 +29,7 @@ def algos_to_microalgos(algos):
     Returns:
         int: how many microalgos
     """
-    return algos*constants.microalgos_to_algos_ratio
+    return round(algos*constants.microalgos_to_algos_ratio)
 
 
 def sign_bytes(to_sign, private_key):
