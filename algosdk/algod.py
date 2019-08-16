@@ -104,11 +104,11 @@ class AlgodClient:
         req = "/ledger/supply"
         return self.algod_request("GET", req)
 
-    def transactions_by_address(self, address, first=1, last=None, limit=0,
-                                from_date=None, to_date=None):
+    def transactions_by_address(self, address, first=None, last=None, 
+                                limit=None, from_date=None, to_date=None):
         """
-        Return transactions for an address. If indexer is enabled, can search
-        by date.
+        Return transactions for an address. If indexer is not enabled, you can
+        search by date and you do not have to specify first and last rounds.
 
         Args:
             address (str): account public key
@@ -117,16 +117,20 @@ class AlgodClient:
             last (int, optional): no transactions after this block will be
                 returned; defaults to last round
             limit (int, optional): maximum number of transactions to return;
-                if limit is 0, return all
+                default is 100
             from_date (str, optional): no transactions before this date will be
                 returned; format YYYY-MM-DD
             to_date (str, optional): no transactions after this date will be
                 returned; format YYYY-MM-DD
         """
+        query = dict()
         if not last:
             last = self.status()["lastRound"]
-        query = {"firstRound": first, "lastRound": last}
-        if limit != 0:
+        if first:
+            query["firstRound"] = first
+        if last:
+            query["lastRound"] = last
+        if limit:
             query["max"] = limit
         if to_date:
             query["toDate"] = to_date
