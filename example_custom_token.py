@@ -6,10 +6,12 @@
 
 from algosdk import algod
 
-algod_address = "http://127.0.0.1:8080"
+algod_address = ''
 algod_token = {
-   'X-API-Key': 'e48a9bbe064a08f19cde9f0f1b589c1188b24e5059bc661b31bd20b4c8fa4ce7',
+   'X-API-Key': '',
+    'content-type' : 'application/json'
 }
+
 
 def main():
 

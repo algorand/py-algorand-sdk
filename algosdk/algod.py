@@ -39,13 +39,10 @@ class AlgodClient:
         """
         if isinstance(self.algod_token, dict):
             header = self.algod_token
+        elif requrl not in constants.no_auth:
+            header = {constants.algod_auth_header: self.algod_token}
         else:
-            if requrl in constants.no_auth:
-                header = {}
-            else:
-                header = {
-                    constants.algod_auth_header: self.algod_token
-                    }
+            header = {}
 
         if requrl not in constants.unversioned_paths:
             requrl = constants.api_version_path_prefix + requrl
