@@ -1,6 +1,9 @@
 # Changelog
 
 ## 1.0.4
+### Changed
+- more flexibility in transactions_by_address()
+- documentation changes
 
 ## 1.0.3
 ### Added
