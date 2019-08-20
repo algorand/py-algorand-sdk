@@ -9,7 +9,7 @@ setuptools.setup(
     description="Algorand SDK in Python",
     author="Algorand",
     author_email="pypiservice@algorand.com",
-    version="1.0.3",
+    version="1.0.4",
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="MIT",
@@ -17,5 +17,6 @@ setuptools.setup(
         "Source": "https://github.com/algorand/py-algorand-sdk",
     },
     install_requires=["pynacl", "cryptography", "msgpack"],
-    packages=["algosdk"]
+    packages=["algosdk"],
+    python_requires=">=3.5"
 )

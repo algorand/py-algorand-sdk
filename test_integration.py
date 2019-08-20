@@ -1,4 +1,3 @@
-import time
 import base64
 import unittest
 import params
@@ -105,15 +104,15 @@ class TestIntegration(unittest.TestCase):
         # get a new handle for the wallet
         handle = self.kcl.init_wallet_handle(wallet_id, wallet_pswd)
 
-        # get expiration time of handle
-        time.sleep(1)
-        exp_time = self.kcl.get_wallet(handle)["expires_seconds"]
+        # get wallet
+        self.assertIn("expires_seconds", self.kcl.get_wallet(handle))
 
         # renew the handle
         renewed_handle = self.kcl.renew_wallet_handle(handle)
-        new_exp_time = renewed_handle["expires_seconds"]
-        self.assertGreaterEqual(new_exp_time, exp_time)
-        released = self.kcl.release_wallet_handle(handle)  # release the handle
+        self.assertIn("expires_seconds", renewed_handle)
+
+        # release the handle
+        released = self.kcl.release_wallet_handle(handle)
         self.assertTrue(released)
 
         # check that the handle has been released
@@ -177,8 +176,9 @@ class TestIntegration(unittest.TestCase):
         # wait for transaction to send
         self.acl.status_after_block(last_round+2)
 
-        # get transaction info three different ways
-        info_1 = self.acl.transactions_by_address(self.account_0, last_round)
+        # get transaction info two different ways
+        info_1 = self.acl.transactions_by_address(self.account_0, last_round-2,
+                                                  last_round+2)
         info_2 = self.acl.transaction_info(self.account_0, txid)
         self.assertIn("transactions", info_1)
         self.assertIn("type", info_2)

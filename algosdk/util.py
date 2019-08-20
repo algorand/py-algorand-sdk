@@ -34,7 +34,7 @@ def algos_to_microalgos(algos):
 
 def sign_bytes(to_sign, private_key):
     """
-    Sign arbitrary bytes.
+    Sign arbitrary bytes after prepending with "MX" for domain separation.
 
     Args:
         to_sign (bytes): bytes to sign
@@ -52,10 +52,11 @@ def sign_bytes(to_sign, private_key):
 
 def verify_bytes(message, signature, public_key):
     """
-    Verify the signature of a message.
+    Verify the signature of a message that was prepended with "MX" for domain
+    separation.
 
     Args:
-        message (bytes): message that was signed
+        message (bytes): message that was signed, without prefix
         signature (str): base64 signature
         public_key (str): base32 address
 

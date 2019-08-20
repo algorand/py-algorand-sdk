@@ -31,13 +31,11 @@ check_sum_len_bytes = 4
 signing_key_len_bytes = 32
 """int: how long addresses are in bytes"""
 address_len = 58
-"""int: how long addresses are in base32"""
+"""int: how long addresses are in base32, including the checksum"""
 mnemonic_len = 25
 """int: how long mnemonic phrases are"""
 msig_addr_prefix = "MultisigAddr"
 """str: prefix for multisig addresses"""
-handle_renew_time = 60
-"""int: how long it takes for a wallet handle to expire"""
 min_txn_fee = 1000
 """int: minimum transaction fee"""
 
