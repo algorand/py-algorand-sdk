@@ -565,11 +565,14 @@ def write_to_file(txns, path, overwrite=True):
     Write signed or unsigned transactions to a file.
 
     Args:
-        txns (Transaction[], SignedTransaction[], or MultisigTransaction[]):
+        txns (Transaction[], SignedTransaction[], or MultisigTransaction[]):\
             can be a mix of the three
         path (str): file to write to
         overwrite (bool): whether or not to overwrite what's already in the
             file; if False, transactions will be appended to the file
+
+    Returns:
+        bool: true if the transactions have been written to the file
     """
 
     f = None
@@ -596,8 +599,8 @@ def retrieve_from_file(path):
     Args:
         path (str): file to read from
 
-    Returns
-        Transaction[], SignedTransaction[], or MultisigTransaction[]:
+    Returns:
+        Transaction[], SignedTransaction[], or MultisigTransaction[]:\
             can be a mix of the three
     """
 

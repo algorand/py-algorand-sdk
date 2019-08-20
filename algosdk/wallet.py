@@ -1,4 +1,3 @@
-import time
 from . import constants
 from . import mnemonic
 
@@ -23,7 +22,6 @@ class Wallet:
         kcl (KMDClient)
         id (str)
         handle (str)
-        last_handle_renew (float): time of last handle renew
     """
 
     def __init__(self, wallet_name, wallet_pswd, kmd_client,
@@ -41,7 +39,6 @@ class Wallet:
             w = self.kcl.create_wallet(self.name, self.pswd, driver_name,
                                        master_deriv_key=mdk)
             self.id = w["id"]
-        self.last_handle_renew = time.time()
         self.handle = self.kcl.init_wallet_handle(self.id, self.pswd)
 
     def info(self):
@@ -223,8 +220,7 @@ class Wallet:
                 partially signed multisig
 
         Returns:
-            SignedTransaction: signed transaction with multisig containing
-                public_key's signature
+            MultisigTransaction: multisig transaction with added signature
         """
         self.automate_handle()
         return self.kcl.sign_multisig_transaction(self.handle, self.pswd,
@@ -237,10 +233,13 @@ class Wallet:
         Returns:
             bool: True if a handle is active
         """
-        if time.time() - self.last_handle_renew >= constants.handle_renew_time:
+        if self.handle is None:
             self.init_handle()
         else:
-            self.renew_handle()
+            try:
+                self.renew_handle()
+            except:
+                self.init_handle()
         return True
 
     def init_handle(self):
@@ -250,7 +249,6 @@ class Wallet:
         Returns:
             bool: True if a handle is active
         """
-        self.last_handle_renew = time.time()
         self.handle = self.kcl.init_wallet_handle(self.id, self.pswd)
         return True
 
@@ -261,7 +259,6 @@ class Wallet:
         Returns:
             dict: dictionary containing wallet handle and wallet information
         """
-        self.last_handle_renew = time.time()
         resp = self.kcl.renew_wallet_handle(self.handle)
         return resp
 
@@ -274,5 +271,4 @@ class Wallet:
         """
         resp = self.kcl.release_wallet_handle(self.handle)
         self.handle = None
-        self.last_handle_renew = time.time() - constants.handle_renew_time
         return resp

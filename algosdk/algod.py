@@ -104,7 +104,7 @@ class AlgodClient:
         req = "/ledger/supply"
         return self.algod_request("GET", req)
 
-    def transactions_by_address(self, address, first=None, last=None, 
+    def transactions_by_address(self, address, first=None, last=None,
                                 limit=None, from_date=None, to_date=None):
         """
         Return transactions for an address. If indexer is not enabled, you can
@@ -124,17 +124,15 @@ class AlgodClient:
                 returned; format YYYY-MM-DD
         """
         query = dict()
-        if not last:
-            last = self.status()["lastRound"]
-        if first:
+        if first is not None:
             query["firstRound"] = first
-        if last:
+        if last is not None:
             query["lastRound"] = last
-        if limit:
+        if limit is not None:
             query["max"] = limit
-        if to_date:
+        if to_date is not None:
             query["toDate"] = to_date
-        if from_date:
+        if from_date is not None:
             query["fromDate"] = from_date
         req = "/account/" + address + "/transactions"
         return self.algod_request("GET", req, params=query)
@@ -214,10 +212,7 @@ class AlgodClient:
         Returns:
             str: transaction ID
         """
-        txn = encoding.msgpack_encode(txn)
-        txn = base64.b64decode(txn)
-        req = "/transactions"
-        return self.algod_request("POST", req, data=txn)["txId"]
+        return self.send_raw_transaction(encoding.msgpack_encode(txn))
 
     def block_info(self, round):
         """

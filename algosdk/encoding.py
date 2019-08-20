@@ -11,7 +11,7 @@ def msgpack_encode(obj):
     Encode the object using canonical msgpack.
 
     Args:
-        obj (Transaction, SignedTransaction, MultisigTransaction, Multisig,
+        obj (Transaction, SignedTransaction, MultisigTransaction, Multisig,\
             Bid, or SignedBid): object to be encoded
 
     Returns:
@@ -44,7 +44,7 @@ def msgpack_decode(enc):
         enc (str): string to be decoded
 
     Returns:
-        Transaction, SignedTransaction, Multisig, Bid, or SignedBid:
+        Transaction, SignedTransaction, Multisig, Bid, or SignedBid:\
             decoded object
     """
     decoded = msgpack.unpackb(base64.b64decode(enc), raw=False)
