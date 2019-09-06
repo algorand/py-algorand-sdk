@@ -15,19 +15,19 @@ class AlgodClient:
     Args:
         algod_token (str): algod API token
         algod_address (str): algod address
-        extended_header (dict, optional): extra header name/value for all requests
+        headers (dict, optional): extra header name/value for all requests
 
     Attributes:
         algod_token (str)
         algod_address (str)
-        extended_header (dict)
+        headers (dict)
     """
-    def __init__(self, algod_token, algod_address, extended_header=None):
+    def __init__(self, algod_token, algod_address, headers=None):
         self.algod_token = algod_token
         self.algod_address = algod_address
-        self.extended_header = extended_header
+        self.headers = headers
 
-    def algod_request(self, method, requrl, params=None, data=None, opt_header=None):
+    def algod_request(self, method, requrl, params=None, data=None, headers=None):
         """
         Execute a given request.
 
@@ -36,18 +36,18 @@ class AlgodClient:
             requrl (str): url for the request
             params (dict, optional): parameters for the request
             data (dict, optional): data in the body of the request
-            opt_header (dict option): additional header for request
+            headers (dict, optional): additional header for request
 
         Returns:
             dict: loaded from json response body
         """
         header = {}
 
-        if self.extended_header:
-            header.update(self.extended_header)
+        if self.headers:
+            header.update(self.headers)
 
-        if opt_header:
-            header.update(opt_header)
+        if headers:
+            header.update(headers)
 
         if requrl not in constants.no_auth:
             header.update({

@@ -8,12 +8,12 @@ from algosdk import algod
 
 algod_address = "https://......"
 algod_token = ""
-extended_header = {
-   'X-API-Key': '#######',
+headers = {
+   "X-API-Key": "#######",
 }
 
 def main():
-    algod_client = algod.AlgodClient(algod_token, algod_address, extended_header)
+    algod_client = algod.AlgodClient(algod_token, algod_address, headers)
 
     try:
         status = algod_client.status()
