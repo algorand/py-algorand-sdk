@@ -14,7 +14,7 @@ def microalgos_to_algos(microalgos):
         microalgos (int): how many microalgos
 
     Returns:
-        int or float: how many algos
+        int or decimal: how many algos
     """
     return decimal.Decimal(microalgos)/constants.microalgos_to_algos_ratio
 
@@ -24,7 +24,7 @@ def algos_to_microalgos(algos):
     Convert algos to microalgos.
 
     Args:
-        algos (int or float): how many algos
+        algos (int or decimal): how many algos
 
     Returns:
         int: how many microalgos

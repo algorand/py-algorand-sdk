@@ -27,7 +27,8 @@ class AlgodClient:
         self.algod_address = algod_address
         self.headers = headers
 
-    def algod_request(self, method, requrl, params=None, data=None, headers=None):
+    def algod_request(self, method, requrl, params=None, data=None,
+                      headers=None):
         """
         Execute a given request.
 
@@ -115,7 +116,8 @@ class AlgodClient:
         return self.algod_request("GET", req, **kwargs)
 
     def transactions_by_address(self, address, first=None, last=None,
-                                limit=None, from_date=None, to_date=None, **kwargs):
+                                limit=None, from_date=None, to_date=None,
+                                **kwargs):
         """
         Return transactions for an address. If indexer is not enabled, you can
         search by date and you do not have to specify first and last rounds.
@@ -224,7 +226,8 @@ class AlgodClient:
         Returns:
             str: transaction ID
         """
-        return self.send_raw_transaction(encoding.msgpack_encode(txn), **kwargs)
+        return self.send_raw_transaction(encoding.msgpack_encode(txn),
+                                         **kwargs)
 
     def block_info(self, round, **kwargs):
         """
