@@ -206,33 +206,35 @@ print(encoding.msgpack_encode(mtx))
 We can put things in the "note" field of a transaction; here's an example with an auction bid. Note that you can put any bytes you want in the "note" field; you don't have to use the NoteField object.
 
 ```python
-from algosdk import auction, transaction, encoding, account, constants
-import base64
+from algosdk import algod, mnemonic, transaction, account
 
-# generate account
-private_key, address = account.generate_account()
-auction_address = "string address"
+passphrase = "teach chat health avocado broken avocado trick adapt parade witness damp gift behave harbor maze truth figure below scatter taste slow sustain aspect absorb nuclear"
 
-# create bid
-external_currency = 10000  # how much external currency you're willing to spend
-max_price = 260  # maximum price for one algo
-bid = auction.Bid(address, external_currency, max_price,
-                  "bid_id", auction_address, "auc_id")
+acl = algod.AlgodClient("API-TOKEN", "API-Address")
 
-# sign bid
-sb = bid.sign(private_key)
+# convert passphrase to secret key
+sk = mnemonic.to_private_key(passphrase)
 
-# create notefield
-note_field = auction.NoteField(sb, constants.note_field_type_bid)
+# get suggested parameters 
+params = acl.suggested_params()
+gen = params["genesisID"]
+gh = params["genesishashb64"]
+last_round = params["lastRound"]
+fee = params["fee"]
 
-# create transaction; you can sign and send this like any other transaction
-fee = 1
-first_valid_round = 567
-gh = "genesis hash"
-note_field_bytes = base64.b64decode(encoding.msgpack_encode(note_field))
-txn = transaction.PaymentTxn(address, fee, first_valid_round,
-                             first_valid_round+100, gh, auction_address,
-                             100000, note=note_field_bytes)
+# Set other parameters
+amount = 100000
+note = "Some Text".encode()
+receiver = "receiver Algorand Address"
+
+# create the transaction
+txn = transaction.PaymentTxn(account.address_from_private_key(sk), fee, last_round, last_round+1000, gh, receiver, amount, note=note)
+
+#sign it 
+stx = txn.sign(sk)
+
+#send it
+txid = acl.send_transaction(stx)
 ```
 
 We can also get the NoteField object back from its bytes:
