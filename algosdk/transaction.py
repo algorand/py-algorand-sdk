@@ -12,7 +12,7 @@ from nacl.signing import SigningKey
 
 class Transaction:
     """
-    Superclass for PaymentTxn and KeyregTxn.
+    Superclass for other FooTxns.
     """
     def __init__(self, sender, fee, first, last, note, gen, gh):
         self.sender = sender
@@ -284,6 +284,117 @@ class KeyregTxn(Transaction):
                 self.votekd == other.votekd and
                 self.type == other.type)
 
+class AssetCreateTxn(Transaction):
+    """
+    Represents an asset creation transaction.
+
+    Args:
+        sender (str): address of sender
+        fee (int): transaction fee (per byte if flat_fee is false)
+        first (int): first round for which the transaction is valid
+        last (int): last round for which the transaction is valid
+        gh (str): genesis_hash
+        total (int): the total supply for this asset
+        default_frozen (bool): whether accounts for this asset are frozen by default
+        manager (str, optional): the address of the asset manager, who is allowed to change the nonzero addresses
+        reserve (str, optional): the address of the reserve account, whose holdings of this asset should be reported as "not minted"
+        freeze (str, optional): the address of the account that is allowed to change the frozen state of holdings of this asset
+        clawback (str, optional): the address of the account that is allowed to take units of this asset from any account
+        note (bytes, optional): encoded NoteField object
+        gen (str): genesis_id
+        flat_fee (bool): whether the specified fee is a flat fee
+
+
+    Attributes:
+        sender (str)
+        fee (int)
+        first_valid_round (int)
+        last_valid_round (int)
+        genesis_hash (str)
+        note (bytes)
+        genesis_id (str)
+        type (str)
+    """
+
+    def __init__(self, sender, fee, first, last, gh, total, default_frozen, manager=None, reserve=None, freeze=None, clawback=None, note=None, gen=None, flat_fee=False):
+        Transaction.__init__(self, sender, fee, first, last, note, gen, gh)
+        self.type = "acfg"
+        self.total = total
+        self.default_frozen = default_frozen
+        self.manager = manager
+        self.reserve = reserve
+        self.freeze = freeze
+        self.clawback = clawback
+        if flat_fee:
+            self.fee = max(constants.min_txn_fee, self.fee)
+        else:
+            self.fee = max(self.estimate_size()*self.fee,
+                           constants.min_txn_fee)
+
+    def dictify(self):
+        od = OrderedDict()
+        od["fee"] = self.fee
+        od["fv"] = self.first_valid_round
+        if self.genesis_id:
+            od["gen"] = self.genesis_id
+        od["gh"] = base64.b64decode(self.genesis_hash)
+        od["lv"] = self.last_valid_round
+        if self.note:
+            od["note"] = self.note
+        od["selkey"] = encoding.decode_address(self.selkey)
+        od["snd"] = encoding.decode_address(self.sender)
+        od["type"] = self.type
+        od["total"] = self.total
+        od["default_frozen"] = self.default_frozen
+        if self.manager:
+            od["manager"] = encoding.decode_address(self.manager)
+        if self.reserve:
+            od["reserve"] = encoding.decode_address(self.reserve)
+        if self.freeze:
+            od["freeze"] = encoding.decode_address(self.freeze)
+        if self.clawback:
+            od["clawback"] = encoding.decode_address(self.clawback)
+        return od
+
+    @staticmethod
+    def undictify(d):
+        note = None
+        gen = None
+        fv = 0
+        manager = None
+        reserve = None
+        freeze = None
+        clawback = None
+        if "note" in d:
+            note = d["note"]
+        if "gen" in d:
+            gen = d["gen"]
+        if "fv" in d:
+            fv = d["fv"]
+        if "manager" in d:
+            manager = d["manager"]
+        if "reserve" in d:
+            reserve = d["reserve"]
+        if "freeze" in d:
+            freeze = d["freeze"]
+        if "clawback" in d:
+            clawback = d["clawback"]
+        tx = AssetCreateTxn(encoding.encode_address(d["snd"]), d["fee"], fv,
+              d["lv"], base64.b64encode(d["gh"]).decode(), d["total"], d["default_frozen"],
+                            manager, reserve, freeze, clawback, note, gen, True)
+        return tx
+
+    def __eq__(self, other):
+        if not isinstance(other, AssetCreateTxn):
+            return False
+        return (super(AssetCreateTxn, self).__eq__(self, other) and
+                self.total == other.total and
+                self.default_frozen == other.default_frozen and
+                self.manager == other.manager and
+                self.reserve == other.reserve and
+                self.freeze == other.freeze and
+                self.clawback == other.clawback and
+                self.type == other.type)
 
 class SignedTransaction:
     """
