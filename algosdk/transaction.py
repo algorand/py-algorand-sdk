@@ -304,13 +304,18 @@ class AssetCreateTxn(Transaction):
         gen (str): genesis_id
         flat_fee (bool): whether the specified fee is a flat fee
 
-
     Attributes:
         sender (str)
         fee (int)
         first_valid_round (int)
         last_valid_round (int)
         genesis_hash (str)
+        total (int)
+        default_frozen (bool)
+        manager (str)
+        reserve (str)
+        freeze (str)
+        clawback (str)
         note (bytes)
         genesis_id (str)
         type (str)
