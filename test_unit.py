@@ -362,6 +362,18 @@ class TestMsgpack(unittest.TestCase):
         self.assertEqual(keyregtxn, encoding.msgpack_encode(
                          encoding.msgpack_decode(keyregtxn)))
 
+    def test_assetconfig_txn(self):
+        actxn = ("iKRhcGFyhKFjxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/" +
+                 "aFmxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFtxCAJ" +
+                 "+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFyxCAJ+9J2LAj" +
+                 "4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aRjYWlkgqFjxCAJ+9J2LA" +
+                 "j4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFpzQTSo2ZlZc0RCKJmd" +
+                 "s4ABOwPomdoxCBIY7UYpLPITsgQ8i1PEIHLD3HwWaesIN7GL39w5Qk6" +
+                 "IqJsds4ABO/3o3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHa" +
+                 "YZH224f2kdHlwZaRhY2Zn")
+        self.assertEqual(actxn, encoding.msgpack_encode(
+                         encoding.msgpack_decode(actxn)))
+
 
 class TestSignBytes(unittest.TestCase):
     def test_sign(self):
