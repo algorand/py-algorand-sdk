@@ -57,10 +57,14 @@ def msgpack_decode(enc):
         return transaction.SignedTransaction.undictify(decoded)
     if "subsig" in decoded:
         return transaction.Multisig.undictify(decoded)
+    if "txlist" in decoded:
+        return transaction.TxGroup.undictify(decoded)
     if "t" in decoded:
         return auction.NoteField.undictify(decoded)
     if "bid" in decoded:
         return auction.SignedBid.undictify(decoded)
+    if "auc" in decoded:
+        return auction.Bid.undictify(decoded)
     if "auc" in decoded:
         return auction.Bid.undictify(decoded)
 
