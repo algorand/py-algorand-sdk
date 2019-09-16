@@ -215,7 +215,7 @@ acl = algod.AlgodClient("API-TOKEN", "API-Address")
 # convert passphrase to secret key
 sk = mnemonic.to_private_key(passphrase)
 
-# get suggested parameters 
+# get suggested parameters
 params = acl.suggested_params()
 gen = params["genesisID"]
 gh = params["genesishashb64"]
@@ -230,10 +230,10 @@ receiver = "receiver Algorand Address"
 # create the transaction
 txn = transaction.PaymentTxn(account.address_from_private_key(sk), fee, last_round, last_round+1000, gh, receiver, amount, note=note)
 
-#sign it 
+# sign it
 stx = txn.sign(sk)
 
-#send it
+# send it
 txid = acl.send_transaction(stx)
 ```
 
