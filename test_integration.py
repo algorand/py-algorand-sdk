@@ -461,6 +461,49 @@ class TestIntegration(unittest.TestCase):
         result = self.acl.suggested_fee()
         self.assertIn("fee", result)
 
+    def test_transaction_group(self):
+        # get the default wallet
+        wallets = self.kcl.list_wallets()
+        wallet_id = None
+        for w in wallets:
+            if w["name"] == wallet_name:
+                wallet_id = w["id"]
+
+        # get a new handle for the wallet
+        handle = self.kcl.init_wallet_handle(wallet_id, wallet_pswd)
+
+        # get private key
+        private_key_0 = self.kcl.export_key(handle, wallet_pswd, self.account_0)
+
+        # get suggested parameters and fee
+        params = self.acl.suggested_params()
+        gen = params["genesisID"]
+        gh = params["genesishashb64"]
+        last_round = params["lastRound"]
+        fee = params["fee"]
+
+        # create transaction
+        txn = transaction.PaymentTxn(self.account_0, fee,
+                                     last_round, last_round+100, gh,
+                                     self.account_0, 1000, gen=gen)
+
+        # calculate group id
+        gid = transaction.calculate_group_id([txn])
+        txn.group = gid
+
+        # sign using kmd
+        stxn1 = self.kcl.sign_transaction(handle, wallet_pswd, txn)
+        # sign using transaction call
+        stxn2 = txn.sign(private_key_0)
+        # check that they are the same
+        self.assertEqual(encoding.msgpack_encode(stxn1), encoding.msgpack_encode(stxn2))
+
+        try:
+            send = self.acl.send_transactions([stxn1])
+            self.assertEqual(send, txn.get_txid())
+        except error.AlgodHTTPError as ex:
+            self.assertIn("TransactionPool.Remember: transaction groups not supported", str(ex))
+
 
 if __name__ == "__main__":
     to_run = [TestIntegration]

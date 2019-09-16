@@ -242,9 +242,9 @@ class AlgodClient:
         """
         serialized = []
         for txn in txns:
-            serialized.append(encoding.msgpack_encode(txn))
+            serialized.append(base64.b64decode(encoding.msgpack_encode(txn)))
 
-        return self.send_raw_transaction(b''.join(serialized),
+        return self.send_raw_transaction(base64.b64encode(b''.join(serialized)),
                                          **kwargs)
 
     def block_info(self, round, **kwargs):
