@@ -1,8 +1,6 @@
 import base64
 import msgpack
 from collections import OrderedDict
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.backends import default_backend
 from . import error
 from . import encoding
 from . import constants
@@ -32,9 +30,7 @@ class Transaction:
         """
         txn = encoding.msgpack_encode(self)
         to_sign = constants.txid_prefix + base64.b64decode(txn)
-        txidbytes = hashes.Hash(hashes.SHA512_256(), default_backend())
-        txidbytes.update(to_sign)
-        txid = txidbytes.finalize()
+        txid = encoding.checksum(to_sign)
         txid = base64.b32encode(txid).decode()
         return encoding._undo_padding(txid)
 
@@ -677,9 +673,7 @@ class Multisig:
                       bytes([self.version]) + bytes([self.threshold]))
         for s in self.subsigs:
             msig_bytes += s.public_key
-        hash = hashes.Hash(hashes.SHA512_256(), default_backend())
-        hash.update(msig_bytes)
-        addr = hash.finalize()
+        addr = encoding.checksum(msig_bytes)
         return encoding.encode_address(addr)
 
     def dictify(self):

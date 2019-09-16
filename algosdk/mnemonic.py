@@ -1,5 +1,3 @@
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.backends import default_backend
 from nacl import signing
 import base64
 from . import wordlist
@@ -137,9 +135,7 @@ def _checksum(data):
     Returns:
         bytes: checksum
     """
-    hash = hashes.Hash(hashes.SHA512_256(), default_backend())
-    hash.update(data)
-    chksum = hash.finalize()
+    chksum = encoding.checksum(data)
     temp = chksum[0:2]
     nums = _to_11_bit(temp)
     return _apply_words(nums)[0]
