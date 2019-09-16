@@ -4,9 +4,7 @@ python:
   - "3.7"
 
 install:
-  - pip3 install pynacl
-  - pip3 install msgpack
-  - pip3 install cryptography
+  - pip3 install -r requirements.txt
   - curl https://raw.githubusercontent.com/algorand/algorand-sdk-testing/master/scripts/sdkupdate.sh -o ~/sdkupdate.sh
   - chmod +x ~/sdkupdate.sh
 
