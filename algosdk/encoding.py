@@ -29,11 +29,7 @@ def msgpack_encode(obj):
     """
     if not isinstance(obj, OrderedDict):
         obj = obj.dictify()
-    od = OrderedDict()
-    for key in obj:
-        if obj[key]:
-            od[key] = obj[key]
-    return base64.b64encode(msgpack.packb(od, use_bin_type=True)).decode()
+    return base64.b64encode(msgpack.packb(obj, use_bin_type=True)).decode()
 
 
 def msgpack_decode(enc):
@@ -49,10 +45,12 @@ def msgpack_decode(enc):
     """
     decoded = msgpack.unpackb(base64.b64decode(enc), raw=False)
     if "type" in decoded:
-        if decoded["type"] == "pay":
+        if decoded["type"] == constants.payment_txn:
             return transaction.PaymentTxn.undictify(decoded)
-        else:
+        elif decoded["type"] == constants.keyreg_txn:
             return transaction.KeyregTxn.undictify(decoded)
+        elif decoded["type"] == constants.assetconfig_txn:
+            return transaction.AssetConfigTxn.undictify(decoded)
     if "msig" in decoded:
         return transaction.MultisigTransaction.undictify(decoded)
     if "txn" in decoded:

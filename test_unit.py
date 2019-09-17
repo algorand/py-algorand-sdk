@@ -72,6 +72,23 @@ class TestTransaction(unittest.TestCase):
         txid_golden = "5FJDJD5LMZC3EHUYYJNH5I23U4X6H2KXABNDGPIL557ZMJ33GZHQ"
         self.assertEqual(txn.get_txid(), txid_golden)
 
+    def test_serialize_assetconfig(self):
+        address = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        txn = transaction.AssetConfigTxn(address, 10, 322575, 323575, gh,
+                                         address, 1234, manager=address,
+                                         reserve=address, freeze=address,
+                                         clawback=address)
+        golden = ("iKRhcGFyhKFjxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh" +
+                  "/aFmxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFtxCAJ" +
+                  "+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFyxCAJ+9J2LAj4" +
+                  "bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aRjYWlkgqFjxCAJ+9J2LAj4" +
+                  "bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFpzQTSo2ZlZc0OzqJmds4A" +
+                  "BOwPomdoxCBIY7UYpLPITsgQ8i1PEIHLD3HwWaesIN7GL39w5Qk6IqJs" +
+                  "ds4ABO/3o3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH22" +
+                  "4f2kdHlwZaRhY2Zn")
+        self.assertEqual(encoding.msgpack_encode(txn), golden)
+
 
 class TestMnemonic(unittest.TestCase):
     def test_mnemonic_private_key(self):
@@ -361,6 +378,18 @@ class TestMsgpack(unittest.TestCase):
                      "iOIPooA8mrvoHRyFtk27F/PPN08bAufGhnp0BGndm90ZWxzdM1y7g==")
         self.assertEqual(keyregtxn, encoding.msgpack_encode(
                          encoding.msgpack_decode(keyregtxn)))
+
+    def test_assetconfig_txn(self):
+        actxn = ("iKRhcGFyhKFjxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh" +
+                 "/aFmxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFtxCAJ" +
+                 "+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFyxCAJ+9J2LAj4" +
+                 "bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aRjYWlkgqFjxCAJ+9J2LAj4" +
+                 "bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFpzQTSo2ZlZc0OzqJmds4A" +
+                 "BOwPomdoxCBIY7UYpLPITsgQ8i1PEIHLD3HwWaesIN7GL39w5Qk6IqJs" +
+                 "ds4ABO/3o3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH22" +
+                 "4f2kdHlwZaRhY2Zn")
+        self.assertEqual(actxn, encoding.msgpack_encode(
+                         encoding.msgpack_decode(actxn)))
 
 
 class TestSignBytes(unittest.TestCase):
