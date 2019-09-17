@@ -424,7 +424,7 @@ class AssetConfigTxn(Transaction):
         creator = None
         index = None
         total = None
-        default_frozen = False
+        default_frozen = None
         unit_name = None
         asset_name = None
         manager = None
