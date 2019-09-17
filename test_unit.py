@@ -1,4 +1,5 @@
 import base64
+import copy
 import unittest
 import random
 from algosdk import transaction
@@ -167,6 +168,10 @@ class TestTransaction(unittest.TestCase):
         self.assertEqual(goldenTx1, encoding.msgpack_encode(stx1))
         self.assertEqual(goldenTx2, encoding.msgpack_encode(stx2))
 
+        # preserve original tx{1,2} objects
+        tx1 = copy.deepcopy(tx1)
+        tx2 = copy.deepcopy(tx2)
+
         gid = transaction.calculate_group_id([tx1, tx2])
         stx1.transaction.group = gid
         stx2.transaction.group = gid
@@ -192,6 +197,33 @@ class TestTransaction(unittest.TestCase):
         )
 
         self.assertEqual(goldenTxg, txg)
+
+        # repeat test above for assign_group_id
+        txa1 = copy.deepcopy(tx1)
+        txa2 = copy.deepcopy(tx2)
+
+        txns = transaction.assign_group_id([txa1, txa2])
+        self.assertEqual(len(txns), 2)
+        stx1 = transaction.SignedTransaction(txns[0], None)
+        stx2 = transaction.SignedTransaction(txns[1], None)
+
+        # goal clerk group sets Group to every transaction and concatenate them in output file
+        # simulating that behavior here
+        txg = base64.b64encode(
+            base64.b64decode(encoding.msgpack_encode(stx1)) +
+            base64.b64decode(encoding.msgpack_encode(stx2))
+        ).decode()
+
+        self.assertEqual(goldenTxg, txg)
+
+        # check filtering
+        txns = transaction.assign_group_id([tx1, tx2], address=fromAddress)
+        self.assertEqual(len(txns), 2)
+        self.assertEqual(stx1.transaction.group, txns[0].group)
+
+        txns = transaction.assign_group_id([tx1, tx2], address="NONEXISTENT")
+        self.assertEqual(len(txns), 0)
+
 
 class TestMnemonic(unittest.TestCase):
     def test_mnemonic_private_key(self):

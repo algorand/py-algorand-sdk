@@ -858,6 +858,15 @@ class TxGroup:
 
 
 def calculate_group_id(txns):
+    """
+    Calculate group id for a given list of unsigned transactions
+
+    Args:
+        txns (list): list of unsigned transactions
+
+    Returns:
+        bytes: checksum value representing the group id
+    """
     txids = []
     for txn in txns:
         raw_txn = encoding.msgpack_encode(txn)
@@ -868,4 +877,25 @@ def calculate_group_id(txns):
 
     encoded = encoding.msgpack_encode(group)
     to_sign = constants.tgid_prefix + base64.b64decode(encoded)
-    return encoding.checksum(to_sign)
+    gid = encoding.checksum(to_sign)
+    return gid
+
+
+def assign_group_id(txns, address=None):
+    """
+    Assign group id to a given list of unsigned transactions
+
+    Args:
+        txns (list): list of unsigned transactions
+        address (str): optional sender address specifying which transaction return
+
+    Returns:
+        txns (list): list of unsigned transactions with group property set
+    """
+    gid = calculate_group_id(txns)
+    result = []
+    for tx in txns:
+        if address is None or tx.sender == address:
+            tx.group = gid
+            result.append(tx)
+    return result

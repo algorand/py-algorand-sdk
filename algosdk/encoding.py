@@ -65,8 +65,6 @@ def msgpack_decode(enc):
         return auction.SignedBid.undictify(decoded)
     if "auc" in decoded:
         return auction.Bid.undictify(decoded)
-    if "auc" in decoded:
-        return auction.Bid.undictify(decoded)
 
 
 def is_valid_address(addr):
