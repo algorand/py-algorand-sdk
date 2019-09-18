@@ -1,3 +1,4 @@
+from os import environ
 from os.path import expanduser
 home = expanduser("~")
 
@@ -13,7 +14,7 @@ algod_token = ""
 algod_address = "http://localhost:8080"
 
 # path to the data directory
-data_dir_path = home + "/node/network/Node"
+data_dir_path = environ.get("ALGORAND_DATA", home + "/node/network/Node")
 kmd_folder_name = "kmd-v0.5"  # name of the kmd folder in the data directory
 
 # get tokens and addresses automatically, if data_dir_path is not empty

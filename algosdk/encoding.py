@@ -144,10 +144,7 @@ def _checksum(addr):
     Returns:
         bytes: checksum of the address
     """
-    hash = hashes.Hash(hashes.SHA512_256(), default_backend())
-    hash.update(addr)
-    chksum = hash.finalize()[-constants.check_sum_len_bytes:]
-    return chksum
+    return checksum(addr)[-constants.check_sum_len_bytes:]
 
 
 def _correct_padding(a):
@@ -158,3 +155,18 @@ def _correct_padding(a):
 
 def _undo_padding(a):
     return a.strip("=")
+
+
+def checksum(data):
+    """
+    Compute the checksum of arbitrary binary input.
+
+    Args:
+        data (bytes): data as bytes
+
+    Returns:
+        bytes: checksum of the data
+    """
+    chksum = hashes.Hash(hashes.SHA512_256(), default_backend())
+    chksum.update(data)
+    return chksum.finalize()
