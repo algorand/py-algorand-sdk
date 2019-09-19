@@ -1,4 +1,5 @@
 import base64
+import copy
 import unittest
 import random
 from algosdk import transaction
@@ -47,6 +48,32 @@ class TestTransaction(unittest.TestCase):
         re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
         self.assertEqual(enc, re_enc)
 
+    def test_serialize_txgroup(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        txn = transaction.PaymentTxn(address, 3, 1, 100, gh, address,
+                                     1000, gen="testnet-v1.0",
+                                     close_remainder_to=address)
+        txid = txn.get_txid().encode()
+        txid = base64.decodebytes(txid)
+
+        txgroup = transaction.TxGroup([txid])
+        enc = encoding.msgpack_encode(txgroup)
+        re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
+        self.assertEqual(enc, re_enc)
+
+        txgroup = transaction.TxGroup([txid] * 11)
+        enc = encoding.msgpack_encode(txgroup)
+        re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
+        self.assertEqual(enc, re_enc)
+
+        # check group field serialization
+        gid = transaction.calculate_group_id([txn, txn])
+        txn.group = gid
+        enc = encoding.msgpack_encode(txn)
+        re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
+        self.assertEqual(enc, re_enc)
+
     def test_sign(self):
         mn = ("advice pudding treat near rule blouse same whisper inner " +
               "electric quit surface sunny dismiss leader blood seat " +
@@ -72,6 +99,13 @@ class TestTransaction(unittest.TestCase):
         txid_golden = "5FJDJD5LMZC3EHUYYJNH5I23U4X6H2KXABNDGPIL557ZMJ33GZHQ"
         self.assertEqual(txn.get_txid(), txid_golden)
 
+        # check group field serialization
+        gid = transaction.calculate_group_id([txn])
+        stx.group = gid
+        enc = encoding.msgpack_encode(stx)
+        re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
+        self.assertEqual(enc, re_enc)
+
     def test_serialize_assetconfig(self):
         address = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
@@ -88,6 +122,107 @@ class TestTransaction(unittest.TestCase):
                   "ds4ABO/3o3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH22" +
                   "4f2kdHlwZaRhY2Zn")
         self.assertEqual(encoding.msgpack_encode(txn), golden)
+
+    def test_group_id(self):
+        address = "UPYAFLHSIPMJOHVXU2MPLQ46GXJKSDCEMZ6RLCQ7GWB5PRDKJUWKKXECXI"
+        fromAddress, toAddress = address, address
+        fee = 1000
+        amount = 2000
+        genesisID = "devnet-v1.0"
+        genesisHash = "sC3P7e2SdbqKJK0tbiCdK9tdSpbe6XeCGKdoNzmlj0E="
+
+        firstRound1 = 710399
+        note1 = base64.b64decode("wRKw5cJ0CMo=")
+
+        tx1 = transaction.PaymentTxn(
+            fromAddress, fee, firstRound1, firstRound1 + 1000,
+            genesisHash, toAddress, amount,
+            note=note1, gen=genesisID, flat_fee=True
+        )
+
+        firstRound2 = 710515
+        note2 = base64.b64decode("dBlHI6BdrIg=")
+        tx2 = transaction.PaymentTxn(
+            fromAddress, fee, firstRound2, firstRound2 + 1000,
+            genesisHash, toAddress, amount,
+            note=note2, gen=genesisID, flat_fee=True
+        )
+
+        # goal clerk send dumps unsigned transaction as signed with empty signature in order to save tx type
+        stx1 = transaction.SignedTransaction(tx1, None)
+        stx2 = transaction.SignedTransaction(tx2, None)
+
+        goldenTx1 = (
+            "gaN0eG6Ko2FtdM0H0KNmZWXNA+iiZnbOAArW/6NnZW6rZGV2bmV0LXYxLjCiZ2j" +
+            "EILAtz+3tknW6iiStLW4gnSvbXUqW3ul3ghinaDc5pY9Bomx2zgAK2uekbm90Zc" +
+            "QIwRKw5cJ0CMqjcmN2xCCj8AKs8kPYlx63ppj1w5410qkMRGZ9FYofNYPXxGpNL" +
+            "KNzbmTEIKPwAqzyQ9iXHremmPXDnjXSqQxEZn0Vih81g9fEak0spHR5cGWjcGF5"
+        )
+        goldenTx2 = (
+            "gaN0eG6Ko2FtdM0H0KNmZWXNA+iiZnbOAArXc6NnZW6rZGV2bmV0LXYxLjCiZ2j" +
+            "EILAtz+3tknW6iiStLW4gnSvbXUqW3ul3ghinaDc5pY9Bomx2zgAK21ukbm90Zc" +
+            "QIdBlHI6BdrIijcmN2xCCj8AKs8kPYlx63ppj1w5410qkMRGZ9FYofNYPXxGpNL"
+            "KNzbmTEIKPwAqzyQ9iXHremmPXDnjXSqQxEZn0Vih81g9fEak0spHR5cGWjcGF5"
+        )
+
+        self.assertEqual(goldenTx1, encoding.msgpack_encode(stx1))
+        self.assertEqual(goldenTx2, encoding.msgpack_encode(stx2))
+
+        # preserve original tx{1,2} objects
+        tx1 = copy.deepcopy(tx1)
+        tx2 = copy.deepcopy(tx2)
+
+        gid = transaction.calculate_group_id([tx1, tx2])
+        stx1.transaction.group = gid
+        stx2.transaction.group = gid
+
+        # goal clerk group sets Group to every transaction and concatenate them in output file
+        # simulating that behavior here
+        txg = base64.b64encode(
+            base64.b64decode(encoding.msgpack_encode(stx1)) +
+            base64.b64decode(encoding.msgpack_encode(stx2))
+        ).decode()
+
+        goldenTxg = (
+            "gaN0eG6Lo2FtdM0H0KNmZWXNA+iiZnbOAArW/6NnZW6rZGV2bmV0LXYxLjCiZ2j" +
+            "EILAtz+3tknW6iiStLW4gnSvbXUqW3ul3ghinaDc5pY9Bo2dycMQgLiQ9OBup9H" +
+            "/bZLSfQUH2S6iHUM6FQ3PLuv9FNKyt09SibHbOAAra56Rub3RlxAjBErDlwnQIy" +
+            "qNyY3bEIKPwAqzyQ9iXHremmPXDnjXSqQxEZn0Vih81g9fEak0so3NuZMQgo/AC" +
+            "rPJD2Jcet6aY9cOeNdKpDERmfRWKHzWD18RqTSykdHlwZaNwYXmBo3R4boujYW1" +
+            "0zQfQo2ZlZc0D6KJmds4ACtdzo2dlbqtkZXZuZXQtdjEuMKJnaMQgsC3P7e2Sdb" +
+            "qKJK0tbiCdK9tdSpbe6XeCGKdoNzmlj0GjZ3JwxCAuJD04G6n0f9tktJ9BQfZLq" +
+            "IdQzoVDc8u6/0U0rK3T1KJsds4ACttbpG5vdGXECHQZRyOgXayIo3JjdsQgo/AC" +
+            "rPJD2Jcet6aY9cOeNdKpDERmfRWKHzWD18RqTSyjc25kxCCj8AKs8kPYlx63ppj" +
+            "1w5410qkMRGZ9FYofNYPXxGpNLKR0eXBlo3BheQ=="
+        )
+
+        self.assertEqual(goldenTxg, txg)
+
+        # repeat test above for assign_group_id
+        txa1 = copy.deepcopy(tx1)
+        txa2 = copy.deepcopy(tx2)
+
+        txns = transaction.assign_group_id([txa1, txa2])
+        self.assertEqual(len(txns), 2)
+        stx1 = transaction.SignedTransaction(txns[0], None)
+        stx2 = transaction.SignedTransaction(txns[1], None)
+
+        # goal clerk group sets Group to every transaction and concatenate them in output file
+        # simulating that behavior here
+        txg = base64.b64encode(
+            base64.b64decode(encoding.msgpack_encode(stx1)) +
+            base64.b64decode(encoding.msgpack_encode(stx2))
+        ).decode()
+
+        self.assertEqual(goldenTxg, txg)
+
+        # check filtering
+        txns = transaction.assign_group_id([tx1, tx2], address=fromAddress)
+        self.assertEqual(len(txns), 2)
+        self.assertEqual(stx1.transaction.group, txns[0].group)
+
+        txns = transaction.assign_group_id([tx1, tx2], address="NONEXISTENT")
+        self.assertEqual(len(txns), 0)
 
 
 class TestMnemonic(unittest.TestCase):

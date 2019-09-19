@@ -28,7 +28,7 @@ else:
     print("The address is invalid.")
 ```
 
-## Node setup 
+## Node setup
 
 Follow the instructions in Algorand's [developer resources](https://developer.algorand.org/docs/introduction-installing-node) to install a node on your computer. 
 
@@ -242,6 +242,43 @@ We can also get the NoteField object back from its bytes:
 # decode notefield
 decoded = encoding.msgpack_decode(base64.b64encode(note_field_bytes))
 print(decoded.dictify())
+```
+
+### working with transaction group
+```python
+import params
+from algosdk import algod, kmd, transaction
+
+private_key_sender, sender = account.generate_account()
+private_key_receiver, receiver = account.generate_account()
+
+# create an algod and kmd client
+acl = algod.AlgodClient(params.algod_token, params.algod_address)
+kcl = kmd.KMDClient(params.kmd_token, params.kmd_address)
+
+# get suggested parameters
+params = acl.suggested_params()
+gen = params["genesisID"]
+gh = params["genesishashb64"]
+last_round = params["lastRound"]
+fee = params["fee"]
+
+# create a transaction
+amount = 10000
+txn1 = transaction.PaymentTxn(sender, fee, last_round, last_round+100, gh, receiver, amount)
+txn2 = transaction.PaymentTxn(receiver, fee, last_round, last_round+100, gh, sender, amount)
+
+# get group id and assign it to transactions
+gid = transaction.calculate_group_id([txn1, txn2])
+txn1.transaction.group = gid
+txn2.transaction.group = gid
+
+# sign transactions
+stxn1 = txn1.sign(private_key_sender)
+stxn2 = txn2.sign(private_key_receiver)
+
+# send them over network
+acl.send_transactions([stxn1, stxn2])
 ```
 
 ## Documentation
