@@ -38,6 +38,8 @@ note_field_type_params = "p"
 # prefixes
 txid_prefix = b"TX"
 """bytes: transaction prefix when signing"""
+tgid_prefix = b"TG"
+"""bytes: transaction group prefix when computing the group ID"""
 bid_prefix = b"aB"
 """bytes: bid prefix when signing"""
 bytes_prefix = b"MX"

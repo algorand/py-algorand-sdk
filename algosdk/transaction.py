@@ -1,8 +1,6 @@
 import base64
 import msgpack
 from collections import OrderedDict
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.backends import default_backend
 from . import error
 from . import encoding
 from . import constants
@@ -23,6 +21,8 @@ class Transaction:
         self.genesis_id = gen
         self.genesis_hash = gh
 
+        self.group = None
+
     def get_txid(self):
         """
         Get the transaction's ID.
@@ -32,9 +32,7 @@ class Transaction:
         """
         txn = encoding.msgpack_encode(self)
         to_sign = constants.txid_prefix + base64.b64decode(txn)
-        txidbytes = hashes.Hash(hashes.SHA512_256(), default_backend())
-        txidbytes.update(to_sign)
-        txid = txidbytes.finalize()
+        txid = encoding.checksum(to_sign)
         txid = base64.b32encode(txid).decode()
         return encoding._undo_padding(txid)
 
@@ -111,12 +109,13 @@ class PaymentTxn(Transaction):
         fee (int)
         first_valid_round (int)
         last_valid_round (int)
+        note (bytes)
+        genesis_id (str)
         genesis_hash (str)
+        group(bytes)
         receiver (str)
         amt (int)
         close_remainder_to (str)
-        note (bytes)
-        genesis_id (str)
         type (str)
     """
 
@@ -144,6 +143,8 @@ class PaymentTxn(Transaction):
         if self.genesis_id:
             od["gen"] = self.genesis_id
         od["gh"] = base64.b64decode(self.genesis_hash)
+        if self.group:
+            od["grp"] = self.group
         od["lv"] = self.last_valid_round
         if self.note:
             od["note"] = self.note
@@ -160,6 +161,7 @@ class PaymentTxn(Transaction):
         gen = None
         amt = 0
         fv = 0
+        grp = None
         if "close" in d:
             crt = encoding.encode_address(d["close"])
         if "note" in d:
@@ -170,10 +172,13 @@ class PaymentTxn(Transaction):
             amt = d["amt"]
         if "fv" in d:
             fv = d["fv"]
+        if "grp" in d:
+            grp = d["grp"]
         tr = PaymentTxn(encoding.encode_address(d["snd"]), d["fee"], fv,
                         d["lv"], base64.b64encode(d["gh"]).decode(),
                         encoding.encode_address(d["rcv"]), amt,
                         crt, note, gen, True)
+        tr.group = grp
         return tr
 
     def __eq__(self, other):
@@ -210,14 +215,15 @@ class KeyregTxn(Transaction):
         fee (int)
         first_valid_round (int)
         last_valid_round (int)
+        note (bytes)
+        genesis_id (str)
         genesis_hash (str)
+        group(bytes)
         votepk (str)
         selkey (str)
         votefst (int)
         votelst (int)
         votekd (int)
-        note (bytes)
-        genesis_id (str)
         type (str)
     """
 
@@ -243,6 +249,8 @@ class KeyregTxn(Transaction):
         if self.genesis_id:
             od["gen"] = self.genesis_id
         od["gh"] = base64.b64decode(self.genesis_hash)
+        if self.group:
+            od["grp"] = self.group
         od["lv"] = self.last_valid_round
         if self.note:
             od["note"] = self.note
@@ -260,17 +268,21 @@ class KeyregTxn(Transaction):
         note = None
         gen = None
         fv = 0
+        grp = None
         if "note" in d:
             note = d["note"]
         if "gen" in d:
             gen = d["gen"]
         if "fv" in d:
             fv = d["fv"]
+        if "grp" in d:
+            grp = d["grp"]
         k = KeyregTxn(encoding.encode_address(d["snd"]), d["fee"], fv,
                       d["lv"], base64.b64encode(d["gh"]).decode(),
                       encoding.encode_address(d["votekey"]),
                       encoding.encode_address(d["selkey"]), d["votefst"],
                       d["votelst"], d["votekd"], note, gen, True)
+        k.group = grp
         return k
 
     def __eq__(self, other):
@@ -503,7 +515,8 @@ class SignedTransaction:
 
     def dictify(self):
         od = OrderedDict()
-        od["sig"] = base64.b64decode(self.signature)
+        if self.signature:
+            od["sig"] = base64.b64decode(self.signature)
         od["txn"] = self.transaction.dictify()
         return od
 
@@ -677,9 +690,7 @@ class Multisig:
                       bytes([self.version]) + bytes([self.threshold]))
         for s in self.subsigs:
             msig_bytes += s.public_key
-        hash = hashes.Hash(hashes.SHA512_256(), default_backend())
-        hash.update(msig_bytes)
-        addr = hash.finalize()
+        addr = encoding.checksum(msig_bytes)
         return encoding.encode_address(addr)
 
     def dictify(self):
@@ -822,3 +833,69 @@ def retrieve_from_file(path):
             txns.append(KeyregTxn.undictify(txn["txn"]))
     f.close()
     return txns
+
+
+class TxGroup:
+    def __init__(self, txns):
+        assert isinstance(txns, list)
+        """
+        Transactions specifies a list of transactions that must appear
+        together, sequentially, in a block in order for the group to be
+        valid.  Each hash in the list is a hash of a transaction with
+        the `Group` field omitted.
+        """
+        self.transactions = txns
+
+    def dictify(self):
+        od = OrderedDict()
+        od["txlist"] = self.transactions
+        return od
+
+    @staticmethod
+    def undictify(d):
+        txg = TxGroup(d["txlist"])
+        return txg
+
+
+def calculate_group_id(txns):
+    """
+    Calculate group id for a given list of unsigned transactions
+
+    Args:
+        txns (list): list of unsigned transactions
+
+    Returns:
+        bytes: checksum value representing the group id
+    """
+    txids = []
+    for txn in txns:
+        raw_txn = encoding.msgpack_encode(txn)
+        to_hash = constants.txid_prefix + base64.b64decode(raw_txn)
+        txids.append(encoding.checksum(to_hash))
+
+    group = TxGroup(txids)
+
+    encoded = encoding.msgpack_encode(group)
+    to_sign = constants.tgid_prefix + base64.b64decode(encoded)
+    gid = encoding.checksum(to_sign)
+    return gid
+
+
+def assign_group_id(txns, address=None):
+    """
+    Assign group id to a given list of unsigned transactions
+
+    Args:
+        txns (list): list of unsigned transactions
+        address (str): optional sender address specifying which transaction return
+
+    Returns:
+        txns (list): list of unsigned transactions with group property set
+    """
+    gid = calculate_group_id(txns)
+    result = []
+    for tx in txns:
+        if address is None or tx.sender == address:
+            tx.group = gid
+            result.append(tx)
+    return result

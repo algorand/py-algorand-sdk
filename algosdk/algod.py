@@ -240,6 +240,24 @@ class AlgodClient:
         return self.send_raw_transaction(encoding.msgpack_encode(txn),
                                          **kwargs)
 
+    def send_transactions(self, txns, **kwargs):
+        """
+        Broadcast list of a signed transaction objects to the network.
+
+        Args:
+            txns list of (SignedTransaction or MultisigTransaction): transactions to send
+            request_header (dict, optional): additional header for request
+
+        Returns:
+            str: first transaction ID
+        """
+        serialized = []
+        for txn in txns:
+            serialized.append(base64.b64decode(encoding.msgpack_encode(txn)))
+
+        return self.send_raw_transaction(base64.b64encode(b''.join(serialized)),
+                                         **kwargs)
+
     def block_info(self, round, **kwargs):
         """
         Return block information.
