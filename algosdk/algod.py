@@ -159,6 +159,17 @@ class AlgodClient:
         req = "/account/" + address
         return self.algod_request("GET", req, **kwargs)
 
+    def asset_info(self, creator, index, **kwargs):
+        """
+        Return asset information.
+
+        Args:
+            creator (str): asset creator public key
+            index (int): asset index
+        """
+        req = "/account/" + creator + "/assets/" + str(index)
+        return self.algod_request("GET", req, **kwargs)
+
     def transaction_info(self, address, transaction_id, **kwargs):
         """
         Return transaction information.

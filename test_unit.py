@@ -106,6 +106,7 @@ class TestTransaction(unittest.TestCase):
         re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
         self.assertEqual(enc, re_enc)
 
+
     def test_serialize_assetconfig(self):
         address = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
@@ -122,6 +123,7 @@ class TestTransaction(unittest.TestCase):
                   "ds4ABO/3o3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH22" +
                   "4f2kdHlwZaRhY2Zn")
         self.assertEqual(encoding.msgpack_encode(txn), golden)
+
 
     def test_group_id(self):
         address = "UPYAFLHSIPMJOHVXU2MPLQ46GXJKSDCEMZ6RLCQ7GWB5PRDKJUWKKXECXI"

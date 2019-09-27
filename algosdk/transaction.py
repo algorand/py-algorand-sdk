@@ -10,7 +10,7 @@ from nacl.signing import SigningKey
 
 class Transaction:
     """
-    Superclass for PaymentTxn and KeyregTxn.
+    Superclass for various transaction types.
     """
     def __init__(self, sender, fee, first, last, note, gen, gh):
         self.sender = sender
