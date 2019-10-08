@@ -49,6 +49,8 @@ bytes_prefix = b"MX"
 """bytes: bytes prefix when signing"""
 msig_addr_prefix = "MultisigAddr"
 """str: prefix for multisig addresses"""
+logic_prefix = b"Program"
+"""bytes: program (logic) prefix when signing"""
 
 
 check_sum_len_bytes = 4

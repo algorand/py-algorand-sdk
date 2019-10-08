@@ -50,6 +50,11 @@ class UnknownMsigVersionError(Exception):
         Exception.__init__(self, "unknown multisig version != 1")
 
 
+class InvalidProgram(Exception):
+    def __init__(self, message="invalid program for logic sig"):
+        Exception.__init__(self, message)
+
+
 class KMDHTTPError(Exception):
     pass
 
