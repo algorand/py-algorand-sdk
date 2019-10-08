@@ -1,11 +1,13 @@
 import base64
 import msgpack
 from collections import OrderedDict
-from . import error
-from . import encoding
-from . import constants
 from . import account
-from nacl.signing import SigningKey
+from . import constants
+from . import encoding
+from . import error
+from . import logic
+from nacl.signing import SigningKey, VerifyKey
+from nacl.exceptions import BadSignatureError
 
 
 class Transaction:
@@ -945,6 +947,31 @@ class Multisig:
         addr = encoding.checksum(msig_bytes)
         return encoding.encode_address(addr)
 
+    def verify(self, message):
+        """Verify that the multisig is valid for the message"""
+        try:
+            self.validate()
+        except (error.UnknownMsigVersionError, error.InvalidThresholdError):
+            return False
+        counter = sum(map(lambda s: s.signature != None, self.subsigs))
+        if counter < self.threshold:
+            return False
+
+        verified_count = 0
+        for subsig in self.subsigs:
+            if subsig.signature != None:
+                verify_key = VerifyKey(subsig.public_key)
+                try:
+                    verify_key.verify(message, base64.b64decode(subsig.signature))
+                    verified_count += 1
+                except BadSignatureError:
+                    return False
+
+        if verified_count < self.threshold:
+            return False
+
+        return True
+
     def dictify(self):
         od = OrderedDict()
         od["subsig"] = [subsig.dictify() for subsig in self.subsigs]
@@ -1025,6 +1052,219 @@ class MultisigSubsig:
             return False
         return (self.public_key == other.public_key and
                 self.signature == other.signature)
+
+
+class LogicSig:
+    """
+    Represents a logic signature
+
+    Arguments:
+        logic (bytes)
+        args (list of bytes)
+
+    Attributes:
+        logic (bytes)
+        sig (bytes)
+        msig (Multisig)
+        args (list of bytes)
+    """
+
+    def __init__(self, program, args=None):
+        if not program or not logic.check_program(program, args):
+            raise error.InvalidProgram()
+        self.logic = program
+        self.args = args
+        self.sig = None
+        self.msig = None
+
+    def dictify(self):
+        od = OrderedDict()
+        od["l"] = self.logic
+        od["arg"] = self.args
+        if self.sig:
+            od["sig"] = base64.b64decode(self.sig)
+        elif self.msig:
+            od["msig"] = self.msig.dictify()
+        return od
+
+    @staticmethod
+    def undictify(d):
+        lsig = LogicSig(d["l"], d.get("arg", None))
+        if "sig" in d:
+            lsig.sig = base64.b64encode(d["sig"]).decode()
+        elif "msig" in d:
+            lsig.msig = Multisig.undictify(d['msig'])
+        return lsig
+
+    def verify(self, public_key):
+        """
+        Verifies LogicSig against the transaction's sender address
+
+        Args:
+            public_key (bytes)
+
+        Returns:
+            true if the signature valid (one of):
+                - the sender address matches to the logic hash
+                - the signature is valid agains the sender addres
+            false otherwise
+        """
+        if self.sig and self.msig:
+            return False
+
+        try:
+            logic.check_program(self.logic, self.args)
+        except error.InvalidProgram:
+            return False
+
+        to_sign = constants.logic_prefix + self.logic
+
+        if not self.sig and not self.msig:
+            checksum = encoding.checksum(to_sign)
+            return checksum == public_key
+
+        if self.sig:
+            verify_key = VerifyKey(public_key)
+            try:
+                verify_key.verify(to_sign, base64.b64decode(self.sig))
+                return True
+            except BadSignatureError:
+                return False
+
+        return self.msig.verify(to_sign)
+
+    def address(self):
+        """
+        Compute hash of the logic sig program (that is the same as escrow account address) as string address
+
+        Returns: string
+        """
+        to_sign = constants.logic_prefix + self.logic
+        checksum = encoding.checksum(to_sign)
+        return encoding.encode_address(checksum)
+
+    @staticmethod
+    def sign_program(program, private_key):
+        private_key = base64.b64decode(private_key)
+        signing_key = SigningKey(private_key[:constants.signing_key_len_bytes])
+        to_sign = constants.logic_prefix + program
+        signed = signing_key.sign(to_sign)
+        return base64.b64encode(signed.signature).decode()
+
+    @staticmethod
+    def single_sig_multisig(program, private_key, multisig):
+        index = -1
+        public_key = base64.b64decode(bytes(private_key, "utf-8"))
+        public_key = public_key[constants.signing_key_len_bytes:]
+        for s in range(len(multisig.subsigs)):
+            if multisig.subsigs[s].public_key == public_key:
+                index = s
+                break
+        if index == -1:
+            raise error.InvalidSecretKeyError
+        sig = LogicSig.sign_program(program, private_key)
+
+        return sig, index
+
+    def sign(self, private_key, multisig=None):
+        """
+        Creates signature (if no pk provided) or multi signature
+
+        Args:
+            private_key (str): private key of signing account
+            multisig (Multisig): optional multisig account without signatures to sign with
+
+        Raises InvalidSecretKeyError if no matching private key in multisig object
+        """
+
+        if not multisig:
+            self.sig = LogicSig.sign_program(self.logic, private_key)
+        else:
+            sig, index = LogicSig.single_sig_multisig(self.logic, private_key, multisig)
+            multisig.subsigs[index].signature = sig
+            self.msig = multisig
+
+    def append_to_multisig(self, private_key):
+        """
+        Appends a signature to multi signature
+
+        Args:
+            private_key (str): private key of signing account
+
+        Raises InvalidSecretKeyError if no matching private key in multisig object
+        """
+
+        if self.msig is None:
+            raise error.InvalidSecretKeyError
+        sig, index = LogicSig.single_sig_multisig(self.logic, private_key, self.msig)
+        self.msig.subsigs[index].signature = sig
+
+    def __eq__(self, other):
+        if not isinstance(other, LogicSig):
+            return False
+        return (self.logic == other.logic and
+                self.args == other.args and
+                self.sig == other.sig and
+                self.msig == other.msig)
+
+
+class LogicSigTransaction:
+    """
+    Represents a logic signed transaction
+
+    Arguments:
+        transaction (Transaction)
+        lsig (LogicSig)
+
+    Attributes:
+        transaction (Transaction)
+        lsig (LogicSig)
+    """
+
+    def __init__(self, transaction, lsig):
+        self.transaction = transaction
+        self.lsig = lsig
+
+    def verify(self):
+        """
+        Verify LogicSig against the transaction
+
+        Returns:
+            true if the signature valid (one of):
+                - the sender address matches to the logic hash
+                - the signature is valid agains the sender addres
+            false otherwise
+        """
+        public_key = encoding.decode_address(self.transaction.sender)
+        return self.lsig.verify(public_key)
+
+    def dictify(self):
+        od = OrderedDict()
+        if self.lsig:
+            od["lsig"] = self.lsig.dictify()
+        od["txn"] = self.transaction.dictify()
+        return od
+
+    @staticmethod
+    def undictify(d):
+        lsig = None
+        if "lsig" in d:
+            lsig = LogicSig.undictify(d["lsig"])
+        txn_type = d["txn"]["type"]
+        if txn_type == constants.payment_txn:
+            txn = PaymentTxn.undictify(d["txn"])
+        elif txn_type == constants.keyreg_txn:
+            txn = KeyregTxn.undictify(d["txn"])
+        elif txn_type == constants.assetconfig_txn:
+            txn = AssetConfigTxn.undictify(d["txn"])
+        lstx = LogicSigTransaction(txn, lsig)
+        return lstx
+
+    def __eq__(self, other):
+        if not isinstance(other, LogicSigTransaction):
+            return False
+        return (self.lsig == other.lsig and
+                self.transaction == other.transaction)
 
 
 def write_to_file(txns, path, overwrite=True):
