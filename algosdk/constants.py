@@ -65,3 +65,9 @@ min_txn_fee = 1000
 """int: minimum transaction fee"""
 microalgos_to_algos_ratio = 1000000
 """int: how many microalgos per algo"""
+
+# logic sig related
+logic_sig_max_cost = 20000
+"""int: max execution cost of a teal program"""
+logic_sig_max_size = 1000
+"""int: max size of a teal program and its arguments in bytes"""

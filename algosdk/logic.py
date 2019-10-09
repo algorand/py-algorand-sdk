@@ -1,13 +1,12 @@
 import json
 import os
 
+from . import constants
 from . import error
 
 spec = None
 opcodes = None
 
-MAX_COST = 20000
-MAX_LENGTH = 1000
 
 def check_program(program, args=None):
     """
@@ -19,10 +18,14 @@ def check_program(program, args=None):
 
     Returns:
         True on success
-        Raises InvalidProgram on error
+
+    Raises:
+        InvalidProgram on error
     """
 
     global spec, opcodes
+    intcblock_opcode = 32
+    bytecblock_opcode = 38
 
     if not program:
         raise error.InvalidProgram("empty program")
@@ -45,7 +48,7 @@ def check_program(program, args=None):
     for arg in args:
         length += len(arg)
 
-    if length >= MAX_LENGTH:
+    if length > constants.logic_sig_max_size:
         raise error.InvalidProgram("program too long")
 
     if opcodes is None:
@@ -62,15 +65,15 @@ def check_program(program, args=None):
         cost += op['Cost']
         size = op['Size']
         if size == 0:
-            if op['Opcode'] == 32:  # intcblock
+            if op['Opcode'] == intcblock_opcode:
                 size += check_int_const_block(program, pc)
-            elif op['Opcode'] == 38:    # bytecblock
+            elif op['Opcode'] == bytecblock_opcode:
                 size += check_byte_const_block(program, pc)
             else:
                 raise error.InvalidProgram("invalid instruction")
         pc += size
 
-    if cost >= MAX_COST:
+    if cost >= constants.logic_sig_max_cost:
         raise error.InvalidProgram("program too costly to run")
 
     return True

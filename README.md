@@ -281,6 +281,41 @@ stxn2 = txn2.sign(private_key_receiver)
 acl.send_transactions([stxn1, stxn2])
 ```
 
+### working with logic sig
+
+Example below creates a LogicSig transaction signed by a program that never approves the transfer.
+
+```python
+import params
+from algosdk import algod, transaction
+
+program = b"\x01\x20\x01\x00\x22"  # int 0
+lsig = transaction.LogicSig(program)
+sender = lsig.address()
+
+# create an algod client
+acl = algod.AlgodClient(params.algod_token, params.algod_address)
+
+# get suggested parameters
+params = acl.suggested_params()
+gen = params["genesisID"]
+gh = params["genesishashb64"]
+last_round = params["lastRound"]
+fee = params["fee"]
+
+# create a transaction
+amount = 10000
+txn = transaction.PaymentTxn(sender, fee, last_round, last_round+100, gh, receiver, amount)
+
+# note, transaction is signed by logic only (no delegation)
+# that means sender address must match to program hash
+lstx = transaction.LogicSigTransaction(txn, lsig)
+assert lstx.verify()
+
+# send them over network
+acl.send_transaction(lstx)
+```
+
 ## Documentation
 Documentation for the Python SDK is available at [py-algorand-sdk.readthedocs.io](https://py-algorand-sdk.readthedocs.io/en/latest/).
 
