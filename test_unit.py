@@ -106,7 +106,6 @@ class TestTransaction(unittest.TestCase):
         re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
         self.assertEqual(enc, re_enc)
 
-
     def test_serialize_assetconfig(self):
         address = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
@@ -122,6 +121,21 @@ class TestTransaction(unittest.TestCase):
                   "BOwPomdoxCBIY7UYpLPITsgQ8i1PEIHLD3HwWaesIN7GL39w5Qk6IqJs" +
                   "ds4ABO/3o3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH22" +
                   "4f2kdHlwZaRhY2Zn")
+        self.assertEqual(encoding.msgpack_encode(txn), golden)
+
+    def test_serialize_assettransfer(self):
+        address = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        txn = transaction.AssetTransferTxn(address, 10, 322575, 323575, gh,
+                                           address, 1234, address, 1,
+                                           close_assets_to=address, revocation_target=address)
+        golden = ("i6R4YWlkgqFjxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/" +
+                  "aFpAaRhc25kxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/a" +
+                  "ZhY2xvc2XEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pGF" +
+                  "hbXTNBNKkYXJjdsQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH22" +
+                  "4f2jZmVlzQ3eomZ2zgAE7A+iZ2jEIEhjtRiks8hOyBDyLU8QgcsPcfBZp" +
+                  "6wg3sYvf3DlCToiomx2zgAE7/ejc25kxCAJ+9J2LAj4bFrmv23Xp6kB3m" +
+                  "Z111Dgfoxcdphkfbbh/aR0eXBlpWF4ZmVy")
         self.assertEqual(encoding.msgpack_encode(txn), golden)
 
 
