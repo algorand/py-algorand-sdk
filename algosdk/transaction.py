@@ -100,7 +100,7 @@ class PaymentTxn(Transaction):
         amt (int): amount in microAlgos to be sent
         close_remainder_to (str, optional): if nonempty, account will be closed
             and remaining algos will be sent to this address
-        note (bytes, optional): encoded NoteField object
+        note (bytes, optional): arbitrary optional bytes
         gen (str, optional): genesis_id
         flat_fee (bool): whether the specified fee is a flat fee
 
@@ -206,7 +206,7 @@ class KeyregTxn(Transaction):
         votefst (int): first round to vote
         votelst (int): last round to vote
         votekd (int): vote key dilution
-        note (bytes, optional): encoded NoteField object
+        note (bytes, optional): arbitrary optional bytes
         gen (str): genesis_id
         flat_fee (bool): whether the specified fee is a flat fee
 
@@ -334,7 +334,7 @@ class AssetConfigTxn(Transaction):
             holdings of this asset
         clawback (str, optional): account allowed take units of this asset
             from any account
-        note (bytes, optional): encoded NoteField object
+        note (bytes, optional): arbitrary optional bytes
         gen (str, optional): genesis_id
         flat_fee (bool): whether the specified fee is a flat fee
 
@@ -496,6 +496,111 @@ class AssetConfigTxn(Transaction):
                 self.clawback == other.clawback and
                 self.type == other.type)
 
+class AssetFreezeTxn(Transaction):
+    """
+    Represents a transaction for freezing or unfreezing an account's asset holdings.
+    Must be issued by the asset's freeze manager.
+
+    Args:
+        sender (str): address of the sender, who must be the asset's freeze manager.
+        fee (int): transaction fee (per byte if flat_fee is false)
+        first (int): first round for which the transaction is valid
+        last (int): last round for which the transaction is valid
+        gh (str): genesis_hash
+        creator (str): creator of the asset
+        index (int): index of the asset
+        target (str): address having its assets frozen or unfrozen
+        new_freeze_state (bool): true if the assets should be frozen, false if they should be transferrable
+        note (bytes, optional): arbitrary optional bytes
+        gen (str, optional): genesis_id
+        flat_fee (bool): whether the specified fee is a flat fee
+
+    Attributes:
+        sender (str)
+        fee (int)
+        first_valid_round (int)
+        last_valid_round (int)
+        genesis_hash (str)
+        creator (str)
+        index (int)
+        target (str)
+        new_freeze_state (bool)
+        note (bytes)
+        genesis_id (str)
+        type (str)
+    """
+
+    def __init__(self, sender, fee, first, last, gh, creator, index, target, new_freeze_state,
+                 note=None, gen=None, flat_fee=False):
+        Transaction.__init__(self, sender, fee, first, last, note, gen, gh)
+        self.creator = creator
+        self.index = index
+        self.target = target
+        self.new_freeze_state = new_freeze_state
+        self.type = constants.assetfreeze_txn
+        if flat_fee:
+            self.fee = max(constants.min_txn_fee, self.fee)
+        else:
+            self.fee = max(self.estimate_size()*self.fee,
+                           constants.min_txn_fee)
+
+    def dictify(self):
+        od = OrderedDict()
+
+        od["fadd"] = encoding.decode_address(self.target)
+
+        faid = OrderedDict()
+        if self.creator:
+            faid["c"] = encoding.decode_address(self.creator)
+        if self.index:
+            faid["i"] = self.index
+        od["faid"] = faid
+
+        od["afrz"] = self.new_freeze_state
+
+        od["fee"] = self.fee
+        od["fv"] = self.first_valid_round
+        if self.genesis_id:
+            od["gen"] = self.genesis_id
+        od["gh"] = base64.b64decode(self.genesis_hash)
+        od["lv"] = self.last_valid_round
+        if self.note:
+            od["note"] = self.note
+        od["snd"] = encoding.decode_address(self.sender)
+        od["type"] = self.type
+
+        return od
+
+    @staticmethod
+    def undictify(d):
+        note = None
+        gen = None
+        fv = 0
+        if "note" in d:
+            note = d["note"]
+        if "gen" in d:
+            gen = d["gen"]
+        if "fv" in d:
+            fv = d["fv"]
+        creator = encoding.encode_address(d["faid"]["c"])
+        index = d["faid"]["i"]
+        target = encoding.encode_address(d["fadd"])
+        new_freeze_state = d["afrz"]
+
+        af = AssetFreezeTxn(encoding.encode_address(d["snd"]), d["fee"], fv, d["lv"],
+                            base64.b64encode(d["gh"]).decode(), creator, index, target,
+                            new_freeze_state, note, gen, True)
+        return af
+
+    def __eq__(self, other):
+        if not isinstance(other, AssetFreezeTxn):
+            return False
+        return (super(AssetFreezeTxn, self).__eq__(other) and
+                self.creator == other.creator and
+                self.index == other.index and
+                self.target == other.target and
+                self.new_freeze_state == other.new_freeze_state and
+                self.type == other.type)
 
 class AssetTransferTxn(Transaction):
     """
@@ -521,7 +626,7 @@ class AssetTransferTxn(Transaction):
             after paying `amt` to receiver, to this address
         revocation_target (string, optional): send assets from this address, rather than the sender's address
             (can only be used by an asset's revocation manager, also known as clawback)
-        note (bytes, optional): encoded NoteField object
+        note (bytes, optional): arbitrary optional bytes
         gen (str, optional): genesis_id
         flat_fee (bool): whether the specified fee is a flat fee
 
