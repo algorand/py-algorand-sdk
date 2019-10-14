@@ -100,7 +100,7 @@ class PaymentTxn(Transaction):
         amt (int): amount in microAlgos to be sent
         close_remainder_to (str, optional): if nonempty, account will be closed
             and remaining algos will be sent to this address
-        note (bytes, optional): encoded NoteField object
+        note (bytes, optional): arbitrary optional bytes
         gen (str, optional): genesis_id
         flat_fee (bool): whether the specified fee is a flat fee
 
@@ -206,7 +206,7 @@ class KeyregTxn(Transaction):
         votefst (int): first round to vote
         votelst (int): last round to vote
         votekd (int): vote key dilution
-        note (bytes, optional): encoded NoteField object
+        note (bytes, optional): arbitrary optional bytes
         gen (str): genesis_id
         flat_fee (bool): whether the specified fee is a flat fee
 
@@ -334,7 +334,7 @@ class AssetConfigTxn(Transaction):
             holdings of this asset
         clawback (str, optional): account allowed take units of this asset
             from any account
-        note (bytes, optional): encoded NoteField object
+        note (bytes, optional): arbitrary optional bytes
         gen (str, optional): genesis_id
         flat_fee (bool): whether the specified fee is a flat fee
 
@@ -511,7 +511,7 @@ class AssetFreezeTransaction(Transaction):
         index (int): index of the asset
         target (str): address having its assets frozen or unfrozen
         new_freeze_state (bool): true if the assets should be frozen, false if they should be transferrable
-        note (bytes, optional): encoded NoteField object
+        note (bytes, optional): arbitrary optional bytes
         gen (str, optional): genesis_id
         flat_fee (bool): whether the specified fee is a flat fee
 
