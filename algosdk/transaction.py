@@ -626,7 +626,7 @@ class AssetTransferTxn(Transaction):
             after paying `amt` to receiver, to this address
         revocation_target (string, optional): send assets from this address, rather than the sender's address
             (can only be used by an asset's revocation manager, also known as clawback)
-        note (bytes, optional): encoded NoteField object
+        note (bytes, optional): arbitrary optional bytes
         gen (str, optional): genesis_id
         flat_fee (bool): whether the specified fee is a flat fee
 
