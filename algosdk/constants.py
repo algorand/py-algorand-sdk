@@ -22,7 +22,8 @@ keyreg_txn = "keyreg"
 """str: indicates a key registration transaction"""
 assetconfig_txn = "acfg"
 """str: indicates an asset configuration transaction"""
-
+assettransfer_txn = "axfer"
+"""str: indicates an asset transfer transaction"""
 
 # note field types
 note_field_type_deposit = "d"

@@ -497,6 +497,151 @@ class AssetConfigTxn(Transaction):
                 self.type == other.type)
 
 
+class AssetTransferTxn(Transaction):
+    """
+    Represents a transaction for asset transfer.
+
+    To begin accepting an asset, supply the same address as both sender and receiver, and set amount to 0.
+
+    To revoke an asset, set revocation_target, and issue the transaction from the asset's revocation manager account.
+
+    To burn or mint an asset, send the asset to or from the asset's reserve account, respectively.
+
+    Args:
+        sender (str): address of the sender
+        fee (int): transaction fee (per byte if flat_fee is false)
+        first (int): first round for which the transaction is valid
+        last (int): last round for which the transaction is valid
+        gh (str): genesis_hash
+        receiver (str): address of the receiver
+        amt (int): amount of asset units to send
+        creator (str: creator of the asset
+        index (int): index of the asset
+        close_assets_to (string, optional): send all of sender's remaining assets,
+            after paying `amt` to receiver, to this address
+        revocation_target (string, optional): send assets from this address, rather than the sender's address
+            (can only be used by an asset's revocation manager, also known as clawback)
+        note (bytes, optional): encoded NoteField object
+        gen (str, optional): genesis_id
+        flat_fee (bool): whether the specified fee is a flat fee
+
+    Attributes:
+        sender (str)
+        fee (int)
+        first_valid_round (int)
+        last_valid_round (int)
+        genesis_hash (str)
+        creator (str)
+        index (int)
+        amount (int)
+        receiver (string)
+        close_assets_to (string)
+        revocation_target (string)
+        note (bytes)
+        genesis_id (str)
+        type (str)
+    """
+
+    def __init__(self, sender, fee, first, last, gh, receiver, amt, creator, index,
+                 close_assets_to=None, revocation_target=None, note=None, gen=None, flat_fee=False):
+        Transaction.__init__(self,  sender, fee, first, last, note, gen, gh)
+        self.type = constants.assettransfer_txn
+        self.receiver = receiver
+        self.amount = amt
+        self.creator = creator
+        self.index = index
+        if close_assets_to is not None:
+            self.close_assets_to = close_assets_to
+        if revocation_target is not None:
+            self.revocation_target = revocation_target
+        if flat_fee:
+            self.fee = max(constants.min_txn_fee, self.fee)
+        else:
+            self.fee = max(self.estimate_size()*self.fee,
+                           constants.min_txn_fee)
+
+    def dictify(self):
+        od = OrderedDict()
+
+        xaid = OrderedDict()
+        if self.creator:
+            xaid["c"] = encoding.decode_address(self.creator)
+        if self.index:
+            xaid["i"] = self.index
+        od["xaid"] = xaid
+
+        if self.revocation_target is not None:
+            od["asnd"] = encoding.decode_address(self.revocation_target)
+        if self.close_assets_to is not None:
+            od["aclose"] = encoding.decode_address(self.close_assets_to)
+
+        od["aamt"] = self.amount
+        od["arcv"] = encoding.decode_address(self.receiver)
+
+        od["fee"] = self.fee
+        od["fv"] = self.first_valid_round
+        if self.genesis_id:
+            od["gen"] = self.genesis_id
+        od["gh"] = base64.b64decode(self.genesis_hash)
+        od["lv"] = self.last_valid_round
+        if self.note:
+            od["note"] = self.note
+        od["snd"] = encoding.decode_address(self.sender)
+        od["type"] = self.type
+
+        return od
+
+    @staticmethod
+    def undictify(d):
+
+        note = None
+        gen = None
+        fv = 0
+        receiver = None
+        amt = 0
+        creator = None
+        index = None
+        close_assets_to = None
+        revocation_target = None
+        if "note" in d:
+            note = d["note"]
+        if "gen" in d:
+            gen = d["gen"]
+        if "fv" in d:
+            fv = d["fv"]
+        if "arcv" in d:
+            receiver = encoding.encode_address(d["arcv"])
+        if "aamt" in d:
+            amt = d["aamt"]
+        if "xaid" in d:
+            if "c" in d["xaid"]:
+                creator = encoding.encode_address(d["xaid"]["c"])
+            if "i" in d["xaid"]:
+                index = d["xaid"]["i"]
+        if "aclose" in d:
+            close_assets_to = encoding.encode_address(d["aclose"])
+        if "asnd" in d:
+            revocation_target = encoding.encode_address(d["asnd"])
+
+        atxfer = AssetTransferTxn(encoding.encode_address(d["snd"]), d["fee"], fv,
+                                  d["lv"], base64.b64encode(d["gh"]).decode(),
+                                  receiver, amt, creator, index, close_assets_to, revocation_target,
+                                  note, gen, True)
+        return atxfer
+
+    def __eq__(self, other):
+        if not isinstance(other, AssetTransferTxn):
+            return False
+        return (super(AssetTransferTxn, self).__eq__(other) and
+                self.creator == other.creator and
+                self.index == other.index and
+                self.amount == other.amount and
+                self.receiver == other.receiver and
+                self.close_assets_to == other.close_assets_to and
+                self.revocation_target == other.revocation_target and
+                self.type == other.type)
+
+
 class SignedTransaction:
     """
     Represents a signed transaction.
@@ -532,6 +677,8 @@ class SignedTransaction:
             txn = KeyregTxn.undictify(d["txn"])
         elif txn_type == constants.assetconfig_txn:
             txn = AssetConfigTxn.undictify(d["txn"])
+        elif txn_type == constants.assettransfer_txn:
+            txn = AssetTransferTxn.undictify(d["txn"])
         stx = SignedTransaction(txn, sig)
         return stx
 
