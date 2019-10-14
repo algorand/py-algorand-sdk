@@ -496,7 +496,7 @@ class AssetConfigTxn(Transaction):
                 self.clawback == other.clawback and
                 self.type == other.type)
 
-class AssetFreezeTransaction(Transaction):
+class AssetFreezeTxn(Transaction):
     """
     Represents a transaction for freezing or unfreezing an account's asset holdings.
     Must be issued by the asset's freeze manager.
@@ -587,15 +587,15 @@ class AssetFreezeTransaction(Transaction):
         target = encoding.encode_address(d["fadd"])
         new_freeze_state = d["afrz"]
 
-        af = AssetFreezeTransaction(encoding.encode_address(d["snd"]), d["fee"], fv, d["lv"],
-                                    base64.b64encode(d["gh"]).decode(), creator, index, target,
-                                    new_freeze_state, note, gen, True)
+        af = AssetFreezeTxn(encoding.encode_address(d["snd"]), d["fee"], fv, d["lv"],
+                            base64.b64encode(d["gh"]).decode(), creator, index, target,
+                            new_freeze_state, note, gen, True)
         return af
 
     def __eq__(self, other):
-        if not isinstance(other, AssetFreezeTransaction):
+        if not isinstance(other, AssetFreezeTxn):
             return False
-        return (super(AssetFreezeTransaction, self).__eq__(other) and
+        return (super(AssetFreezeTxn, self).__eq__(other) and
                 self.creator == other.creator and
                 self.index == other.index and
                 self.target == other.target and
