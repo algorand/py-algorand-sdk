@@ -24,7 +24,8 @@ assetconfig_txn = "acfg"
 """str: indicates an asset configuration transaction"""
 assetfreeze_txn = "afrz"
 """str: indicates an asset freeze transaction"""
-
+assettransfer_txn = "axfer"
+"""str: indicates an asset transfer transaction"""
 
 # note field types
 note_field_type_deposit = "d"
