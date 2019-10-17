@@ -139,7 +139,8 @@ class PaymentTxn(Transaction):
         if self.close_remainder_to:
             od["close"] = encoding.decode_address(self.close_remainder_to)
         od["fee"] = self.fee
-        od["fv"] = self.first_valid_round
+        if self.first_valid_round:
+            od["fv"] = self.first_valid_round
         if self.genesis_id:
             od["gen"] = self.genesis_id
         od["gh"] = base64.b64decode(self.genesis_hash)
@@ -245,7 +246,8 @@ class KeyregTxn(Transaction):
     def dictify(self):
         od = OrderedDict()
         od["fee"] = self.fee
-        od["fv"] = self.first_valid_round
+        if self.first_valid_round:
+            od["fv"] = self.first_valid_round
         if self.genesis_id:
             od["gen"] = self.genesis_id
         od["gh"] = base64.b64decode(self.genesis_hash)
@@ -370,6 +372,14 @@ class AssetConfigTxn(Transaction):
         self.default_frozen = default_frozen
         self.unit_name = unit_name
         self.asset_name = asset_name
+        if unit_name != None:
+            if len(unit_name) > constants.unit_name_length:
+                raise error.WrongUnitNameLengthError
+            self.unit_name = unit_name + (constants.unit_name_length - len(unit_name))*b'\x00'
+        if asset_name != None:
+            if len(asset_name) > constants.asset_name_length:
+                raise error.WrongAssetNameLengthError
+            self.asset_name = asset_name + (constants.asset_name_length - len(asset_name))*b'\x00'
         self.manager = manager
         self.reserve = reserve
         self.freeze = freeze
@@ -392,7 +402,7 @@ class AssetConfigTxn(Transaction):
                 apar["an"] = self.asset_name
             if self.clawback:
                 apar["c"] = encoding.decode_address(self.clawback)
-            if self.default_frozen:
+            if self.default_frozen != None:
                 apar["df"] = self.default_frozen
             if self.freeze:
                 apar["f"] = encoding.decode_address(self.freeze)
@@ -415,7 +425,8 @@ class AssetConfigTxn(Transaction):
             od["caid"] = caid
 
         od["fee"] = self.fee
-        od["fv"] = self.first_valid_round
+        if self.first_valid_round:
+            od["fv"] = self.first_valid_round
         if self.genesis_id:
             od["gen"] = self.genesis_id
         od["gh"] = base64.b64decode(self.genesis_hash)
@@ -559,7 +570,8 @@ class AssetFreezeTxn(Transaction):
         od["afrz"] = self.new_freeze_state
 
         od["fee"] = self.fee
-        od["fv"] = self.first_valid_round
+        if self.first_valid_round:
+            od["fv"] = self.first_valid_round
         if self.genesis_id:
             od["gen"] = self.genesis_id
         od["gh"] = base64.b64decode(self.genesis_hash)
@@ -609,8 +621,6 @@ class AssetTransferTxn(Transaction):
     To begin accepting an asset, supply the same address as both sender and receiver, and set amount to 0.
 
     To revoke an asset, set revocation_target, and issue the transaction from the asset's revocation manager account.
-
-    To burn or mint an asset, send the asset to or from the asset's reserve account, respectively.
 
     Args:
         sender (str): address of the sender
@@ -684,7 +694,8 @@ class AssetTransferTxn(Transaction):
         od["arcv"] = encoding.decode_address(self.receiver)
 
         od["fee"] = self.fee
-        od["fv"] = self.first_valid_round
+        if self.first_valid_round:
+            od["fv"] = self.first_valid_round
         if self.genesis_id:
             od["gen"] = self.genesis_id
         od["gh"] = base64.b64decode(self.genesis_hash)

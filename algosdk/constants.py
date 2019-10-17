@@ -63,3 +63,7 @@ min_txn_fee = 1000
 """int: minimum transaction fee"""
 microalgos_to_algos_ratio = 1000000
 """int: how many microalgos per algo"""
+unit_name_length = 8
+"""int: length of asset unit names"""
+asset_name_length = 32
+"""int: length of asset names"""

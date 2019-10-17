@@ -50,6 +50,16 @@ class UnknownMsigVersionError(Exception):
         Exception.__init__(self, "unknown multisig version != 1")
 
 
+class WrongAssetNameLengthError(Exception):
+    def __init(self):
+        Exception.__init__(self, "asset name length must be less than or equal to 32 bytes")
+
+
+class WrongUnitNameLengthError(Exception):
+    def __init(self):
+        Exception.__init__(self, "asset unit name length must be less than or equal to 8 bytes")
+
+
 class KMDHTTPError(Exception):
     pass
 
