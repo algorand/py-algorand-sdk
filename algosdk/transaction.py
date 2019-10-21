@@ -254,12 +254,12 @@ class KeyregTxn(Transaction):
         od["lv"] = self.last_valid_round
         if self.note:
             od["note"] = self.note
-        od["selkey"] = encoding.decode_address(self.selkey)
+        od["selkey"] = base64.b64decode(self.selkey)
         od["snd"] = encoding.decode_address(self.sender)
         od["type"] = self.type
         od["votefst"] = self.votefst
         od["votekd"] = self.votekd
-        od["votekey"] = encoding.decode_address(self.votepk)
+        od["votekey"] = base64.b64decode(self.votepk)
         od["votelst"] = self.votelst
         return od
 
@@ -279,8 +279,8 @@ class KeyregTxn(Transaction):
             grp = d["grp"]
         k = KeyregTxn(encoding.encode_address(d["snd"]), d["fee"], fv,
                       d["lv"], base64.b64encode(d["gh"]).decode(),
-                      encoding.encode_address(d["votekey"]),
-                      encoding.encode_address(d["selkey"]), d["votefst"],
+                      base64.b64encode(d["votekey"]).decode(),
+                      base64.b64encode(d["selkey"]).decode(), d["votefst"],
                       d["votelst"], d["votekd"], note, gen, True)
         k.group = grp
         return k
