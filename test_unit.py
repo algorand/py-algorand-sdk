@@ -143,13 +143,11 @@ class TestTransaction(unittest.TestCase):
         sk = mnemonic.to_private_key(mn)
         pk = mnemonic.to_public_key(mn)
         fee = 1000
-        first_round = 322575
-        last_round = 323575
+        first_round = 10000
+        last_round = 11000
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
-        votepk = encoding.encode_address(base64.b64decode(
-                            "Kv7QI7chi1y6axoy+t7wzAVpePqRq/rkjzWh/RMYyLo="))
-        selpk = encoding.encode_address(base64.b64decode(
-                            "bPgrv4YogPcdaUAxrt1QysYZTVyRAuUMD4zQmCu9llc="))
+        votepk = "xMEOduMUvTB4sJM4jlbyJXisvHjDrZ1pnEYHQSJ0TYg="
+        selpk = "FSDjbQY+RPaa6rijWotIixQ+snuhLT/dYihjCKolGAw="
         votefirst = 10000
         votelast = 10111
         votedilution = 11
@@ -158,14 +156,13 @@ class TestTransaction(unittest.TestCase):
                                     votepk, selpk, votefirst, votelast,
                                     votedilution, flat_fee=True)
         signed_txn = txn.sign(sk)
-
-        golden = ("gqNzaWfEQEA8ANbrvTRxU9c8v6WERcEPw7D/HacRgg4vICa61vEof60Ww" +
-                  "tx6KJKDyvBuvViFeacLlngPY6vYCVP0DktTwQ2jdHhui6NmZWXNA+iiZn" +
-                  "bOAATsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiK" +
-                  "ibHbOAATv96ZzZWxrZXnEIGz4K7+GKID3HWlAMa7dUMrGGU1ckQLlDA+M" +
-                  "0JgrvZZXo3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224" +
-                  "f2kdHlwZaZrZXlyZWendm90ZWZzdM0nEKZ2b3Rla2QLp3ZvdGVrZXnEIC" +
-                  "r+0CO3IYtcumsaMvre8MwFaXj6kav65I81of0TGMi6p3ZvdGVsc3TNJ38=")
+        golden = ("gqNzaWfEQHJXgrGgN3Sxv3nh+c6lLqm8xpNZMYjvnH5CqeRyBVVnhBDjs" +
+                  "rL03MlLZ1fzdq4mhDM5dxokyWqnqDF4oOP87gajdHhui6NmZWXNA+iiZn" +
+                  "bNJxCiZ2jEIEhjtRiks8hOyBDyLU8QgcsPcfBZp6wg3sYvf3DlCToiomx" +
+                  "2zSr4pnNlbGtlecQgFSDjbQY+RPaa6rijWotIixQ+snuhLT/dYihjCKol" +
+                  "GAyjc25kxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aR0e" +
+                  "XBlpmtleXJlZ6d2b3RlZnN0zScQpnZvdGVrZAundm90ZWtlecQgxMEOdu" +
+                  "MUvTB4sJM4jlbyJXisvHjDrZ1pnEYHQSJ0TYindm90ZWxzdM0nfw==")
 
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
