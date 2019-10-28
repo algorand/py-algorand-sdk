@@ -53,7 +53,7 @@ msig_addr_prefix = "MultisigAddr"
 
 check_sum_len_bytes = 4
 """int: how long checksums should be"""
-signing_key_len_bytes = 32
+key_len_bytes = 32
 """int: how long addresses are in bytes"""
 address_len = 58
 """int: how long addresses are in base32, including the checksum"""
@@ -67,3 +67,7 @@ unit_name_length = 8
 """int: length of asset unit names"""
 asset_name_length = 32
 """int: length of asset names"""
+url_length = 32
+"""int: length of urls"""
+metadata_length = 32
+"""int: length of asset metadata"""

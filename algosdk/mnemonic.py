@@ -49,7 +49,7 @@ def from_private_key(key):
         str: mnemonic
     """
     key = base64.b64decode(key)
-    return _from_key(key[:constants.signing_key_len_bytes])
+    return _from_key(key[:constants.key_len_bytes])
 
 
 def to_private_key(mnemonic):
@@ -92,7 +92,7 @@ def _from_key(key):
     Returns:
         str: mnemonic
     """
-    if not len(key) == constants.signing_key_len_bytes:
+    if not len(key) == constants.key_len_bytes:
         raise error.WrongKeyBytesLengthError
     chksum = _checksum(key)
     nums = _to_11_bit(key)
@@ -118,9 +118,9 @@ def _to_key(mnemonic):
     m_bytes = _to_bytes(mnemonic)
     if not m_bytes[-1:len(m_bytes)] == b'\x00':
         raise error.WrongChecksumError
-    chksum = _checksum(m_bytes[:constants.signing_key_len_bytes])
+    chksum = _checksum(m_bytes[:constants.key_len_bytes])
     if chksum == m_checksum:
-        return m_bytes[:constants.signing_key_len_bytes]
+        return m_bytes[:constants.key_len_bytes]
     else:
         raise error.WrongChecksumError
 

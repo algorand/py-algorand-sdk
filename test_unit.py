@@ -106,76 +106,233 @@ class TestTransaction(unittest.TestCase):
         re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
         self.assertEqual(enc, re_enc)
 
-    def test_serialize_assetconfig(self):
-        address = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
-        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
-        txn = transaction.AssetConfigTxn(address, 10, 322575, 323575, gh,
-                                         address, 1234, manager=address,
-                                         reserve=address, freeze=address,
-                                         clawback=address)
-        golden = ("iKRhcGFyhKFjxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh" +
-                  "/aFmxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFtxCAJ" +
-                  "+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFyxCAJ+9J2LAj4" +
-                  "bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aRjYWlkgqFjxCAJ+9J2LAj4" +
-                  "bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFpzQTSo2ZlZc0OzqJmds4A" +
-                  "BOwPomdoxCBIY7UYpLPITsgQ8i1PEIHLD3HwWaesIN7GL39w5Qk6IqJs" +
-                  "ds4ABO/3o3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH22" +
-                  "4f2kdHlwZaRhY2Zn")
-        self.assertEqual(encoding.msgpack_encode(txn), golden)
+    def test_serialize_pay(self):
+        mn = ("advice pudding treat near rule blouse same whisper inner elec" +
+              "tric quit surface sunny dismiss leader blood seat clown cost " +
+              "exist hospital century reform able sponsor")
+        sk = mnemonic.to_private_key(mn)
+        pk = mnemonic.to_public_key(mn)
+        to = "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI"
+        fee = 4
+        first_round = 12466
+        last_round = 13466
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        gen = "devnet-v33.0"
+        note = base64.b64decode("6gAVR0Nsv5Y=")
+        close = "IDUTJEUIEVSMXTU4LGTJWZ2UE2E6TIODUKU6UW3FU3UKIQQ77RLUBBBFLA"
+        amount = 1000
+        txn = transaction.PaymentTxn(pk, fee, first_round, last_round, gh, to, amount, close, note, gen)
+        signed_txn = txn.sign(sk)
+        
+        golden = ("gqNzaWfEQPhUAZ3xkDDcc8FvOVo6UinzmKBCqs0woYSfodlmBMfQvGbeU" +
+                  "x3Srxy3dyJDzv7rLm26BRv9FnL2/AuT7NYfiAWjdHhui6NhbXTNA+ilY2" +
+                  "xvc2XEIEDpNJKIJWTLzpxZpptnVCaJ6aHDoqnqW2Wm6KRCH/xXo2ZlZc0" +
+                  "EmKJmds0wsqNnZW6sZGV2bmV0LXYzMy4womdoxCAmCyAJoJOohot5WHIv" +
+                  "peVG7eftF+TYXEx4r7BFJpDt0qJsds00mqRub3RlxAjqABVHQ2y/lqNyY" +
+                  "3bEIHts4k/rW6zAsWTinCIsV/X2PcOH1DkEglhBHF/hD3wCo3NuZMQg5/" +
+                  "D4TQaBHfnzHI2HixFV9GcdUaGFwgCQhmf0SVhwaKGkdHlwZaNwYXk=")
 
-    def test_serialize_assetfreeze(self):
-        address = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
-        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
-        txn = transaction.AssetFreezeTxn(address, 10, 322575, 323575, gh,
-                                                 address, 1234, address, True)
-        golden = ("iaRmYWRkxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aRmYW" +
-                  "lkgqFjxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFpzQTS" +
-                  "pGFmcnrDo2ZlZc0KtKJmds4ABOwPomdoxCBIY7UYpLPITsgQ8i1PEIHLD3" +
-                  "HwWaesIN7GL39w5Qk6IqJsds4ABO/3o3NuZMQgCfvSdiwI+Gxa5r9t16ep" +
-                  "Ad5mdddQ4H6MXHaYZH224f2kdHlwZaRhZnJ6")
-        self.assertEqual(encoding.msgpack_encode(txn), golden)
+        self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
-    def test_deserialize_assetfreeze(self):
-        address = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+    def test_serialize_keyreg(self):
+        mn = ("awful drop leaf tennis indoor begin mandate discover uncle se" +
+              "ven only coil atom any hospital uncover make any climb actor " +
+              "armed measure need above hundred")
+        sk = mnemonic.to_private_key(mn)
+        pk = mnemonic.to_public_key(mn)
+        fee = 1000
+        first_round = 322575
+        last_round = 323575
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
-        txn = transaction.AssetFreezeTxn(address, 10, 322575, 323575, gh,
-                                                 address, 1234, address, True)
-        golden = ("iaRmYWRkxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aRmYW" +
-                  "lkgqFjxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFpzQTS" +
-                  "pGFmcnrDo2ZlZc0KtKJmds4ABOwPomdoxCBIY7UYpLPITsgQ8i1PEIHLD3" +
-                  "HwWaesIN7GL39w5Qk6IqJsds4ABO/3o3NuZMQgCfvSdiwI+Gxa5r9t16ep" +
-                  "Ad5mdddQ4H6MXHaYZH224f2kdHlwZaRhZnJ6")
-        self.assertEqual(txn, encoding.msgpack_decode(golden))
+        votepk = encoding.encode_address(base64.b64decode("Kv7QI7chi1y6axoy+t7wzAVpePqRq/rkjzWh/RMYyLo="))
+        selpk = encoding.encode_address(base64.b64decode("bPgrv4YogPcdaUAxrt1QysYZTVyRAuUMD4zQmCu9llc="))
+        votefirst = 10000
+        votelast = 10111
+        votedilution = 11
 
-    def test_serialize_assettransfer(self):
-        address = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
-        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
-        txn = transaction.AssetTransferTxn(address, 10, 322575, 323575, gh,
-                                           address, 1234, address, 1,
-                                           close_assets_to=address, revocation_target=address)
-        golden = ("i6R4YWlkgqFjxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/" +
-                  "aFpAaRhc25kxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/a" +
-                  "ZhY2xvc2XEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pGF" +
-                  "hbXTNBNKkYXJjdsQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH22" +
-                  "4f2jZmVlzQ3eomZ2zgAE7A+iZ2jEIEhjtRiks8hOyBDyLU8QgcsPcfBZp" +
-                  "6wg3sYvf3DlCToiomx2zgAE7/ejc25kxCAJ+9J2LAj4bFrmv23Xp6kB3m" +
-                  "Z111Dgfoxcdphkfbbh/aR0eXBlpWF4ZmVy")
-        self.assertEqual(encoding.msgpack_encode(txn), golden)
+        txn = transaction.KeyregTxn(pk, fee, first_round, last_round, gh, votepk, selpk, votefirst, votelast, votedilution, flat_fee=True)
+        signed_txn = txn.sign(sk)
+        
+        golden = ("gqNzaWfEQEA8ANbrvTRxU9c8v6WERcEPw7D/HacRgg4vICa61vEof60Ww" +
+                  "tx6KJKDyvBuvViFeacLlngPY6vYCVP0DktTwQ2jdHhui6NmZWXNA+iiZn" +
+                  "bOAATsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiK" +
+                  "ibHbOAATv96ZzZWxrZXnEIGz4K7+GKID3HWlAMa7dUMrGGU1ckQLlDA+M" +
+                  "0JgrvZZXo3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224" +
+                  "f2kdHlwZaZrZXlyZWendm90ZWZzdM0nEKZ2b3Rla2QLp3ZvdGVrZXnEIC" +
+                  "r+0CO3IYtcumsaMvre8MwFaXj6kav65I81of0TGMi6p3ZvdGVsc3TNJ38=")
 
-    def test_deserialize_assettransfer(self):
-        address = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
+
+    def test_serialize_asset_create(self):
+        mn = ("awful drop leaf tennis indoor begin mandate discover uncle se" +
+              "ven only coil atom any hospital uncover make any climb actor " +
+              "armed measure need above hundred")
+        sk = mnemonic.to_private_key(mn)
+        pk = mnemonic.to_public_key(mn)
+        fee = 10
+        first_round = 322575
+        last_round = 323575
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
-        txn = transaction.AssetTransferTxn(address, 10, 322575, 323575, gh,
-                                           address, 1234, address, 1,
-                                           close_assets_to=address, revocation_target=address)
-        golden = ("i6R4YWlkgqFjxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/" +
-                  "aFpAaRhc25kxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/a" +
-                  "ZhY2xvc2XEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pGF" +
-                  "hbXTNBNKkYXJjdsQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH22" +
-                  "4f2jZmVlzQ3eomZ2zgAE7A+iZ2jEIEhjtRiks8hOyBDyLU8QgcsPcfBZp" +
-                  "6wg3sYvf3DlCToiomx2zgAE7/ejc25kxCAJ+9J2LAj4bFrmv23Xp6kB3m" +
-                  "Z111Dgfoxcdphkfbbh/aR0eXBlpWF4ZmVy")
-        self.assertEqual(txn, encoding.msgpack_decode(golden))
+        
+        total = 100
+        assetname = bytes("testcoin", "ascii")
+        unitname = bytes("tst", "ascii")
+        url = bytes("website", "ascii")
+        metadata = bytes("somehash", "ascii")
+
+        txn = transaction.AssetConfigTxn(pk, fee, first_round, last_round, gh, total=total, manager=pk, reserve=pk, freeze=pk, clawback=pk, unit_name=unitname, asset_name=assetname, url=url, metadata=metadata, default_frozen=False)
+        signed_txn = txn.sign(sk)
+        golden = ("gqNzaWfEQGgrTyL9vDPnfdHhNycCFm+reimO11pXK0jNcvWigQ5iHUzg3" +
+                  "OrY5QlNTUXRcCrLP07K256WPy+5aRtrYvwMgwWjdHhuh6RhcGFyiaJhbc" +
+                  "Qgc29tZWhhc2gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACiYW7EIHRlc3R" +
+                  "jb2luAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAomF1xCB3ZWJzaXRlAAAA" +
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAKFjxCAJ+9J2LAj4bFrmv23Xp6kB3" +
+                  "mZ111Dgfoxcdphkfbbh/aFmxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfo" +
+                  "xcdphkfbbh/aFtxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbb" +
+                  "h/aFyxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aF0ZKJ1" +
+                  "bsQIdHN0AAAAAACjZmVlzRHuomZ2zgAE7A+iZ2jEIEhjtRiks8hOyBDyL" +
+                  "U8QgcsPcfBZp6wg3sYvf3DlCToiomx2zgAE7/ejc25kxCAJ+9J2LAj4bF" +
+                  "rmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aR0eXBlpGFjZmc=")
+        
+        self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
+
+    def test_serialize_asset_config(self):
+        mn = ("awful drop leaf tennis indoor begin mandate discover uncle se" +
+              "ven only coil atom any hospital uncover make any climb actor " +
+              "armed measure need above hundred")
+        sk = mnemonic.to_private_key(mn)
+        pk = mnemonic.to_public_key(mn)
+        fee = 10
+        first_round = 322575
+        last_round = 323575
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        index = 1234
+        txn = transaction.AssetConfigTxn(pk, fee, first_round, last_round, gh, manager=pk, reserve=pk, freeze=pk, clawback=pk, index=index)
+        signed_txn = txn.sign(sk)
+        golden = ("gqNzaWfEQBBkfw5n6UevuIMDo2lHyU4dS80JCCQ/vTRUcTx5m0ivX68zT" +
+                  "KyuVRrHaTbxbRRc3YpJ4zeVEnC9Fiw3Wf4REwejdHhuiKRhcGFyhKFjxC" +
+                  "AJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFmxCAJ+9J2LAj" +
+                  "4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFtxCAJ+9J2LAj4bFrmv23X" +
+                  "p6kB3mZ111Dgfoxcdphkfbbh/aFyxCAJ+9J2LAj4bFrmv23Xp6kB3mZ11" +
+                  "1Dgfoxcdphkfbbh/aRjYWlkzQTSo2ZlZc0NSKJmds4ABOwPomdoxCBIY7" +
+                  "UYpLPITsgQ8i1PEIHLD3HwWaesIN7GL39w5Qk6IqJsds4ABO/3o3NuZMQ" +
+                  "gCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2kdHlwZaRhY2Zn")
+
+        self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
+
+    def test_serialize_asset_destroy(self):
+        mn = ("awful drop leaf tennis indoor begin mandate discover uncle se" +
+              "ven only coil atom any hospital uncover make any climb actor " +
+              "armed measure need above hundred")
+        sk = mnemonic.to_private_key(mn)
+        pk = mnemonic.to_public_key(mn)
+        fee = 10
+        first_round = 322575
+        last_round = 323575
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        index = 1
+        txn = transaction.AssetConfigTxn(pk, fee, first_round, last_round, gh, index=index)
+        signed_txn = txn.sign(sk)
+        golden = ("gqNzaWfEQBSP7HtzD/Lvn4aVvaNpeR4T93dQgo4LvywEwcZgDEoc/WVl3" +
+                  "aKsZGcZkcRFoiWk8AidhfOZzZYutckkccB8RgGjdHhuh6RjYWlkAaNmZW" +
+                  "XNB1iiZnbOAATsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9" +
+                  "/cOUJOiKibHbOAATv96NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+" +
+                  "jFx2mGR9tuH9pHR5cGWkYWNmZw==")
+        self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
+
+    def test_serialize_asset_freeze(self):
+        mn = ("awful drop leaf tennis indoor begin mandate discover uncle se" +
+              "ven only coil atom any hospital uncover make any climb actor " +
+              "armed measure need above hundred")
+        sk = mnemonic.to_private_key(mn)
+        pk = mnemonic.to_public_key(mn)
+        fee = 10
+        first_round = 322575
+        last_round = 323576
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        index = 1
+        freezetarget = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        txn = transaction.AssetFreezeTxn(pk, fee, first_round, last_round, gh, index=index, target=freezetarget, new_freeze_state=True)
+        signed_txn = txn.sign(sk)
+        golden = ("gqNzaWfEQAhru5V2Xvr19s4pGnI0aslqwY4lA2skzpYtDTAN9DKSH5+qs" +
+                  "fQQhm4oq+9VHVj7e1rQC49S28vQZmzDTVnYDQGjdHhuiaRhZnJ6w6RmYW" +
+                  "RkxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aRmYWlkAaN" +
+                  "mZWXNCRqiZnbOAATsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDe" +
+                  "xi9/cOUJOiKibHbOAATv+KNzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXU" +
+                  "OB+jFx2mGR9tuH9pHR5cGWkYWZyeg==")
+        self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
+
+    def test_serialize_asset_transfer(self):
+        mn = ("awful drop leaf tennis indoor begin mandate discover uncle se" +
+              "ven only coil atom any hospital uncover make any climb actor " +
+              "armed measure need above hundred")
+        sk = mnemonic.to_private_key(mn)
+        pk = mnemonic.to_public_key(mn)
+        fee = 10
+        first_round = 322575
+        last_round = 323576
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        index = 1
+        amount = 1
+        to = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        close = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        txn = transaction.AssetTransferTxn(pk, fee, first_round, last_round, gh, to, amount, index, close)
+        signed_txn = txn.sign(sk)
+        golden = ("gqNzaWfEQNkEs3WdfFq6IQKJdF1n0/hbV9waLsvojy9pM1T4fvwfMNdjG" +
+                  "QDy+LeesuQUfQVTneJD4VfMP7zKx4OUlItbrwSjdHhuiqRhYW10AaZhY2" +
+                  "xvc2XEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pGFyY3b" +
+                  "EIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9o2ZlZc0KvqJm" +
+                  "ds4ABOwPomdoxCBIY7UYpLPITsgQ8i1PEIHLD3HwWaesIN7GL39w5Qk6I" +
+                  "qJsds4ABO/4o3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH" +
+                  "224f2kdHlwZaVheGZlcqR4YWlkAQ==")
+        self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
+
+    def test_serialize_asset_accept(self):
+        mn = ("awful drop leaf tennis indoor begin mandate discover uncle se" +
+              "ven only coil atom any hospital uncover make any climb actor " +
+              "armed measure need above hundred")
+        sk = mnemonic.to_private_key(mn)
+        pk = mnemonic.to_public_key(mn)
+        fee = 10
+        first_round = 322575
+        last_round = 323575
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        index = 1
+        amount = 0
+        to = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        txn = transaction.AssetTransferTxn(pk, fee, first_round, last_round, gh, to, amount, index)
+        signed_txn = txn.sign(sk)
+        golden = ("gqNzaWfEQJ7q2rOT8Sb/wB0F87ld+1zMprxVlYqbUbe+oz0WM63FctIi+" +
+                  "K9eYFSqT26XBZ4Rr3+VTJpBE+JLKs8nctl9hgijdHhuiKRhcmN2xCAJ+9" +
+                  "J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aNmZWXNCOiiZnbOAAT" +
+                  "sD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbO" +
+                  "AATv96NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9p" +
+                  "HR5cGWlYXhmZXKkeGFpZAE=")
+        self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
+
+    def test_serialize_asset_revoke(self):
+        mn = ("awful drop leaf tennis indoor begin mandate discover uncle se" +
+              "ven only coil atom any hospital uncover make any climb actor " +
+              "armed measure need above hundred")
+        sk = mnemonic.to_private_key(mn)
+        pk = mnemonic.to_public_key(mn)
+        fee = 10
+        first_round = 322575
+        last_round = 323575
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        index = 1
+        amount = 1
+        to = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        txn = transaction.AssetTransferTxn(pk, fee, first_round, last_round, gh, to, amount, index, revocation_target=to)
+        signed_txn = txn.sign(sk)
+        golden = ("gqNzaWfEQHsgfEAmEHUxLLLR9s+Y/yq5WeoGo/jAArCbany+7ZYwExMyS" +
+                  "zAhmV7M7S8+LBtJalB4EhzEUMKmt3kNKk6+vAWjdHhuiqRhYW10AaRhcm" +
+                  "N2xCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aRhc25kxCA" +
+                  "J+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aNmZWXNCqqiZnbO" +
+                  "AATsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKib" +
+                  "HbOAATv96NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tu" +
+                  "H9pHR5cGWlYXhmZXKkeGFpZAE=")
+        self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_group_id(self):
         address = "UPYAFLHSIPMJOHVXU2MPLQ46GXJKSDCEMZ6RLCQ7GWB5PRDKJUWKKXECXI"
@@ -215,7 +372,7 @@ class TestTransaction(unittest.TestCase):
         goldenTx2 = (
             "gaN0eG6Ko2FtdM0H0KNmZWXNA+iiZnbOAArXc6NnZW6rZGV2bmV0LXYxLjCiZ2j" +
             "EILAtz+3tknW6iiStLW4gnSvbXUqW3ul3ghinaDc5pY9Bomx2zgAK21ukbm90Zc" +
-            "QIdBlHI6BdrIijcmN2xCCj8AKs8kPYlx63ppj1w5410qkMRGZ9FYofNYPXxGpNL"
+            "QIdBlHI6BdrIijcmN2xCCj8AKs8kPYlx63ppj1w5410qkMRGZ9FYofNYPXxGpNL" +
             "KNzbmTEIKPwAqzyQ9iXHremmPXDnjXSqQxEZn0Vih81g9fEak0spHR5cGWjcGF5"
         )
 
@@ -568,17 +725,85 @@ class TestMsgpack(unittest.TestCase):
         self.assertEqual(keyregtxn, encoding.msgpack_encode(
                          encoding.msgpack_decode(keyregtxn)))
 
-    def test_assetconfig_txn(self):
-        actxn = ("iKRhcGFyhKFjxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh" +
-                 "/aFmxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFtxCAJ" +
-                 "+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFyxCAJ+9J2LAj4" +
-                 "bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aRjYWlkgqFjxCAJ+9J2LAj4" +
-                 "bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFpzQTSo2ZlZc0OzqJmds4A" +
-                 "BOwPomdoxCBIY7UYpLPITsgQ8i1PEIHLD3HwWaesIN7GL39w5Qk6IqJs" +
-                 "ds4ABO/3o3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH22" +
-                 "4f2kdHlwZaRhY2Zn")
-        self.assertEqual(actxn, encoding.msgpack_encode(
-                         encoding.msgpack_decode(actxn)))
+    def test_asset_create(self):
+        assettxn = ("gqNzaWfEQGgrTyL9vDPnfdHhNycCFm+reimO11pXK0jNcvWigQ5iHU" +
+                    "zg3OrY5QlNTUXRcCrLP07K256WPy+5aRtrYvwMgwWjdHhuh6RhcGFy" +
+                    "iaJhbcQgc29tZWhhc2gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACiYW" +
+                    "7EIHRlc3Rjb2luAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAomF1xCB3" +
+                    "ZWJzaXRlAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKFjxCAJ+9J2LA" +
+                    "j4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFmxCAJ+9J2LAj4bFrm" +
+                    "v23Xp6kB3mZ111Dgfoxcdphkfbbh/aFtxCAJ+9J2LAj4bFrmv23Xp6" +
+                    "kB3mZ111Dgfoxcdphkfbbh/aFyxCAJ+9J2LAj4bFrmv23Xp6kB3mZ1" +
+                    "11Dgfoxcdphkfbbh/aF0ZKJ1bsQIdHN0AAAAAACjZmVlzRHuomZ2zg" +
+                    "AE7A+iZ2jEIEhjtRiks8hOyBDyLU8QgcsPcfBZp6wg3sYvf3DlCToi" +
+                    "omx2zgAE7/ejc25kxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdp" +
+                    "hkfbbh/aR0eXBlpGFjZmc=")
+        self.assertEqual(assettxn, encoding.msgpack_encode(
+                         encoding.msgpack_decode(assettxn)))
+
+    def test_asset_config(self):
+        assettxn = ("gqNzaWfEQBBkfw5n6UevuIMDo2lHyU4dS80JCCQ/vTRUcTx5m0ivX6" +
+                    "8zTKyuVRrHaTbxbRRc3YpJ4zeVEnC9Fiw3Wf4REwejdHhuiKRhcGFy" +
+                    "hKFjxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFmxC" +
+                    "AJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFtxCAJ+9J2" +
+                    "LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFyxCAJ+9J2LAj4bF" +
+                    "rmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aRjYWlkzQTSo2ZlZc0NSKJm" +
+                    "ds4ABOwPomdoxCBIY7UYpLPITsgQ8i1PEIHLD3HwWaesIN7GL39w5Q" +
+                    "k6IqJsds4ABO/3o3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6M" +
+                    "XHaYZH224f2kdHlwZaRhY2Zn")
+        self.assertEqual(assettxn, encoding.msgpack_encode(
+                         encoding.msgpack_decode(assettxn)))
+
+    def test_asset_destroy(self):
+        assettxn = ("gqNzaWfEQBSP7HtzD/Lvn4aVvaNpeR4T93dQgo4LvywEwcZgDEoc/W" +
+                    "Vl3aKsZGcZkcRFoiWk8AidhfOZzZYutckkccB8RgGjdHhuh6RjYWlk" +
+                    "AaNmZWXNB1iiZnbOAATsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8F" +
+                    "mnrCDexi9/cOUJOiKibHbOAATv96NzbmTEIAn70nYsCPhsWua/bden" +
+                    "qQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWkYWNmZw==")
+        self.assertEqual(assettxn, encoding.msgpack_encode(
+                         encoding.msgpack_decode(assettxn)))
+
+    def test_asset_freeze(self):
+        assettxn = ("gqNzaWfEQAhru5V2Xvr19s4pGnI0aslqwY4lA2skzpYtDTAN9DKSH5" +
+                    "+qsfQQhm4oq+9VHVj7e1rQC49S28vQZmzDTVnYDQGjdHhuiaRhZnJ6" +
+                    "w6RmYWRkxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/a" +
+                    "RmYWlkAaNmZWXNCRqiZnbOAATsD6JnaMQgSGO1GKSzyE7IEPItTxCB" +
+                    "yw9x8FmnrCDexi9/cOUJOiKibHbOAATv+KNzbmTEIAn70nYsCPhsWu" +
+                    "a/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWkYWZyeg==")
+        self.assertEqual(assettxn, encoding.msgpack_encode(
+                         encoding.msgpack_decode(assettxn)))
+
+    def test_asset_transfer(self):
+        assettxn = ("gqNzaWfEQNkEs3WdfFq6IQKJdF1n0/hbV9waLsvojy9pM1T4fvwfMN" +
+                    "djGQDy+LeesuQUfQVTneJD4VfMP7zKx4OUlItbrwSjdHhuiqRhYW10" +
+                    "AaZhY2xvc2XEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tu" +
+                    "H9pGFyY3bEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9" +
+                    "o2ZlZc0KvqJmds4ABOwPomdoxCBIY7UYpLPITsgQ8i1PEIHLD3HwWa" +
+                    "esIN7GL39w5Qk6IqJsds4ABO/4o3NuZMQgCfvSdiwI+Gxa5r9t16ep" +
+                    "Ad5mdddQ4H6MXHaYZH224f2kdHlwZaVheGZlcqR4YWlkAQ==")
+        self.assertEqual(assettxn, encoding.msgpack_encode(
+                         encoding.msgpack_decode(assettxn)))
+
+    def test_asset_accept(self):
+        assettxn = ("gqNzaWfEQJ7q2rOT8Sb/wB0F87ld+1zMprxVlYqbUbe+oz0WM63Fct" +
+                    "Ii+K9eYFSqT26XBZ4Rr3+VTJpBE+JLKs8nctl9hgijdHhuiKRhcmN2" +
+                    "xCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aNmZWXNCO" +
+                    "iiZnbOAATsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/" +
+                    "cOUJOiKibHbOAATv96NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUO" +
+                    "B+jFx2mGR9tuH9pHR5cGWlYXhmZXKkeGFpZAE=")
+        self.assertEqual(assettxn, encoding.msgpack_encode(
+                         encoding.msgpack_decode(assettxn)))
+
+    def test_asset_revoke(self):
+        assettxn = ("gqNzaWfEQHsgfEAmEHUxLLLR9s+Y/yq5WeoGo/jAArCbany+7ZYwEx" +
+                    "MySzAhmV7M7S8+LBtJalB4EhzEUMKmt3kNKk6+vAWjdHhuiqRhYW10" +
+                    "AaRhcmN2xCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/a" +
+                    "Rhc25kxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aNm" +
+                    "ZWXNCqqiZnbOAATsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrC" +
+                    "Dexi9/cOUJOiKibHbOAATv96NzbmTEIAn70nYsCPhsWua/bdenqQHe" +
+                    "ZnXXUOB+jFx2mGR9tuH9pHR5cGWlYXhmZXKkeGFpZAE=")
+        self.assertEqual(assettxn, encoding.msgpack_encode(
+                         encoding.msgpack_decode(assettxn)))
 
 
 class TestSignBytes(unittest.TestCase):

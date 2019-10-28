@@ -133,7 +133,7 @@ def encode_address(addr_bytes):
     """
     if not addr_bytes:
         return addr_bytes
-    if not len(addr_bytes) == constants.signing_key_len_bytes:
+    if not len(addr_bytes) == constants.key_len_bytes:
         raise error.WrongKeyBytesLengthError
     chksum = _checksum(addr_bytes)
     addr = base64.b32encode(addr_bytes+chksum)

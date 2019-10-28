@@ -60,6 +60,16 @@ class WrongUnitNameLengthError(Exception):
         Exception.__init__(self, "asset unit name length must be less than or equal to 8 bytes")
 
 
+class WrongUrlLengthError(Exception):
+    def __init(self):
+        Exception.__init__(self, "url length must be less than or equal to 32 bytes")
+
+
+class WrongMetadataLengthError(Exception):
+    def __init(self):
+        Exception.__init__(self, "metadata length must be less than or equal to 32 bytes")
+
+
 class KMDHTTPError(Exception):
     pass
 

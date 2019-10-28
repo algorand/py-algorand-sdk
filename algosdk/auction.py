@@ -56,7 +56,7 @@ class Bid:
         temp = encoding.msgpack_encode(self)
         to_sign = constants.bid_prefix + base64.b64decode(temp)
         private_key = base64.b64decode(private_key)
-        signing_key = SigningKey(private_key[:constants.signing_key_len_bytes])
+        signing_key = SigningKey(private_key[:constants.key_len_bytes])
         signed = signing_key.sign(to_sign)
         sig = signed.signature
         signed = SignedBid(self, base64.b64encode(sig).decode())

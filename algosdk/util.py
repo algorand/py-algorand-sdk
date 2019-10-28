@@ -44,7 +44,7 @@ def sign_bytes(to_sign, private_key):
     """
     to_sign = constants.bytes_prefix + to_sign
     private_key = base64.b64decode(private_key)
-    signing_key = SigningKey(private_key[:constants.signing_key_len_bytes])
+    signing_key = SigningKey(private_key[:constants.key_len_bytes])
     signed = signing_key.sign(to_sign)
     signature = base64.b64encode(signed.signature).decode()
     return signature
