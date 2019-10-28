@@ -334,6 +334,7 @@ class AssetConfigTxn(Transaction):
         clawback (str, optional): account allowed take units of this asset
             from any account
         url (bytes, optional): a URL where more information about the asset can be retrieved
+        metadata (bytes, optional): a commitment to some unspecified asset metadata
         note (bytes, optional): arbitrary optional bytes
         gen (str, optional): genesis_id
         flat_fee (bool, optional): whether the specified fee is a flat fee
