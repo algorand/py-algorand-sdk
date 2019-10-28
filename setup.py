@@ -18,5 +18,7 @@ setuptools.setup(
     },
     install_requires=["pynacl", "cryptography", "msgpack"],
     packages=["algosdk"],
-    python_requires=">=3.5"
+    python_requires=">=3.5",
+    package_data={'': ['data/langspec.json']},
+    include_package_data=True,
 )
