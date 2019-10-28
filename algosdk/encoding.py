@@ -55,8 +55,12 @@ def msgpack_decode(enc):
             return transaction.AssetFreezeTxn.undictify(decoded)
         elif decoded["type"] == constants.assettransfer_txn:
             return transaction.AssetTransferTxn.undictify(decoded)
+    if "l" in decoded:
+        return transaction.LogicSig.undictify(decoded)
     if "msig" in decoded:
         return transaction.MultisigTransaction.undictify(decoded)
+    if "lsig" in decoded:
+        return transaction.LogicSigTransaction.undictify(decoded)
     if "txn" in decoded:
         return transaction.SignedTransaction.undictify(decoded)
     if "subsig" in decoded:

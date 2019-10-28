@@ -10,6 +10,7 @@ from algosdk import wordlist
 from algosdk import error
 from algosdk import constants
 from algosdk import util
+from algosdk import logic
 
 
 class TestTransaction(unittest.TestCase):
@@ -823,13 +824,243 @@ class TestSignBytes(unittest.TestCase):
         self.assertFalse(util.verify_bytes(changed_message, signature, pk))
 
 
+class TestLogic(unittest.TestCase):
+    def test_parse_uvariant(self):
+        data = b"\x01"
+        value, length = logic.parse_uvariant(data)
+        self.assertEqual(length, 1)
+        self.assertEqual(value, 1)
+
+        data = b"\x7b"
+        value, length = logic.parse_uvariant(data)
+        self.assertEqual(length, 1)
+        self.assertEqual(value, 123)
+
+        data = b"\xc8\x03"
+        value, length = logic.parse_uvariant(data)
+        self.assertEqual(length, 2)
+        self.assertEqual(value, 456)
+
+    def test_parse_intcblock(self):
+        data = b"\x20\x05\x00\x01\xc8\x03\x7b\x02"
+        size = logic.check_int_const_block(data, 0)
+        self.assertEqual(size, len(data))
+
+    def test_parse_bytecblock(self):
+        data = b"\x26\x02\x0d\x31\x32\x33\x34\x35\x36\x37\x38\x39\x30\x31\x32\x33\x02\x01\x02"
+        size = logic.check_byte_const_block(data, 0)
+        self.assertEqual(size, len(data))
+
+    def test_check_program(self):
+        program = b"\x01\x20\x01\x01\x22"  # int 1
+        self.assertTrue(logic.check_program(program, None))
+
+        self.assertTrue(logic.check_program(program, ['a' * 10]))
+
+        # too long arg
+        with self.assertRaises(error.InvalidProgram):
+            logic.check_program(program, ['a' * 1000])
+
+        program += b"\x22" * 10
+        self.assertTrue(logic.check_program(program, None))
+
+        # too long program
+        program += b"\x22" * 1000
+        with self.assertRaises(error.InvalidProgram):
+            logic.check_program(program, [])
+
+        # invalid opcode
+        program = b"\x01\x20\x01\x01\x81"
+        with self.assertRaises(error.InvalidProgram):
+            logic.check_program(program, [])
+
+        # check single keccak256 and 10x keccak256 work
+        program = b"\x01\x26\x01\x01\x01\x01\x28\x02"  # byte 0x01 + keccak256
+        self.assertTrue(logic.check_program(program, []))
+
+        program += b"\x02" * 10
+        self.assertTrue(logic.check_program(program, None))
+
+        # check 800x keccak256 fail
+        program += b"\x02" * 800
+        with self.assertRaises(error.InvalidProgram):
+            logic.check_program(program, [])
+
+
+class TestLogicSig(unittest.TestCase):
+    def test_basic(self):
+        with self.assertRaises(error.InvalidProgram):
+            lsig = transaction.LogicSig(None)
+
+        with self.assertRaises(error.InvalidProgram):
+            lsig = transaction.LogicSig(b"")
+
+        program = b"\x01\x20\x01\x01\x22"  # int 1
+        program_hash = "6Z3C3LDVWGMX23BMSYMANACQOSINPFIRF77H7N3AWJZYV6OH6GWTJKVMXY"
+        public_key = encoding.decode_address(program_hash)
+
+        lsig = transaction.LogicSig(program)
+        self.assertEqual(lsig.logic, program)
+        self.assertEqual(lsig.args, None)
+        self.assertEqual(lsig.sig, None)
+        self.assertEqual(lsig.msig, None)
+        verifed = lsig.verify(public_key)
+        self.assertTrue(verifed)
+        self.assertEqual(lsig.address(), program_hash)
+
+        args = [
+            b"\x01\x02\x03",
+            b"\x04\x05\x06",
+        ]
+        lsig = transaction.LogicSig(program, args)
+        self.assertEqual(lsig.logic, program)
+        self.assertEqual(lsig.args, args)
+        self.assertEqual(lsig.sig, None)
+        self.assertEqual(lsig.msig, None)
+        verifed = lsig.verify(public_key)
+        self.assertTrue(verifed)
+
+        # check serialization
+        encoded = encoding.msgpack_encode(lsig)
+        decoded = encoding.msgpack_decode(encoded)
+        self.assertEqual(decoded, lsig)
+        verifed = lsig.verify(public_key)
+        self.assertTrue(verifed)
+
+        # check signature verification on modified program
+        program = b"\x01\x20\x01\x03\x22"
+        lsig = transaction.LogicSig(program)
+        self.assertEqual(lsig.logic, program)
+        verifed = lsig.verify(public_key)
+        self.assertFalse(verifed)
+        self.assertNotEqual(lsig.address(), program_hash)
+
+        # check invalid program fails
+        program = b"\x00\x20\x01\x03\x22"
+        lsig = transaction.LogicSig(program)
+        verifed = lsig.verify(public_key)
+        self.assertFalse(verifed)
+
+    def test_signature(self):
+        private_key, address = account.generate_account()
+        public_key = encoding.decode_address(address)
+        program = b"\x01\x20\x01\x01\x22"  # int 1
+        lsig = transaction.LogicSig(program)
+        lsig.sign(private_key)
+        self.assertEqual(lsig.logic, program)
+        self.assertEqual(lsig.args, None)
+        self.assertEqual(lsig.msig, None)
+        self.assertNotEqual(lsig.sig, None)
+
+        verifed = lsig.verify(public_key)
+        self.assertTrue(verifed)
+
+        # check serialization
+        encoded = encoding.msgpack_encode(lsig)
+        decoded = encoding.msgpack_decode(encoded)
+        self.assertEqual(decoded, lsig)
+        verifed = lsig.verify(public_key)
+        self.assertTrue(verifed)
+
+    def test_multisig(self):
+        private_key, _ = account.generate_account()
+        private_key_1, account_1 = account.generate_account()
+        private_key_2, account_2 = account.generate_account()
+
+        # create multisig address with invalid version
+        msig = transaction.Multisig(1, 2, [account_1, account_2])
+        program = b"\x01\x20\x01\x01\x22"  # int 1
+        lsig = transaction.LogicSig(program)
+        lsig.sign(private_key_1, msig)
+        self.assertEqual(lsig.logic, program)
+        self.assertEqual(lsig.args, None)
+        self.assertEqual(lsig.sig, None)
+        self.assertNotEqual(lsig.msig, None)
+
+        sender_addr = msig.address()
+        public_key = encoding.decode_address(sender_addr)
+        verifed = lsig.verify(public_key)
+        self.assertFalse(verifed)       # not enough signatures
+
+        with self.assertRaises(error.InvalidSecretKeyError):
+            lsig.append_to_multisig(private_key)
+
+        lsig.append_to_multisig(private_key_2)
+        verifed = lsig.verify(public_key)
+        self.assertTrue(verifed)
+
+        # combine sig and multisig, ensure it fails
+        lsigf = transaction.LogicSig(program)
+        lsigf.sign(private_key)
+        lsig.sig = lsigf.sig
+        verifed = lsig.verify(public_key)
+        self.assertFalse(verifed)
+
+        # remove, ensure it still works
+        lsig.sig = None
+        verifed = lsig.verify(public_key)
+        self.assertTrue(verifed)
+
+        # check serialization
+        encoded = encoding.msgpack_encode(lsig)
+        decoded = encoding.msgpack_decode(encoded)
+        self.assertEqual(decoded, lsig)
+        verifed = lsig.verify(public_key)
+        self.assertTrue(verifed)
+
+    def test_transaction(self):
+        fromAddress = "47YPQTIGQEO7T4Y4RWDYWEKV6RTR2UNBQXBABEEGM72ESWDQNCQ52OPASU"
+        toAddress = "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI"
+        mn = "advice pudding treat near rule blouse same whisper inner electric quit surface sunny dismiss leader blood seat clown cost exist hospital century reform able sponsor"
+        fee = 1000
+        amount = 2000
+        firstRound = 2063137
+        genesisID = "devnet-v1.0"
+
+        genesisHash = "sC3P7e2SdbqKJK0tbiCdK9tdSpbe6XeCGKdoNzmlj0E="
+        note = base64.b64decode("8xMCTuLQ810=")
+
+        tx = transaction.PaymentTxn(
+            fromAddress, fee, firstRound, firstRound + 1000,
+            genesisHash, toAddress, amount,
+            note=note, gen=genesisID, flat_fee=True
+        )
+
+        golden = (
+            "gqRsc2lng6NhcmeSxAMxMjPEAzQ1NqFsxAUBIAEBIqNzaWfEQE6HXaI5K0lcq50o/y3bWOYsyw9TLi/oor" +
+            "ZB4xaNdn1Z14351u2f6JTON478fl+JhIP4HNRRAIh/I8EWXBPpJQ2jdHhuiqNhbXTNB9CjZmVlzQPoomZ2" +
+            "zgAfeyGjZ2Vuq2Rldm5ldC12MS4womdoxCCwLc/t7ZJ1uookrS1uIJ0r211Klt7pd4IYp2g3OaWPQaJsds" +
+            "4AH38JpG5vdGXECPMTAk7i0PNdo3JjdsQge2ziT+tbrMCxZOKcIixX9fY9w4fUOQSCWEEcX+EPfAKjc25k" +
+            "xCDn8PhNBoEd+fMcjYeLEVX0Zx1RoYXCAJCGZ/RJWHBooaR0eXBlo3BheQ=="
+        )
+
+        program = b"\x01\x20\x01\x01\x22"  # int 1
+        args = [
+            b"123",
+            b"456"
+        ]
+        sk = mnemonic.to_private_key(mn)
+        lsig = transaction.LogicSig(program, args)
+        lsig.sign(sk)
+        lstx = transaction.LogicSigTransaction(tx, lsig)
+        verifed = lstx.verify()
+        self.assertTrue(verifed)
+
+        golden_decoded = encoding.msgpack_decode(golden)
+        self.assertEqual(lstx, golden_decoded)
+
+
 if __name__ == "__main__":
-    to_run = [TestTransaction,
-              TestMnemonic,
-              TestAddress,
-              TestMultisig,
-              TestMsgpack,
-              TestSignBytes]
+    to_run = [
+        TestTransaction,
+        TestMnemonic,
+        TestAddress,
+        TestMultisig,
+        TestMsgpack,
+        TestSignBytes,
+        TestLogic,
+        TestLogicSig,
+    ]
     loader = unittest.TestLoader()
     suites = [loader.loadTestsFromTestCase(test_class)
               for test_class in to_run]

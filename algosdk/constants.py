@@ -49,6 +49,8 @@ bytes_prefix = b"MX"
 """bytes: bytes prefix when signing"""
 msig_addr_prefix = "MultisigAddr"
 """str: prefix for multisig addresses"""
+logic_prefix = b"Program"
+"""bytes: program (logic) prefix when signing"""
 
 
 check_sum_len_bytes = 4
@@ -71,3 +73,9 @@ url_length = 32
 """int: length of urls"""
 metadata_length = 32
 """int: length of asset metadata"""
+
+# logic sig related
+logic_sig_max_cost = 20000
+"""int: max execution cost of a teal program"""
+logic_sig_max_size = 1000
+"""int: max size of a teal program and its arguments in bytes"""
