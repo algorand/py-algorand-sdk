@@ -159,16 +159,38 @@ class AlgodClient:
         req = "/account/" + address
         return self.algod_request("GET", req, **kwargs)
 
-    def asset_info(self, creator, index, **kwargs):
+    def asset_info(self, index, **kwargs):
         """
         Return asset information.
 
         Args:
-            creator (str): asset creator public key
             index (int): asset index
         """
-        req = "/account/" + creator + "/assets/" + str(index)
+        req = "/asset/" + str(index)
         return self.algod_request("GET", req, **kwargs)
+
+    def list_assets(self, max_index=None, max_assets=None, **kwargs):
+        """
+        Return a list of up to max_assets assets, where the maximum asset
+        index is max_index.
+
+        Args:
+            max_index (int, optional): maximum asset index; defaults to 0,
+                which lists most recent assets
+            max_assets (int, optional): maximum number of assets (0 to 100);
+                defualts to 100
+        """
+        query = dict()
+        if max_index is not None:
+            query["assetIdx"] = max_index
+        else:
+            query["assetIdx"] = 0
+        if max_assets is not None:
+            query["max"] = max_assets
+        else:
+            query["max"] = 100
+        req = "/assets"
+        return self.algod_request("GET", req, params=query, **kwargs)
 
     def transaction_info(self, address, transaction_id, **kwargs):
         """
