@@ -1,4 +1,3 @@
-from . import constants
 from . import mnemonic
 
 

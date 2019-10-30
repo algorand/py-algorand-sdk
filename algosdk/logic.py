@@ -78,6 +78,7 @@ def check_program(program, args=None):
 
     return True
 
+
 def check_int_const_block(program, pc):
     size = 1
     num_ints, bytes_used = parse_uvariant(program[pc + size:])
@@ -92,6 +93,7 @@ def check_int_const_block(program, pc):
             raise error.InvalidProgram("could not decode int const[%d] at pc=%d" % (i, pc + size))
         size += bytes_used
     return size
+
 
 def check_byte_const_block(program, pc):
     size = 1
@@ -111,6 +113,7 @@ def check_byte_const_block(program, pc):
         size += item_len
     return size
 
+
 def parse_uvariant(buf):
     x = 0
     s = 0
@@ -118,7 +121,7 @@ def parse_uvariant(buf):
         if b < 0x80:
             if i > 9 or i == 9 and b > 1:
                 return 0, -(i + 1)
-            return x | int(b) <<s, i + 1
+            return x | int(b) << s, i + 1
         x |= int(b & 0x7f) << s
         s += 7
 

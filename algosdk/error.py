@@ -52,9 +52,9 @@ class UnknownMsigVersionError(Exception):
 
 class WrongMetadataLengthError(Exception):
     def __init(self):
-        Exception.__init__(self, "metadata length must be less than or equal to 32 bytes")
+        Exception.__init__(self, "metadata length must be 32 bytes")
 
-        
+
 class InvalidProgram(Exception):
     def __init__(self, message="invalid program for logic sig"):
         Exception.__init__(self, message)

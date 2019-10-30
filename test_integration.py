@@ -473,7 +473,8 @@ class TestIntegration(unittest.TestCase):
         handle = self.kcl.init_wallet_handle(wallet_id, wallet_pswd)
 
         # get private key
-        private_key_0 = self.kcl.export_key(handle, wallet_pswd, self.account_0)
+        private_key_0 = self.kcl.export_key(handle, wallet_pswd,
+                                            self.account_0)
 
         # get suggested parameters and fee
         params = self.acl.suggested_params()
@@ -496,13 +497,16 @@ class TestIntegration(unittest.TestCase):
         # sign using transaction call
         stxn2 = txn.sign(private_key_0)
         # check that they are the same
-        self.assertEqual(encoding.msgpack_encode(stxn1), encoding.msgpack_encode(stxn2))
+        self.assertEqual(encoding.msgpack_encode(stxn1),
+                         encoding.msgpack_encode(stxn2))
 
         try:
             send = self.acl.send_transactions([stxn1])
             self.assertEqual(send, txn.get_txid())
         except error.AlgodHTTPError as ex:
-            self.assertIn("TransactionPool.Remember: transaction groups not supported", str(ex))
+            self.assertIn(
+                "TransactionPool.Remember: transaction groups not supported",
+                str(ex))
 
 
 if __name__ == "__main__":
