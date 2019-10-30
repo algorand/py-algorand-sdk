@@ -50,21 +50,6 @@ class UnknownMsigVersionError(Exception):
         Exception.__init__(self, "unknown multisig version != 1")
 
 
-class WrongAssetNameLengthError(Exception):
-    def __init(self):
-        Exception.__init__(self, "asset name length must be less than or equal to 32 bytes")
-
-
-class WrongUnitNameLengthError(Exception):
-    def __init(self):
-        Exception.__init__(self, "asset unit name length must be less than or equal to 8 bytes")
-
-
-class WrongUrlLengthError(Exception):
-    def __init(self):
-        Exception.__init__(self, "url length must be less than or equal to 32 bytes")
-
-
 class WrongMetadataLengthError(Exception):
     def __init(self):
         Exception.__init__(self, "metadata length must be less than or equal to 32 bytes")

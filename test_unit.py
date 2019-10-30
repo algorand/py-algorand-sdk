@@ -176,25 +176,26 @@ class TestTransaction(unittest.TestCase):
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
         
         total = 100
-        assetname = bytes("testcoin", "ascii")
-        unitname = bytes("tst", "ascii")
-        url = bytes("website", "ascii")
-        metadata = bytes("somehash", "ascii")
+        assetname = "testcoin"
+        unitname = "tst"
+        url = "website"
+        metadata = bytes("fACPO4nRgO55j1ndAK3W6Sgc4APkcyFh", "ascii")
+        print(len(metadata))
 
-        txn = transaction.AssetConfigTxn(pk, fee, first_round, last_round, gh, total=total, manager=pk, reserve=pk, freeze=pk, clawback=pk, unit_name=unitname, asset_name=assetname, url=url, metadata=metadata, default_frozen=False)
+        txn = transaction.AssetConfigTxn(pk, fee, first_round, last_round, gh, total=total, manager=pk, reserve=pk, freeze=pk, clawback=pk, unit_name=unitname, asset_name=assetname, url=url, metadata_hash=metadata, default_frozen=False)
         signed_txn = txn.sign(sk)
-        golden = ("gqNzaWfEQGgrTyL9vDPnfdHhNycCFm+reimO11pXK0jNcvWigQ5iHUzg3" +
-                  "OrY5QlNTUXRcCrLP07K256WPy+5aRtrYvwMgwWjdHhuh6RhcGFyiaJhbc" +
-                  "Qgc29tZWhhc2gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACiYW7EIHRlc3R" +
-                  "jb2luAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAomF1xCB3ZWJzaXRlAAAA" +
-                  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAKFjxCAJ+9J2LAj4bFrmv23Xp6kB3" +
-                  "mZ111Dgfoxcdphkfbbh/aFmxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfo" +
-                  "xcdphkfbbh/aFtxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbb" +
-                  "h/aFyxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aF0ZKJ1" +
-                  "bsQIdHN0AAAAAACjZmVlzRHuomZ2zgAE7A+iZ2jEIEhjtRiks8hOyBDyL" +
-                  "U8QgcsPcfBZp6wg3sYvf3DlCToiomx2zgAE7/ejc25kxCAJ+9J2LAj4bF" +
-                  "rmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aR0eXBlpGFjZmc=")
-        
+        golden = ("gqNzaWfEQEDd1OMRoQI/rzNlU4iiF50XQXmup3k5czI9hEsNqHT7K4Ksf" +
+                  "mA/0DUVkbzOwtJdRsHS8trm3Arjpy9r7AXlbAujdHhuh6RhcGFyiaJhbc" +
+                  "QgZkFDUE80blJnTzU1ajFuZEFLM1c2U2djNEFQa2N5RmiiYW6odGVzdGN" +
+                  "vaW6iYXWnd2Vic2l0ZaFjxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxc" +
+                  "dphkfbbh/aFmxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/" +
+                  "aFtxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFyxCAJ+9" +
+                  "J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aF0ZKJ1bqN0c3SjZmV" +
+                  "lzQ+0omZ2zgAE7A+iZ2jEIEhjtRiks8hOyBDyLU8QgcsPcfBZp6wg3sYv" +
+                  "f3DlCToiomx2zgAE7/ejc25kxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgf" +
+                  "oxcdphkfbbh/aR0eXBlpGFjZmc=")
+        print(encoding.msgpack_encode(signed_txn))
+        print(golden)
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_serialize_asset_config(self):
@@ -727,18 +728,16 @@ class TestMsgpack(unittest.TestCase):
                          encoding.msgpack_decode(keyregtxn)))
 
     def test_asset_create(self):
-        assettxn = ("gqNzaWfEQGgrTyL9vDPnfdHhNycCFm+reimO11pXK0jNcvWigQ5iHU" +
-                    "zg3OrY5QlNTUXRcCrLP07K256WPy+5aRtrYvwMgwWjdHhuh6RhcGFy" +
-                    "iaJhbcQgc29tZWhhc2gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACiYW" +
-                    "7EIHRlc3Rjb2luAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAomF1xCB3" +
-                    "ZWJzaXRlAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKFjxCAJ+9J2LA" +
-                    "j4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFmxCAJ+9J2LAj4bFrm" +
-                    "v23Xp6kB3mZ111Dgfoxcdphkfbbh/aFtxCAJ+9J2LAj4bFrmv23Xp6" +
-                    "kB3mZ111Dgfoxcdphkfbbh/aFyxCAJ+9J2LAj4bFrmv23Xp6kB3mZ1" +
-                    "11Dgfoxcdphkfbbh/aF0ZKJ1bsQIdHN0AAAAAACjZmVlzRHuomZ2zg" +
-                    "AE7A+iZ2jEIEhjtRiks8hOyBDyLU8QgcsPcfBZp6wg3sYvf3DlCToi" +
-                    "omx2zgAE7/ejc25kxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdp" +
-                    "hkfbbh/aR0eXBlpGFjZmc=")
+        assettxn = ("gqNzaWfEQEDd1OMRoQI/rzNlU4iiF50XQXmup3k5czI9hEsNqHT7K4Ksf" +
+                  "mA/0DUVkbzOwtJdRsHS8trm3Arjpy9r7AXlbAujdHhuh6RhcGFyiaJhbc" +
+                  "QgZkFDUE80blJnTzU1ajFuZEFLM1c2U2djNEFQa2N5RmiiYW6odGVzdGN" +
+                  "vaW6iYXWnd2Vic2l0ZaFjxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxc" +
+                  "dphkfbbh/aFmxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/" +
+                  "aFtxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFyxCAJ+9" +
+                  "J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aF0ZKJ1bqN0c3SjZmV" +
+                  "lzQ+0omZ2zgAE7A+iZ2jEIEhjtRiks8hOyBDyLU8QgcsPcfBZp6wg3sYv" +
+                  "f3DlCToiomx2zgAE7/ejc25kxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgf" +
+                  "oxcdphkfbbh/aR0eXBlpGFjZmc=")
         self.assertEqual(assettxn, encoding.msgpack_encode(
                          encoding.msgpack_decode(assettxn)))
 

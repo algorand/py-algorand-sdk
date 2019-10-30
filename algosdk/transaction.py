@@ -325,8 +325,8 @@ class AssetConfigTxn(Transaction):
         total (int, optional): total number of units of this asset created
         default_frozen (bool, optional): whether slots for this asset in user
             accounts are frozen by default
-        unit_name (bytes, optional): hint for the name of a unit of this asset
-        asset_name (bytes, optional): hint for the name of the asset
+        unit_name (str, optional): hint for the name of a unit of this asset
+        asset_name (str, optional): hint for the name of the asset
         manager (str, optional): address allowed to change nonzero addresses
             for this asset
         reserve (str, optional): account whose holdings of this asset should
@@ -335,8 +335,10 @@ class AssetConfigTxn(Transaction):
             holdings of this asset
         clawback (str, optional): account allowed take units of this asset
             from any account
-        url (bytes, optional): a URL where more information about the asset can be retrieved
-        metadata (bytes, optional): a commitment to some unspecified asset metadata
+        url (str, optional): a URL where more information about the asset
+            can be retrieved
+        metadata_hash (byte[32], optional): a commitment to some unspecified
+            asset metadata (32 byte hash)
         note (bytes, optional): arbitrary optional bytes
         gen (str, optional): genesis_id
         flat_fee (bool, optional): whether the specified fee is a flat fee
@@ -350,14 +352,14 @@ class AssetConfigTxn(Transaction):
         index (int)
         total (int)
         default_frozen (bool)
-        unit_name (byte[8])
-        asset_name (byte[32])
+        unit_name (str)
+        asset_name (str)
         manager (str)
         reserve (str)
         freeze (str)
         clawback (str)
-        url (bytes[32])
-        metadata (byte[32])
+        url (str)
+        metadata_hash (byte[32])
         note (bytes)
         genesis_id (str)
         type (str)
@@ -366,7 +368,7 @@ class AssetConfigTxn(Transaction):
     def __init__(self, sender, fee, first, last, gh, index=None,
                  total=None, default_frozen=None, unit_name=None,
                  asset_name=None, manager=None, reserve=None, 
-                 freeze=None, clawback=None, url=None, metadata=None,
+                 freeze=None, clawback=None, url=None, metadata_hash=None,
                  note=None, gen=None, flat_fee=False):
         Transaction.__init__(self,  sender, fee, first, last, note, gen, gh)
         self.index = index
@@ -374,28 +376,15 @@ class AssetConfigTxn(Transaction):
         self.default_frozen = default_frozen
         self.unit_name = unit_name
         self.asset_name = asset_name
-        if unit_name != None:
-            if len(unit_name) > constants.unit_name_length:
-                raise error.WrongUnitNameLengthError
-            self.unit_name = unit_name + (constants.unit_name_length - len(unit_name))*b'\x00'
-        if asset_name != None:
-            if len(asset_name) > constants.asset_name_length:
-                raise error.WrongAssetNameLengthError
-            self.asset_name = asset_name + (constants.asset_name_length - len(asset_name))*b'\x00'
         self.manager = manager
         self.reserve = reserve
         self.freeze = freeze
         self.clawback = clawback
         self.url = url
-        if url != None:
-            if len(url) > constants.url_length:
-                raise error.WrongUrlLengthError
-            self.url = url + (constants.url_length - len(url))*b'\x00'
-        self.metadata = metadata
-        if metadata != None:
-            if len(metadata) > constants.metadata_length:
+        self.metadata_hash = metadata_hash
+        if metadata_hash != None:
+            if len(metadata_hash) != constants.metadata_length:
                 raise error.WrongMetadataLengthError
-            self.metadata = metadata + (constants.metadata_length - len(metadata))*b'\x00'
         self.type = constants.assetconfig_txn
         if flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
@@ -410,8 +399,8 @@ class AssetConfigTxn(Transaction):
                 self.asset_name or self.manager or self.reserve or
                 self.freeze or self.clawback):
             apar = OrderedDict()
-            if self.metadata:
-                apar["am"] = self.metadata
+            if self.metadata_hash:
+                apar["am"] = self.metadata_hash
             if self.asset_name:
                 apar["an"] = self.asset_name
             if self.url:
@@ -465,7 +454,7 @@ class AssetConfigTxn(Transaction):
         freeze = None
         clawback = None
         url = None
-        metadata = None
+        metadata_hash = None
 
         if "note" in d:
             note = d["note"]
@@ -495,13 +484,13 @@ class AssetConfigTxn(Transaction):
             if "au" in d["apar"]:
                 url = d["apar"]["au"]
             if "am" in d["apar"]:
-                metadata = d["apar"]["am"]
+                metadata_hash = d["apar"]["am"]
 
         ac = AssetConfigTxn(encoding.encode_address(d["snd"]), d["fee"], fv,
                             d["lv"], base64.b64encode(d["gh"]).decode(),
                             index, total, default_frozen,
                             unit_name, asset_name, manager, reserve, freeze,
-                            clawback, url, metadata, note, gen, True)
+                            clawback, url, metadata_hash, note, gen, True)
         return ac
 
     def __eq__(self, other):
@@ -518,7 +507,7 @@ class AssetConfigTxn(Transaction):
                 self.freeze == other.freeze and
                 self.clawback == other.clawback and
                 self.url == other.url and
-                self.metadata == other.metadata and
+                self.metadata_hash == other.metadata_hash and
                 self.type == other.type)
 
 class AssetFreezeTxn(Transaction):
@@ -1147,7 +1136,7 @@ class LogicSig:
     @staticmethod
     def sign_program(program, private_key):
         private_key = base64.b64decode(private_key)
-        signing_key = SigningKey(private_key[:constants.signing_key_len_bytes])
+        signing_key = SigningKey(private_key[:constants.key_len_bytes])
         to_sign = constants.logic_prefix + program
         signed = signing_key.sign(to_sign)
         return base64.b64encode(signed.signature).decode()
@@ -1156,7 +1145,7 @@ class LogicSig:
     def single_sig_multisig(program, private_key, multisig):
         index = -1
         public_key = base64.b64decode(bytes(private_key, "utf-8"))
-        public_key = public_key[constants.signing_key_len_bytes:]
+        public_key = public_key[constants.key_len_bytes:]
         for s in range(len(multisig.subsigs)):
             if multisig.subsigs[s].public_key == public_key:
                 index = s
