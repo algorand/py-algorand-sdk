@@ -560,7 +560,8 @@ class AssetFreezeTxn(Transaction):
 
     def dictify(self):
         od = OrderedDict()
-        od["afrz"] = self.new_freeze_state
+        if self.new_freeze_state:
+            od["afrz"] = self.new_freeze_state
 
         od["fadd"] = encoding.decode_address(self.target)
 
