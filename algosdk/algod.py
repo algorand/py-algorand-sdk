@@ -159,16 +159,32 @@ class AlgodClient:
         req = "/account/" + address
         return self.algod_request("GET", req, **kwargs)
 
-    def asset_info(self, creator, index, **kwargs):
+    def asset_info(self, index, **kwargs):
         """
         Return asset information.
 
         Args:
-            creator (str): asset creator public key
             index (int): asset index
         """
-        req = "/account/" + creator + "/assets/" + str(index)
+        req = "/asset/" + str(index)
         return self.algod_request("GET", req, **kwargs)
+
+    def list_assets(self, max_index=None, max_assets=None, **kwargs):
+        """
+        Return a list of up to max_assets assets, where the maximum asset
+        index is max_index.
+
+        Args:
+            max_index (int, optional): maximum asset index; defaults to 0,
+                which lists most recent assets
+            max_assets (int, optional): maximum number of assets (0 to 100);
+                defaults to 100
+        """
+        query = dict()
+        query["assetIdx"] = max_index if max_index is not None else 0
+        query["max"] = max_assets if max_assets is not None else 100
+        req = "/assets"
+        return self.algod_request("GET", req, params=query, **kwargs)
 
     def transaction_info(self, address, transaction_id, **kwargs):
         """
@@ -245,7 +261,8 @@ class AlgodClient:
         Broadcast list of a signed transaction objects to the network.
 
         Args:
-            txns list of (SignedTransaction or MultisigTransaction): transactions to send
+            txns (SignedTransaction[] or MultisigTransaction[]):
+                transactions to send
             request_header (dict, optional): additional header for request
 
         Returns:
@@ -255,8 +272,8 @@ class AlgodClient:
         for txn in txns:
             serialized.append(base64.b64decode(encoding.msgpack_encode(txn)))
 
-        return self.send_raw_transaction(base64.b64encode(b''.join(serialized)),
-                                         **kwargs)
+        return self.send_raw_transaction(base64.b64encode(
+                                         b''.join(serialized)), **kwargs)
 
     def block_info(self, round, **kwargs):
         """

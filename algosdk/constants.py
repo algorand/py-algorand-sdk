@@ -55,7 +55,7 @@ logic_prefix = b"Program"
 
 check_sum_len_bytes = 4
 """int: how long checksums should be"""
-signing_key_len_bytes = 32
+key_len_bytes = 32
 """int: how long addresses are in bytes"""
 address_len = 58
 """int: how long addresses are in base32, including the checksum"""
@@ -65,6 +65,14 @@ min_txn_fee = 1000
 """int: minimum transaction fee"""
 microalgos_to_algos_ratio = 1000000
 """int: how many microalgos per algo"""
+unit_name_length = 8
+"""int: length of asset unit names"""
+asset_name_length = 32
+"""int: length of asset names"""
+url_length = 32
+"""int: length of urls"""
+metadata_length = 32
+"""int: length of asset metadata"""
 
 # logic sig related
 logic_sig_max_cost = 20000

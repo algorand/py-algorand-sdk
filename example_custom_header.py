@@ -12,6 +12,7 @@ headers = {
    "X-API-Key": "#######",
 }
 
+
 def main():
     algod_client = algod.AlgodClient(algod_token, algod_address, headers)
 
@@ -22,13 +23,17 @@ def main():
 
     if status:
         print("algod last round: {}".format(status.get("lastRound")))
-        print("algod time since last round: {}".format(status.get("timeSinceLastRound")))
+        print("algod time since last round: {}".format(
+              status.get("timeSinceLastRound")))
         print("algod catchup: {}".format(status.get("catchupTime")))
-        print("algod latest version: {}".format(status.get("lastConsensusVersion")))
+        print("algod latest version: {}".format(
+              status.get("lastConsensusVersion")))
 
-    # Retrieve latest block information                                                                                                                                               
+    # Retrieve latest block information
     last_round = algod_client.status().get("lastRound")
     print("####################")
     block = algod_client.block_info(last_round)
     print(block)
+
+
 main()
