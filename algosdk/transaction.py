@@ -560,7 +560,8 @@ class AssetFreezeTxn(Transaction):
 
     def dictify(self):
         od = OrderedDict()
-        od["afrz"] = self.new_freeze_state
+        if self.new_freeze_state:
+            od["afrz"] = self.new_freeze_state
 
         od["fadd"] = encoding.decode_address(self.target)
 
@@ -586,6 +587,7 @@ class AssetFreezeTxn(Transaction):
         note = None
         gen = None
         fv = 0
+        new_freeze_state = False
         if "note" in d:
             note = d["note"]
         if "gen" in d:
@@ -594,7 +596,8 @@ class AssetFreezeTxn(Transaction):
             fv = d["fv"]
         index = d["faid"]
         target = encoding.encode_address(d["fadd"])
-        new_freeze_state = d["afrz"]
+        if "afrz" in d:
+            new_freeze_state = d["afrz"]
 
         af = AssetFreezeTxn(encoding.encode_address(d["snd"]), d["fee"], fv,
                             d["lv"], base64.b64encode(d["gh"]).decode(), index,
