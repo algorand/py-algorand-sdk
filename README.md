@@ -316,6 +316,193 @@ assert lstx.verify()
 acl.send_transaction(lstx)
 ```
 
+### working with assets
+Assets can be managed by sending three types of transactions: AssetConfigTxn, AssetFreezeTxn, and AssetTransferTxn. Shown below are examples of how to create these transactions
+#### creating an asset
+```python
+from algosdk import account, transaction
+
+private_key, address = account.generate_account() # creator
+_, freeze = account.generate_account() # account that can freeze other accounts for this asset
+_, manager = account.generate_account() # account able to update asset configuration
+_, clawback = account.generate_account() # account allowed to take this asset from any other account
+_, reserve = account.generate_account() # account that holds reserves for this asset
+
+fee_per_byte = 10
+first_valid_round = 1000
+last_valid_round = 2000
+genesis_hash = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+
+total = 100 # how many of this asset there will be
+assetname = "assetname"
+unitname = "unitname"
+url = "website"
+metadata = bytes("fACPO4nRgO55j1ndAK3W6Sgc4APkcyFh", "ascii") # should be a 32-byte hash
+default_frozen = False # whether accounts should be frozen by default
+
+# create the asset creation transaction
+txn = transaction.AssetConfigTxn(address, fee_per_byte, first_valid_round,
+            last_valid_round, genesis_hash, total=total, manager=manager,
+            reserve=reserve, freeze=freeze, clawback=clawback,
+            unit_name=unitname, asset_name=assetname, url=url,
+            metadata_hash=metadata, default_frozen=default_frozen)
+
+# sign the transaction
+signed_txn = txn.sign(private_key)
+```
+#### updating asset configuration
+This transaction must be sent from the manager's account.
+```python
+from algosdk import account, transaction
+
+manager_private_key = "manager private key"
+manager_address = "manager address"
+_, new_freeze = account.generate_account() # account that can freeze other accounts for this asset
+_, new_manager = account.generate_account() # account able to update asset configuration
+_, new_clawback = account.generate_account() # account allowed to take this asset from any other account
+_, new_reserve = account.generate_account() # account that holds reserves for this asset
+
+fee_per_byte = 10
+first_valid_round = 1000
+last_valid_round = 2000
+genesis_hash = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+
+index = 1234 # identifying index of the asset
+
+# create the asset config transaction
+txn = transaction.AssetConfigTxn(manager_address, fee_per_byte, first_valid_round,
+            last_valid_round, genesis_hash, manager=new_manager, reserve=new_reserve,
+            freeze=new_freeze, clawback=new_clawback, index=index)
+
+# sign the transaction
+signed_txn = txn.sign(manager_private_key)
+```
+
+#### destroying an asset
+This transaction must be sent from the creator's account.
+```python
+from algosdk import account, transaction
+
+creator_private_key = "creator private key"
+creator_address = "creator address"
+
+fee_per_byte = 10
+first_valid_round = 1000
+last_valid_round = 2000
+genesis_hash = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+
+index = 1234 # identifying index of the asset
+
+# create the asset destroy transaction
+txn = transaction.AssetConfigTxn(creator_address, fee_per_byte, first_valid_round, last_valid_round, genesis_hash,
+                                         index=index)
+# sign the transaction
+signed_txn = txn.sign(creator_private_key)
+```
+
+#### freezing or unfreezing an account
+This transaction must be sent from the account specified as the freeze manager for the asset.
+```python
+from algosdk import account, transaction
+
+freeze_private_key = "freeze private key"
+freeze_address = "freeze address"
+
+fee_per_byte = 10
+first_valid_round = 1000
+last_valid_round = 2000
+genesis_hash = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+freeze_target = "address to be frozen or unfrozen"
+
+index = 1234 # identifying index of the asset
+
+# create the asset freeze transaction
+txn = transaction.AssetFreezeTxn(freeze_address, fee_per_byte, first_valid_round,
+            last_valid_round, genesis_hash, index=index, target=freeze_target,
+            new_freeze_state=True)
+
+# sign the transaction
+signed_txn = txn.sign(freeze_private_key)
+```
+
+#### sending assets
+```python
+from algosdk import account, transaction
+
+sender_private_key = "freeze private key"
+sender_address = "freeze address"
+
+fee_per_byte = 10
+first_valid_round = 1000
+last_valid_round = 2000
+genesis_hash = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+close_assets_to = "account to close assets to"
+receiver = "account to receive assets"
+amount = 100 # amount of assets to transfer
+
+index = 1234 # identifying index of the asset
+
+# create the asset transfer transaction
+txn = transaction.AssetTransferTxn(sender_address, fee_per_byte, 
+                first_valid_round, last_valid_round, genesis_hash,
+                receiver, amount, index, close_assets_to)
+
+# sign the transaction
+signed_txn = txn.sign(sender_private_key)
+```
+
+#### accepting assets
+```python
+from algosdk import account, transaction
+
+private_key = "freeze private key"
+address = "freeze address"
+
+fee_per_byte = 10
+first_valid_round = 1000
+last_valid_round = 2000
+genesis_hash = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+receiver = address # to start accepting assets, set receiver to sender
+amount = 0 # to start accepting assets, set amount to 0
+
+index = 1234 # identifying index of the asset
+
+# create the asset accept transaction
+txn = transaction.AssetTransferTxn(address, fee_per_byte, 
+                first_valid_round, last_valid_round, genesis_hash,
+                receiver, amount, index)
+
+# sign the transaction
+signed_txn = txn.sign(private_key)
+```
+
+#### revoking assets
+This transactino must be sent by the asset's clawback manager.
+```python
+from algosdk import account, transaction
+
+clawback_private_key = "clawback private key"
+clawback_address = "clawback address"
+
+fee_per_byte = 10
+first_valid_round = 1000
+last_valid_round = 2000
+genesis_hash = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+receiver = "receiver address" # where to send the revoked assets
+target = "revocation target" # address to revoke assets from
+amount = 100
+
+index = 1234 # identifying index of the asset
+
+# create the asset transfer transaction
+txn = transaction.AssetTransferTxn(clawback_address, fee_per_byte, 
+                first_valid_round, last_valid_round, genesis_hash,
+                receiver, amount, index, revocation_target=target)
+
+# sign the transaction
+signed_txn = txn.sign(clawback_private_key)
+```
+
 ## Documentation
 Documentation for the Python SDK is available at [py-algorand-sdk.readthedocs.io](https://py-algorand-sdk.readthedocs.io/en/latest/).
 
