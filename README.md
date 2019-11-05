@@ -317,7 +317,7 @@ acl.send_transaction(lstx)
 ```
 
 ### working with assets
-Assets can be managed by sending three types of transactions: AssetConfigTxn, AssetFreezeTxn, and AssetTransferTxn. Shown below are examples of how to create these transactions
+Assets can be managed by sending three types of transactions: AssetConfigTxn, AssetFreezeTxn, and AssetTransferTxn. Shown below are examples of how to use these transactions.
 #### creating an asset
 ```python
 from algosdk import account, transaction
@@ -477,7 +477,7 @@ signed_txn = txn.sign(private_key)
 ```
 
 #### revoking assets
-This transactino must be sent by the asset's clawback manager.
+This transaction must be sent by the asset's clawback manager.
 ```python
 from algosdk import account, transaction
 
