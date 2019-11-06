@@ -14,7 +14,7 @@ def microalgos_to_algos(microalgos):
         microalgos (int): how many microalgos
 
     Returns:
-        int or float: how many algos
+        int or decimal: how many algos
     """
     return decimal.Decimal(microalgos)/constants.microalgos_to_algos_ratio
 
@@ -24,7 +24,7 @@ def algos_to_microalgos(algos):
     Convert algos to microalgos.
 
     Args:
-        algos (int or float): how many algos
+        algos (int or decimal): how many algos
 
     Returns:
         int: how many microalgos
@@ -44,7 +44,7 @@ def sign_bytes(to_sign, private_key):
     """
     to_sign = constants.bytes_prefix + to_sign
     private_key = base64.b64decode(private_key)
-    signing_key = SigningKey(private_key[:constants.signing_key_len_bytes])
+    signing_key = SigningKey(private_key[:constants.key_len_bytes])
     signed = signing_key.sign(to_sign)
     signature = base64.b64encode(signed.signature).decode()
     return signature

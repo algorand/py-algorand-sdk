@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.5
+### Added
+- custom headers and example
+
 ## 1.0.4
 ### Changed
 - more flexibility in transactions_by_address()

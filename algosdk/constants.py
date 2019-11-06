@@ -15,6 +15,18 @@ no_auth = ["/health"]
 """str[]: requests that don't require authentication"""
 
 
+# transaction types
+payment_txn = "pay"
+"""str: indicates a payment transaction"""
+keyreg_txn = "keyreg"
+"""str: indicates a key registration transaction"""
+assetconfig_txn = "acfg"
+"""str: indicates an asset configuration transaction"""
+assetfreeze_txn = "afrz"
+"""str: indicates an asset freeze transaction"""
+assettransfer_txn = "axfer"
+"""str: indicates an asset transfer transaction"""
+
 # note field types
 note_field_type_deposit = "d"
 """str: indicates a signed deposit in NoteField"""
@@ -26,27 +38,44 @@ note_field_type_params = "p"
 """str: indicates signed params in NoteField"""
 
 
+# prefixes
+txid_prefix = b"TX"
+"""bytes: transaction prefix when signing"""
+tgid_prefix = b"TG"
+"""bytes: transaction group prefix when computing the group ID"""
+bid_prefix = b"aB"
+"""bytes: bid prefix when signing"""
+bytes_prefix = b"MX"
+"""bytes: bytes prefix when signing"""
+msig_addr_prefix = "MultisigAddr"
+"""str: prefix for multisig addresses"""
+logic_prefix = b"Program"
+"""bytes: program (logic) prefix when signing"""
+
+
 check_sum_len_bytes = 4
 """int: how long checksums should be"""
-signing_key_len_bytes = 32
+key_len_bytes = 32
 """int: how long addresses are in bytes"""
 address_len = 58
 """int: how long addresses are in base32, including the checksum"""
 mnemonic_len = 25
 """int: how long mnemonic phrases are"""
-msig_addr_prefix = "MultisigAddr"
-"""str: prefix for multisig addresses"""
 min_txn_fee = 1000
 """int: minimum transaction fee"""
-
-
-txid_prefix = b"TX"
-"""bytes: transaction prefix when signing"""
-bid_prefix = b"aB"
-"""bytes: bid prefix when signing"""
-bytes_prefix = b"MX"
-"""bytes: bytes prefix when signing"""
-
-
 microalgos_to_algos_ratio = 1000000
 """int: how many microalgos per algo"""
+unit_name_length = 8
+"""int: length of asset unit names"""
+asset_name_length = 32
+"""int: length of asset names"""
+url_length = 32
+"""int: length of urls"""
+metadata_length = 32
+"""int: length of asset metadata"""
+
+# logic sig related
+logic_sig_max_cost = 20000
+"""int: max execution cost of a teal program"""
+logic_sig_max_size = 1000
+"""int: max size of a teal program and its arguments in bytes"""

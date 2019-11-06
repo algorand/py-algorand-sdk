@@ -29,11 +29,7 @@ def msgpack_encode(obj):
     """
     if not isinstance(obj, OrderedDict):
         obj = obj.dictify()
-    od = OrderedDict()
-    for key in obj:
-        if obj[key]:
-            od[key] = obj[key]
-    return base64.b64encode(msgpack.packb(od, use_bin_type=True)).decode()
+    return base64.b64encode(msgpack.packb(obj, use_bin_type=True)).decode()
 
 
 def msgpack_decode(enc):
@@ -49,16 +45,28 @@ def msgpack_decode(enc):
     """
     decoded = msgpack.unpackb(base64.b64decode(enc), raw=False)
     if "type" in decoded:
-        if decoded["type"] == "pay":
+        if decoded["type"] == constants.payment_txn:
             return transaction.PaymentTxn.undictify(decoded)
-        else:
+        elif decoded["type"] == constants.keyreg_txn:
             return transaction.KeyregTxn.undictify(decoded)
+        elif decoded["type"] == constants.assetconfig_txn:
+            return transaction.AssetConfigTxn.undictify(decoded)
+        elif decoded["type"] == constants.assetfreeze_txn:
+            return transaction.AssetFreezeTxn.undictify(decoded)
+        elif decoded["type"] == constants.assettransfer_txn:
+            return transaction.AssetTransferTxn.undictify(decoded)
+    if "l" in decoded:
+        return transaction.LogicSig.undictify(decoded)
     if "msig" in decoded:
         return transaction.MultisigTransaction.undictify(decoded)
+    if "lsig" in decoded:
+        return transaction.LogicSigTransaction.undictify(decoded)
     if "txn" in decoded:
         return transaction.SignedTransaction.undictify(decoded)
     if "subsig" in decoded:
         return transaction.Multisig.undictify(decoded)
+    if "txlist" in decoded:
+        return transaction.TxGroup.undictify(decoded)
     if "t" in decoded:
         return auction.NoteField.undictify(decoded)
     if "bid" in decoded:
@@ -129,7 +137,7 @@ def encode_address(addr_bytes):
     """
     if not addr_bytes:
         return addr_bytes
-    if not len(addr_bytes) == constants.signing_key_len_bytes:
+    if not len(addr_bytes) == constants.key_len_bytes:
         raise error.WrongKeyBytesLengthError
     chksum = _checksum(addr_bytes)
     addr = base64.b32encode(addr_bytes+chksum)
@@ -146,10 +154,7 @@ def _checksum(addr):
     Returns:
         bytes: checksum of the address
     """
-    hash = hashes.Hash(hashes.SHA512_256(), default_backend())
-    hash.update(addr)
-    chksum = hash.finalize()[-constants.check_sum_len_bytes:]
-    return chksum
+    return checksum(addr)[-constants.check_sum_len_bytes:]
 
 
 def _correct_padding(a):
@@ -160,3 +165,18 @@ def _correct_padding(a):
 
 def _undo_padding(a):
     return a.strip("=")
+
+
+def checksum(data):
+    """
+    Compute the checksum of arbitrary binary input.
+
+    Args:
+        data (bytes): data as bytes
+
+    Returns:
+        bytes: checksum of the data
+    """
+    chksum = hashes.Hash(hashes.SHA512_256(), default_backend())
+    chksum.update(data)
+    return chksum.finalize()

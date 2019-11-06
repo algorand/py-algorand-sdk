@@ -28,7 +28,7 @@ else:
     print("The address is invalid.")
 ```
 
-## Node setup 
+## Node setup
 
 Follow the instructions in Algorand's [developer resources](https://developer.algorand.org/docs/introduction-installing-node) to install a node on your computer. 
 
@@ -206,33 +206,35 @@ print(encoding.msgpack_encode(mtx))
 We can put things in the "note" field of a transaction; here's an example with an auction bid. Note that you can put any bytes you want in the "note" field; you don't have to use the NoteField object.
 
 ```python
-from algosdk import auction, transaction, encoding, account, constants
-import base64
+from algosdk import algod, mnemonic, transaction, account
 
-# generate account
-private_key, address = account.generate_account()
-auction_address = "string address"
+passphrase = "teach chat health avocado broken avocado trick adapt parade witness damp gift behave harbor maze truth figure below scatter taste slow sustain aspect absorb nuclear"
 
-# create bid
-external_currency = 10000  # how much external currency you're willing to spend
-max_price = 260  # maximum price for one algo
-bid = auction.Bid(address, external_currency, max_price,
-                  "bid_id", auction_address, "auc_id")
+acl = algod.AlgodClient("API-TOKEN", "API-Address")
 
-# sign bid
-sb = bid.sign(private_key)
+# convert passphrase to secret key
+sk = mnemonic.to_private_key(passphrase)
 
-# create notefield
-note_field = auction.NoteField(sb, constants.note_field_type_bid)
+# get suggested parameters
+params = acl.suggested_params()
+gen = params["genesisID"]
+gh = params["genesishashb64"]
+last_round = params["lastRound"]
+fee = params["fee"]
 
-# create transaction; you can sign and send this like any other transaction
-fee = 1
-first_valid_round = 567
-gh = "genesis hash"
-note_field_bytes = base64.b64decode(encoding.msgpack_encode(note_field))
-txn = transaction.PaymentTxn(address, fee, first_valid_round,
-                             first_valid_round+100, gh, auction_address,
-                             100000, note=note_field_bytes)
+# Set other parameters
+amount = 100000
+note = "Some Text".encode()
+receiver = "receiver Algorand Address"
+
+# create the transaction
+txn = transaction.PaymentTxn(account.address_from_private_key(sk), fee, last_round, last_round+1000, gh, receiver, amount, note=note)
+
+# sign it
+stx = txn.sign(sk)
+
+# send it
+txid = acl.send_transaction(stx)
 ```
 
 We can also get the NoteField object back from its bytes:
@@ -240,6 +242,78 @@ We can also get the NoteField object back from its bytes:
 # decode notefield
 decoded = encoding.msgpack_decode(base64.b64encode(note_field_bytes))
 print(decoded.dictify())
+```
+
+### working with transaction group
+```python
+import params
+from algosdk import algod, kmd, transaction
+
+private_key_sender, sender = account.generate_account()
+private_key_receiver, receiver = account.generate_account()
+
+# create an algod and kmd client
+acl = algod.AlgodClient(params.algod_token, params.algod_address)
+kcl = kmd.KMDClient(params.kmd_token, params.kmd_address)
+
+# get suggested parameters
+params = acl.suggested_params()
+gen = params["genesisID"]
+gh = params["genesishashb64"]
+last_round = params["lastRound"]
+fee = params["fee"]
+
+# create a transaction
+amount = 10000
+txn1 = transaction.PaymentTxn(sender, fee, last_round, last_round+100, gh, receiver, amount)
+txn2 = transaction.PaymentTxn(receiver, fee, last_round, last_round+100, gh, sender, amount)
+
+# get group id and assign it to transactions
+gid = transaction.calculate_group_id([txn1, txn2])
+txn1.transaction.group = gid
+txn2.transaction.group = gid
+
+# sign transactions
+stxn1 = txn1.sign(private_key_sender)
+stxn2 = txn2.sign(private_key_receiver)
+
+# send them over network
+acl.send_transactions([stxn1, stxn2])
+```
+
+### working with logic sig
+
+Example below creates a LogicSig transaction signed by a program that never approves the transfer.
+
+```python
+import params
+from algosdk import algod, transaction
+
+program = b"\x01\x20\x01\x00\x22"  # int 0
+lsig = transaction.LogicSig(program)
+sender = lsig.address()
+
+# create an algod client
+acl = algod.AlgodClient(params.algod_token, params.algod_address)
+
+# get suggested parameters
+params = acl.suggested_params()
+gen = params["genesisID"]
+gh = params["genesishashb64"]
+last_round = params["lastRound"]
+fee = params["fee"]
+
+# create a transaction
+amount = 10000
+txn = transaction.PaymentTxn(sender, fee, last_round, last_round+100, gh, receiver, amount)
+
+# note, transaction is signed by logic only (no delegation)
+# that means sender address must match to program hash
+lstx = transaction.LogicSigTransaction(txn, lsig)
+assert lstx.verify()
+
+# send them over network
+acl.send_transaction(lstx)
 ```
 
 ## Documentation

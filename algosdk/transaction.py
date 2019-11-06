@@ -1,18 +1,18 @@
 import base64
 import msgpack
 from collections import OrderedDict
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.backends import default_backend
-from . import error
-from . import encoding
-from . import constants
 from . import account
-from nacl.signing import SigningKey
+from . import constants
+from . import encoding
+from . import error
+from . import logic
+from nacl.signing import SigningKey, VerifyKey
+from nacl.exceptions import BadSignatureError
 
 
 class Transaction:
     """
-    Superclass for PaymentTxn and KeyregTxn.
+    Superclass for various transaction types.
     """
     def __init__(self, sender, fee, first, last, note, gen, gh):
         self.sender = sender
@@ -22,6 +22,7 @@ class Transaction:
         self.note = note
         self.genesis_id = gen
         self.genesis_hash = gh
+        self.group = None
 
     def get_txid(self):
         """
@@ -32,9 +33,7 @@ class Transaction:
         """
         txn = encoding.msgpack_encode(self)
         to_sign = constants.txid_prefix + base64.b64decode(txn)
-        txidbytes = hashes.Hash(hashes.SHA512_256(), default_backend())
-        txidbytes.update(to_sign)
-        txid = txidbytes.finalize()
+        txid = encoding.checksum(to_sign)
         txid = base64.b32encode(txid).decode()
         return encoding._undo_padding(txid)
 
@@ -66,7 +65,7 @@ class Transaction:
         private_key = base64.b64decode(private_key)
         txn = encoding.msgpack_encode(self)
         to_sign = constants.txid_prefix + base64.b64decode(txn)
-        signing_key = SigningKey(private_key[:constants.signing_key_len_bytes])
+        signing_key = SigningKey(private_key[:constants.key_len_bytes])
         signed = signing_key.sign(to_sign)
         sig = signed.signature
         return sig
@@ -102,21 +101,22 @@ class PaymentTxn(Transaction):
         amt (int): amount in microAlgos to be sent
         close_remainder_to (str, optional): if nonempty, account will be closed
             and remaining algos will be sent to this address
-        note (bytes, optional): encoded NoteField object
+        note (bytes, optional): arbitrary optional bytes
         gen (str, optional): genesis_id
         flat_fee (bool): whether the specified fee is a flat fee
 
     Attributes:
-        sender (bytes)
+        sender (str)
         fee (int)
         first_valid_round (int)
         last_valid_round (int)
+        note (bytes)
+        genesis_id (str)
         genesis_hash (str)
+        group(bytes)
         receiver (str)
         amt (int)
         close_remainder_to (str)
-        note (bytes)
-        genesis_id (str)
         type (str)
     """
 
@@ -126,7 +126,7 @@ class PaymentTxn(Transaction):
         self.receiver = receiver
         self.amt = amt
         self.close_remainder_to = close_remainder_to
-        self.type = "pay"
+        self.type = constants.payment_txn
         if flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
@@ -140,10 +140,13 @@ class PaymentTxn(Transaction):
         if self.close_remainder_to:
             od["close"] = encoding.decode_address(self.close_remainder_to)
         od["fee"] = self.fee
-        od["fv"] = self.first_valid_round
+        if self.first_valid_round:
+            od["fv"] = self.first_valid_round
         if self.genesis_id:
             od["gen"] = self.genesis_id
         od["gh"] = base64.b64decode(self.genesis_hash)
+        if self.group:
+            od["grp"] = self.group
         od["lv"] = self.last_valid_round
         if self.note:
             od["note"] = self.note
@@ -160,6 +163,7 @@ class PaymentTxn(Transaction):
         gen = None
         amt = 0
         fv = 0
+        grp = None
         if "close" in d:
             crt = encoding.encode_address(d["close"])
         if "note" in d:
@@ -170,10 +174,13 @@ class PaymentTxn(Transaction):
             amt = d["amt"]
         if "fv" in d:
             fv = d["fv"]
+        if "grp" in d:
+            grp = d["grp"]
         tr = PaymentTxn(encoding.encode_address(d["snd"]), d["fee"], fv,
                         d["lv"], base64.b64encode(d["gh"]).decode(),
                         encoding.encode_address(d["rcv"]), amt,
                         crt, note, gen, True)
+        tr.group = grp
         return tr
 
     def __eq__(self, other):
@@ -201,7 +208,7 @@ class KeyregTxn(Transaction):
         votefst (int): first round to vote
         votelst (int): last round to vote
         votekd (int): vote key dilution
-        note (bytes, optional): encoded NoteField object
+        note (bytes, optional): arbitrary optional bytes
         gen (str): genesis_id
         flat_fee (bool): whether the specified fee is a flat fee
 
@@ -210,14 +217,15 @@ class KeyregTxn(Transaction):
         fee (int)
         first_valid_round (int)
         last_valid_round (int)
+        note (bytes)
+        genesis_id (str)
         genesis_hash (str)
+        group(bytes)
         votepk (str)
         selkey (str)
         votefst (int)
         votelst (int)
         votekd (int)
-        note (bytes)
-        genesis_id (str)
         type (str)
     """
 
@@ -229,7 +237,7 @@ class KeyregTxn(Transaction):
         self.votefst = votefst
         self.votelst = votelst
         self.votekd = votekd
-        self.type = "keyreg"
+        self.type = constants.keyreg_txn
         if flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
@@ -239,10 +247,13 @@ class KeyregTxn(Transaction):
     def dictify(self):
         od = OrderedDict()
         od["fee"] = self.fee
-        od["fv"] = self.first_valid_round
+        if self.first_valid_round:
+            od["fv"] = self.first_valid_round
         if self.genesis_id:
             od["gen"] = self.genesis_id
         od["gh"] = base64.b64decode(self.genesis_hash)
+        if self.group:
+            od["grp"] = self.group
         od["lv"] = self.last_valid_round
         if self.note:
             od["note"] = self.note
@@ -260,17 +271,21 @@ class KeyregTxn(Transaction):
         note = None
         gen = None
         fv = 0
+        grp = None
         if "note" in d:
             note = d["note"]
         if "gen" in d:
             gen = d["gen"]
         if "fv" in d:
             fv = d["fv"]
+        if "grp" in d:
+            grp = d["grp"]
         k = KeyregTxn(encoding.encode_address(d["snd"]), d["fee"], fv,
                       d["lv"], base64.b64encode(d["gh"]).decode(),
                       encoding.encode_address(d["votekey"]),
                       encoding.encode_address(d["selkey"]), d["votefst"],
                       d["votelst"], d["votekd"], note, gen, True)
+        k.group = grp
         return k
 
     def __eq__(self, other):
@@ -282,6 +297,455 @@ class KeyregTxn(Transaction):
                 self.votefst == other.votefst and
                 self.votelst == other.votelst and
                 self.votekd == other.votekd and
+                self.type == other.type)
+
+
+class AssetConfigTxn(Transaction):
+    """
+    Represents a transaction for asset creation, reconfiguration, or
+    destruction.
+
+    To create an asset, include the following:
+        total, default_frozen, unit_name, asset_name,
+        manager, reserve, freeze, clawback, url, metadata
+
+    To destroy an asset, include the following:
+        index
+
+    To update asset configuration, include the following:
+        index, manager, reserve, freeze, clawback
+
+    Args:
+        sender (str): address of the sender
+        fee (int): transaction fee (per byte if flat_fee is false)
+        first (int): first round for which the transaction is valid
+        last (int): last round for which the transaction is valid
+        gh (str): genesis_hash
+        index (int, optional): index of the asset
+        total (int, optional): total number of units of this asset created
+        default_frozen (bool, optional): whether slots for this asset in user
+            accounts are frozen by default
+        unit_name (str, optional): hint for the name of a unit of this asset
+        asset_name (str, optional): hint for the name of the asset
+        manager (str, optional): address allowed to change nonzero addresses
+            for this asset
+        reserve (str, optional): account whose holdings of this asset should
+            be reported as "not minted"
+        freeze (str, optional): account allowed to change frozen state of
+            holdings of this asset
+        clawback (str, optional): account allowed take units of this asset
+            from any account
+        url (str, optional): a URL where more information about the asset
+            can be retrieved
+        metadata_hash (byte[32], optional): a commitment to some unspecified
+            asset metadata (32 byte hash)
+        note (bytes, optional): arbitrary optional bytes
+        gen (str, optional): genesis_id
+        flat_fee (bool, optional): whether the specified fee is a flat fee
+
+    Attributes:
+        sender (str)
+        fee (int)
+        first_valid_round (int)
+        last_valid_round (int)
+        genesis_hash (str)
+        index (int)
+        total (int)
+        default_frozen (bool)
+        unit_name (str)
+        asset_name (str)
+        manager (str)
+        reserve (str)
+        freeze (str)
+        clawback (str)
+        url (str)
+        metadata_hash (byte[32])
+        note (bytes)
+        genesis_id (str)
+        type (str)
+    """
+
+    def __init__(self, sender, fee, first, last, gh, index=None,
+                 total=None, default_frozen=None, unit_name=None,
+                 asset_name=None, manager=None, reserve=None,
+                 freeze=None, clawback=None, url=None, metadata_hash=None,
+                 note=None, gen=None, flat_fee=False):
+        Transaction.__init__(self,  sender, fee, first, last, note, gen, gh)
+        self.index = index
+        self.total = total
+        self.default_frozen = default_frozen
+        self.unit_name = unit_name
+        self.asset_name = asset_name
+        self.manager = manager
+        self.reserve = reserve
+        self.freeze = freeze
+        self.clawback = clawback
+        self.url = url
+        self.metadata_hash = metadata_hash
+        if metadata_hash is not None:
+            if len(metadata_hash) != constants.metadata_length:
+                raise error.WrongMetadataLengthError
+        self.type = constants.assetconfig_txn
+        if flat_fee:
+            self.fee = max(constants.min_txn_fee, self.fee)
+        else:
+            self.fee = max(self.estimate_size()*self.fee,
+                           constants.min_txn_fee)
+
+    def dictify(self):
+        od = OrderedDict()
+
+        if (self.total or self.default_frozen or self.unit_name or
+                self.asset_name or self.manager or self.reserve or
+                self.freeze or self.clawback):
+            apar = OrderedDict()
+            if self.metadata_hash:
+                apar["am"] = self.metadata_hash
+            if self.asset_name:
+                apar["an"] = self.asset_name
+            if self.url:
+                apar["au"] = self.url
+            if self.clawback:
+                apar["c"] = encoding.decode_address(self.clawback)
+            if self.default_frozen:
+                apar["df"] = self.default_frozen
+            if self.freeze:
+                apar["f"] = encoding.decode_address(self.freeze)
+            if self.manager:
+                apar["m"] = encoding.decode_address(self.manager)
+            if self.reserve:
+                apar["r"] = encoding.decode_address(self.reserve)
+            if self.total:
+                apar["t"] = self.total
+            if self.unit_name:
+                apar["un"] = self.unit_name
+            od["apar"] = apar
+
+        if self.index:
+            od["caid"] = self.index
+
+        od["fee"] = self.fee
+        if self.first_valid_round:
+            od["fv"] = self.first_valid_round
+        if self.genesis_id:
+            od["gen"] = self.genesis_id
+        od["gh"] = base64.b64decode(self.genesis_hash)
+        od["lv"] = self.last_valid_round
+        if self.note:
+            od["note"] = self.note
+        od["snd"] = encoding.decode_address(self.sender)
+        od["type"] = self.type
+
+        return od
+
+    @staticmethod
+    def undictify(d):
+        note = None
+        gen = None
+        fv = 0
+
+        index = None
+        total = None
+        default_frozen = None
+        unit_name = None
+        asset_name = None
+        manager = None
+        reserve = None
+        freeze = None
+        clawback = None
+        url = None
+        metadata_hash = None
+
+        if "note" in d:
+            note = d["note"]
+        if "gen" in d:
+            gen = d["gen"]
+        if "fv" in d:
+            fv = d["fv"]
+        if "caid" in d:
+            index = d["caid"]
+        if "apar" in d:
+            if "t" in d["apar"]:
+                total = d["apar"]["t"]
+            if "df" in d["apar"]:
+                default_frozen = d["apar"]["df"]
+            if "un" in d["apar"]:
+                unit_name = d["apar"]["un"]
+            if "an" in d["apar"]:
+                asset_name = d["apar"]["an"]
+            if "m" in d["apar"]:
+                manager = encoding.encode_address(d["apar"]["m"])
+            if "r" in d["apar"]:
+                reserve = encoding.encode_address(d["apar"]["r"])
+            if "f" in d["apar"]:
+                freeze = encoding.encode_address(d["apar"]["f"])
+            if "c" in d["apar"]:
+                clawback = encoding.encode_address(d["apar"]["c"])
+            if "au" in d["apar"]:
+                url = d["apar"]["au"]
+            if "am" in d["apar"]:
+                metadata_hash = d["apar"]["am"]
+
+        ac = AssetConfigTxn(encoding.encode_address(d["snd"]), d["fee"], fv,
+                            d["lv"], base64.b64encode(d["gh"]).decode(),
+                            index, total, default_frozen,
+                            unit_name, asset_name, manager, reserve, freeze,
+                            clawback, url, metadata_hash, note, gen, True)
+        return ac
+
+    def __eq__(self, other):
+        if not isinstance(other, AssetConfigTxn):
+            return False
+        return (super(AssetConfigTxn, self).__eq__(other) and
+                self.index == other.index and
+                self.total == other.total and
+                self.default_frozen == other.default_frozen and
+                self.unit_name == other.unit_name and
+                self.asset_name == other.asset_name and
+                self.manager == other.manager and
+                self.reserve == other.reserve and
+                self.freeze == other.freeze and
+                self.clawback == other.clawback and
+                self.url == other.url and
+                self.metadata_hash == other.metadata_hash and
+                self.type == other.type)
+
+
+class AssetFreezeTxn(Transaction):
+    """
+    Represents a transaction for freezing or unfreezing an account's asset
+    holdings. Must be issued by the asset's freeze manager.
+
+    Args:
+        sender (str): address of the sender, who must be the asset's freeze
+            manager
+        fee (int): transaction fee (per byte if flat_fee is false)
+        first (int): first round for which the transaction is valid
+        last (int): last round for which the transaction is valid
+        gh (str): genesis_hash
+        index (int): index of the asset
+        target (str): address having its assets frozen or unfrozen
+        new_freeze_state (bool): true if the assets should be frozen, false if
+            they should be transferrable
+        note (bytes, optional): arbitrary optional bytes
+        gen (str, optional): genesis_id
+        flat_fee (bool): whether the specified fee is a flat fee
+
+    Attributes:
+        sender (str)
+        fee (int)
+        first_valid_round (int)
+        last_valid_round (int)
+        genesis_hash (str)
+        index (int)
+        target (str)
+        new_freeze_state (bool)
+        note (bytes)
+        genesis_id (str)
+        type (str)
+    """
+
+    def __init__(self, sender, fee, first, last, gh, index, target,
+                 new_freeze_state, note=None, gen=None, flat_fee=False):
+        Transaction.__init__(self, sender, fee, first, last, note, gen, gh)
+        self.index = index
+        self.target = target
+        self.new_freeze_state = new_freeze_state
+        self.type = constants.assetfreeze_txn
+        if flat_fee:
+            self.fee = max(constants.min_txn_fee, self.fee)
+        else:
+            self.fee = max(self.estimate_size()*self.fee,
+                           constants.min_txn_fee)
+
+    def dictify(self):
+        od = OrderedDict()
+        if self.new_freeze_state:
+            od["afrz"] = self.new_freeze_state
+
+        od["fadd"] = encoding.decode_address(self.target)
+
+        if self.index:
+            od["faid"] = self.index
+
+        od["fee"] = self.fee
+        if self.first_valid_round:
+            od["fv"] = self.first_valid_round
+        if self.genesis_id:
+            od["gen"] = self.genesis_id
+        od["gh"] = base64.b64decode(self.genesis_hash)
+        od["lv"] = self.last_valid_round
+        if self.note:
+            od["note"] = self.note
+        od["snd"] = encoding.decode_address(self.sender)
+        od["type"] = self.type
+
+        return od
+
+    @staticmethod
+    def undictify(d):
+        note = None
+        gen = None
+        fv = 0
+        new_freeze_state = False
+        if "note" in d:
+            note = d["note"]
+        if "gen" in d:
+            gen = d["gen"]
+        if "fv" in d:
+            fv = d["fv"]
+        index = d["faid"]
+        target = encoding.encode_address(d["fadd"])
+        if "afrz" in d:
+            new_freeze_state = d["afrz"]
+
+        af = AssetFreezeTxn(encoding.encode_address(d["snd"]), d["fee"], fv,
+                            d["lv"], base64.b64encode(d["gh"]).decode(), index,
+                            target, new_freeze_state, note, gen, True)
+        return af
+
+    def __eq__(self, other):
+        if not isinstance(other, AssetFreezeTxn):
+            return False
+        return (super(AssetFreezeTxn, self).__eq__(other) and
+                self.index == other.index and
+                self.target == other.target and
+                self.new_freeze_state == other.new_freeze_state and
+                self.type == other.type)
+
+
+class AssetTransferTxn(Transaction):
+    """
+    Represents a transaction for asset transfer.
+
+    To begin accepting an asset, supply the same address as both sender and
+    receiver, and set amount to 0.
+
+    To revoke an asset, set revocation_target, and issue the transaction from
+    the asset's revocation manager account.
+
+    Args:
+        sender (str): address of the sender
+        fee (int): transaction fee (per byte if flat_fee is false)
+        first (int): first round for which the transaction is valid
+        last (int): last round for which the transaction is valid
+        gh (str): genesis_hash
+        receiver (str): address of the receiver
+        amt (int): amount of asset units to send
+        index (int): index of the asset
+        close_assets_to (string, optional): send all of sender's remaining
+            assets, after paying `amt` to receiver, to this address
+        revocation_target (string, optional): send assets from this address,
+            rather than the sender's address (can only be used by an asset's
+            revocation manager, also known as clawback)
+        note (bytes, optional): arbitrary optional bytes
+        gen (str, optional): genesis_id
+        flat_fee (bool): whether the specified fee is a flat fee
+
+    Attributes:
+        sender (str)
+        fee (int)
+        first_valid_round (int)
+        last_valid_round (int)
+        genesis_hash (str)
+        index (int)
+        amount (int)
+        receiver (string)
+        close_assets_to (string)
+        revocation_target (string)
+        note (bytes)
+        genesis_id (str)
+        type (str)
+    """
+
+    def __init__(self, sender, fee, first, last, gh, receiver, amt, index,
+                 close_assets_to=None, revocation_target=None, note=None,
+                 gen=None, flat_fee=False):
+        Transaction.__init__(self,  sender, fee, first, last, note, gen, gh)
+        self.type = constants.assettransfer_txn
+        self.receiver = receiver
+        self.amount = amt
+        self.index = index
+        self.close_assets_to = close_assets_to
+        self.revocation_target = revocation_target
+        if flat_fee:
+            self.fee = max(constants.min_txn_fee, self.fee)
+        else:
+            self.fee = max(self.estimate_size()*self.fee,
+                           constants.min_txn_fee)
+
+    def dictify(self):
+        od = OrderedDict()
+
+        if self.amount:
+            od["aamt"] = self.amount
+        if self.close_assets_to:
+            od["aclose"] = encoding.decode_address(self.close_assets_to)
+        if self.receiver:
+            od["arcv"] = encoding.decode_address(self.receiver)
+        if self.revocation_target:
+            od["asnd"] = encoding.decode_address(self.revocation_target)
+
+        od["fee"] = self.fee
+        if self.first_valid_round:
+            od["fv"] = self.first_valid_round
+        if self.genesis_id:
+            od["gen"] = self.genesis_id
+        od["gh"] = base64.b64decode(self.genesis_hash)
+        od["lv"] = self.last_valid_round
+        if self.note:
+            od["note"] = self.note
+        od["snd"] = encoding.decode_address(self.sender)
+        od["type"] = self.type
+        if self.index:
+            od["xaid"] = self.index
+
+        return od
+
+    @staticmethod
+    def undictify(d):
+
+        note = None
+        gen = None
+        fv = 0
+        receiver = None
+        amt = 0
+        index = None
+        close_assets_to = None
+        revocation_target = None
+        if "note" in d:
+            note = d["note"]
+        if "gen" in d:
+            gen = d["gen"]
+        if "fv" in d:
+            fv = d["fv"]
+        if "arcv" in d:
+            receiver = encoding.encode_address(d["arcv"])
+        if "aamt" in d:
+            amt = d["aamt"]
+        if "xaid" in d:
+            index = d["xaid"]
+        if "aclose" in d:
+            close_assets_to = encoding.encode_address(d["aclose"])
+        if "asnd" in d:
+            revocation_target = encoding.encode_address(d["asnd"])
+
+        atxfer = AssetTransferTxn(encoding.encode_address(d["snd"]), d["fee"],
+                                  fv, d["lv"],
+                                  base64.b64encode(d["gh"]).decode(),
+                                  receiver, amt, index, close_assets_to,
+                                  revocation_target, note, gen, True)
+        return atxfer
+
+    def __eq__(self, other):
+        if not isinstance(other, AssetTransferTxn):
+            return False
+        return (super(AssetTransferTxn, self).__eq__(other) and
+                self.index == other.index and
+                self.amount == other.amount and
+                self.receiver == other.receiver and
+                self.close_assets_to == other.close_assets_to and
+                self.revocation_target == other.revocation_target and
                 self.type == other.type)
 
 
@@ -303,7 +767,8 @@ class SignedTransaction:
 
     def dictify(self):
         od = OrderedDict()
-        od["sig"] = base64.b64decode(self.signature)
+        if self.signature:
+            od["sig"] = base64.b64decode(self.signature)
         od["txn"] = self.transaction.dictify()
         return od
 
@@ -313,10 +778,16 @@ class SignedTransaction:
         if "sig" in d:
             sig = base64.b64encode(d["sig"]).decode()
         txn_type = d["txn"]["type"]
-        if txn_type == "pay":
+        if txn_type == constants.payment_txn:
             txn = PaymentTxn.undictify(d["txn"])
-        else:
+        elif txn_type == constants.keyreg_txn:
             txn = KeyregTxn.undictify(d["txn"])
+        elif txn_type == constants.assetconfig_txn:
+            txn = AssetConfigTxn.undictify(d["txn"])
+        elif txn_type == constants.assettransfer_txn:
+            txn = AssetTransferTxn.undictify(d["txn"])
+        elif txn_type == constants.assetfreeze_txn:
+            txn = AssetFreezeTxn.undictify(d["txn"])
         stx = SignedTransaction(txn, sig)
         return stx
 
@@ -363,7 +834,7 @@ class MultisigTransaction:
             raise error.BadTxnSenderError
         index = -1
         public_key = base64.b64decode(bytes(private_key, "utf-8"))
-        public_key = public_key[constants.signing_key_len_bytes:]
+        public_key = public_key[constants.key_len_bytes:]
         for s in range(len(self.multisig.subsigs)):
             if self.multisig.subsigs[s].public_key == public_key:
                 index = s
@@ -386,10 +857,12 @@ class MultisigTransaction:
         if "msig" in d:
             msig = Multisig.undictify(d["msig"])
         txn_type = d["txn"]["type"]
-        if txn_type == "pay":
+        if txn_type == constants.payment_txn:
             txn = PaymentTxn.undictify(d["txn"])
-        else:
+        elif txn_type == constants.keyreg_txn:
             txn = KeyregTxn.undictify(d["txn"])
+        elif txn_type == constants.assetconfig_txn:
+            txn = AssetConfigTxn.undictify(d["txn"])
         mtx = MultisigTransaction(txn, msig)
         return mtx
 
@@ -473,9 +946,7 @@ class Multisig:
                       bytes([self.version]) + bytes([self.threshold]))
         for s in self.subsigs:
             msig_bytes += s.public_key
-        hash = hashes.Hash(hashes.SHA512_256(), default_backend())
-        hash.update(msig_bytes)
-        addr = hash.finalize()
+        addr = encoding.checksum(msig_bytes)
         return encoding.encode_address(addr)
 
     def verify(self, message):
@@ -858,9 +1329,76 @@ def retrieve_from_file(path):
             txns.append(MultisigTransaction.undictify(txn))
         elif "sig" in txn:
             txns.append(SignedTransaction.undictify(txn))
-        elif txn["txn"]["type"] == "pay":
+        elif txn["txn"]["type"] == constants.payment_txn:
             txns.append(PaymentTxn.undictify(txn["txn"]))
-        elif txn["txn"]["type"] == "keyreg":
+        elif txn["txn"]["type"] == constants.keyreg_txn:
             txns.append(KeyregTxn.undictify(txn["txn"]))
     f.close()
     return txns
+
+
+class TxGroup:
+    def __init__(self, txns):
+        assert isinstance(txns, list)
+        """
+        Transactions specifies a list of transactions that must appear
+        together, sequentially, in a block in order for the group to be
+        valid.  Each hash in the list is a hash of a transaction with
+        the `Group` field omitted.
+        """
+        self.transactions = txns
+
+    def dictify(self):
+        od = OrderedDict()
+        od["txlist"] = self.transactions
+        return od
+
+    @staticmethod
+    def undictify(d):
+        txg = TxGroup(d["txlist"])
+        return txg
+
+
+def calculate_group_id(txns):
+    """
+    Calculate group id for a given list of unsigned transactions
+
+    Args:
+        txns (list): list of unsigned transactions
+
+    Returns:
+        bytes: checksum value representing the group id
+    """
+    txids = []
+    for txn in txns:
+        raw_txn = encoding.msgpack_encode(txn)
+        to_hash = constants.txid_prefix + base64.b64decode(raw_txn)
+        txids.append(encoding.checksum(to_hash))
+
+    group = TxGroup(txids)
+
+    encoded = encoding.msgpack_encode(group)
+    to_sign = constants.tgid_prefix + base64.b64decode(encoded)
+    gid = encoding.checksum(to_sign)
+    return gid
+
+
+def assign_group_id(txns, address=None):
+    """
+    Assign group id to a given list of unsigned transactions
+
+    Args:
+        txns (list): list of unsigned transactions
+        address (str): optional sender address specifying which transaction
+            return
+
+    Returns:
+        txns (list): list of unsigned transactions with group property set
+    """
+    gid = calculate_group_id(txns)
+    result = []
+    for tx in txns:
+        if address is None or tx.sender == address:
+            tx.group = gid
+            result.append(tx)
+    return result
