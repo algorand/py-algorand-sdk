@@ -430,6 +430,8 @@ class AssetConfigTxn(Transaction):
         if self.genesis_id:
             od["gen"] = self.genesis_id
         od["gh"] = base64.b64decode(self.genesis_hash)
+        if self.group:
+            od["grp"] = self.group
         od["lv"] = self.last_valid_round
         if self.note:
             od["note"] = self.note
@@ -455,7 +457,10 @@ class AssetConfigTxn(Transaction):
         clawback = None
         url = None
         metadata_hash = None
+        grp = None
 
+        if "grp" in d:
+            grp = d["grp"]
         if "note" in d:
             note = d["note"]
         if "gen" in d:
@@ -491,6 +496,7 @@ class AssetConfigTxn(Transaction):
                             index, total, default_frozen,
                             unit_name, asset_name, manager, reserve, freeze,
                             clawback, url, metadata_hash, note, gen, True)
+        ac.group = grp
         return ac
 
     def __eq__(self, other):
@@ -574,6 +580,8 @@ class AssetFreezeTxn(Transaction):
         if self.genesis_id:
             od["gen"] = self.genesis_id
         od["gh"] = base64.b64decode(self.genesis_hash)
+        if self.group:
+            od["grp"] = self.group
         od["lv"] = self.last_valid_round
         if self.note:
             od["note"] = self.note
@@ -588,6 +596,10 @@ class AssetFreezeTxn(Transaction):
         gen = None
         fv = 0
         new_freeze_state = False
+        grp = None
+
+        if "grp" in d:
+            grp = d["grp"]
         if "note" in d:
             note = d["note"]
         if "gen" in d:
@@ -602,6 +614,7 @@ class AssetFreezeTxn(Transaction):
         af = AssetFreezeTxn(encoding.encode_address(d["snd"]), d["fee"], fv,
                             d["lv"], base64.b64encode(d["gh"]).decode(), index,
                             target, new_freeze_state, note, gen, True)
+        af.group = grp
         return af
 
     def __eq__(self, other):
@@ -692,6 +705,8 @@ class AssetTransferTxn(Transaction):
         if self.genesis_id:
             od["gen"] = self.genesis_id
         od["gh"] = base64.b64decode(self.genesis_hash)
+        if self.group:
+            od["grp"] = self.group
         od["lv"] = self.last_valid_round
         if self.note:
             od["note"] = self.note
@@ -713,6 +728,10 @@ class AssetTransferTxn(Transaction):
         index = None
         close_assets_to = None
         revocation_target = None
+        grp = None
+
+        if "grp" in d:
+            grp = d["grp"]
         if "note" in d:
             note = d["note"]
         if "gen" in d:
@@ -735,6 +754,7 @@ class AssetTransferTxn(Transaction):
                                   base64.b64encode(d["gh"]).decode(),
                                   receiver, amt, index, close_assets_to,
                                   revocation_target, note, gen, True)
+        atxfer.group = grp
         return atxfer
 
     def __eq__(self, other):
