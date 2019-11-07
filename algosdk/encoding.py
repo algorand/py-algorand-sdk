@@ -45,16 +45,7 @@ def msgpack_decode(enc):
     """
     decoded = msgpack.unpackb(base64.b64decode(enc), raw=False)
     if "type" in decoded:
-        if decoded["type"] == constants.payment_txn:
-            return transaction.PaymentTxn.undictify(decoded)
-        elif decoded["type"] == constants.keyreg_txn:
-            return transaction.KeyregTxn.undictify(decoded)
-        elif decoded["type"] == constants.assetconfig_txn:
-            return transaction.AssetConfigTxn.undictify(decoded)
-        elif decoded["type"] == constants.assetfreeze_txn:
-            return transaction.AssetFreezeTxn.undictify(decoded)
-        elif decoded["type"] == constants.assettransfer_txn:
-            return transaction.AssetTransferTxn.undictify(decoded)
+        return transaction.Transaction.undictify(decoded)
     if "l" in decoded:
         return transaction.LogicSig.undictify(decoded)
     if "msig" in decoded:

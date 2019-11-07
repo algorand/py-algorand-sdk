@@ -14,7 +14,8 @@ class Transaction:
     """
     Superclass for various transaction types.
     """
-    def __init__(self, sender, fee, first, last, note, gen, gh, lease):
+    def __init__(self, sender, fee, first, last, note, gen, gh, lease,
+                 txn_type):
         self.sender = sender
         self.fee = fee
         self.first_valid_round = first
@@ -24,6 +25,7 @@ class Transaction:
         self.genesis_hash = gh
         self.group = None
         self.lease = lease
+        self.type = txn_type
 
     def get_txid(self):
         """
@@ -75,6 +77,58 @@ class Transaction:
         sk, _ = account.generate_account()
         stx = self.sign(sk)
         return len(base64.b64decode(encoding.msgpack_encode(stx)))
+    
+    def dictify(self):
+        d = dict()
+        d["fee"] = self.fee
+        if self.first_valid_round:
+            d["fv"] = self.first_valid_round
+        if self.genesis_id:
+            d["gen"] = self.genesis_id
+        d["gh"] = base64.b64decode(self.genesis_hash)
+        if self.group:
+            d["grp"] = self.group
+        d["lv"] = self.last_valid_round
+        if self.lease:
+            d["lx"] = self.lease
+        if self.note:
+            d["note"] = self.note
+        d["snd"] = encoding.decode_address(self.sender)
+        d["type"] = self.type
+
+        return d
+
+    @staticmethod
+    def undictify(d):
+        args = {
+            "sender": encoding.encode_address(d["snd"]),
+            "fee": d["fee"],
+            "first": d["fv"] if "fv" in d else 0,
+            "last": d["lv"],
+            "gh": base64.b64encode(d["gh"]).decode(),
+            "note": d["note"] if "note" in d else None,
+            "gen": d["gen"] if "gen" in d else None,
+            "flat_fee": True,
+            "lease": d["lx"] if "lx" in d else None,
+        }
+        if d["type"] == constants.payment_txn:
+            args.update(PaymentTxn._undictify(d))
+            txn = PaymentTxn(**args)
+        elif d["type"] == constants.keyreg_txn:
+            args.update(KeyregTxn._undictify(d))
+            txn = KeyregTxn(**args)
+        elif d["type"] == constants.assetconfig_txn:
+            args.update(AssetConfigTxn._undictify(d))
+            txn = AssetConfigTxn(**args)
+        elif d["type"] == constants.assetfreeze_txn:
+            args.update(AssetFreezeTxn._undictify(d))
+            txn = AssetFreezeTxn(**args)
+        elif d["type"] == constants.assettransfer_txn:
+            args.update(AssetTransferTxn._undictify(d))
+            txn = AssetTransferTxn(**args)
+        if "grp" in d:
+            txn.group = d["grp"]
+        return txn
 
     def __eq__(self, other):
         if not isinstance(other, Transaction):
@@ -87,7 +141,8 @@ class Transaction:
                 self.genesis_id == other.genesis_id and
                 self.note == other.note and
                 self.group == other.group and
-                self.lease == other.lease)
+                self.lease == other.lease and
+                self.type)
 
 
 class PaymentTxn(Transaction):
@@ -131,11 +186,10 @@ class PaymentTxn(Transaction):
                  close_remainder_to=None, note=None, gen=None, flat_fee=False,
                  lease=None):
         Transaction.__init__(self,  sender, fee, first, last, note, gen, gh,
-                             lease)
+                             lease, constants.payment_txn)
         self.receiver = receiver
         self.amt = amt
         self.close_remainder_to = close_remainder_to
-        self.type = constants.payment_txn
         if flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
@@ -143,59 +197,26 @@ class PaymentTxn(Transaction):
                            constants.min_txn_fee)
 
     def dictify(self):
-        od = OrderedDict()
+        d = dict()
         if self.amt:
-            od["amt"] = self.amt
+            d["amt"] = self.amt
         if self.close_remainder_to:
-            od["close"] = encoding.decode_address(self.close_remainder_to)
-        od["fee"] = self.fee
-        if self.first_valid_round:
-            od["fv"] = self.first_valid_round
-        if self.genesis_id:
-            od["gen"] = self.genesis_id
-        od["gh"] = base64.b64decode(self.genesis_hash)
-        if self.group:
-            od["grp"] = self.group
-        od["lv"] = self.last_valid_round
-        if self.lease:
-            od["lx"] = self.lease
-        if self.note:
-            od["note"] = self.note
-        od["rcv"] = encoding.decode_address(self.receiver)
-        od["snd"] = encoding.decode_address(self.sender)
-        od["type"] = self.type
+            d["close"] = encoding.decode_address(self.close_remainder_to)
+        d["rcv"] = encoding.decode_address(self.receiver)
+
+        d.update(super(PaymentTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
 
         return od
 
     @staticmethod
-    def undictify(d):
-        crt = None
-        note = None
-        gen = None
-        amt = 0
-        fv = 0
-        grp = None
-        lease = None
-        if "close" in d:
-            crt = encoding.encode_address(d["close"])
-        if "note" in d:
-            note = d["note"]
-        if "gen" in d:
-            gen = d["gen"]
-        if "amt" in d:
-            amt = d["amt"]
-        if "fv" in d:
-            fv = d["fv"]
-        if "lx" in d:
-            lease = d["lx"]
-        if "grp" in d:
-            grp = d["grp"]
-        tr = PaymentTxn(encoding.encode_address(d["snd"]), d["fee"], fv,
-                        d["lv"], base64.b64encode(d["gh"]).decode(),
-                        encoding.encode_address(d["rcv"]), amt,
-                        crt, note, gen, True, lease)
-        tr.group = grp
-        return tr
+    def _undictify(d):
+        args = {
+            "close_remainder_to": encoding.encode_address(d["close"]) if "close" in d else None,
+            "amt": d["amt"] if "amt" in d else 0,
+            "receiver": encoding.encode_address(d["rcv"])
+        }
+        return args
 
     def __eq__(self, other):
         if not isinstance(other, PaymentTxn):
@@ -251,13 +272,12 @@ class KeyregTxn(Transaction):
                  votelst, votekd, note=None, gen=None, flat_fee=False,
                  lease=None):
         Transaction.__init__(self, sender, fee, first, last, note, gen, gh,
-                             lease)
+                             lease, constants.keyreg_txn)
         self.votepk = votekey
         self.selkey = selkey
         self.votefst = votefst
         self.votelst = votelst
         self.votekd = votekd
-        self.type = constants.keyreg_txn
         if flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
@@ -265,53 +285,28 @@ class KeyregTxn(Transaction):
                            constants.min_txn_fee)
 
     def dictify(self):
-        od = OrderedDict()
-        od["fee"] = self.fee
-        if self.first_valid_round:
-            od["fv"] = self.first_valid_round
-        if self.genesis_id:
-            od["gen"] = self.genesis_id
-        od["gh"] = base64.b64decode(self.genesis_hash)
-        if self.group:
-            od["grp"] = self.group
-        od["lv"] = self.last_valid_round
-        if self.lease:
-            od["lx"] = self.lease
-        if self.note:
-            od["note"] = self.note
-        od["selkey"] = encoding.decode_address(self.selkey)
-        od["snd"] = encoding.decode_address(self.sender)
-        od["type"] = self.type
-        od["votefst"] = self.votefst
-        od["votekd"] = self.votekd
-        od["votekey"] = encoding.decode_address(self.votepk)
-        od["votelst"] = self.votelst
+        d = {
+            "selkey": encoding.decode_address(self.selkey),
+            "votefst": self.votefst,
+            "votekd": self.votekd,
+            "votekey": encoding.decode_address(self.votepk),
+            "votelst": self.votelst
+        }
+        d.update(super(KeyregTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
+        
         return od
 
     @staticmethod
-    def undictify(d):
-        note = None
-        gen = None
-        fv = 0
-        grp = None
-        lease = None
-        if "note" in d:
-            note = d["note"]
-        if "gen" in d:
-            gen = d["gen"]
-        if "fv" in d:
-            fv = d["fv"]
-        if "grp" in d:
-            grp = d["grp"]
-        if "lx" in d:
-            lease = d["lx"]
-        k = KeyregTxn(encoding.encode_address(d["snd"]), d["fee"], fv,
-                      d["lv"], base64.b64encode(d["gh"]).decode(),
-                      encoding.encode_address(d["votekey"]),
-                      encoding.encode_address(d["selkey"]), d["votefst"],
-                      d["votelst"], d["votekd"], note, gen, True, lease)
-        k.group = grp
-        return k
+    def _undictify(d):
+        args = {
+            "votekey": encoding.encode_address(d["votekey"]),
+            "selkey": encoding.encode_address(d["selkey"]),
+            "votefst": d["votefst"],
+            "votelst": d["votelst"],
+            "votekd": d["votekd"]
+        }
+        return args
 
     def __eq__(self, other):
         if not isinstance(other, KeyregTxn):
@@ -400,7 +395,7 @@ class AssetConfigTxn(Transaction):
                  freeze=None, clawback=None, url=None, metadata_hash=None,
                  note=None, gen=None, flat_fee=False, lease=None):
         Transaction.__init__(self,  sender, fee, first, last, note, gen, gh,
-                             lease)
+                             lease, constants.assetconfig_txn)
         self.index = index
         self.total = total
         self.default_frozen = default_frozen
@@ -415,7 +410,6 @@ class AssetConfigTxn(Transaction):
         if metadata_hash is not None:
             if len(metadata_hash) != constants.metadata_length:
                 raise error.WrongMetadataLengthError
-        self.type = constants.assetconfig_txn
         if flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
@@ -423,7 +417,7 @@ class AssetConfigTxn(Transaction):
                            constants.min_txn_fee)
 
     def dictify(self):
-        od = OrderedDict()
+        d = dict()
 
         if (self.total or self.default_frozen or self.unit_name or
                 self.asset_name or self.manager or self.reserve or
@@ -449,34 +443,18 @@ class AssetConfigTxn(Transaction):
                 apar["t"] = self.total
             if self.unit_name:
                 apar["un"] = self.unit_name
-            od["apar"] = apar
+            d["apar"] = apar
 
         if self.index:
-            od["caid"] = self.index
-
-        od["fee"] = self.fee
-        if self.first_valid_round:
-            od["fv"] = self.first_valid_round
-        if self.genesis_id:
-            od["gen"] = self.genesis_id
-        od["gh"] = base64.b64decode(self.genesis_hash)
-        if self.group:
-            od["grp"] = self.group
-        od["lv"] = self.last_valid_round
-        if self.lease:
-            od["lx"] = self.lease
-        if self.note:
-            od["note"] = self.note
-        od["snd"] = encoding.decode_address(self.sender)
-        od["type"] = self.type
+            d["caid"] = self.index
+        
+        d.update(super(AssetConfigTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
 
         return od
 
     @staticmethod
-    def undictify(d):
-        note = None
-        gen = None
-        fv = 0
+    def _undictify(d):
 
         index = None
         total = None
@@ -489,19 +467,7 @@ class AssetConfigTxn(Transaction):
         clawback = None
         url = None
         metadata_hash = None
-        grp = None
-        lease = None
 
-        if "grp" in d:
-            grp = d["grp"]
-        if "lx" in d:
-            lease = d["lx"]
-        if "note" in d:
-            note = d["note"]
-        if "gen" in d:
-            gen = d["gen"]
-        if "fv" in d:
-            fv = d["fv"]
         if "caid" in d:
             index = d["caid"]
         if "apar" in d:
@@ -525,15 +491,22 @@ class AssetConfigTxn(Transaction):
                 url = d["apar"]["au"]
             if "am" in d["apar"]:
                 metadata_hash = d["apar"]["am"]
+        
+        args = {
+            "index": index,
+            "total": total,
+            "default_frozen": default_frozen,
+            "unit_name": unit_name,
+            "asset_name": asset_name,
+            "manager": manager,
+            "reserve": reserve,
+            "freeze": freeze,
+            "clawback": clawback,
+            "url": url,
+            "metadata_hash": metadata_hash
+        }
 
-        ac = AssetConfigTxn(encoding.encode_address(d["snd"]), d["fee"], fv,
-                            d["lv"], base64.b64encode(d["gh"]).decode(),
-                            index, total, default_frozen,
-                            unit_name, asset_name, manager, reserve, freeze,
-                            clawback, url, metadata_hash, note, gen, True,
-                            lease)
-        ac.group = grp
-        return ac
+        return args
 
     def __eq__(self, other):
         if not isinstance(other, AssetConfigTxn):
@@ -595,11 +568,10 @@ class AssetFreezeTxn(Transaction):
                  new_freeze_state, note=None, gen=None, flat_fee=False,
                  lease=None):
         Transaction.__init__(self, sender, fee, first, last, note, gen, gh,
-                             lease)
+                             lease, constants.assetfreeze_txn)
         self.index = index
         self.target = target
         self.new_freeze_state = new_freeze_state
-        self.type = constants.assetfreeze_txn
         if flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
@@ -607,62 +579,28 @@ class AssetFreezeTxn(Transaction):
                            constants.min_txn_fee)
 
     def dictify(self):
-        od = OrderedDict()
+        d = dict()
         if self.new_freeze_state:
-            od["afrz"] = self.new_freeze_state
+            d["afrz"] = self.new_freeze_state
 
-        od["fadd"] = encoding.decode_address(self.target)
+        d["fadd"] = encoding.decode_address(self.target)
 
         if self.index:
-            od["faid"] = self.index
+            d["faid"] = self.index
 
-        od["fee"] = self.fee
-        if self.first_valid_round:
-            od["fv"] = self.first_valid_round
-        if self.genesis_id:
-            od["gen"] = self.genesis_id
-        od["gh"] = base64.b64decode(self.genesis_hash)
-        if self.group:
-            od["grp"] = self.group
-        od["lv"] = self.last_valid_round
-        if self.lease:
-            od["lx"] = self.lease
-        if self.note:
-            od["note"] = self.note
-        od["snd"] = encoding.decode_address(self.sender)
-        od["type"] = self.type
-
+        d.update(super(AssetFreezeTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
         return od
 
     @staticmethod
-    def undictify(d):
-        note = None
-        gen = None
-        fv = 0
-        new_freeze_state = False
-        grp = None
-        lease = None
+    def _undictify(d):
+        args = {
+            "index": d["faid"],
+            "new_freeze_state": d["afrz"] if "afrz" in d else False,
+            "target": encoding.encode_address(d["fadd"])
+        }
 
-        if "grp" in d:
-            grp = d["grp"]
-        if "lx" in d:
-            lease = d["lx"]
-        if "note" in d:
-            note = d["note"]
-        if "gen" in d:
-            gen = d["gen"]
-        if "fv" in d:
-            fv = d["fv"]
-        index = d["faid"]
-        target = encoding.encode_address(d["fadd"])
-        if "afrz" in d:
-            new_freeze_state = d["afrz"]
-
-        af = AssetFreezeTxn(encoding.encode_address(d["snd"]), d["fee"], fv,
-                            d["lv"], base64.b64encode(d["gh"]).decode(), index,
-                            target, new_freeze_state, note, gen, True, lease)
-        af.group = grp
-        return af
+        return args
 
     def __eq__(self, other):
         if not isinstance(other, AssetFreezeTxn):
@@ -726,8 +664,7 @@ class AssetTransferTxn(Transaction):
                  close_assets_to=None, revocation_target=None, note=None,
                  gen=None, flat_fee=False, lease=None):
         Transaction.__init__(self,  sender, fee, first, last, note, gen, gh,
-                             lease)
-        self.type = constants.assettransfer_txn
+                             lease, constants.assettransfer_txn)
         self.receiver = receiver
         self.amount = amt
         self.index = index
@@ -740,79 +677,36 @@ class AssetTransferTxn(Transaction):
                            constants.min_txn_fee)
 
     def dictify(self):
-        od = OrderedDict()
+        d = dict()
 
         if self.amount:
-            od["aamt"] = self.amount
+            d["aamt"] = self.amount
         if self.close_assets_to:
-            od["aclose"] = encoding.decode_address(self.close_assets_to)
+            d["aclose"] = encoding.decode_address(self.close_assets_to)
         if self.receiver:
-            od["arcv"] = encoding.decode_address(self.receiver)
+            d["arcv"] = encoding.decode_address(self.receiver)
         if self.revocation_target:
-            od["asnd"] = encoding.decode_address(self.revocation_target)
+            d["asnd"] = encoding.decode_address(self.revocation_target)
 
-        od["fee"] = self.fee
-        if self.first_valid_round:
-            od["fv"] = self.first_valid_round
-        if self.genesis_id:
-            od["gen"] = self.genesis_id
-        od["gh"] = base64.b64decode(self.genesis_hash)
-        if self.group:
-            od["grp"] = self.group
-        od["lv"] = self.last_valid_round
-        if self.lease:
-            od["lx"] = self.lease
-        if self.note:
-            od["note"] = self.note
-        od["snd"] = encoding.decode_address(self.sender)
-        od["type"] = self.type
         if self.index:
-            od["xaid"] = self.index
+            d["xaid"] = self.index
+        
+        d.update(super(AssetTransferTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
 
         return od
 
     @staticmethod
-    def undictify(d):
+    def _undictify(d):
+        args = {
+            "receiver": encoding.encode_address(d["arcv"]) if "arcv" in d else None,
+            "amt": d["aamt"] if "aamt" in d else 0,
+            "index": d["xaid"] if "xaid" in d else None,
+            "close_assets_to": encoding.encode_address(d["aclose"]) if "aclose" in d else None,
+            "revocation_target": encoding.encode_address(d["asnd"]) if "asnd" in d else None
+        }
 
-        note = None
-        gen = None
-        fv = 0
-        receiver = None
-        amt = 0
-        index = None
-        close_assets_to = None
-        revocation_target = None
-        grp = None
-        lease = None
-
-        if "grp" in d:
-            grp = d["grp"]
-        if "lx" in d:
-            lease = d["lx"]
-        if "note" in d:
-            note = d["note"]
-        if "gen" in d:
-            gen = d["gen"]
-        if "fv" in d:
-            fv = d["fv"]
-        if "arcv" in d:
-            receiver = encoding.encode_address(d["arcv"])
-        if "aamt" in d:
-            amt = d["aamt"]
-        if "xaid" in d:
-            index = d["xaid"]
-        if "aclose" in d:
-            close_assets_to = encoding.encode_address(d["aclose"])
-        if "asnd" in d:
-            revocation_target = encoding.encode_address(d["asnd"])
-
-        atxfer = AssetTransferTxn(encoding.encode_address(d["snd"]), d["fee"],
-                                  fv, d["lv"],
-                                  base64.b64encode(d["gh"]).decode(),
-                                  receiver, amt, index, close_assets_to,
-                                  revocation_target, note, gen, True, lease)
-        atxfer.group = grp
-        return atxfer
+        return args
 
     def __eq__(self, other):
         if not isinstance(other, AssetTransferTxn):
@@ -854,17 +748,7 @@ class SignedTransaction:
         sig = None
         if "sig" in d:
             sig = base64.b64encode(d["sig"]).decode()
-        txn_type = d["txn"]["type"]
-        if txn_type == constants.payment_txn:
-            txn = PaymentTxn.undictify(d["txn"])
-        elif txn_type == constants.keyreg_txn:
-            txn = KeyregTxn.undictify(d["txn"])
-        elif txn_type == constants.assetconfig_txn:
-            txn = AssetConfigTxn.undictify(d["txn"])
-        elif txn_type == constants.assettransfer_txn:
-            txn = AssetTransferTxn.undictify(d["txn"])
-        elif txn_type == constants.assetfreeze_txn:
-            txn = AssetFreezeTxn.undictify(d["txn"])
+        txn = Transaction.undictify(d["txn"])
         stx = SignedTransaction(txn, sig)
         return stx
 
@@ -933,13 +817,7 @@ class MultisigTransaction:
         msig = None
         if "msig" in d:
             msig = Multisig.undictify(d["msig"])
-        txn_type = d["txn"]["type"]
-        if txn_type == constants.payment_txn:
-            txn = PaymentTxn.undictify(d["txn"])
-        elif txn_type == constants.keyreg_txn:
-            txn = KeyregTxn.undictify(d["txn"])
-        elif txn_type == constants.assetconfig_txn:
-            txn = AssetConfigTxn.undictify(d["txn"])
+        txn = Transaction.undictify(d["txn"])
         mtx = MultisigTransaction(txn, msig)
         return mtx
 
@@ -1336,13 +1214,7 @@ class LogicSigTransaction:
         lsig = None
         if "lsig" in d:
             lsig = LogicSig.undictify(d["lsig"])
-        txn_type = d["txn"]["type"]
-        if txn_type == constants.payment_txn:
-            txn = PaymentTxn.undictify(d["txn"])
-        elif txn_type == constants.keyreg_txn:
-            txn = KeyregTxn.undictify(d["txn"])
-        elif txn_type == constants.assetconfig_txn:
-            txn = AssetConfigTxn.undictify(d["txn"])
+        txn = Transaction.undictify(d["txn"])
         lstx = LogicSigTransaction(txn, lsig)
         return lstx
 
@@ -1405,10 +1277,10 @@ def retrieve_from_file(path):
             txns.append(MultisigTransaction.undictify(txn))
         elif "sig" in txn:
             txns.append(SignedTransaction.undictify(txn))
-        elif txn["txn"]["type"] == constants.payment_txn:
-            txns.append(PaymentTxn.undictify(txn["txn"]))
-        elif txn["txn"]["type"] == constants.keyreg_txn:
-            txns.append(KeyregTxn.undictify(txn["txn"]))
+        elif "lsig" in txn:
+            txns.append(LogicSigTransaction.undictify(txn))
+        elif "type" in txn:
+            txns.append(Transaction.undictify(txn))
     f.close()
     return txns
 
