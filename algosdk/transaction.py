@@ -24,6 +24,9 @@ class Transaction:
         self.genesis_hash = gh
         self.group = None
         self.lease = lease
+        if self.lease is not None:
+            if len(self.lease) != 32:
+                raise error.WrongLeaseLengthError
 
     def get_txid(self):
         """
