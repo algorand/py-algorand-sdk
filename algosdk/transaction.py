@@ -14,7 +14,7 @@ class Transaction:
     """
     Superclass for various transaction types.
     """
-    def __init__(self, sender, fee, first, last, note, gen, gh):
+    def __init__(self, sender, fee, first, last, note, gen, gh, lease):
         self.sender = sender
         self.fee = fee
         self.first_valid_round = first
@@ -23,6 +23,10 @@ class Transaction:
         self.genesis_id = gen
         self.genesis_hash = gh
         self.group = None
+        self.lease = lease
+        if self.lease is not None:
+            if len(self.lease) != 32:
+                raise error.WrongLeaseLengthError
 
     def get_txid(self):
         """
@@ -84,7 +88,9 @@ class Transaction:
                 self.last_valid_round == other.last_valid_round and
                 self.genesis_hash == other.genesis_hash and
                 self.genesis_id == other.genesis_id and
-                self.note == other.note)
+                self.note == other.note and
+                self.group == other.group and
+                self.lease == other.lease)
 
 
 class PaymentTxn(Transaction):
@@ -103,7 +109,10 @@ class PaymentTxn(Transaction):
             and remaining algos will be sent to this address
         note (bytes, optional): arbitrary optional bytes
         gen (str, optional): genesis_id
-        flat_fee (bool): whether the specified fee is a flat fee
+        flat_fee (bool, optional): whether the specified fee is a flat fee
+        lease (byte[32], optional): specifies a lease, and no other transaction
+            with the same sender and lease can be confirmed in this
+            transaction's valid rounds
 
     Attributes:
         sender (str)
@@ -113,16 +122,19 @@ class PaymentTxn(Transaction):
         note (bytes)
         genesis_id (str)
         genesis_hash (str)
-        group(bytes)
+        group (bytes)
         receiver (str)
         amt (int)
         close_remainder_to (str)
         type (str)
+        lease (byte[32])
     """
 
     def __init__(self, sender, fee, first, last, gh, receiver, amt,
-                 close_remainder_to=None, note=None, gen=None, flat_fee=False):
-        Transaction.__init__(self,  sender, fee, first, last, note, gen, gh)
+                 close_remainder_to=None, note=None, gen=None, flat_fee=False,
+                 lease=None):
+        Transaction.__init__(self,  sender, fee, first, last, note, gen, gh,
+                             lease)
         self.receiver = receiver
         self.amt = amt
         self.close_remainder_to = close_remainder_to
@@ -148,6 +160,8 @@ class PaymentTxn(Transaction):
         if self.group:
             od["grp"] = self.group
         od["lv"] = self.last_valid_round
+        if self.lease:
+            od["lx"] = self.lease
         if self.note:
             od["note"] = self.note
         od["rcv"] = encoding.decode_address(self.receiver)
@@ -164,6 +178,7 @@ class PaymentTxn(Transaction):
         amt = 0
         fv = 0
         grp = None
+        lease = None
         if "close" in d:
             crt = encoding.encode_address(d["close"])
         if "note" in d:
@@ -174,12 +189,14 @@ class PaymentTxn(Transaction):
             amt = d["amt"]
         if "fv" in d:
             fv = d["fv"]
+        if "lx" in d:
+            lease = d["lx"]
         if "grp" in d:
             grp = d["grp"]
         tr = PaymentTxn(encoding.encode_address(d["snd"]), d["fee"], fv,
                         d["lv"], base64.b64encode(d["gh"]).decode(),
                         encoding.encode_address(d["rcv"]), amt,
-                        crt, note, gen, True)
+                        crt, note, gen, True, lease)
         tr.group = grp
         return tr
 
@@ -209,8 +226,11 @@ class KeyregTxn(Transaction):
         votelst (int): last round to vote
         votekd (int): vote key dilution
         note (bytes, optional): arbitrary optional bytes
-        gen (str): genesis_id
-        flat_fee (bool): whether the specified fee is a flat fee
+        gen (str, optional): genesis_id
+        flat_fee (bool, optional): whether the specified fee is a flat fee
+        lease (byte[32], optional): specifies a lease, and no other transaction
+            with the same sender and lease can be confirmed in this
+            transaction's valid rounds
 
     Attributes:
         sender (str)
@@ -227,11 +247,14 @@ class KeyregTxn(Transaction):
         votelst (int)
         votekd (int)
         type (str)
+        lease (byte[32])
     """
 
     def __init__(self, sender, fee, first, last, gh, votekey, selkey, votefst,
-                 votelst, votekd, note=None, gen=None, flat_fee=False):
-        Transaction.__init__(self, sender, fee, first, last, note, gen, gh)
+                 votelst, votekd, note=None, gen=None, flat_fee=False,
+                 lease=None):
+        Transaction.__init__(self, sender, fee, first, last, note, gen, gh,
+                             lease)
         self.votepk = votekey
         self.selkey = selkey
         self.votefst = votefst
@@ -255,6 +278,8 @@ class KeyregTxn(Transaction):
         if self.group:
             od["grp"] = self.group
         od["lv"] = self.last_valid_round
+        if self.lease:
+            od["lx"] = self.lease
         if self.note:
             od["note"] = self.note
         od["selkey"] = encoding.decode_address(self.selkey)
@@ -272,6 +297,7 @@ class KeyregTxn(Transaction):
         gen = None
         fv = 0
         grp = None
+        lease = None
         if "note" in d:
             note = d["note"]
         if "gen" in d:
@@ -280,11 +306,13 @@ class KeyregTxn(Transaction):
             fv = d["fv"]
         if "grp" in d:
             grp = d["grp"]
+        if "lx" in d:
+            lease = d["lx"]
         k = KeyregTxn(encoding.encode_address(d["snd"]), d["fee"], fv,
                       d["lv"], base64.b64encode(d["gh"]).decode(),
                       encoding.encode_address(d["votekey"]),
                       encoding.encode_address(d["selkey"]), d["votefst"],
-                      d["votelst"], d["votekd"], note, gen, True)
+                      d["votelst"], d["votekd"], note, gen, True, lease)
         k.group = grp
         return k
 
@@ -342,6 +370,9 @@ class AssetConfigTxn(Transaction):
         note (bytes, optional): arbitrary optional bytes
         gen (str, optional): genesis_id
         flat_fee (bool, optional): whether the specified fee is a flat fee
+        lease (byte[32], optional): specifies a lease, and no other transaction
+            with the same sender and lease can be confirmed in this
+            transaction's valid rounds
 
     Attributes:
         sender (str)
@@ -363,14 +394,16 @@ class AssetConfigTxn(Transaction):
         note (bytes)
         genesis_id (str)
         type (str)
+        lease (byte[32])
     """
 
     def __init__(self, sender, fee, first, last, gh, index=None,
                  total=None, default_frozen=None, unit_name=None,
                  asset_name=None, manager=None, reserve=None,
                  freeze=None, clawback=None, url=None, metadata_hash=None,
-                 note=None, gen=None, flat_fee=False):
-        Transaction.__init__(self,  sender, fee, first, last, note, gen, gh)
+                 note=None, gen=None, flat_fee=False, lease=None):
+        Transaction.__init__(self,  sender, fee, first, last, note, gen, gh,
+                             lease)
         self.index = index
         self.total = total
         self.default_frozen = default_frozen
@@ -430,7 +463,11 @@ class AssetConfigTxn(Transaction):
         if self.genesis_id:
             od["gen"] = self.genesis_id
         od["gh"] = base64.b64decode(self.genesis_hash)
+        if self.group:
+            od["grp"] = self.group
         od["lv"] = self.last_valid_round
+        if self.lease:
+            od["lx"] = self.lease
         if self.note:
             od["note"] = self.note
         od["snd"] = encoding.decode_address(self.sender)
@@ -455,7 +492,13 @@ class AssetConfigTxn(Transaction):
         clawback = None
         url = None
         metadata_hash = None
+        grp = None
+        lease = None
 
+        if "grp" in d:
+            grp = d["grp"]
+        if "lx" in d:
+            lease = d["lx"]
         if "note" in d:
             note = d["note"]
         if "gen" in d:
@@ -490,7 +533,9 @@ class AssetConfigTxn(Transaction):
                             d["lv"], base64.b64encode(d["gh"]).decode(),
                             index, total, default_frozen,
                             unit_name, asset_name, manager, reserve, freeze,
-                            clawback, url, metadata_hash, note, gen, True)
+                            clawback, url, metadata_hash, note, gen, True,
+                            lease)
+        ac.group = grp
         return ac
 
     def __eq__(self, other):
@@ -529,7 +574,10 @@ class AssetFreezeTxn(Transaction):
             they should be transferrable
         note (bytes, optional): arbitrary optional bytes
         gen (str, optional): genesis_id
-        flat_fee (bool): whether the specified fee is a flat fee
+        flat_fee (bool, optional): whether the specified fee is a flat fee
+        lease (byte[32], optional): specifies a lease, and no other transaction
+            with the same sender and lease can be confirmed in this
+            transaction's valid rounds
 
     Attributes:
         sender (str)
@@ -543,11 +591,14 @@ class AssetFreezeTxn(Transaction):
         note (bytes)
         genesis_id (str)
         type (str)
+        lease (byte[32])
     """
 
     def __init__(self, sender, fee, first, last, gh, index, target,
-                 new_freeze_state, note=None, gen=None, flat_fee=False):
-        Transaction.__init__(self, sender, fee, first, last, note, gen, gh)
+                 new_freeze_state, note=None, gen=None, flat_fee=False,
+                 lease=None):
+        Transaction.__init__(self, sender, fee, first, last, note, gen, gh,
+                             lease)
         self.index = index
         self.target = target
         self.new_freeze_state = new_freeze_state
@@ -574,7 +625,11 @@ class AssetFreezeTxn(Transaction):
         if self.genesis_id:
             od["gen"] = self.genesis_id
         od["gh"] = base64.b64decode(self.genesis_hash)
+        if self.group:
+            od["grp"] = self.group
         od["lv"] = self.last_valid_round
+        if self.lease:
+            od["lx"] = self.lease
         if self.note:
             od["note"] = self.note
         od["snd"] = encoding.decode_address(self.sender)
@@ -588,6 +643,13 @@ class AssetFreezeTxn(Transaction):
         gen = None
         fv = 0
         new_freeze_state = False
+        grp = None
+        lease = None
+
+        if "grp" in d:
+            grp = d["grp"]
+        if "lx" in d:
+            lease = d["lx"]
         if "note" in d:
             note = d["note"]
         if "gen" in d:
@@ -601,7 +663,8 @@ class AssetFreezeTxn(Transaction):
 
         af = AssetFreezeTxn(encoding.encode_address(d["snd"]), d["fee"], fv,
                             d["lv"], base64.b64encode(d["gh"]).decode(), index,
-                            target, new_freeze_state, note, gen, True)
+                            target, new_freeze_state, note, gen, True, lease)
+        af.group = grp
         return af
 
     def __eq__(self, other):
@@ -640,7 +703,10 @@ class AssetTransferTxn(Transaction):
             revocation manager, also known as clawback)
         note (bytes, optional): arbitrary optional bytes
         gen (str, optional): genesis_id
-        flat_fee (bool): whether the specified fee is a flat fee
+        flat_fee (bool, optional): whether the specified fee is a flat fee
+        lease (byte[32], optional): specifies a lease, and no other transaction
+            with the same sender and lease can be confirmed in this
+            transaction's valid rounds
 
     Attributes:
         sender (str)
@@ -656,12 +722,14 @@ class AssetTransferTxn(Transaction):
         note (bytes)
         genesis_id (str)
         type (str)
+        lease (byte[32])
     """
 
     def __init__(self, sender, fee, first, last, gh, receiver, amt, index,
                  close_assets_to=None, revocation_target=None, note=None,
-                 gen=None, flat_fee=False):
-        Transaction.__init__(self,  sender, fee, first, last, note, gen, gh)
+                 gen=None, flat_fee=False, lease=None):
+        Transaction.__init__(self,  sender, fee, first, last, note, gen, gh,
+                             lease)
         self.type = constants.assettransfer_txn
         self.receiver = receiver
         self.amount = amt
@@ -692,7 +760,11 @@ class AssetTransferTxn(Transaction):
         if self.genesis_id:
             od["gen"] = self.genesis_id
         od["gh"] = base64.b64decode(self.genesis_hash)
+        if self.group:
+            od["grp"] = self.group
         od["lv"] = self.last_valid_round
+        if self.lease:
+            od["lx"] = self.lease
         if self.note:
             od["note"] = self.note
         od["snd"] = encoding.decode_address(self.sender)
@@ -713,6 +785,13 @@ class AssetTransferTxn(Transaction):
         index = None
         close_assets_to = None
         revocation_target = None
+        grp = None
+        lease = None
+
+        if "grp" in d:
+            grp = d["grp"]
+        if "lx" in d:
+            lease = d["lx"]
         if "note" in d:
             note = d["note"]
         if "gen" in d:
@@ -734,7 +813,8 @@ class AssetTransferTxn(Transaction):
                                   fv, d["lv"],
                                   base64.b64encode(d["gh"]).decode(),
                                   receiver, amt, index, close_assets_to,
-                                  revocation_target, note, gen, True)
+                                  revocation_target, note, gen, True, lease)
+        atxfer.group = grp
         return atxfer
 
     def __eq__(self, other):

@@ -67,6 +67,8 @@ microalgos_to_algos_ratio = 1000000
 """int: how many microalgos per algo"""
 metadata_length = 32
 """int: length of asset metadata"""
+lease_length = 32
+"""int: byte length of leases"""
 
 # logic sig related
 logic_sig_max_cost = 20000
