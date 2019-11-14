@@ -136,6 +136,37 @@ class TestTransaction(unittest.TestCase):
 
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
+    def test_serialize_pay_lease(self):
+        mn = ("advice pudding treat near rule blouse same whisper inner elec" +
+              "tric quit surface sunny dismiss leader blood seat clown cost " +
+              "exist hospital century reform able sponsor")
+        sk = mnemonic.to_private_key(mn)
+        pk = mnemonic.to_public_key(mn)
+        to = "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI"
+        fee = 4
+        first_round = 12466
+        last_round = 13466
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        gen = "devnet-v33.0"
+        note = base64.b64decode("6gAVR0Nsv5Y=")
+        close = "IDUTJEUIEVSMXTU4LGTJWZ2UE2E6TIODUKU6UW3FU3UKIQQ77RLUBBBFLA"
+        amount = 1000
+        lease = bytes([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
+        txn = transaction.PaymentTxn(pk, fee, first_round, last_round, gh, to,
+                                     amount, close, note, gen, lease=lease)
+        signed_txn = txn.sign(sk)
+
+        golden = ("gqNzaWfEQOMmFSIKsZvpW0txwzhmbgQjxv6IyN7BbV5sZ2aNgFbVcrWUn" +
+                  "qPpQQxfPhV/wdu9jzEPUU1jAujYtcNCxJ7ONgejdHhujKNhbXTNA+ilY2" +
+                  "xvc2XEIEDpNJKIJWTLzpxZpptnVCaJ6aHDoqnqW2Wm6KRCH/xXo2ZlZc0" +
+                  "FLKJmds0wsqNnZW6sZGV2bmV0LXYzMy4womdoxCAmCyAJoJOohot5WHIv" +
+                  "peVG7eftF+TYXEx4r7BFJpDt0qJsds00mqJseMQgAQIDBAECAwQBAgMEA" +
+                  "QIDBAECAwQBAgMEAQIDBAECAwSkbm90ZcQI6gAVR0Nsv5ajcmN2xCB7bO" +
+                  "JP61uswLFk4pwiLFf19j3Dh9Q5BIJYQRxf4Q98AqNzbmTEIOfw+E0GgR3" +
+                  "58xyNh4sRVfRnHVGhhcIAkIZn9ElYcGihpHR5cGWjcGF5")
+
+        self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
+
     def test_serialize_keyreg(self):
         mn = ("awful drop leaf tennis indoor begin mandate discover uncle se" +
               "ven only coil atom any hospital uncover make any climb actor " +

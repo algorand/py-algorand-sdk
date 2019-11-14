@@ -25,6 +25,9 @@ class Transaction:
         self.genesis_hash = gh
         self.group = None
         self.lease = lease
+        if self.lease is not None:
+            if len(self.lease) != constants.lease_length:
+                raise error.WrongLeaseLengthError
         self.type = txn_type
 
     def get_txid(self):
@@ -142,7 +145,7 @@ class Transaction:
                 self.note == other.note and
                 self.group == other.group and
                 self.lease == other.lease and
-                self.type)
+                self.type == other.type)
 
 
 class PaymentTxn(Transaction):
@@ -224,8 +227,7 @@ class PaymentTxn(Transaction):
         return (super(PaymentTxn, self).__eq__(other) and
                 self.receiver == other.receiver and
                 self.amt == other.amt and
-                self.close_remainder_to == other.close_remainder_to and
-                self.type == other.type)
+                self.close_remainder_to == other.close_remainder_to)
 
 
 class KeyregTxn(Transaction):
@@ -316,8 +318,7 @@ class KeyregTxn(Transaction):
                 self.selkey == other.selkey and
                 self.votefst == other.votefst and
                 self.votelst == other.votelst and
-                self.votekd == other.votekd and
-                self.type == other.type)
+                self.votekd == other.votekd)
 
 
 class AssetConfigTxn(Transaction):
@@ -467,6 +468,8 @@ class AssetConfigTxn(Transaction):
         clawback = None
         url = None
         metadata_hash = None
+        grp = None
+        lease = None
 
         if "caid" in d:
             index = d["caid"]
@@ -522,8 +525,7 @@ class AssetConfigTxn(Transaction):
                 self.freeze == other.freeze and
                 self.clawback == other.clawback and
                 self.url == other.url and
-                self.metadata_hash == other.metadata_hash and
-                self.type == other.type)
+                self.metadata_hash == other.metadata_hash)
 
 
 class AssetFreezeTxn(Transaction):
@@ -608,8 +610,7 @@ class AssetFreezeTxn(Transaction):
         return (super(AssetFreezeTxn, self).__eq__(other) and
                 self.index == other.index and
                 self.target == other.target and
-                self.new_freeze_state == other.new_freeze_state and
-                self.type == other.type)
+                self.new_freeze_state == other.new_freeze_state)
 
 
 class AssetTransferTxn(Transaction):
@@ -716,8 +717,7 @@ class AssetTransferTxn(Transaction):
                 self.amount == other.amount and
                 self.receiver == other.receiver and
                 self.close_assets_to == other.close_assets_to and
-                self.revocation_target == other.revocation_target and
-                self.type == other.type)
+                self.revocation_target == other.revocation_target)
 
 
 class SignedTransaction:
@@ -905,7 +905,7 @@ class Multisig:
         return encoding.encode_address(addr)
 
     def verify(self, message):
-        """Verify that the multisig is valid for the message"""
+        """Verify that the multisig is valid for the message."""
         try:
             self.validate()
         except (error.UnknownMsigVersionError, error.InvalidThresholdError):
@@ -1059,13 +1059,12 @@ class LogicSig:
         Verifies LogicSig against the transaction's sender address
 
         Args:
-            public_key (bytes)
+            public_key (bytes): sender address
 
         Returns:
-            true if the signature valid (one of):
-                - the sender address matches to the logic hash
-                - the signature is valid agains the sender addres
-            false otherwise
+            bool: true if the signature is valid (the sender address matches\
+                the logic hash or the signature is valid against the sender\
+                address), false otherwise
         """
         if self.sig and self.msig:
             return False
@@ -1096,7 +1095,8 @@ class LogicSig:
         Compute hash of the logic sig program (that is the same as escrow
         account address) as string address
 
-        Returns: string
+        Returns: 
+            string
         """
         to_sign = constants.logic_prefix + self.logic
         checksum = encoding.checksum(to_sign)
@@ -1134,8 +1134,9 @@ class LogicSig:
             multisig (Multisig): optional multisig account without signatures
                 to sign with
 
-        Raises InvalidSecretKeyError if no matching private key in multisig
-            object
+        Raises:
+            InvalidSecretKeyError: if no matching private key in multisig\
+                object
         """
 
         if not multisig:
@@ -1154,7 +1155,8 @@ class LogicSig:
             private_key (str): private key of signing account
 
         Raises:
-            InvalidSecretKeyError if no matching private key in multisig object
+            InvalidSecretKeyError: if no matching private key in multisig\
+                object
         """
 
         if self.msig is None:
@@ -1194,10 +1196,9 @@ class LogicSigTransaction:
         Verify LogicSig against the transaction
 
         Returns:
-            true if the signature valid (one of):
-                - the sender address matches to the logic hash
-                - the signature is valid agains the sender addres
-            false otherwise
+            bool: true if the signature is valid (the sender address matches\
+                the logic hash or the signature is valid against the sender\
+                address), false otherwise
         """
         public_key = encoding.decode_address(self.transaction.sender)
         return self.lsig.verify(public_key)
