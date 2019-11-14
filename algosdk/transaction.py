@@ -25,7 +25,7 @@ class Transaction:
         self.group = None
         self.lease = lease
         if self.lease is not None:
-            if len(self.lease) != 32:
+            if len(self.lease) != constants.lease_length:
                 raise error.WrongLeaseLengthError
 
     def get_txid(self):
