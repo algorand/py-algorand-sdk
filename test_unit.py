@@ -216,7 +216,6 @@ class TestTransaction(unittest.TestCase):
         unitname = "tst"
         url = "website"
         metadata = bytes("fACPO4nRgO55j1ndAK3W6Sgc4APkcyFh", "ascii")
-        print(len(metadata))
 
         txn = transaction.AssetConfigTxn(pk, fee, first_round, last_round, gh,
                                          total=total, manager=pk, reserve=pk,
@@ -236,8 +235,6 @@ class TestTransaction(unittest.TestCase):
                   "lzQ+0omZ2zgAE7A+iZ2jEIEhjtRiks8hOyBDyLU8QgcsPcfBZp6wg3sYv" +
                   "f3DlCToiomx2zgAE7/ejc25kxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgf" +
                   "oxcdphkfbbh/aR0eXBlpGFjZmc=")
-        print(encoding.msgpack_encode(signed_txn))
-        print(golden)
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_serialize_asset_config(self):
