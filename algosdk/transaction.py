@@ -894,6 +894,8 @@ class Multisig:
         if (self.threshold <= 0 or len(self.subsigs) == 0 or
                 self.threshold > len(self.subsigs)):
             raise error.InvalidThresholdError
+        if len(self.subsigs) > constants.multisig_account_limit:
+            raise error.MultisigAccountSizeError
 
     def address(self):
         """Return the multisig account address."""
@@ -1295,6 +1297,8 @@ class TxGroup:
         valid.  Each hash in the list is a hash of a transaction with
         the `Group` field omitted.
         """
+        if len(txns) > constants.tx_group_limit:
+            raise error.TransactionGroupSizeError
         self.transactions = txns
 
     def dictify(self):
@@ -1318,6 +1322,8 @@ def calculate_group_id(txns):
     Returns:
         bytes: checksum value representing the group id
     """
+    if len(txns) > constants.tx_group_limit:
+        raise error.TransactionGroupSizeError
     txids = []
     for txn in txns:
         raw_txn = encoding.msgpack_encode(txn)
@@ -1344,6 +1350,8 @@ def assign_group_id(txns, address=None):
     Returns:
         txns (list): list of unsigned transactions with group property set
     """
+    if len(txns) > constants.tx_group_limit:
+        raise error.TransactionGroupSizeError
     gid = calculate_group_id(txns)
     result = []
     for tx in txns:

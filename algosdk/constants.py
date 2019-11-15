@@ -69,6 +69,10 @@ metadata_length = 32
 """int: length of asset metadata"""
 lease_length = 32
 """int: byte length of leases"""
+multisig_account_limit = 255
+"""int: maximum number of addresses in a multisig account"""
+tx_group_limit = 16
+"""int: maximum number of transaction in a transaction group"""
 
 # logic sig related
 logic_sig_max_cost = 20000

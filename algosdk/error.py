@@ -65,6 +65,16 @@ class InvalidProgram(Exception):
         Exception.__init__(self, message)
 
 
+class TransactionGroupSizeError(Exception):
+    def __init__(self):
+        Exception.__init__(self, "transaction groups are limited to 16 transactions")
+
+
+class MultisigAccountSizeError(Exception):
+    def __init__(self):
+        Exception.__init__(self, "multisig accounts are limited to 256 addresses")
+
+
 class KMDHTTPError(Exception):
     pass
 
