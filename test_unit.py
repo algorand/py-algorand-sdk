@@ -11,6 +11,7 @@ from algosdk import error
 from algosdk import constants
 from algosdk import util
 from algosdk import logic
+from algosdk import template
 
 
 class TestTransaction(unittest.TestCase):
@@ -1108,6 +1109,29 @@ class TestLogicSig(unittest.TestCase):
         self.assertEqual(lstx, golden_decoded)
 
 
+class TestTemplate(unittest.TestCase):
+    def testSplit(self):
+        addr1 = "WO3QIJ6T4DZHBX5PWJH26JLHFSRT7W7M2DJOULPXDTUS6TUX7ZRIO4KDFY"
+        addr2 = "W6UUUSEAOGLBHT7VFT4H2SDATKKSG6ZBUIJXTZMSLW36YS44FRP5NVAU7U"
+        addr3 = "XCIBIN7RT4ZXGBMVAMU3QS6L5EKB7XGROC5EPCNHHYXUIBAA5Q6C5Y7NEU"
+        s = template.Split(addr1, addr2, addr3, 30, 100, 123456, 10000, 5000000)
+        golden  = "ASAIAcCWsQICAMDEBx5kkE4mAyCztwQn0+DycN+vsk+vJWcsoz/b7NDS6i33HOkvTpf+YiC3qUpIgHGWE8/1LPh9SGCalSN7IaITeeWSXbfsS5wsXyC4kBQ38Z8zcwWVAym4S8vpFB/c0XC6R4mnPi9EBADsPDEQIhIxASMMEDIEJBJAABkxCSgSMQcyAxIQMQglEhAxAiEEDRAiQAAuMwAAMwEAEjEJMgMSEDMABykSEDMBByoSEDMACCEFCzMBCCEGCxIQMwAIIQcPEBA="
+        golden_addr = "KPYGWKTV7CKMPMTLQRNGMEQRSYTYDHUOFNV4UDSBDLC44CLIJPQWRTCPBU"
+        self.assertEqual(s.get_program(), golden)
+        self.assertEqual(s.get_address(), golden_addr)
+
+
+    def testHTLC(self):
+        addr1 = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
+        addr2 = "42NJMHTPFVPXVSDGA6JGKUV6TARV5UZTMPFIREMLXHETRKIVW34QFSDFRE"
+        s = template.HTLC(addr1, addr2, "sha256", "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", 600000, 1000)
+        golden_addr = "KNBD7ATNUVQ4NTLOI72EEUWBVMBNKMPHWVBCETERV2W7T2YO6CVMLJRBM4"
+        golden = "ASAE6AcBAMDPJCYDIOaalh5vLV96yGYHkmVSvpgjXtMzY8qIkYu5yTipFbb5IH+DsWV/8fxTuS3BgUih1l38LUsfo9Z3KErd0gASbZBpIP68oLsUSlpOp7Q4pGgayA5soQW8tgf8VlMlyVaV9qITMQEiDjEQIxIQMQcyAxIQMQgkEhAxCSgSLQEpEhAxCSoSMQIlDRAREA=="
+        p = s.get_program()
+        self.assertEqual(p, golden)
+        self.assertEqual(s.get_address(), golden_addr)
+
+
 if __name__ == "__main__":
     to_run = [
         TestTransaction,
@@ -1118,6 +1142,7 @@ if __name__ == "__main__":
         TestSignBytes,
         TestLogic,
         TestLogicSig,
+        TestTemplate
     ]
     loader = unittest.TestLoader()
     suites = [loader.loadTestsFromTestCase(test_class)

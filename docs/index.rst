@@ -12,7 +12,9 @@ Modules
    algosdk.encoding
    algosdk.error
    algosdk.kmd
+   algosdk.logic
    algosdk.mnemonic
+   algosdk.template
    algosdk.transaction
    algosdk.util
    algosdk.wallet

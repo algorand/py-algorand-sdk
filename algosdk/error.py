@@ -65,6 +65,11 @@ class InvalidProgram(Exception):
         Exception.__init__(self, message)
 
 
+class NotDivisibleError(Exception):
+    def __init(self):
+        Exception.__init__(self, "amount is not exactly divisible based on the ratio")
+
+
 class KMDHTTPError(Exception):
     pass
 
