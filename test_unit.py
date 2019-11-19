@@ -152,7 +152,8 @@ class TestTransaction(unittest.TestCase):
         note = base64.b64decode("6gAVR0Nsv5Y=")
         close = "IDUTJEUIEVSMXTU4LGTJWZ2UE2E6TIODUKU6UW3FU3UKIQQ77RLUBBBFLA"
         amount = 1000
-        lease = bytes([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
+        lease = bytes([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3,
+                       4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
         txn = transaction.PaymentTxn(pk, fee, first_round, last_round, gh, to,
                                      amount, close, note, gen, lease=lease)
         signed_txn = txn.sign(sk)
@@ -1110,23 +1111,73 @@ class TestLogicSig(unittest.TestCase):
 
 
 class TestTemplate(unittest.TestCase):
-    def testSplit(self):
+    def test_split(self):
         addr1 = "WO3QIJ6T4DZHBX5PWJH26JLHFSRT7W7M2DJOULPXDTUS6TUX7ZRIO4KDFY"
         addr2 = "W6UUUSEAOGLBHT7VFT4H2SDATKKSG6ZBUIJXTZMSLW36YS44FRP5NVAU7U"
         addr3 = "XCIBIN7RT4ZXGBMVAMU3QS6L5EKB7XGROC5EPCNHHYXUIBAA5Q6C5Y7NEU"
-        s = template.Split(addr1, addr2, addr3, 30, 100, 123456, 10000, 5000000)
-        golden  = "ASAIAcCWsQICAMDEBx5kkE4mAyCztwQn0+DycN+vsk+vJWcsoz/b7NDS6i33HOkvTpf+YiC3qUpIgHGWE8/1LPh9SGCalSN7IaITeeWSXbfsS5wsXyC4kBQ38Z8zcwWVAym4S8vpFB/c0XC6R4mnPi9EBADsPDEQIhIxASMMEDIEJBJAABkxCSgSMQcyAxIQMQglEhAxAiEEDRAiQAAuMwAAMwEAEjEJMgMSEDMABykSEDMBByoSEDMACCEFCzMBCCEGCxIQMwAIIQcPEBA="
-        golden_addr = "KPYGWKTV7CKMPMTLQRNGMEQRSYTYDHUOFNV4UDSBDLC44CLIJPQWRTCPBU"
+        s = template.Split(addr1, addr2, addr3, 30, 100, 123456,
+                           10000, 5000000)
+        golden = ("ASAIAcCWsQICAMDEBx5kkE4mAyCztwQn0+DycN+vsk+vJWcsoz/b7NDS" +
+                  "6i33HOkvTpf+YiC3qUpIgHGWE8/1LPh9SGCalSN7IaITeeWSXbfsS5ws" +
+                  "XyC4kBQ38Z8zcwWVAym4S8vpFB/c0XC6R4mnPi9EBADsPDEQIhIxASMM" +
+                  "EDIEJBJAABkxCSgSMQcyAxIQMQglEhAxAiEEDRAiQAAuMwAAMwEAEjEJ" +
+                  "MgMSEDMABykSEDMBByoSEDMACCEFCzMBCCEGCxIQMwAIIQcPEBA=")
+        golden_addr = ("KPYGWKTV7CKMPMTLQRNGMEQRSYTYD" +
+                       "HUOFNV4UDSBDLC44CLIJPQWRTCPBU")
         self.assertEqual(s.get_program(), golden)
         self.assertEqual(s.get_address(), golden_addr)
+        print([dict(t.dictify()) for t in s.get_send_funds_transaction(1234, 2345, 2346, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", precise=False).transactions])
 
-
-    def testHTLC(self):
+    def test_HTLC(self):
         addr1 = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
         addr2 = "42NJMHTPFVPXVSDGA6JGKUV6TARV5UZTMPFIREMLXHETRKIVW34QFSDFRE"
-        s = template.HTLC(addr1, addr2, "sha256", "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", 600000, 1000)
-        golden_addr = "KNBD7ATNUVQ4NTLOI72EEUWBVMBNKMPHWVBCETERV2W7T2YO6CVMLJRBM4"
-        golden = "ASAE6AcBAMDPJCYDIOaalh5vLV96yGYHkmVSvpgjXtMzY8qIkYu5yTipFbb5IH+DsWV/8fxTuS3BgUih1l38LUsfo9Z3KErd0gASbZBpIP68oLsUSlpOp7Q4pGgayA5soQW8tgf8VlMlyVaV9qITMQEiDjEQIxIQMQcyAxIQMQgkEhAxCSgSLQEpEhAxCSoSMQIlDRAREA=="
+        s = template.HTLC(addr1, addr2, "sha256",
+                          "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=",
+                          600000, 1000)
+        golden_addr = ("KNBD7ATNUVQ4NTLOI72EEUWBVMBNK" +
+                       "MPHWVBCETERV2W7T2YO6CVMLJRBM4")
+
+        golden = ("ASAE6AcBAMDPJCYDIOaalh5vLV96yGYHkmVSvpgjXtMzY8qIkYu5yTip" +
+                  "Fbb5IH+DsWV/8fxTuS3BgUih1l38LUsfo9Z3KErd0gASbZBpIP68oLsU" +
+                  "SlpOp7Q4pGgayA5soQW8tgf8VlMlyVaV9qITMQEiDjEQIxIQMQcyAxIQ" +
+                  "MQgkEhAxCSgSLQEpEhAxCSoSMQIlDRAREA==")
+        p = s.get_program()
+        self.assertEqual(p, golden)
+        self.assertEqual(s.get_address(), golden_addr)
+
+    def test_dynamic_fee(self):
+        addr1 = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
+        addr2 = "42NJMHTPFVPXVSDGA6JGKUV6TARV5UZTMPFIREMLXHETRKIVW34QFSDFRE"
+        s = template.DynamicFee(addr1, 5000, 12345, 12346, addr2)
+        s.lease_value = "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
+
+        golden_addr = ("GCI4WWDIWUFATVPOQ372OZYG52EUL" +
+                       "PUZKI7Y34MXK3ZJKIBZXHD2H5C5TI")
+
+        golden = ("ASAFAgGIJ7lgumAmAyD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJclW" +
+                  "lfaiEyDmmpYeby1feshmB5JlUr6YI17TM2PKiJGLuck4qRW2+SB/g7Fl" +
+                  "f/H8U7ktwYFIodZd/C1LH6PWdyhK3dIAEm2QaTIEIhIzABAjEhAzAAcx" +
+                  "ABIQMwAIMQESEDEWIxIQMRAjEhAxBygSEDEJKRIQMQgkEhAxAiUSEDEE" +
+                  "IQQSEDEGKhIQ")
+        p = s.get_program()
+        self.assertEqual(p, golden)
+        self.assertEqual(s.get_address(), golden_addr)
+
+    def test_periodic_fee(self):
+        # changesdflkjsdflk
+        addr1 = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
+        addr2 = "42NJMHTPFVPXVSDGA6JGKUV6TARV5UZTMPFIREMLXHETRKIVW34QFSDFRE"
+        s = template.DynamicFee(addr1, 5000, 12345, 12346, addr2)
+        s.lease_value = "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
+
+        golden_addr = ("GCI4WWDIWUFATVPOQ372OZYG52EUL" +
+                       "PUZKI7Y34MXK3ZJKIBZXHD2H5C5TI")
+
+        golden = ("ASAFAgGIJ7lgumAmAyD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJclW" +
+                  "lfaiEyDmmpYeby1feshmB5JlUr6YI17TM2PKiJGLuck4qRW2+SB/g7Fl" +
+                  "f/H8U7ktwYFIodZd/C1LH6PWdyhK3dIAEm2QaTIEIhIzABAjEhAzAAcx" +
+                  "ABIQMwAIMQESEDEWIxIQMRAjEhAxBygSEDEJKRIQMQgkEhAxAiUSEDEE" +
+                  "IQQSEDEGKhIQ")
         p = s.get_program()
         self.assertEqual(p, golden)
         self.assertEqual(s.get_address(), golden_addr)
