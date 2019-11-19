@@ -15,9 +15,6 @@ class Template:
     def get_program(self):
         pass
 
-    def get_transactions(self):
-        pass
-
 
 class Split(Template):
     """
