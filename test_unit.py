@@ -1126,7 +1126,6 @@ class TestTemplate(unittest.TestCase):
                        "HUOFNV4UDSBDLC44CLIJPQWRTCPBU")
         self.assertEqual(s.get_program(), golden)
         self.assertEqual(s.get_address(), golden_addr)
-        print([dict(t.dictify()) for t in s.get_send_funds_transaction(1234, 2345, 2346, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", precise=False).transactions])
 
     def test_HTLC(self):
         addr1 = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
