@@ -1144,43 +1144,6 @@ class TestTemplate(unittest.TestCase):
         self.assertEqual(p, golden)
         self.assertEqual(s.get_address(), golden_addr)
 
-    def test_dynamic_fee(self):
-        addr1 = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
-        addr2 = "42NJMHTPFVPXVSDGA6JGKUV6TARV5UZTMPFIREMLXHETRKIVW34QFSDFRE"
-        s = template.DynamicFee(addr1, 5000, 12345, 12346, addr2)
-        s.lease_value = "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
-
-        golden_addr = ("GCI4WWDIWUFATVPOQ372OZYG52EUL" +
-                       "PUZKI7Y34MXK3ZJKIBZXHD2H5C5TI")
-
-        golden = ("ASAFAgGIJ7lgumAmAyD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJclW" +
-                  "lfaiEyDmmpYeby1feshmB5JlUr6YI17TM2PKiJGLuck4qRW2+SB/g7Fl" +
-                  "f/H8U7ktwYFIodZd/C1LH6PWdyhK3dIAEm2QaTIEIhIzABAjEhAzAAcx" +
-                  "ABIQMwAIMQESEDEWIxIQMRAjEhAxBygSEDEJKRIQMQgkEhAxAiUSEDEE" +
-                  "IQQSEDEGKhIQ")
-        p = s.get_program()
-        self.assertEqual(p, golden)
-        self.assertEqual(s.get_address(), golden_addr)
-
-    def test_periodic_fee(self):
-        # changesdflkjsdflk
-        addr1 = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
-        addr2 = "42NJMHTPFVPXVSDGA6JGKUV6TARV5UZTMPFIREMLXHETRKIVW34QFSDFRE"
-        s = template.DynamicFee(addr1, 5000, 12345, 12346, addr2)
-        s.lease_value = "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
-
-        golden_addr = ("GCI4WWDIWUFATVPOQ372OZYG52EUL" +
-                       "PUZKI7Y34MXK3ZJKIBZXHD2H5C5TI")
-
-        golden = ("ASAFAgGIJ7lgumAmAyD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJclW" +
-                  "lfaiEyDmmpYeby1feshmB5JlUr6YI17TM2PKiJGLuck4qRW2+SB/g7Fl" +
-                  "f/H8U7ktwYFIodZd/C1LH6PWdyhK3dIAEm2QaTIEIhIzABAjEhAzAAcx" +
-                  "ABIQMwAIMQESEDEWIxIQMRAjEhAxBygSEDEJKRIQMQgkEhAxAiUSEDEE" +
-                  "IQQSEDEGKhIQ")
-        p = s.get_program()
-        self.assertEqual(p, golden)
-        self.assertEqual(s.get_address(), golden_addr)
-
 
 if __name__ == "__main__":
     to_run = [
