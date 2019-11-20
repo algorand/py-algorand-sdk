@@ -875,19 +875,19 @@ class TestSignBytes(unittest.TestCase):
 
 
 class TestLogic(unittest.TestCase):
-    def test_parse_uvariant(self):
+    def test_parse_uvarint(self):
         data = b"\x01"
-        value, length = logic.parse_uvariant(data)
+        value, length = logic.parse_uvarint(data)
         self.assertEqual(length, 1)
         self.assertEqual(value, 1)
 
         data = b"\x7b"
-        value, length = logic.parse_uvariant(data)
+        value, length = logic.parse_uvarint(data)
         self.assertEqual(length, 1)
         self.assertEqual(value, 123)
 
         data = b"\xc8\x03"
-        value, length = logic.parse_uvariant(data)
+        value, length = logic.parse_uvarint(data)
         self.assertEqual(length, 2)
         self.assertEqual(value, 456)
 
