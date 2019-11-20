@@ -25,7 +25,7 @@ class Transaction:
         self.group = None
         self.lease = lease
         if self.lease is not None:
-            if len(self.lease) != constants.lease_length:
+            if len(self.lease) != 32:
                 raise error.WrongLeaseLengthError
 
     def get_txid(self):
@@ -1224,9 +1224,7 @@ class LogicSig:
         Returns:
             string
         """
-        to_sign = constants.logic_prefix + self.logic
-        checksum = encoding.checksum(to_sign)
-        return encoding.encode_address(checksum)
+        return logic.address(self.logic)
 
     @staticmethod
     def sign_program(program, private_key):

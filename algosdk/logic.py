@@ -3,6 +3,7 @@ import os
 
 from . import constants
 from . import error
+from . import encoding
 
 spec = None
 opcodes = None
@@ -126,3 +127,18 @@ def parse_uvariant(buf):
         s += 7
 
     return 0, 0
+
+
+def address(program):
+    """
+    Return the address of the program.
+
+    Args:
+        program (bytes)
+
+    Returns:
+        string
+    """
+    to_sign = constants.logic_prefix + program
+    checksum = encoding.checksum(to_sign)
+    return encoding.encode_address(checksum)

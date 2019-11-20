@@ -1124,7 +1124,7 @@ class TestTemplate(unittest.TestCase):
                   "MgMSEDMABykSEDMBByoSEDMACCEFCzMBCCEGCxIQMwAIIQcPEBA=")
         golden_addr = ("KPYGWKTV7CKMPMTLQRNGMEQRSYTYD" +
                        "HUOFNV4UDSBDLC44CLIJPQWRTCPBU")
-        self.assertEqual(s.get_program(), golden)
+        self.assertEqual(s.get_program(), base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
 
     def test_HTLC(self):
@@ -1141,7 +1141,7 @@ class TestTemplate(unittest.TestCase):
                   "SlpOp7Q4pGgayA5soQW8tgf8VlMlyVaV9qITMQEiDjEQIxIQMQcyAxIQ" +
                   "MQgkEhAxCSgSLQEpEhAxCSoSMQIlDRAREA==")
         p = s.get_program()
-        self.assertEqual(p, golden)
+        self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
 
 

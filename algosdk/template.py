@@ -1,5 +1,5 @@
 import math
-from . import error, encoding, constants, transaction
+from . import error, encoding, transaction, logic
 import base64
 
 
@@ -8,9 +8,7 @@ class Template:
         """
         Return the address of the contract.
         """
-        p = constants.logic_prefix + base64.b64decode(self.get_program())
-        addr = encoding.checksum(p)
-        return encoding.encode_address(addr)
+        return logic.address(self.get_program())
 
     def get_program(self):
         pass
@@ -33,11 +31,11 @@ class Split(Template):
         receiver_2 (str): second address to receive assets
         ratn (int): the numerator of the first address fraction
         ratd (int): the denominator of the first address fraction
-        expiry_round (int): the round on which the assets can be transferred
+        expiry_round (int): the round on which the assets can be transferred\
             back to owner
-        min_pay (int): the minimum number of assets that can be transferred
+        min_pay (int): the minimum number of assets that can be transferred\
             from the account to receiver_1
-        max_fee (int): half the maximum fee that can be paid to the network by
+        max_fee (int): half the maximum fee that can be paid to the network by\
             the account
     """
     def __init__(self, owner: str, receiver_1: str, receiver_2: str, ratn: int,
@@ -65,7 +63,7 @@ class Split(Template):
         values = [self.max_fee, self.expiry_round, self.ratn, self.ratd,
                   self.min_pay, self.owner, self.receiver_1, self.receiver_2]
         types = [int, int, int, int, int, "address", "address", "address"]
-        return base64.b64encode(inject(orig, offsets, values, types)).decode()
+        return inject(orig, offsets, values, types)
 
     def get_send_funds_transaction(self, amount: int, first_valid, last_valid,
                                    gh, precise=True):
@@ -136,15 +134,15 @@ class HTLC(Template):
     2. To owner if txn.FirstValid > expiry_round
 
     Args:
-        owner (str): an address that can receive the asset after the expiry
+        owner (str): an address that can receive the asset after the expiry\
             round
         receiver (str): address to receive Algos
-        hash_function (str): the hash function to be used (must be either
+        hash_function (str): the hash function to be used (must be either\
             sha256 or keccak256)
         hash_image (str): the hash image in base64
-        expiry_round (int): the round on which the assets can be transferred
+        expiry_round (int): the round on which the assets can be transferred\
             back to owner
-        max_fee (int): the maximum fee that can be paid to the network by the
+        max_fee (int): the maximum fee that can be paid to the network by the\
             account
 
     """
@@ -174,7 +172,7 @@ class HTLC(Template):
         values = [self.max_fee, self.expiry_round, self.receiver,
                   self.hash_image, self.owner, hash_inject]
         types = [int, int, "address", "base64", "address", int]
-        return base64.b64encode(inject(orig, offsets, values, types)).decode()
+        return inject(orig, offsets, values, types)
 
 
 def put_uvarint(buf, x):
