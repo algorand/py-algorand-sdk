@@ -1040,7 +1040,8 @@ class LogicSig:
     def dictify(self):
         od = OrderedDict()
         od["l"] = self.logic
-        od["arg"] = self.args
+        if self.args:
+            od["arg"] = self.args
         if self.sig:
             od["sig"] = base64.b64decode(self.sig)
         elif self.msig:
@@ -1097,12 +1098,10 @@ class LogicSig:
         Compute hash of the logic sig program (that is the same as escrow
         account address) as string address
 
-        Returns: 
+        Returns:
             string
         """
-        to_sign = constants.logic_prefix + self.logic
-        checksum = encoding.checksum(to_sign)
-        return encoding.encode_address(checksum)
+        return logic.address(self.logic)
 
     @staticmethod
     def sign_program(program, private_key):

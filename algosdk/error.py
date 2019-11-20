@@ -65,6 +65,12 @@ class InvalidProgram(Exception):
         Exception.__init__(self, message)
 
 
+class NotDivisibleError(Exception):
+    def __init(self):
+        Exception.__init__(self, "amount is not exactly divisible based on" +
+                                 "the given ratio")
+
+
 class TransactionGroupSizeError(Exception):
     def __init__(self):
         Exception.__init__(self, "transaction groups are limited to 16 transactions")
