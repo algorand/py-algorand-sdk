@@ -168,7 +168,7 @@ class HTLC(Template):
             hash_inject = 1
         elif self.hash_function == "keccak256":
             hash_inject = 2
-        offsets = [3, 6, 10, 42, 45, 102]
+        offsets = [3, 6, 10, 42, 44, 101]
         values = [self.max_fee, self.expiry_round, self.receiver,
                   self.hash_image, self.owner, hash_inject]
         types = [int, int, "address", "base64", "address", int]
@@ -202,7 +202,7 @@ def inject(orig, offsets, values, values_types):
 
         if val_type == int:
             buf = []
-            dec_len = put_uvarint(buf, val) - 1
+            dec_len = put_uvarint(buf, val)
             val = bytes(buf)
             res = replace(res, val, offsets[i], 1)
 
@@ -213,7 +213,7 @@ def inject(orig, offsets, values, values_types):
         elif val_type == "base64":
             val = bytes(base64.b64decode(val))
             buf = []
-            dec_len = put_uvarint(buf, len(val)) + len(val) - 2
+            dec_len = put_uvarint(buf, len(val)) + len(val)
             res = replace(res, bytes(buf) + val, offsets[i], 2)
 
         else:
@@ -222,6 +222,6 @@ def inject(orig, offsets, values, values_types):
         # update offsets
         if dec_len != 0:
             for o in range(len(offsets)):
-                offsets[o] += dec_len
+                offsets[o] += dec_len - 1
 
     return res
