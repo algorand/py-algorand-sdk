@@ -18,10 +18,10 @@ class Split(Template):
     """
     Split allows locking assets in an account which allows transfering
     to two predefined addresses in a specific M:N ratio. Note that the ratio is
-    specified by the first address part. For example - If you would like to
+    specified by the first address part. For example, if you would like to
     have a split where the first address receives 30 percent and the second
-    receives 70, set ratn and ratd to 30 and 100, respectively.
-    Split also have an expiry round, in which the owner can transfer back the
+    receives 70, set ratn and ratd to 30 and 100, respectively. Split also
+    have an expiry round, in which the owner can transfer back the
     assets.
 
     Arguments:
@@ -31,11 +31,11 @@ class Split(Template):
         receiver_2 (str): second address to receive assets
         ratn (int): the numerator of the first address fraction
         ratd (int): the denominator of the first address fraction
-        expiry_round (int): the round on which the assets can be transferred\
+        expiry_round (int): the round on which the assets can be transferred
             back to owner
-        min_pay (int): the minimum number of assets that can be transferred\
+        min_pay (int): the minimum number of assets that can be transferred
             from the account to receiver_1
-        max_fee (int): half the maximum fee that can be paid to the network by\
+        max_fee (int): half the maximum fee that can be paid to the network by
             the account
     """
     def __init__(self, owner: str, receiver_1: str, receiver_2: str, ratn: int,
@@ -75,10 +75,10 @@ class Split(Template):
             amount (int): amount to be transferred
             first_valid (int): first round where the transactions are valid
             gh (str): genesis hash in base64
-            precise (bool, optional): precise treats the case where amount is\
-                not perfectly divisible based on the ratio. When set to False,\
-                the amount will be divided as close as possible but one\
-                address will get slightly more. When True, an error will be\
+            precise (bool, optional): precise treats the case where amount is
+                not perfectly divisible based on the ratio. When set to False,
+                the amount will be divided as close as possible but one
+                address will get slightly more. When True, an error will be
                 raised. Defaults to True.
 
         Returns:
@@ -134,15 +134,15 @@ class HTLC(Template):
         2. To owner if txn.FirstValid > expiry_round
 
     Args:
-        owner (str): an address that can receive the asset after the expiry\
+        owner (str): an address that can receive the asset after the expiry
             round
         receiver (str): address to receive Algos
-        hash_function (str): the hash function to be used (must be either\
+        hash_function (str): the hash function to be used (must be either
             sha256 or keccak256)
         hash_image (str): the hash image in base64
-        expiry_round (int): the round on which the assets can be transferred\
+        expiry_round (int): the round on which the assets can be transferred
             back to owner
-        max_fee (int): the maximum fee that can be paid to the network by the\
+        max_fee (int): the maximum fee that can be paid to the network by the
             account
 
     """

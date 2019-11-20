@@ -331,7 +331,7 @@ class AssetConfigTxn(Transaction):
         manager, reserve, freeze, clawback, url, metadata
 
     To destroy an asset, include the following:
-        index
+        index, strict_empty_address_check (set to False)
 
     To update asset configuration, include the following:
         index, manager, reserve, freeze, clawback,
@@ -394,7 +394,6 @@ class AssetConfigTxn(Transaction):
         genesis_id (str)
         type (str)
         lease (byte[32])
-        strict_empty_address_check (bool)
     """
 
     def __init__(self, sender, fee, first, last, gh, index=None,
@@ -1028,14 +1027,14 @@ class LogicSig:
     Represents a logic signature
 
     Arguments:
-        logic (bytes)
-        args (list of bytes)
+        logic (bytes): compiled program
+        args (list[bytes]): args are not signed, but are checked by logic
 
     Attributes:
         logic (bytes)
         sig (bytes)
         msig (Multisig)
-        args (list of bytes)
+        args (list[bytes])
     """
 
     def __init__(self, program, args=None):
@@ -1108,7 +1107,7 @@ class LogicSig:
         account address) as string address
 
         Returns:
-            string
+            str: program address
         """
         return logic.address(self.logic)
 

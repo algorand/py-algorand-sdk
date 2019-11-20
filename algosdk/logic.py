@@ -14,14 +14,14 @@ def check_program(program, args=None):
     Performs program checking for max length and cost
 
     Args:
-        program (bytes)
-        args (list[bytes])
+        program (bytes): compiled program
+        args (list[bytes]): args are not signed, but are checked by logic
 
     Returns:
-        True on success
+        bool: True on success
 
     Raises:
-        InvalidProgram on error
+        InvalidProgram: on error
     """
 
     global spec, opcodes
@@ -134,10 +134,10 @@ def address(program):
     Return the address of the program.
 
     Args:
-        program (bytes)
+        program (bytes): compiled program
 
     Returns:
-        string
+        str: program address
     """
     to_sign = constants.logic_prefix + program
     checksum = encoding.checksum(to_sign)
