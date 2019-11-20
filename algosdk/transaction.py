@@ -80,7 +80,7 @@ class Transaction:
         sk, _ = account.generate_account()
         stx = self.sign(sk)
         return len(base64.b64decode(encoding.msgpack_encode(stx)))
-    
+
     def dictify(self):
         d = dict()
         d["fee"] = self.fee
