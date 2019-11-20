@@ -395,7 +395,7 @@ index = 1234 # identifying index of the asset
 
 # create the asset destroy transaction
 txn = transaction.AssetConfigTxn(creator_address, fee_per_byte, first_valid_round, last_valid_round, genesis_hash,
-                                         index=index)
+                                         index=index, strict_empty_address_check=False)
 # sign the transaction
 signed_txn = txn.sign(creator_private_key)
 ```

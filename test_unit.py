@@ -239,6 +239,17 @@ class TestTransaction(unittest.TestCase):
                   "oxcdphkfbbh/aR0eXBlpGFjZmc=")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
+    def test_asset_empty_address_error(self):
+        pk = "DN7MBMCL5JQ3PFUQS7TMX5AH4EEKOBJVDUF4TCV6WERATKFLQF4MQUPZTA"
+        fee = 10
+        first_round = 322575
+        last_round = 323575
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        index = 1234
+        self.assertRaises(error.EmptyAddressError, transaction.AssetConfigTxn,
+                          pk, fee, first_round, last_round, gh, reserve=pk,
+                          freeze=pk, clawback=pk, index=index)
+
     def test_serialize_asset_config(self):
         mn = ("awful drop leaf tennis indoor begin mandate discover uncle se" +
               "ven only coil atom any hospital uncover make any climb actor " +
@@ -277,7 +288,8 @@ class TestTransaction(unittest.TestCase):
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
         index = 1
         txn = transaction.AssetConfigTxn(pk, fee, first_round, last_round, gh,
-                                         index=index)
+                                         index=index,
+                                         strict_empty_address_check=False)
         signed_txn = txn.sign(sk)
         golden = ("gqNzaWfEQBSP7HtzD/Lvn4aVvaNpeR4T93dQgo4LvywEwcZgDEoc/WVl3" +
                   "aKsZGcZkcRFoiWk8AidhfOZzZYutckkccB8RgGjdHhuh6RjYWlkAaNmZW" +
