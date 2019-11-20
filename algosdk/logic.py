@@ -39,7 +39,7 @@ def check_program(program, args=None):
         with open(langspec_file, "rt") as fin:
             spec = json.load(fin)
 
-    version, vlen = parse_uvariant(program)
+    version, vlen = parse_uvarint(program)
     if vlen <= 0 or version > spec["EvalMaxVersion"]:
         raise error.InvalidProgram("unsupported version")
 
@@ -81,14 +81,14 @@ def check_program(program, args=None):
 
 def check_int_const_block(program, pc):
     size = 1
-    num_ints, bytes_used = parse_uvariant(program[pc + size:])
+    num_ints, bytes_used = parse_uvarint(program[pc + size:])
     if bytes_used <= 0:
         raise error.InvalidProgram("could not decode int const block size at pc=%d" % (pc + size))
     size += bytes_used
     for i in range(0, num_ints):
         if pc + size >= len(program):
             raise error.InvalidProgram("intcblock ran past end of program")
-        _, bytes_used = parse_uvariant(program[pc + size:])
+        _, bytes_used = parse_uvarint(program[pc + size:])
         if bytes_used <= 0:
             raise error.InvalidProgram("could not decode int const[%d] at pc=%d" % (i, pc + size))
         size += bytes_used
@@ -97,14 +97,14 @@ def check_int_const_block(program, pc):
 
 def check_byte_const_block(program, pc):
     size = 1
-    num_ints, bytes_used = parse_uvariant(program[pc + size:])
+    num_ints, bytes_used = parse_uvarint(program[pc + size:])
     if bytes_used <= 0:
         raise error.InvalidProgram("could not decode []byte const block size at pc=%d" % (pc + size))
     size += bytes_used
     for i in range(0, num_ints):
         if pc + size >= len(program):
             raise error.InvalidProgram("bytecblock ran past end of program")
-        item_len, bytes_used = parse_uvariant(program[pc + size:])
+        item_len, bytes_used = parse_uvarint(program[pc + size:])
         if bytes_used <= 0:
             raise error.InvalidProgram("could not decode []byte const[%d] at pc=%d" % (i, pc + size))
         size += bytes_used
@@ -114,7 +114,7 @@ def check_byte_const_block(program, pc):
     return size
 
 
-def parse_uvariant(buf):
+def parse_uvarint(buf):
     x = 0
     s = 0
     for i, b in enumerate(buf):
