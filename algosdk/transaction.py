@@ -296,7 +296,7 @@ class KeyregTxn(Transaction):
         }
         d.update(super(KeyregTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
-        
+
         return od
 
     @staticmethod
@@ -334,7 +334,8 @@ class AssetConfigTxn(Transaction):
         index
 
     To update asset configuration, include the following:
-        index, manager, reserve, freeze, clawback
+        index, manager, reserve, freeze, clawback,
+        strict_empty_address_check (optional)
 
     Args:
         sender (str): address of the sender
@@ -366,6 +367,11 @@ class AssetConfigTxn(Transaction):
         lease (byte[32], optional): specifies a lease, and no other transaction
             with the same sender and lease can be confirmed in this
             transaction's valid rounds
+        strict_empty_address_check (bool, optional): set this to False if you
+            want to specify empty addresses. Otherwise, if this is left as
+            True (the default), having empty addresses will raise an error,
+            which will prevent accidentally removing admin access to assets or
+            deleting the asset.
 
     Attributes:
         sender (str)
@@ -388,15 +394,20 @@ class AssetConfigTxn(Transaction):
         genesis_id (str)
         type (str)
         lease (byte[32])
+        strict_empty_address_check (bool)
     """
 
     def __init__(self, sender, fee, first, last, gh, index=None,
                  total=None, default_frozen=None, unit_name=None,
                  asset_name=None, manager=None, reserve=None,
                  freeze=None, clawback=None, url=None, metadata_hash=None,
-                 note=None, gen=None, flat_fee=False, lease=None):
+                 note=None, gen=None, flat_fee=False, lease=None,
+                 strict_empty_address_check=True):
         Transaction.__init__(self,  sender, fee, first, last, note, gen, gh,
                              lease, constants.assetconfig_txn)
+        if strict_empty_address_check:
+            if not (manager and reserve and freeze and clawback):
+                raise error.EmptyAddressError
         self.index = index
         self.total = total
         self.default_frozen = default_frozen
@@ -448,7 +459,7 @@ class AssetConfigTxn(Transaction):
 
         if self.index:
             d["caid"] = self.index
-        
+
         d.update(super(AssetConfigTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
 
@@ -456,7 +467,6 @@ class AssetConfigTxn(Transaction):
 
     @staticmethod
     def _undictify(d):
-
         index = None
         total = None
         default_frozen = None
@@ -468,8 +478,6 @@ class AssetConfigTxn(Transaction):
         clawback = None
         url = None
         metadata_hash = None
-        grp = None
-        lease = None
 
         if "caid" in d:
             index = d["caid"]
@@ -494,7 +502,7 @@ class AssetConfigTxn(Transaction):
                 url = d["apar"]["au"]
             if "am" in d["apar"]:
                 metadata_hash = d["apar"]["am"]
-        
+
         args = {
             "index": index,
             "total": total,
@@ -506,7 +514,8 @@ class AssetConfigTxn(Transaction):
             "freeze": freeze,
             "clawback": clawback,
             "url": url,
-            "metadata_hash": metadata_hash
+            "metadata_hash": metadata_hash,
+            "strict_empty_address_check": False
         }
 
         return args
@@ -691,7 +700,7 @@ class AssetTransferTxn(Transaction):
 
         if self.index:
             d["xaid"] = self.index
-        
+
         d.update(super(AssetTransferTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
 

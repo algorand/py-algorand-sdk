@@ -130,8 +130,8 @@ class HTLC(Template):
     This contract is usually used to perform cross-chained atomic swaps.
 
     More formally, algos can be transfered under only two circumstances:
-    1. To receiver if hash_function(arg_0) = hash_value
-    2. To owner if txn.FirstValid > expiry_round
+        1. To receiver if hash_function(arg_0) = hash_value
+        2. To owner if txn.FirstValid > expiry_round
 
     Args:
         owner (str): an address that can receive the asset after the expiry\
