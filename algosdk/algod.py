@@ -71,10 +71,12 @@ class AlgodClient:
             resp = urlopen(req)
         except urllib.error.HTTPError as e:
             e = e.read().decode("utf-8")
+            raisex = e
             try:
-                raise error.AlgodHTTPError(json.loads(e)["message"])
+                raisex = json.loads(e)["message"]
             except:
-                raise error.AlgodHTTPError(e)
+                pass
+            raise error.AlgodHTTPError(raisex)
         if raw_response:
             return resp
         return json.loads(resp.read().decode("utf-8"))
