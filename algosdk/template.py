@@ -1,6 +1,6 @@
 import math
 import random
-from . import error, encoding, constants, transaction, logic
+from . import error, encoding, constants, transaction, logic, account
 import base64
 from nacl.signing import SigningKey
 
@@ -178,7 +178,7 @@ class HTLC(Template):
 
 class DynamicFee(Template):
     """
-        DynamicFee contract allows to create a transaction without specifying
+        DynamicFee contract allows you to create a transaction without specifying
         the fee. The fee will be determined at the moment of transfer.
 
         Args:
@@ -253,33 +253,23 @@ class DynamicFee(Template):
             last_valid (int): last round the transactions should be valid
             gh (str): genesis hash, in base64
         """
+        txn_1 = transaction.PaymentTxn(self.get_address(), 0,
+                                       first_valid, last_valid, gh,
+                                       self.receiver, self.amount)
 
-        # does this need to grab suggested fee?
-        # or can just put maxfee?
-        # how to get self. params if only given contract?
-        txn_1 = transaction.PaymentTxn(self.get_address(), self.max_fee,
+        txn_2 = transaction.PaymentTxn(account.address_from_private_key(
+                                       private_key), 0,
                                        first_valid, last_valid, gh,
-                                       self.owner, self.max_fee)
-        # just empty address here???
-        txn_2 = transaction.PaymentTxn(bytes(32), self.max_fee,
-                                       first_valid, last_valid, gh,
-                                       self.receiver, self.amount,
+                                       self.get_address(), self.amount,
                                        self.close_remainder_address)
 
         transaction.assign_group_id([txn_1, txn_2])
 
-        stx_1 = txn_1.sign(private_key)
-        stx_2 = transaction.LogicSigTransaction(txn_2, contract)
+        lsig = transaction.LogicSig(contract)
+        stx_1 = transaction.LogicSigTransaction(txn_1, lsig)
+        stx_2 = txn_2.sign(private_key)
 
         return [stx_1, stx_2]
-        # Decode bytes
-        # create the main txn
-        # attach the lsig
-
-        # create the auxiliary txn
-        # sign it
-
-        # Create and return a group txn
 
 
 class PeriodicPayment(Template):
@@ -314,7 +304,9 @@ class PeriodicPayment(Template):
         """
         Return a byte array to be used in LogicSig.
         """
-        orig = ("ASAHAQoLAAwNDiYCAQYg/ryguxRKWk6ntDikaBrIDmyhBby2B/xWUyXJVpX2ohMxECISMQEjDhAxAiQYJRIQMQQhBDECCBIQMQYoEhAxCTIDEjEHKRIQMQghBRIQMQkpEjEHMgMSEDECIQYNEDEIJRIQERA=")
+        orig = ("ASAHAQoLAAwNDiYCAQYg/ryguxRKWk6ntDikaBrIDmyhBby2B/xWUyXJVp" +
+                "X2ohMxECISMQEjDhAxAiQYJRIQMQQhBDECCBIQMQYoEhAxCTIDEjEHKRIQ" +
+                "MQghBRIQMQkpEjEHMgMSEDECIQYNEDEIJRIQERA=")
         orig = base64.b64decode(orig)
         offsets = [4, 5, 7, 8, 9, 12, 15]
         values = [self.fee, self.period, self.withdrawing_window, self.amount,
@@ -322,7 +314,7 @@ class PeriodicPayment(Template):
         types = [int, int, int, int, int, "base64", "address"]
         return inject(orig, offsets, values, types)
 
-    def get_withdrawal_transaction(self, contract, secret_key, first_valid,
+    def get_withdrawal_transaction(self, contract, private_key, first_valid,
                                    last_valid, gh):
         """
         Returns the withdrawal transaction to be sent to the network
@@ -335,13 +327,12 @@ class PeriodicPayment(Template):
             last_valid (int): last round the transaction should be valid
             gh (int): genesis hash in base64
         """
-        # where get info?
-        txn = transaction.PaymentTxn(self.get_address(), self.max_fee,
+        txn = transaction.PaymentTxn(self.get_address(), self.fee,
                                      first_valid, last_valid, gh,
-                                     self.owner, self.max_fee)
+                                     self.receiver, self.amount)
 
-        stx = transaction.LogicSigTransaction(txn, contract)
-        # should sign???
+        lsig = transaction.LogicSig(contract)
+        stx = transaction.LogicSigTransaction(txn, lsig)
         return stx
 
 

@@ -1138,6 +1138,9 @@ class TestTemplate(unittest.TestCase):
                        "HUOFNV4UDSBDLC44CLIJPQWRTCPBU")
         self.assertEqual(s.get_program(), base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
+        s.get_send_funds_transaction(1000, 1234, 2234,
+                                     "f4OxZX/x/FO5LcGBSKHWXf" +
+                                     "wtSx+j1ncoSt3SABJtkGk=")
 
     def test_HTLC(self):
         addr1 = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
@@ -1173,27 +1176,39 @@ class TestTemplate(unittest.TestCase):
         p = s.get_program()
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
+        sk, pk = account.generate_account()
+        s.get_transactions(p, sk, 1234, 2234, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
 
     def test_periodic_fee(self):
-        # changesdflkjsdflk
         addr = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
         s = template.PeriodicPayment(addr, 10000, 999, 11, 10, 123456)
         s.lease_value = "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
 
-        golden_addr = ("IJPPJDULMZNQXBIGCLCWVP5P4VD6U564BHC7C5CMZB2FVXKGZSIVPJFPT4")
+        golden_addr = ("IJPPJDULMZNQXBIGCLCWVP5P4VD6U" +
+                       "564BHC7C5CMZB2FVXKGZSIVPJFPT4")
 
-        golden = ("ASAHAQoLAOcHkE7AxAcmAiB/g7Flf/H8U7ktwYFIodZd/C1LH6PWdyhK3dIAEm2QaSD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJclWlfaiEzEQIhIxASMOEDECJBglEhAxBCEEMQIIEhAxBigSEDEJMgMSMQcpEhAxCCEFEhAxCSkSMQcyAxIQMQIhBg0QMQglEhAREA==")
+        golden = ("ASAHAQoLAOcHkE7AxAcmAiB/g7Flf/H8U7ktwYFIodZd/C1LH6PWdyhK" +
+                  "3dIAEm2QaSD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJclWlfaiEzEQ" +
+                  "IhIxASMOEDECJBglEhAxBCEEMQIIEhAxBigSEDEJMgMSMQcpEhAxCCEF" +
+                  "EhAxCSkSMQcyAxIQMQIhBg0QMQglEhAREA==")
         p = s.get_program()
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
+        sk, pk = account.generate_account()
+        s.get_withdrawal_transaction(p, sk, 1234, 2234, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
 
     def test_limit_order_a(self):
         addr = "SKXZDBHECM6AS73GVPGJHMIRDMJKEAN5TUGMUPSKJCQ44E6M6TC2H2UJ3I"
         s = template.LimitOrder(addr, 10000, 257, 36, 13579, 10, 123456)
 
-        golden_addr = ("WLTFMUFK2BRUOZTWKZIU5LUUR6FJZBFRJCDLMF35PXQEBDWSDT2CSGMK3M")
+        golden_addr = ("WLTFMUFK2BRUOZTWKZIU5LUUR6FJZ" +
+                       "BFRJCDLMF35PXQEBDWSDT2CSGMK3M")
 
-        golden = ("ASAKAAEKAsDEBwSQTiSBAotqJgEgkq+RhOQTPAl/ZqvMk7ERGxKiAb2dDMo+SkihzhPM9MUxFiISMRAjEhAxASQOEDIEIxJAAFUyBCUSMQghBA0QMQkyAxIQMwEQIQUSEDMBESEGEhAzARQoEhAzARMyAxIQMwESIQcdNQI1ATEIIQgdNQQ1AzQBNAMNQAAkNAE0AxI0AjQEDxBAABYAMQkoEjECIQkNEDEHMgMSEDEIIhIQEA==")
+        golden = ("ASAKAAEKAsDEBwSQTiSBAotqJgEgkq+RhOQTPAl/ZqvMk7ERGxKiAb2d" +
+                  "DMo+SkihzhPM9MUxFiISMRAjEhAxASQOEDIEIxJAAFUyBCUSMQghBA0Q" +
+                  "MQkyAxIQMwEQIQUSEDMBESEGEhAzARQoEhAzARMyAxIQMwESIQcdNQI1" +
+                  "ATEIIQgdNQQ1AzQBNAMNQAAkNAE0AxI0AjQEDxBAABYAMQkoEjECIQkN" +
+                  "EDEHMgMSEDEIIhIQEA==")
         p = s.get_program()
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
