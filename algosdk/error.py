@@ -12,7 +12,7 @@ class InvalidThresholdError(Exception):
 class InvalidSecretKeyError(Exception):
     def __init__(self):
         Exception.__init__(self, "secret key has no corresponding " +
-                                 "public key in multisig ")
+                                 "public key in multisig")
 
 
 class MergeKeysMismatchError(Exception):
@@ -67,8 +67,27 @@ class InvalidProgram(Exception):
 
 class NotDivisibleError(Exception):
     def __init(self):
-        Exception.__init__(self, "amount is not exactly divisible based on" +
+        Exception.__init__(self, "amount is not exactly divisible based on " +
                                  "the given ratio")
+
+
+class TransactionGroupSizeError(Exception):
+    def __init__(self):
+        Exception.__init__(self, "transaction groups are limited to 16 " +
+                                 "transactions")
+
+
+class MultisigAccountSizeError(Exception):
+    def __init__(self):
+        Exception.__init__(self, "multisig accounts are limited to 256 " +
+                                 "addresses")
+
+
+class EmptyAddressError(Exception):
+    def __init__(self):
+        Exception.__init__(self, "manager, freeze, reserve, and clawback " +
+                                 "should not be empty unless " +
+                                 "strict_empty_address_check is set to False")
 
 
 class KMDHTTPError(Exception):

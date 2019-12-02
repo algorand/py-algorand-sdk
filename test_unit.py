@@ -239,6 +239,17 @@ class TestTransaction(unittest.TestCase):
                   "oxcdphkfbbh/aR0eXBlpGFjZmc=")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
+    def test_asset_empty_address_error(self):
+        pk = "DN7MBMCL5JQ3PFUQS7TMX5AH4EEKOBJVDUF4TCV6WERATKFLQF4MQUPZTA"
+        fee = 10
+        first_round = 322575
+        last_round = 323575
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        index = 1234
+        self.assertRaises(error.EmptyAddressError, transaction.AssetConfigTxn,
+                          pk, fee, first_round, last_round, gh, reserve=pk,
+                          freeze=pk, clawback=pk, index=index)
+
     def test_serialize_asset_config(self):
         mn = ("awful drop leaf tennis indoor begin mandate discover uncle se" +
               "ven only coil atom any hospital uncover make any climb actor " +
@@ -277,7 +288,8 @@ class TestTransaction(unittest.TestCase):
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
         index = 1
         txn = transaction.AssetConfigTxn(pk, fee, first_round, last_round, gh,
-                                         index=index)
+                                         index=index,
+                                         strict_empty_address_check=False)
         signed_txn = txn.sign(sk)
         golden = ("gqNzaWfEQBSP7HtzD/Lvn4aVvaNpeR4T93dQgo4LvywEwcZgDEoc/WVl3" +
                   "aKsZGcZkcRFoiWk8AidhfOZzZYutckkccB8RgGjdHhuh6RjYWlkAaNmZW" +
@@ -877,19 +889,19 @@ class TestSignBytes(unittest.TestCase):
 
 
 class TestLogic(unittest.TestCase):
-    def test_parse_uvariant(self):
+    def test_parse_uvarint(self):
         data = b"\x01"
-        value, length = logic.parse_uvariant(data)
+        value, length = logic.parse_uvarint(data)
         self.assertEqual(length, 1)
         self.assertEqual(value, 1)
 
         data = b"\x7b"
-        value, length = logic.parse_uvariant(data)
+        value, length = logic.parse_uvarint(data)
         self.assertEqual(length, 1)
         self.assertEqual(value, 123)
 
         data = b"\xc8\x03"
-        value, length = logic.parse_uvariant(data)
+        value, length = logic.parse_uvarint(data)
         self.assertEqual(length, 2)
         self.assertEqual(value, 456)
 
@@ -1124,9 +1136,8 @@ class TestTemplate(unittest.TestCase):
                   "MgMSEDMABykSEDMBByoSEDMACCEFCzMBCCEGCxIQMwAIIQcPEBA=")
         golden_addr = ("KPYGWKTV7CKMPMTLQRNGMEQRSYTYD" +
                        "HUOFNV4UDSBDLC44CLIJPQWRTCPBU")
-        self.assertEqual(s.get_program(), golden)
+        self.assertEqual(s.get_program(), base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
-        print([dict(t.dictify()) for t in s.get_send_funds_transaction(1234, 2345, 2346, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", precise=False).transactions])
 
     def test_HTLC(self):
         addr1 = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
@@ -1142,7 +1153,7 @@ class TestTemplate(unittest.TestCase):
                   "SlpOp7Q4pGgayA5soQW8tgf8VlMlyVaV9qITMQEiDjEQIxIQMQcyAxIQ" +
                   "MQgkEhAxCSgSLQEpEhAxCSoSMQIlDRAREA==")
         p = s.get_program()
-        self.assertEqual(p, golden)
+        self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
 
     def test_dynamic_fee(self):
@@ -1160,26 +1171,31 @@ class TestTemplate(unittest.TestCase):
                   "ABIQMwAIMQESEDEWIxIQMRAjEhAxBygSEDEJKRIQMQgkEhAxAiUSEDEE" +
                   "IQQSEDEGKhIQ")
         p = s.get_program()
-        self.assertEqual(p, golden)
+        self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
 
     def test_periodic_fee(self):
         # changesdflkjsdflk
-        addr1 = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
-        addr2 = "42NJMHTPFVPXVSDGA6JGKUV6TARV5UZTMPFIREMLXHETRKIVW34QFSDFRE"
-        s = template.DynamicFee(addr1, 5000, 12345, 12346, addr2)
+        addr = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
+        s = template.PeriodicPayment(addr, 10000, 999, 11, 10, 123456)
         s.lease_value = "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
 
-        golden_addr = ("GCI4WWDIWUFATVPOQ372OZYG52EUL" +
-                       "PUZKI7Y34MXK3ZJKIBZXHD2H5C5TI")
+        golden_addr = ("IJPPJDULMZNQXBIGCLCWVP5P4VD6U564BHC7C5CMZB2FVXKGZSIVPJFPT4")
 
-        golden = ("ASAFAgGIJ7lgumAmAyD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJclW" +
-                  "lfaiEyDmmpYeby1feshmB5JlUr6YI17TM2PKiJGLuck4qRW2+SB/g7Fl" +
-                  "f/H8U7ktwYFIodZd/C1LH6PWdyhK3dIAEm2QaTIEIhIzABAjEhAzAAcx" +
-                  "ABIQMwAIMQESEDEWIxIQMRAjEhAxBygSEDEJKRIQMQgkEhAxAiUSEDEE" +
-                  "IQQSEDEGKhIQ")
+        golden = ("ASAHAQoLAOcHkE7AxAcmAiB/g7Flf/H8U7ktwYFIodZd/C1LH6PWdyhK3dIAEm2QaSD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJclWlfaiEzEQIhIxASMOEDECJBglEhAxBCEEMQIIEhAxBigSEDEJMgMSMQcpEhAxCCEFEhAxCSkSMQcyAxIQMQIhBg0QMQglEhAREA==")
         p = s.get_program()
-        self.assertEqual(p, golden)
+        self.assertEqual(p, base64.b64decode(golden))
+        self.assertEqual(s.get_address(), golden_addr)
+
+    def test_limit_order_a(self):
+        addr = "SKXZDBHECM6AS73GVPGJHMIRDMJKEAN5TUGMUPSKJCQ44E6M6TC2H2UJ3I"
+        s = template.LimitOrder(addr, 10000, 257, 36, 13579, 10, 123456)
+
+        golden_addr = ("WLTFMUFK2BRUOZTWKZIU5LUUR6FJZBFRJCDLMF35PXQEBDWSDT2CSGMK3M")
+
+        golden = ("ASAKAAEKAsDEBwSQTiSBAotqJgEgkq+RhOQTPAl/ZqvMk7ERGxKiAb2dDMo+SkihzhPM9MUxFiISMRAjEhAxASQOEDIEIxJAAFUyBCUSMQghBA0QMQkyAxIQMwEQIQUSEDMBESEGEhAzARQoEhAzARMyAxIQMwESIQcdNQI1ATEIIQgdNQQ1AzQBNAMNQAAkNAE0AxI0AjQEDxBAABYAMQkoEjECIQkNEDEHMgMSEDEIIhIQEA==")
+        p = s.get_program()
+        self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
 
 
