@@ -178,8 +178,9 @@ class HTLC(Template):
 
 class DynamicFee(Template):
     """
-        DynamicFee contract allows you to create a transaction without specifying
-        the fee. The fee will be determined at the moment of transfer.
+        DynamicFee contract allows you to create a transaction without
+        specifying the fee. The fee will be determined at the moment of
+        transfer.
 
         Args:
             receiver (str): address to receive the assets
@@ -382,20 +383,37 @@ class LimitOrder(Template):
         return inject(orig, offsets, values, types)
 
     def get_swap_assets_transactions(self, amount: int, contract: bytes,
-                                     secret_key: bytes):
+                                     private_key: str, first_valid,
+                                     last_valid, gh):
         """
         Return a group transactions array which transfer funds according to
         the contract's ratio.
 
         Args:
-        ----------
-        amount : int
-            the amount of assets to be sent
-        contract : bytes
-            the contract containg information, should be recived from payer
-        seceret_key : bytes
-            the secret key to sign the contract
+            amount (int): the amount of assets to be sent
+            contract (bytes): the contract containg information, should be
+                recieved from payer
+            private_key (str): the secret key to sign the contract
         """
+        txn_1 = transaction.PaymentTxn(self.get_address(), self.max_fee,
+                                       first_valid, last_valid, gh,
+                                       account.address_from_private_key(
+                                       private_key), int(
+                                           amount/self.ratn*self.ratd))
+
+        txn_2 = transaction.AssetTransferTxn(account.address_from_private_key(
+                                             private_key), self.max_fee,
+                                             first_valid, last_valid, gh,
+                                             self.get_address(), amount,
+                                             self.asset_id)
+
+        transaction.assign_group_id([txn_1, txn_2])
+
+        lsig = transaction.LogicSig(contract)
+        stx_1 = transaction.LogicSigTransaction(txn_1, lsig)
+        stx_2 = txn_2.sign(private_key)
+
+        return [stx_1, stx_2]
 
 
 def put_uvarint(buf, x):
