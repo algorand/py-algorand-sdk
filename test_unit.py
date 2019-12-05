@@ -819,6 +819,19 @@ class TestMsgpack(unittest.TestCase):
         self.assertEqual(assettxn, encoding.msgpack_encode(
                          encoding.msgpack_decode(assettxn)))
 
+    def test_asset_config_with_decimal(self):
+        assettxn = ("gqNzaWfEQBBkfw5n6UevuIMDo2lHyU4dS80JCCQ/vTRUcTx5m0ivX6" +
+                    "8zTKyuVRrHaTbxbRRc3YpJ4zeVEnC9Fiw3Wf4REwejdHhuiKRhcGFy" +
+                    "haFjxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aJkYw" +
+                    "yhZsQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2hbcQg" +
+                    "CfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2hcsQgCfvSdi" +
+                    "wI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2kY2FpZM0E0qNmZWXN" +
+                    "DUiiZnbOAATsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi" +
+                    "9/cOUJOiKibHbOAATv96NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXX" +
+                    "UOB+jFx2mGR9tuH9pHR5cGWkYWNmZw==")
+        self.assertEqual(assettxn, encoding.msgpack_encode(
+                         encoding.msgpack_decode(assettxn)))
+
     def test_asset_destroy(self):
         assettxn = ("gqNzaWfEQBSP7HtzD/Lvn4aVvaNpeR4T93dQgo4LvywEwcZgDEoc/W" +
                     "Vl3aKsZGcZkcRFoiWk8AidhfOZzZYutckkccB8RgGjdHhuh6RjYWlk" +

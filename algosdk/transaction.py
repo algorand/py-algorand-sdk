@@ -328,7 +328,8 @@ class AssetConfigTxn(Transaction):
 
     To create an asset, include the following:
         total, default_frozen, unit_name, asset_name,
-        manager, reserve, freeze, clawback, url, metadata
+        manager, reserve, freeze, clawback, url, metadata,
+        decimals
 
     To destroy an asset, include the following:
         index, strict_empty_address_check (set to False)
@@ -344,7 +345,7 @@ class AssetConfigTxn(Transaction):
         last (int): last round for which the transaction is valid
         gh (str): genesis_hash
         index (int, optional): index of the asset
-        total (int, optional): total number of units of this asset created
+        total (int, optional): total number of base units of this asset created
         default_frozen (bool, optional): whether slots for this asset in user
             accounts are frozen by default
         unit_name (str, optional): hint for the name of a unit of this asset
@@ -372,6 +373,10 @@ class AssetConfigTxn(Transaction):
             True (the default), having empty addresses will raise an error,
             which will prevent accidentally removing admin access to assets or
             deleting the asset.
+        decimals (int, optional): number of digits to use for display after
+            decimal. If set to 0, the asset is not divisible. If set to 1, the
+            base unit of the asset is in tenths. Must be between 0 and 19.
+            Defaults to 0.
 
     Attributes:
         sender (str)
@@ -394,6 +399,7 @@ class AssetConfigTxn(Transaction):
         genesis_id (str)
         type (str)
         lease (byte[32])
+        decimals (int)
     """
 
     def __init__(self, sender, fee, first, last, gh, index=None,
@@ -401,7 +407,7 @@ class AssetConfigTxn(Transaction):
                  asset_name=None, manager=None, reserve=None,
                  freeze=None, clawback=None, url=None, metadata_hash=None,
                  note=None, gen=None, flat_fee=False, lease=None,
-                 strict_empty_address_check=True):
+                 strict_empty_address_check=True, decimals=0):
         Transaction.__init__(self,  sender, fee, first, last, note, gen, gh,
                              lease, constants.assetconfig_txn)
         if strict_empty_address_check:
@@ -418,6 +424,7 @@ class AssetConfigTxn(Transaction):
         self.clawback = clawback
         self.url = url
         self.metadata_hash = metadata_hash
+        self.decimals = decimals
         if metadata_hash is not None:
             if len(metadata_hash) != constants.metadata_length:
                 raise error.WrongMetadataLengthError
@@ -432,7 +439,7 @@ class AssetConfigTxn(Transaction):
 
         if (self.total or self.default_frozen or self.unit_name or
                 self.asset_name or self.manager or self.reserve or
-                self.freeze or self.clawback):
+                self.freeze or self.clawback or self.decimals):
             apar = OrderedDict()
             if self.metadata_hash:
                 apar["am"] = self.metadata_hash
@@ -442,6 +449,8 @@ class AssetConfigTxn(Transaction):
                 apar["au"] = self.url
             if self.clawback:
                 apar["c"] = encoding.decode_address(self.clawback)
+            if self.decimals:
+                apar["dc"] = self.decimals
             if self.default_frozen:
                 apar["df"] = self.default_frozen
             if self.freeze:
@@ -477,6 +486,7 @@ class AssetConfigTxn(Transaction):
         clawback = None
         url = None
         metadata_hash = None
+        decimals = 0
 
         if "caid" in d:
             index = d["caid"]
@@ -501,6 +511,8 @@ class AssetConfigTxn(Transaction):
                 url = d["apar"]["au"]
             if "am" in d["apar"]:
                 metadata_hash = d["apar"]["am"]
+            if "dc" in d["apar"]:
+                decimals = d["apar"]["dc"]
 
         args = {
             "index": index,
@@ -514,7 +526,8 @@ class AssetConfigTxn(Transaction):
             "clawback": clawback,
             "url": url,
             "metadata_hash": metadata_hash,
-            "strict_empty_address_check": False
+            "strict_empty_address_check": False,
+            "decimals": decimals
         }
 
         return args
@@ -533,7 +546,8 @@ class AssetConfigTxn(Transaction):
                 self.freeze == other.freeze and
                 self.clawback == other.clawback and
                 self.url == other.url and
-                self.metadata_hash == other.metadata_hash)
+                self.metadata_hash == other.metadata_hash and
+                self.decimals == other.decimals)
 
 
 class AssetFreezeTxn(Transaction):
@@ -638,7 +652,7 @@ class AssetTransferTxn(Transaction):
         last (int): last round for which the transaction is valid
         gh (str): genesis_hash
         receiver (str): address of the receiver
-        amt (int): amount of asset units to send
+        amt (int): amount of asset base units to send
         index (int): index of the asset
         close_assets_to (string, optional): send all of sender's remaining
             assets, after paying `amt` to receiver, to this address
