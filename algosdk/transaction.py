@@ -375,8 +375,8 @@ class AssetConfigTxn(Transaction):
             deleting the asset.
         decimals (int, optional): number of digits to use for display after
             decimal. If set to 0, the asset is not divisible. If set to 1, the
-            base unit of the asset is in tenths. Must be between 0 and 19.
-            Defaults to 0.
+            base unit of the asset is in tenths. Must be between 0 and 19,
+            inclusive. Defaults to 0.
 
     Attributes:
         sender (str)
@@ -425,6 +425,8 @@ class AssetConfigTxn(Transaction):
         self.url = url
         self.metadata_hash = metadata_hash
         self.decimals = decimals
+        if decimals < 0 or decimals > constants.max_asset_decimals:
+            raise error.OutOfRangeDecimalsError
         if metadata_hash is not None:
             if len(metadata_hash) != constants.metadata_length:
                 raise error.WrongMetadataLengthError
