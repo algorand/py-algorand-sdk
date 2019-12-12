@@ -232,6 +232,9 @@ class LimitOrder(Template):
             contract (bytes): the contract containg information, should be
                 recieved from payer
             private_key (str): the secret key to sign the contract
+            first_valid (int): first valid round for the transactions
+            last_valid (int): last valid round for the transactions
+            gh (str): genesis hash in base64
             fee (int): fee per byte
         """
         txn_1 = transaction.PaymentTxn(self.get_address(), fee,
