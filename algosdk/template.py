@@ -217,10 +217,10 @@ class PeriodicPayment(Template):
         types = [int, int, int, int, int, "base64", "address"]
         return inject(orig, offsets, values, types)
 
-    def get_withdrawal_transaction(self, contract, private_key, first_valid,
+    def get_withdrawal_transaction(self, first_valid,
                                    last_valid, gh, fee):
         """
-        Returns the withdrawal transaction to be sent to the network
+        Return the withdrawal transaction to be sent to the network.
 
         Args:
             contract (bytes): the contract containing information, should be
@@ -235,7 +235,7 @@ class PeriodicPayment(Template):
                                      first_valid, last_valid, gh,
                                      self.receiver, self.amount)
 
-        lsig = transaction.LogicSig(contract)
+        lsig = transaction.LogicSig(self.get_program())
         stx = transaction.LogicSigTransaction(txn, lsig)
         return stx
 
