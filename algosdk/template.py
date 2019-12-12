@@ -217,15 +217,11 @@ class PeriodicPayment(Template):
         types = [int, int, int, int, int, "base64", "address"]
         return inject(orig, offsets, values, types)
 
-    def get_withdrawal_transaction(self, first_valid,
-                                   last_valid, gh, fee):
+    def get_withdrawal_transaction(self, first_valid, last_valid, gh, fee):
         """
         Return the withdrawal transaction to be sent to the network.
 
         Args:
-            contract (bytes): the contract containing information, should be
-                received from payer
-            private_key (bytes): the secret key to sign the contract
             first_valid (int): first round the transaction should be valid
             last_valid (int): last round the transaction should be valid
             gh (int): genesis hash in base64
