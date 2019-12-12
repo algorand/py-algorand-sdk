@@ -1180,42 +1180,6 @@ class TestTemplate(unittest.TestCase):
         print()
         s.get_transactions(s.sign_dynamic_fee(sk), sk, 1234, 2234, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
 
-    def test_periodic_fee(self):
-        addr = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
-        s = template.PeriodicPayment(addr, 10000, 999, 11, 10, 123456)
-        s.lease_value = "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
-
-        golden_addr = ("IJPPJDULMZNQXBIGCLCWVP5P4VD6U" +
-                       "564BHC7C5CMZB2FVXKGZSIVPJFPT4")
-
-        golden = ("ASAHAQoLAOcHkE7AxAcmAiB/g7Flf/H8U7ktwYFIodZd/C1LH6PWdyhK" +
-                  "3dIAEm2QaSD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJclWlfaiEzEQ" +
-                  "IhIxASMOEDECJBglEhAxBCEEMQIIEhAxBigSEDEJMgMSMQcpEhAxCCEF" +
-                  "EhAxCSkSMQcyAxIQMQIhBg0QMQglEhAREA==")
-        p = s.get_program()
-        self.assertEqual(p, base64.b64decode(golden))
-        self.assertEqual(s.get_address(), golden_addr)
-        sk, pk = account.generate_account()
-        s.get_withdrawal_transaction(p, sk, 1234, 2234, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", 10)
-
-    def test_limit_order_a(self):
-        addr = "SKXZDBHECM6AS73GVPGJHMIRDMJKEAN5TUGMUPSKJCQ44E6M6TC2H2UJ3I"
-        s = template.LimitOrder(addr, 10000, 257, 36, 13579, 10, 123456)
-
-        golden_addr = ("WLTFMUFK2BRUOZTWKZIU5LUUR6FJZ" +
-                       "BFRJCDLMF35PXQEBDWSDT2CSGMK3M")
-
-        golden = ("ASAKAAEKAsDEBwSQTiSBAotqJgEgkq+RhOQTPAl/ZqvMk7ERGxKiAb2d" +
-                  "DMo+SkihzhPM9MUxFiISMRAjEhAxASQOEDIEIxJAAFUyBCUSMQghBA0Q" +
-                  "MQkyAxIQMwEQIQUSEDMBESEGEhAzARQoEhAzARMyAxIQMwESIQcdNQI1" +
-                  "ATEIIQgdNQQ1AzQBNAMNQAAkNAE0AxI0AjQEDxBAABYAMQkoEjECIQkN" +
-                  "EDEHMgMSEDEIIhIQEA==")
-        p = s.get_program()
-        self.assertEqual(p, base64.b64decode(golden))
-        self.assertEqual(s.get_address(), golden_addr)
-        sk, pk = account.generate_account()
-        s.get_swap_assets_transactions(1000, p, sk, 1234, 2234, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", 10)
-
 
 if __name__ == "__main__":
     to_run = [

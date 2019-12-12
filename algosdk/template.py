@@ -226,22 +226,28 @@ class DynamicFee(Template):
         types = [int, int, int, "address", "address", "base64"]
         return inject(orig, offsets, values, types)
 
-    def sign_dynamic_fee(self, txns, private_key, fee, secondary_fee):
+    def sign_dynamic_fee(self, txns, private_key, fee):
         """
-        Sign the secondary dynamic fee transaction.
+        Sign the secondary dynamic fee transaction, update transaction
+        fields, and sign as the fee payer.
 
         Args:
             txns (str): list of transactions from payer, encoded in base64
             private_key (str): the secret key of the account that pays the fee
-            fee (int): how much fee to reimburse
-            secondary_fee (int): how much fee to pay on the reimbursement
-                transaction
+            fee (int): fee per byte, for both transactions
         """
-        pass
+        txns[0].fee = fee*txns[0].estimate_size()
+        txns[1].amount = txns[0].fee
+        txns[1].fee = fee*txns[1].estimate_size()
+        txns[1].sign(private_key)
+        return txns
 
     def get_transactions(self, contract, private_key, gh):
         """
         Return the two transactions needed to complete the transfer.
+        These should be sent to the fee payer, who needs to update the fee in
+        both transactions and the amount in the second transaction and then
+        sign the second transaction.
 
         Args:
             contract (bytes): the contract containing information, should be
@@ -269,151 +275,6 @@ class DynamicFee(Template):
         stx_1 = transaction.LogicSigTransaction(txn_1, lsig)
 
         return [stx_1, txn_2]
-
-
-class PeriodicPayment(Template):
-    """
-    PeriodicPayment contract enables creating an account which allows the
-    withdrawal of a fixed amount of assets every fixed number of rounds to a
-    specific Algrorand Address. In addition, the contract allows to add
-    timeout, which after the address can withdraw the rest of the assets.
-
-    Args:
-        receiver (str): address to receive the assets
-        amount (int): amount of assets to transfer at every cycle
-        withdrawing_window (int): the number of blocks in which the user can
-            withdraw the asset once the period start (must be < 1000)
-        period (int): how often the address can withdraw assets (in rounds)
-        fee (int): maximum fee per transaction
-        timeout (int): a round in which the receiver can withdraw the rest of
-            the funds after
-    """
-    def __init__(self, receiver: str, amount: int, withdrawing_window: int,
-                 period: int, max_fee: int, timeout: int):
-        self.lease_value = bytes([random.randint(0, 255) for x in range(
-                                 constants.lease_length)])
-        self.receiver = receiver
-        self.amount = amount
-        self.withdrawing_window = withdrawing_window
-        self.period = period
-        self.max_fee = max_fee
-        self.timeout = timeout
-
-    def get_program(self):
-        """
-        Return a byte array to be used in LogicSig.
-        """
-        orig = ("ASAHAQoLAAwNDiYCAQYg/ryguxRKWk6ntDikaBrIDmyhBby2B/xWUyXJVp" +
-                "X2ohMxECISMQEjDhAxAiQYJRIQMQQhBDECCBIQMQYoEhAxCTIDEjEHKRIQ" +
-                "MQghBRIQMQkpEjEHMgMSEDECIQYNEDEIJRIQERA=")
-        orig = base64.b64decode(orig)
-        offsets = [4, 5, 7, 8, 9, 12, 15]
-        values = [self.max_fee, self.period, self.withdrawing_window,
-                  self.amount, self.timeout, self.lease_value, self.receiver]
-        types = [int, int, int, int, int, "base64", "address"]
-        return inject(orig, offsets, values, types)
-
-    def get_withdrawal_transaction(self, contract, private_key, first_valid,
-                                   last_valid, gh, fee):
-        """
-        Returns the withdrawal transaction to be sent to the network
-
-        Args:
-            contract (bytes): the contract containing information, should be
-                received from payer
-            private_key (bytes): the secret key to sign the contract
-            first_valid (int): first round the transaction should be valid
-            last_valid (int): last round the transaction should be valid
-            gh (int): genesis hash in base64
-            fee (int): fee per byte
-        """
-        txn = transaction.PaymentTxn(self.get_address(), fee,
-                                     first_valid, last_valid, gh,
-                                     self.receiver, self.amount)
-
-        lsig = transaction.LogicSig(contract)
-        stx = transaction.LogicSigTransaction(txn, lsig)
-        return stx
-
-
-class LimitOrder(Template):
-    """
-    Limit Order allows to trade Algos for other asests given a specific ratio;
-    for N Algos, swap for Rate * N Assets.
-    ...
-
-    Args:
-        owner (str): an address that can receive the asset after the expiry
-            round
-        asset_id (int): asset to be transfered
-        ratn (int): the numerator of the exchange rate
-        ratd (int): the denominator of the exchange rate
-        expiry_round (int): the round on which the assets can be transferred
-            back to owner
-        min_trade (int): the minimum amount (of Algos) to be traded away
-        max_fee (int): the maximum fee that can be paid to the network by the
-            account
-
-    """
-    def __init__(self, owner: str, asset_id: int, ratn: int, ratd: int,
-                 expiry_round: int, max_fee: int, min_trade: int):
-        self.owner = owner
-        self.ratn = ratn
-        self.ratd = ratd
-        self.expiry_round = expiry_round
-        self.min_trade = min_trade
-        self.max_fee = max_fee
-        self.asset_id = asset_id
-
-    def get_program(self):
-        """
-        Return a byte array to be used in LogicSig.
-        """
-        orig = ("ASAKAAEFAgYEBwgJHSYBIJKvkYTkEzwJf2arzJOxERsSogG9nQzKPkpIoc" +
-                "4TzPTFMRYiEjEQIxIQMQEkDhAyBCMSQABVMgQlEjEIIQQNEDEJMgMSEDMB" +
-                "ECEFEhAzAREhBhIQMwEUKBIQMwETMgMSEDMBEiEHHTUCNQExCCEIHTUENQ" +
-                "M0ATQDDUAAJDQBNAMSNAI0BA8QQAAWADEJKBIxAiEJDRAxBzIDEhAxCCIS" +
-                "EBA=")
-        orig = base64.b64decode(orig)
-        offsets = [5, 7, 9, 10, 11, 12, 16]
-        values = [self.max_fee, self.min_trade, self.asset_id, self.ratd,
-                  self.ratn, self.expiry_round, self.owner]
-        types = [int, int, int, int, int, int, "address"]
-        return inject(orig, offsets, values, types)
-
-    def get_swap_assets_transactions(self, amount: int, contract: bytes,
-                                     private_key: str, first_valid,
-                                     last_valid, gh, fee):
-        """
-        Return a group transactions array which transfer funds according to
-        the contract's ratio.
-
-        Args:
-            amount (int): the amount of assets to be sent
-            contract (bytes): the contract containg information, should be
-                recieved from payer
-            private_key (str): the secret key to sign the contract
-            fee (int): fee per byte
-        """
-        txn_1 = transaction.PaymentTxn(self.get_address(), fee,
-                                       first_valid, last_valid, gh,
-                                       account.address_from_private_key(
-                                       private_key), int(
-                                           amount/self.ratn*self.ratd))
-
-        txn_2 = transaction.AssetTransferTxn(account.address_from_private_key(
-                                             private_key), fee,
-                                             first_valid, last_valid, gh,
-                                             self.owner, amount,
-                                             self.asset_id)
-
-        transaction.assign_group_id([txn_1, txn_2])
-
-        lsig = transaction.LogicSig(contract)
-        stx_1 = transaction.LogicSigTransaction(txn_1, lsig)
-        stx_2 = txn_2.sign(private_key)
-
-        return [stx_1, stx_2]
 
 
 def put_uvarint(buf, x):
