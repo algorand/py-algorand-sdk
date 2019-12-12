@@ -2,7 +2,6 @@ import math
 import random
 from . import error, encoding, constants, transaction, logic, account
 import base64
-from nacl.signing import SigningKey
 
 
 class Template:
@@ -178,20 +177,20 @@ class HTLC(Template):
 
 class DynamicFee(Template):
     """
-        DynamicFee contract allows you to create a transaction without
-        specifying the fee. The fee will be determined at the moment of
-        transfer.
+    DynamicFee contract allows you to create a transaction without
+    specifying the fee. The fee will be determined at the moment of
+    transfer.
 
-        Args:
-            receiver (str): address to receive the assets
-            amount (int): amount of assets to transfer
-            first_valid (int): first valid round for the transaction
-            last_valid (int, optional): last valid round for the transaction
-                (default to first_valid + 1000)
-            close_remainder_address (str, optional): if you would like to
-                close the account after the transfer, specify the address that
-                would recieve the remainder
-        """
+    Args:
+        receiver (str): address to receive the assets
+        amount (int): amount of assets to transfer
+        first_valid (int): first valid round for the transaction
+        last_valid (int, optional): last valid round for the transaction
+            (default to first_valid + 1000)
+        close_remainder_address (str, optional): if you would like to
+            close the account after the transfer, specify the address that
+            would recieve the remainder
+    """
 
     def __init__(self, receiver: str, amount: int, first_valid: int,
                  last_valid: int = None, close_remainder_address: str = None):
@@ -219,6 +218,7 @@ class DynamicFee(Template):
                 "EDMABzEAEhAzAAgxARIQMRYjEhAxECMSEDEHKBIQMQkpEhAxCCQSEDECJR" +
                 "IQMQQhBBIQMQYqEhA=")
         orig = base64.b64decode(orig)
+        print([i for i in orig])
         offsets = [5, 6, 7, 11, 44, 76]
         values = [self.amount, self.first_valid, self.last_valid,
                   self.receiver, self.close_remainder_address,
@@ -226,51 +226,49 @@ class DynamicFee(Template):
         types = [int, int, int, "address", "address", "base64"]
         return inject(orig, offsets, values, types)
 
-    def sign_dynamic_fee(self, private_key):
+    def sign_dynamic_fee(self, txns, private_key, fee, secondary_fee):
         """
-        Sign the dynamic fee contract.
+        Sign the secondary dynamic fee transaction.
 
         Args:
-            private_key (str): the secret key in base64 to sign the contract
+            txns (str): list of transactions from payer, encoded in base64
+            private_key (str): the secret key of the account that pays the fee
+            fee (int): how much fee to reimburse
+            secondary_fee (int): how much fee to pay on the reimbursement
+                transaction
         """
-        program = self.get_program()
-        to_sign = constants.logic_prefix + program
-        private_key = base64.b64decode(private_key)
-        signing_key = SigningKey(private_key[:constants.key_len_bytes])
-        signed = signing_key.sign(to_sign)
-        self.signature = base64.b64encode(signed.signature).decode()
-        return self.signature
+        pass
 
-    def get_transactions(self, contract, private_key, first_valid,
-                         last_valid, gh):
+    def get_transactions(self, contract, private_key, gh):
         """
         Return the two transactions needed to complete the transfer.
 
         Args:
             contract (bytes): the contract containing information, should be
-                received from payer
-            seceret_key (bytes): the secret key to sign the contract
-            first_valid (int): first round the transactions should be valid
-            last_valid (int): last round the transactions should be valid
+                received from payer as an encoded lsig with a signature
+            private_key (bytes): the secret key to sign the contract
             gh (str): genesis hash, in base64
         """
-        txn_1 = transaction.PaymentTxn(self.get_address(), 0,
-                                       first_valid, last_valid, gh,
-                                       self.receiver, self.amount)
+        sender = account.address_from_private_key(private_key)
 
-        txn_2 = transaction.PaymentTxn(account.address_from_private_key(
-                                       private_key), 0,
-                                       first_valid, last_valid, gh,
-                                       self.get_address(), self.amount,
-                                       self.close_remainder_address)
+        # main transaction
+        txn_1 = transaction.PaymentTxn(sender, 0, self.first_valid,
+                                       self.last_valid, gh, self.receiver,
+                                       self.amount)
+
+        lsig = transaction.LogicSig(self.get_program())
+        lsig.sign(private_key)
+
+        # reimbursement transaction; fill with zero values for now
+        txn_2 = transaction.PaymentTxn(bytes(32), 0, self.first_valid,
+                                       self.last_valid, gh,
+                                       self.account.address_from_private_key(
+                                       private_key), 0)
 
         transaction.assign_group_id([txn_1, txn_2])
-
-        lsig = transaction.LogicSig(contract)
         stx_1 = transaction.LogicSigTransaction(txn_1, lsig)
-        stx_2 = txn_2.sign(private_key)
 
-        return [stx_1, stx_2]
+        return [stx_1, txn_2]
 
 
 class PeriodicPayment(Template):
@@ -291,14 +289,14 @@ class PeriodicPayment(Template):
             the funds after
     """
     def __init__(self, receiver: str, amount: int, withdrawing_window: int,
-                 period: int, fee: int, timeout: int):
+                 period: int, max_fee: int, timeout: int):
         self.lease_value = bytes([random.randint(0, 255) for x in range(
                                  constants.lease_length)])
         self.receiver = receiver
         self.amount = amount
         self.withdrawing_window = withdrawing_window
         self.period = period
-        self.fee = fee
+        self.max_fee = max_fee
         self.timeout = timeout
 
     def get_program(self):
@@ -310,25 +308,26 @@ class PeriodicPayment(Template):
                 "MQghBRIQMQkpEjEHMgMSEDECIQYNEDEIJRIQERA=")
         orig = base64.b64decode(orig)
         offsets = [4, 5, 7, 8, 9, 12, 15]
-        values = [self.fee, self.period, self.withdrawing_window, self.amount,
-                  self.timeout, self.lease_value, self.receiver]
+        values = [self.max_fee, self.period, self.withdrawing_window,
+                  self.amount, self.timeout, self.lease_value, self.receiver]
         types = [int, int, int, int, int, "base64", "address"]
         return inject(orig, offsets, values, types)
 
     def get_withdrawal_transaction(self, contract, private_key, first_valid,
-                                   last_valid, gh):
+                                   last_valid, gh, fee):
         """
         Returns the withdrawal transaction to be sent to the network
 
         Args:
             contract (bytes): the contract containing information, should be
                 received from payer
-            seceret_key (bytes): the secret key to sign the contract
+            private_key (bytes): the secret key to sign the contract
             first_valid (int): first round the transaction should be valid
             last_valid (int): last round the transaction should be valid
             gh (int): genesis hash in base64
+            fee (int): fee per byte
         """
-        txn = transaction.PaymentTxn(self.get_address(), self.fee,
+        txn = transaction.PaymentTxn(self.get_address(), fee,
                                      first_valid, last_valid, gh,
                                      self.receiver, self.amount)
 
@@ -384,7 +383,7 @@ class LimitOrder(Template):
 
     def get_swap_assets_transactions(self, amount: int, contract: bytes,
                                      private_key: str, first_valid,
-                                     last_valid, gh):
+                                     last_valid, gh, fee):
         """
         Return a group transactions array which transfer funds according to
         the contract's ratio.
@@ -394,17 +393,18 @@ class LimitOrder(Template):
             contract (bytes): the contract containg information, should be
                 recieved from payer
             private_key (str): the secret key to sign the contract
+            fee (int): fee per byte
         """
-        txn_1 = transaction.PaymentTxn(self.get_address(), self.max_fee,
+        txn_1 = transaction.PaymentTxn(self.get_address(), fee,
                                        first_valid, last_valid, gh,
                                        account.address_from_private_key(
                                        private_key), int(
                                            amount/self.ratn*self.ratd))
 
         txn_2 = transaction.AssetTransferTxn(account.address_from_private_key(
-                                             private_key), self.max_fee,
+                                             private_key), fee,
                                              first_valid, last_valid, gh,
-                                             self.get_address(), amount,
+                                             self.owner, amount,
                                              self.asset_id)
 
         transaction.assign_group_id([txn_1, txn_2])
