@@ -1188,6 +1188,9 @@ class TestTemplate(unittest.TestCase):
                        "HUOFNV4UDSBDLC44CLIJPQWRTCPBU")
         self.assertEqual(s.get_program(), base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
+        s.get_send_funds_transaction(1000, 1234, 2234,
+                                     "f4OxZX/x/FO5LcGBSKHWXf" +
+                                     "wtSx+j1ncoSt3SABJtkGk=")
 
     def test_HTLC(self):
         addr1 = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
@@ -1205,6 +1208,24 @@ class TestTemplate(unittest.TestCase):
         p = s.get_program()
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
+
+    def test_limit_order_a(self):
+        addr = "SKXZDBHECM6AS73GVPGJHMIRDMJKEAN5TUGMUPSKJCQ44E6M6TC2H2UJ3I"
+        s = template.LimitOrder(addr, 10000, 257, 36, 13579, 10, 123456)
+
+        golden_addr = ("WLTFMUFK2BRUOZTWKZIU5LUUR6FJZ" +
+                       "BFRJCDLMF35PXQEBDWSDT2CSGMK3M")
+
+        golden = ("ASAKAAEKAsDEBwSQTiSBAotqJgEgkq+RhOQTPAl/ZqvMk7ERGxKiAb2d" +
+                  "DMo+SkihzhPM9MUxFiISMRAjEhAxASQOEDIEIxJAAFUyBCUSMQghBA0Q" +
+                  "MQkyAxIQMwEQIQUSEDMBESEGEhAzARQoEhAzARMyAxIQMwESIQcdNQI1" +
+                  "ATEIIQgdNQQ1AzQBNAMNQAAkNAE0AxI0AjQEDxBAABYAMQkoEjECIQkN" +
+                  "EDEHMgMSEDEIIhIQEA==")
+        p = s.get_program()
+        self.assertEqual(p, base64.b64decode(golden))
+        self.assertEqual(s.get_address(), golden_addr)
+        sk, pk = account.generate_account()
+        s.get_swap_assets_transactions(1000, p, sk, 1234, 2234, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", 10)
 
 
 if __name__ == "__main__":

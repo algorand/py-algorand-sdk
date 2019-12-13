@@ -1,5 +1,6 @@
 import math
-from . import error, encoding, transaction, logic
+import random
+from . import error, encoding, constants, transaction, logic, account
 import base64
 
 
@@ -21,8 +22,7 @@ class Split(Template):
     specified by the first address part. For example, if you would like to
     have a split where the first address receives 30 percent and the second
     receives 70, set ratn and ratd to 30 and 100, respectively. Split also
-    have an expiry round, in which the owner can transfer back the
-    assets.
+    have an expiry round, in which the owner can transfer back the assets.
 
     Arguments:
         owner (str): an address that can receive the asset after the expiry
@@ -114,7 +114,7 @@ class Split(Template):
 
         p = self.get_program()
 
-        lsig = transaction.LogicSig(base64.b64decode(p))
+        lsig = transaction.LogicSig(p)
 
         stx_1 = transaction.LogicSigTransaction(txn_1, lsig)
         stx_2 = transaction.LogicSigTransaction(txn_2, lsig)
@@ -173,6 +173,89 @@ class HTLC(Template):
                   self.hash_image, self.owner, hash_inject]
         types = [int, int, "address", "base64", "address", int]
         return inject(orig, offsets, values, types)
+
+
+class LimitOrder(Template):
+    """
+    Limit Order allows to trade Algos for other asests given a specific ratio;
+    for N Algos, swap for Rate * N Assets.
+    ...
+
+    Args:
+        owner (str): an address that can receive the asset after the expiry
+            round
+        asset_id (int): asset to be transfered
+        ratn (int): the numerator of the exchange rate
+        ratd (int): the denominator of the exchange rate
+        expiry_round (int): the round on which the assets can be transferred
+            back to owner
+        min_trade (int): the minimum amount (of Algos) to be traded away
+        max_fee (int): the maximum fee that can be paid to the network by the
+            account
+
+    """
+    def __init__(self, owner: str, asset_id: int, ratn: int, ratd: int,
+                 expiry_round: int, max_fee: int, min_trade: int):
+        self.owner = owner
+        self.ratn = ratn
+        self.ratd = ratd
+        self.expiry_round = expiry_round
+        self.min_trade = min_trade
+        self.max_fee = max_fee
+        self.asset_id = asset_id
+
+    def get_program(self):
+        """
+        Return a byte array to be used in LogicSig.
+        """
+        orig = ("ASAKAAEFAgYEBwgJHSYBIJKvkYTkEzwJf2arzJOxERsSogG9nQzKPkpIoc" +
+                "4TzPTFMRYiEjEQIxIQMQEkDhAyBCMSQABVMgQlEjEIIQQNEDEJMgMSEDMB" +
+                "ECEFEhAzAREhBhIQMwEUKBIQMwETMgMSEDMBEiEHHTUCNQExCCEIHTUENQ" +
+                "M0ATQDDUAAJDQBNAMSNAI0BA8QQAAWADEJKBIxAiEJDRAxBzIDEhAxCCIS" +
+                "EBA=")
+        orig = base64.b64decode(orig)
+        offsets = [5, 7, 9, 10, 11, 12, 16]
+        values = [self.max_fee, self.min_trade, self.asset_id, self.ratd,
+                  self.ratn, self.expiry_round, self.owner]
+        types = [int, int, int, int, int, int, "address"]
+        return inject(orig, offsets, values, types)
+
+    def get_swap_assets_transactions(self, amount: int, contract: bytes,
+                                     private_key: str, first_valid,
+                                     last_valid, gh, fee):
+        """
+        Return a group transactions array which transfer funds according to
+        the contract's ratio.
+
+        Args:
+            amount (int): the amount of assets to be sent
+            contract (bytes): the contract containg information, should be
+                recieved from payer
+            private_key (str): the secret key to sign the contract
+            first_valid (int): first valid round for the transactions
+            last_valid (int): last valid round for the transactions
+            gh (str): genesis hash in base64
+            fee (int): fee per byte
+        """
+        txn_1 = transaction.PaymentTxn(self.get_address(), fee,
+                                       first_valid, last_valid, gh,
+                                       account.address_from_private_key(
+                                       private_key), int(
+                                           amount/self.ratn*self.ratd))
+
+        txn_2 = transaction.AssetTransferTxn(account.address_from_private_key(
+                                             private_key), fee,
+                                             first_valid, last_valid, gh,
+                                             self.owner, amount,
+                                             self.asset_id)
+
+        transaction.assign_group_id([txn_1, txn_2])
+
+        lsig = transaction.LogicSig(contract)
+        stx_1 = transaction.LogicSigTransaction(txn_1, lsig)
+        stx_2 = txn_2.sign(private_key)
+
+        return [stx_1, stx_2]
 
 
 def put_uvarint(buf, x):
