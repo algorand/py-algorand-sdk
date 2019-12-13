@@ -1162,7 +1162,7 @@ class TestTemplate(unittest.TestCase):
     def test_periodic_fee(self):
         addr = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
         s = template.PeriodicPayment(addr, 10000, 999, 11, 10, 123456)
-        s.lease_value = "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
+        s.lease_value = base64.b64decode("f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
 
         golden_addr = ("IJPPJDULMZNQXBIGCLCWVP5P4VD6U" +
                        "564BHC7C5CMZB2FVXKGZSIVPJFPT4")

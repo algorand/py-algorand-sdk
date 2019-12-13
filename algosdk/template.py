@@ -213,7 +213,8 @@ class PeriodicPayment(Template):
         orig = base64.b64decode(orig)
         offsets = [4, 5, 7, 8, 9, 12, 15]
         values = [self.max_fee, self.period, self.withdrawing_window,
-                  self.amount, self.timeout, self.lease_value, self.receiver]
+                  self.amount, self.timeout, base64.b64encode(
+                      self.lease_value), self.receiver]
         types = [int, int, int, int, int, "base64", "address"]
         return inject(orig, offsets, values, types)
 
@@ -229,7 +230,8 @@ class PeriodicPayment(Template):
         """
         txn = transaction.PaymentTxn(self.get_address(), fee,
                                      first_valid, last_valid, gh,
-                                     self.receiver, self.amount)
+                                     self.receiver, self.amount,
+                                     lease=self.lease_value)
 
         lsig = transaction.LogicSig(self.get_program())
         stx = transaction.LogicSigTransaction(txn, lsig)
