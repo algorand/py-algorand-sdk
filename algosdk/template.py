@@ -194,9 +194,8 @@ class DynamicFee(Template):
 
     def __init__(self, receiver: str, amount: int, first_valid: int,
                  last_valid: int = None, close_remainder_address: str = None):
-        self.lease_value = base64.b64encode(bytes([random.randint(0, 255)
-                                            for x in range(
-                                            constants.lease_length)])).decode()
+        self.lease_value = bytes([random.randint(0, 255) for x in range(
+                                 constants.lease_length)])
 
         self.last_valid = last_valid
         if last_valid is None:
@@ -218,63 +217,65 @@ class DynamicFee(Template):
                 "EDMABzEAEhAzAAgxARIQMRYjEhAxECMSEDEHKBIQMQkpEhAxCCQSEDECJR" +
                 "IQMQQhBBIQMQYqEhA=")
         orig = base64.b64decode(orig)
-        print([i for i in orig])
         offsets = [5, 6, 7, 11, 44, 76]
         values = [self.amount, self.first_valid, self.last_valid,
                   self.receiver, self.close_remainder_address,
-                  self.lease_value]
+                  base64.b64encode(self.lease_value)]
         types = [int, int, int, "address", "address", "base64"]
         return inject(orig, offsets, values, types)
 
-    def sign_dynamic_fee(self, txns, private_key, fee):
+    @staticmethod
+    def sign_dynamic_fee(txn, lsig, private_key, fee, first_valid, last_valid):
         """
         Sign the secondary dynamic fee transaction, update transaction
         fields, and sign as the fee payer.
 
         Args:
-            txns (str): list of transactions from payer, encoded in base64
+            txn (Transaction): main transaction from payer
+            lsig (LogicSig): signed logic received from payer
             private_key (str): the secret key of the account that pays the fee
             fee (int): fee per byte, for both transactions
+            first_valid (int): first valid round for the transaction
+            last_valid (int): last valid round for the transaction
         """
-        txns[0].fee = fee*txns[0].estimate_size()
-        txns[1].amount = txns[0].fee
-        txns[1].fee = fee*txns[1].estimate_size()
-        txns[1].sign(private_key)
-        return txns
+        txn.fee = max(constants.min_txn_fee, fee*txn.estimate_size())
+        txn.fv = first_valid
+        txn.lv = last_valid
 
-    def get_transactions(self, contract, private_key, gh):
+        # reimbursement transaction
+        address = account.address_from_private_key(private_key)
+        txn_2 = transaction.PaymentTxn(address, fee, first_valid, last_valid,
+                                       txn.genesis_hash, txn.sender, txn.fee,
+                                       lease=txn.lease)
+
+        transaction.assign_group_id([txn, txn_2])
+
+        stx_1 = transaction.LogicSigTransaction(txn, lsig)
+        stx_2 = txn_2.sign(private_key)
+
+        return [stx_1, stx_2]
+
+    def get_transaction(self, private_key, gh):
         """
-        Return the two transactions needed to complete the transfer.
-        These should be sent to the fee payer, who needs to update the fee in
-        both transactions and the amount in the second transaction and then
-        sign the second transaction.
+        Return the main transaction and signed logic needed to complete the
+        transfer. These should be sent to the fee payer, who can use
+        sign_dynamic_fee() to update fields and create the auxiliary
+        transaction.
 
         Args:
-            contract (bytes): the contract containing information, should be
-                received from payer as an encoded lsig with a signature
             private_key (bytes): the secret key to sign the contract
             gh (str): genesis hash, in base64
         """
         sender = account.address_from_private_key(private_key)
 
         # main transaction
-        txn_1 = transaction.PaymentTxn(sender, 0, self.first_valid,
-                                       self.last_valid, gh, self.receiver,
-                                       self.amount)
-
+        txn = transaction.PaymentTxn(sender, 0, self.first_valid,
+                                     self.last_valid, gh, self.receiver,
+                                     self.amount, lease=self.lease_value)
         lsig = transaction.LogicSig(self.get_program())
         lsig.sign(private_key)
 
-        # reimbursement transaction; fill with zero values for now
-        txn_2 = transaction.PaymentTxn(bytes(32), 0, self.first_valid,
-                                       self.last_valid, gh,
-                                       self.account.address_from_private_key(
-                                       private_key), 0)
-
-        transaction.assign_group_id([txn_1, txn_2])
-        stx_1 = transaction.LogicSigTransaction(txn_1, lsig)
-
-        return [stx_1, txn_2]
+        return txn, lsig
 
 
 def put_uvarint(buf, x):

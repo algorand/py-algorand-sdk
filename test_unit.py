@@ -1163,7 +1163,7 @@ class TestTemplate(unittest.TestCase):
         addr1 = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
         addr2 = "42NJMHTPFVPXVSDGA6JGKUV6TARV5UZTMPFIREMLXHETRKIVW34QFSDFRE"
         s = template.DynamicFee(addr1, 5000, 12345, 12346, addr2)
-        s.lease_value = "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
+        s.lease_value = base64.b64decode("f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
 
         golden_addr = ("GCI4WWDIWUFATVPOQ372OZYG52EUL" +
                        "PUZKI7Y34MXK3ZJKIBZXHD2H5C5TI")
@@ -1177,7 +1177,7 @@ class TestTemplate(unittest.TestCase):
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
         sk, pk = account.generate_account()
-        s.get_transactions(s.sign_dynamic_fee(sk), sk, 1234, 2234, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
+        txn, lsig = s.get_transaction(sk, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
 
 
 if __name__ == "__main__":
