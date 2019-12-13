@@ -225,10 +225,11 @@ class DynamicFee(Template):
         return inject(orig, offsets, values, types)
 
     @staticmethod
-    def sign_dynamic_fee(txn, lsig, private_key, fee, first_valid, last_valid):
+    def get_transactions(txn, lsig, private_key, fee, first_valid, last_valid):
         """
-        Sign the secondary dynamic fee transaction, update transaction
-        fields, and sign as the fee payer.
+        Create and sign the secondary dynamic fee transaction, update
+        transaction fields, and sign as the fee payer; return both
+        transactions.
 
         Args:
             txn (Transaction): main transaction from payer
@@ -255,11 +256,11 @@ class DynamicFee(Template):
 
         return [stx_1, stx_2]
 
-    def get_transaction(self, private_key, gh):
+    def sign_dynamic_fee(self, private_key, gh):
         """
         Return the main transaction and signed logic needed to complete the
         transfer. These should be sent to the fee payer, who can use
-        sign_dynamic_fee() to update fields and create the auxiliary
+        get_transactions() to update fields and create the auxiliary
         transaction.
 
         Args:

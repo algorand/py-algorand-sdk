@@ -1177,7 +1177,8 @@ class TestTemplate(unittest.TestCase):
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
         sk, pk = account.generate_account()
-        txn, lsig = s.get_transaction(sk, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
+        txn, lsig = s.sign_dynamic_fee(sk, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
+        s.get_transactions(txn, lsig, sk, 10, 1234, 2234)
 
 
 if __name__ == "__main__":
