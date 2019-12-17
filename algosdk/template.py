@@ -205,7 +205,7 @@ class DynamicFee(Template):
         self.first_valid = first_valid
         self.close_remainder_address = close_remainder_address
         if close_remainder_address is None:
-            self.close_remainder_address = bytes(32)
+            self.close_remainder_address = bytes(constants.address_len)
         self.receiver = receiver
 
     def get_program(self):
@@ -235,13 +235,15 @@ class DynamicFee(Template):
             txn (Transaction): main transaction from payer
             lsig (LogicSig): signed logic received from payer
             private_key (str): the secret key of the account that pays the fee
+                in base64
             fee (int): fee per byte, for both transactions
             first_valid (int): first valid round for the transaction
             last_valid (int): last valid round for the transaction
         """
-        txn.fee = max(constants.min_txn_fee, fee*txn.estimate_size())
         txn.fv = first_valid
         txn.lv = last_valid
+        txn.fee = fee
+        txn.fee = max(constants.min_txn_fee, fee*txn.estimate_size())
 
         # reimbursement transaction
         address = account.address_from_private_key(private_key)
@@ -270,9 +272,12 @@ class DynamicFee(Template):
         sender = account.address_from_private_key(private_key)
 
         # main transaction
+        close = None if self.close_remainder_address == bytes(
+            constants.address_len) else self.close_remainder_address
         txn = transaction.PaymentTxn(sender, 0, self.first_valid,
                                      self.last_valid, gh, self.receiver,
-                                     self.amount, lease=self.lease_value)
+                                     self.amount, lease=self.lease_value,
+                                     close_remainder_to=close)
         lsig = transaction.LogicSig(self.get_program())
         lsig.sign(private_key)
 

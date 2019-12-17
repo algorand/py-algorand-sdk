@@ -1178,7 +1178,15 @@ class TestTemplate(unittest.TestCase):
         self.assertEqual(s.get_address(), golden_addr)
         sk, pk = account.generate_account()
         txn, lsig = s.sign_dynamic_fee(sk, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
-        s.get_transactions(txn, lsig, sk, 10, 1234, 2234)
+        txns = s.get_transactions(txn, lsig, sk, 10, 1234, 2234)
+
+        golden_txn_1 = transaction.PaymentTxn(pk, 10, 12345, 12346, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", addr1, 5000, close_remainder_to=addr2, lease=s.lease_value)
+        golden_txn_1.group = txn.group
+        self.assertEqual(golden_txn_1, txns[0].transaction)
+
+        golden_txn_2 = transaction.PaymentTxn(pk, 10, 1234, 2234, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", pk, golden_txn_1.fee, lease=s.lease_value)
+        golden_txn_2.group = txn.group
+        self.assertEqual(golden_txn_2, txns[1].transaction)
 
 
 if __name__ == "__main__":
