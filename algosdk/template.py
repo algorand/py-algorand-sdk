@@ -180,7 +180,7 @@ class PeriodicPayment(Template):
     PeriodicPayment contract enables creating an account which allows the
     withdrawal of a fixed amount of assets every fixed number of rounds to a
     specific Algrorand Address. In addition, the contract allows to add
-    timeout, which after the address can withdraw the rest of the assets.
+    timeout, after which the address can withdraw the rest of the assets.
 
     Args:
         receiver (str): address to receive the assets
@@ -202,7 +202,7 @@ class PeriodicPayment(Template):
         self.period = period
         self.max_fee = max_fee
         self.timeout = timeout
-        
+
     def get_program(self):
         """
         Return a byte array to be used in LogicSig.
@@ -218,25 +218,28 @@ class PeriodicPayment(Template):
         types = [int, int, int, int, int, "base64", "address"]
         return inject(orig, offsets, values, types)
 
-    def get_withdrawal_transaction(self, first_valid, last_valid, gh, fee):
+    def get_withdrawal_transaction(self, first_valid, gh, fee):
         """
         Return the withdrawal transaction to be sent to the network.
 
         Args:
-            first_valid (int): first round the transaction should be valid
-            last_valid (int): last round the transaction should be valid
+            first_valid (int): first round the transaction should be valid;
+                this must be a multiple of self.period
             gh (int): genesis hash in base64
             fee (int): fee per byte
         """
+        if first_valid % self.period != 0:
+            raise error.PeriodicPaymentDivisibilityError
         txn = transaction.PaymentTxn(self.get_address(), fee,
-                                     first_valid, last_valid, gh,
+                                     first_valid, first_valid +
+                                     self.withdrawing_window, gh,
                                      self.receiver, self.amount,
                                      lease=self.lease_value)
 
         lsig = transaction.LogicSig(self.get_program())
         stx = transaction.LogicSigTransaction(txn, lsig)
         return stx
-        
+
 
 class LimitOrder(Template):
     """
