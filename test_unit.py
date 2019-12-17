@@ -239,6 +239,43 @@ class TestTransaction(unittest.TestCase):
                   "oxcdphkfbbh/aR0eXBlpGFjZmc=")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
+    def test_serialize_asset_create_decimal(self):
+        mn = ("awful drop leaf tennis indoor begin mandate discover uncle se" +
+              "ven only coil atom any hospital uncover make any climb actor " +
+              "armed measure need above hundred")
+        sk = mnemonic.to_private_key(mn)
+        pk = mnemonic.to_public_key(mn)
+        fee = 10
+        first_round = 322575
+        last_round = 323575
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+
+        total = 100
+        assetname = "testcoin"
+        unitname = "tst"
+        url = "website"
+        metadata = bytes("fACPO4nRgO55j1ndAK3W6Sgc4APkcyFh", "ascii")
+
+        txn = transaction.AssetConfigTxn(pk, fee, first_round, last_round, gh,
+                                         total=total, manager=pk, reserve=pk,
+                                         freeze=pk, clawback=pk,
+                                         unit_name=unitname,
+                                         asset_name=assetname, url=url,
+                                         metadata_hash=metadata,
+                                         default_frozen=False, decimals=1)
+        signed_txn = txn.sign(sk)
+        golden = ("gqNzaWfEQCj5xLqNozR5ahB+LNBlTG+d0gl0vWBrGdAXj1ibsCkvAwOsX" +
+                  "s5KHZK1YdLgkdJecQiWm4oiZ+pm5Yg0m3KFqgqjdHhuh6RhcGFyiqJhbc" +
+                  "QgZkFDUE80blJnTzU1ajFuZEFLM1c2U2djNEFQa2N5RmiiYW6odGVzdGN" +
+                  "vaW6iYXWnd2Vic2l0ZaFjxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxc" +
+                  "dphkfbbh/aJkYwGhZsQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZ" +
+                  "H224f2hbcQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2hcs" +
+                  "QgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2hdGSidW6jdHN" +
+                  "0o2ZlZc0P3KJmds4ABOwPomdoxCBIY7UYpLPITsgQ8i1PEIHLD3HwWaes" +
+                  "IN7GL39w5Qk6IqJsds4ABO/3o3NuZMQgCfvSdiwI+Gxa5r9t16epAd5md" +
+                  "ddQ4H6MXHaYZH224f2kdHlwZaRhY2Zn")
+        self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
+
     def test_asset_empty_address_error(self):
         pk = "DN7MBMCL5JQ3PFUQS7TMX5AH4EEKOBJVDUF4TCV6WERATKFLQF4MQUPZTA"
         fee = 10
@@ -819,6 +856,19 @@ class TestMsgpack(unittest.TestCase):
         self.assertEqual(assettxn, encoding.msgpack_encode(
                          encoding.msgpack_decode(assettxn)))
 
+    def test_asset_config_with_decimal(self):
+        assettxn = ("gqNzaWfEQBBkfw5n6UevuIMDo2lHyU4dS80JCCQ/vTRUcTx5m0ivX6" +
+                    "8zTKyuVRrHaTbxbRRc3YpJ4zeVEnC9Fiw3Wf4REwejdHhuiKRhcGFy" +
+                    "haFjxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aJkYw" +
+                    "yhZsQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2hbcQg" +
+                    "CfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2hcsQgCfvSdi" +
+                    "wI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2kY2FpZM0E0qNmZWXN" +
+                    "DUiiZnbOAATsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi" +
+                    "9/cOUJOiKibHbOAATv96NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXX" +
+                    "UOB+jFx2mGR9tuH9pHR5cGWkYWNmZw==")
+        self.assertEqual(assettxn, encoding.msgpack_encode(
+                         encoding.msgpack_decode(assettxn)))
+
     def test_asset_destroy(self):
         assettxn = ("gqNzaWfEQBSP7HtzD/Lvn4aVvaNpeR4T93dQgo4LvywEwcZgDEoc/W" +
                     "Vl3aKsZGcZkcRFoiWk8AidhfOZzZYutckkccB8RgGjdHhuh6RjYWlk" +
@@ -1187,6 +1237,24 @@ class TestTemplate(unittest.TestCase):
         golden_txn_2 = transaction.PaymentTxn(pk, 10, 1234, 2234, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", pk, golden_txn_1.fee, lease=s.lease_value)
         golden_txn_2.group = txn.group
         self.assertEqual(golden_txn_2, txns[1].transaction)
+
+    def test_limit_order_a(self):
+        addr = "SKXZDBHECM6AS73GVPGJHMIRDMJKEAN5TUGMUPSKJCQ44E6M6TC2H2UJ3I"
+        s = template.LimitOrder(addr, 10000, 257, 36, 13579, 10, 123456)
+
+        golden_addr = ("WLTFMUFK2BRUOZTWKZIU5LUUR6FJZ" +
+                       "BFRJCDLMF35PXQEBDWSDT2CSGMK3M")
+
+        golden = ("ASAKAAEKAsDEBwSQTiSBAotqJgEgkq+RhOQTPAl/ZqvMk7ERGxKiAb2d" +
+                  "DMo+SkihzhPM9MUxFiISMRAjEhAxASQOEDIEIxJAAFUyBCUSMQghBA0Q" +
+                  "MQkyAxIQMwEQIQUSEDMBESEGEhAzARQoEhAzARMyAxIQMwESIQcdNQI1" +
+                  "ATEIIQgdNQQ1AzQBNAMNQAAkNAE0AxI0AjQEDxBAABYAMQkoEjECIQkN" +
+                  "EDEHMgMSEDEIIhIQEA==")
+        p = s.get_program()
+        self.assertEqual(p, base64.b64decode(golden))
+        self.assertEqual(s.get_address(), golden_addr)
+        sk, pk = account.generate_account()
+        s.get_swap_assets_transactions(1000, p, sk, 1234, 2234, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", 10)
 
 
 if __name__ == "__main__":

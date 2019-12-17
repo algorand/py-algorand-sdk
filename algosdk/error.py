@@ -83,6 +83,12 @@ class MultisigAccountSizeError(Exception):
                                  "addresses")
 
 
+class OutOfRangeDecimalsError(Exception):
+    def __init__(self):
+        Exception.__init__(self, "decimals must be between 0 and 19, " +
+                                 "inclusive")
+
+
 class EmptyAddressError(Exception):
     def __init__(self):
         Exception.__init__(self, "manager, freeze, reserve, and clawback " +
