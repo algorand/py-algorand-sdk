@@ -1,4 +1,7 @@
 # Changelog
+# 1.1.1
+# Added
+- Added asset decimals field.
 
 # 1.1.0
 # Added
