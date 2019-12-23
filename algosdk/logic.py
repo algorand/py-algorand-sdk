@@ -23,7 +23,11 @@ def check_program(program, args=None):
     Raises:
         InvalidProgram: on error
     """
+    ok, _, _ = read_program(program, args)
+    return ok
 
+
+def read_program(program, args=None):
     global spec, opcodes
     intcblock_opcode = 32
     bytecblock_opcode = 38
@@ -57,6 +61,8 @@ def check_program(program, args=None):
         for op in spec['Ops']:
             opcodes[op['Opcode']] = op
 
+    ints = []
+    bytearrays = []
     pc = vlen
     while pc < len(program):
         op = opcodes.get(program[pc], None)
@@ -67,9 +73,11 @@ def check_program(program, args=None):
         size = op['Size']
         if size == 0:
             if op['Opcode'] == intcblock_opcode:
-                size += check_int_const_block(program, pc)
+                size_inc, ints = read_int_const_block(program, pc)
+                size += size_inc
             elif op['Opcode'] == bytecblock_opcode:
-                size += check_byte_const_block(program, pc)
+                size_inc, bytearrays = read_byte_const_block(program, pc)
+                size += size_inc
             else:
                 raise error.InvalidProgram("invalid instruction")
         pc += size
@@ -77,11 +85,17 @@ def check_program(program, args=None):
     if cost >= constants.logic_sig_max_cost:
         raise error.InvalidProgram("program too costly to run")
 
-    return True
+    return True, ints, bytearrays
 
 
 def check_int_const_block(program, pc):
+    size, _ = read_int_const_block(program, pc)
+    return size
+
+
+def read_int_const_block(program, pc):
     size = 1
+    ints = []
     num_ints, bytes_used = parse_uvarint(program[pc + size:])
     if bytes_used <= 0:
         raise error.InvalidProgram("could not decode int const block size at pc=%d" % (pc + size))
@@ -89,15 +103,22 @@ def check_int_const_block(program, pc):
     for i in range(0, num_ints):
         if pc + size >= len(program):
             raise error.InvalidProgram("intcblock ran past end of program")
-        _, bytes_used = parse_uvarint(program[pc + size:])
+        num, bytes_used = parse_uvarint(program[pc + size:])
         if bytes_used <= 0:
             raise error.InvalidProgram("could not decode int const[%d] at pc=%d" % (i, pc + size))
+        ints.append(num)
         size += bytes_used
-    return size
+    return size, ints
 
 
 def check_byte_const_block(program, pc):
+    size, _ = read_byte_const_block(program, pc)
+    return size
+
+
+def read_byte_const_block(program, pc):
     size = 1
+    bytearrays = []
     num_ints, bytes_used = parse_uvarint(program[pc + size:])
     if bytes_used <= 0:
         raise error.InvalidProgram("could not decode []byte const block size at pc=%d" % (pc + size))
@@ -111,8 +132,9 @@ def check_byte_const_block(program, pc):
         size += bytes_used
         if pc + size >= len(program):
             raise error.InvalidProgram("bytecblock ran past end of program")
+        bytearrays.append(program[pc+size:pc+size+item_len])
         size += item_len
-    return size
+    return size, bytearrays
 
 
 def parse_uvarint(buf):

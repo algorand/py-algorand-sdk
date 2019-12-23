@@ -218,25 +218,37 @@ class PeriodicPayment(Template):
         types = [int, int, int, int, int, "base64", "address"]
         return inject(orig, offsets, values, types)
 
-    def get_withdrawal_transaction(self, first_valid, gh, fee):
+    @staticmethod
+    def get_withdrawal_transaction(contract, first_valid, gh, fee):
         """
         Return the withdrawal transaction to be sent to the network.
 
         Args:
+            contract (bytes): contract containing information, should be
+                received from payer
             first_valid (int): first round the transaction should be valid;
                 this must be a multiple of self.period
             gh (int): genesis hash in base64
             fee (int): fee per byte
         """
-        if first_valid % self.period != 0:
-            raise error.PeriodicPaymentDivisibilityError
-        txn = transaction.PaymentTxn(self.get_address(), fee,
-                                     first_valid, first_valid +
-                                     self.withdrawing_window, gh,
-                                     self.receiver, self.amount,
-                                     lease=self.lease_value)
+        address = logic.address(contract)
+        _, ints, bytearrays = logic.read_program(contract)
+        amount = ints[5]
+        withdrawing_window = ints[4]
+        period = ints[2]
+        fee = ints[1]
+        lease_value = bytearrays[0]
+        receiver = encoding.encode_address(bytearrays[1])
 
-        lsig = transaction.LogicSig(self.get_program())
+        if first_valid % period != 0:
+            raise error.PeriodicPaymentDivisibilityError
+        txn = transaction.PaymentTxn(address, fee,
+                                     first_valid, first_valid +
+                                     withdrawing_window, gh,
+                                     receiver, amount,
+                                     lease=lease_value)
+
+        lsig = transaction.LogicSig(contract)
         stx = transaction.LogicSigTransaction(txn, lsig)
         return stx
 

@@ -1224,7 +1224,7 @@ class TestTemplate(unittest.TestCase):
         p = s.get_program()
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
-        ltxn = s.get_withdrawal_transaction(1210, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", 10)
+        ltxn = s.get_withdrawal_transaction(p, 1210, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", 10)
 
         golden_txn = transaction.PaymentTxn(golden_addr, 10, 1210, 2209, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", addr, 10000, lease=s.lease_value)
         self.assertEqual(golden_txn, ltxn.transaction)
