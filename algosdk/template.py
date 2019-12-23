@@ -266,7 +266,7 @@ class DynamicFee(Template):
         transaction.
 
         Args:
-            private_key (bytes): the secret key to sign the contract
+            private_key (bytes): the secret key to sign the contract in base64
             gh (str): genesis hash, in base64
         """
         sender = account.address_from_private_key(private_key)
@@ -282,6 +282,7 @@ class DynamicFee(Template):
         lsig.sign(private_key)
 
         return txn, lsig
+
 
 class LimitOrder(Template):
     """
@@ -311,7 +312,7 @@ class LimitOrder(Template):
         self.min_trade = min_trade
         self.max_fee = max_fee
         self.asset_id = asset_id
-    
+
     def get_program(self):
         """
         Return a byte array to be used in LogicSig.
