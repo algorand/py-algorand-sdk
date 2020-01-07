@@ -219,7 +219,7 @@ class PeriodicPayment(Template):
         return inject(orig, offsets, values, types)
 
     @staticmethod
-    def get_withdrawal_transaction(contract, first_valid, gh, fee):
+    def get_withdrawal_transaction(contract, first_valid, gh):
         """
         Return the withdrawal transaction to be sent to the network.
 
@@ -228,8 +228,7 @@ class PeriodicPayment(Template):
                 received from payer
             first_valid (int): first round the transaction should be valid;
                 this must be a multiple of self.period
-            gh (int): genesis hash in base64
-            fee (int): fee per byte
+            gh (str): genesis hash in base64
         """
         address = logic.address(contract)
         _, ints, bytearrays = logic.read_program(contract)

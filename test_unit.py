@@ -1224,10 +1224,20 @@ class TestTemplate(unittest.TestCase):
         p = s.get_program()
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
-        ltxn = s.get_withdrawal_transaction(p, 1210, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", 10)
+        ltxn = s.get_withdrawal_transaction(p, 1210, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
 
-        golden_txn = transaction.PaymentTxn(golden_addr, 10, 1210, 2209, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", addr, 10000, lease=s.lease_value)
-        self.assertEqual(golden_txn, ltxn.transaction)
+        golden_ltxn = ("gqRsc2lngaFsxJcBIAcBCgsA5weQTsDEByYCIH+DsWV/8fxTuS3" +
+                       "BgUih1l38LUsfo9Z3KErd0gASbZBpIP68oLsUSlpOp7Q4pGgayA" +
+                       "5soQW8tgf8VlMlyVaV9qITMRAiEjEBIw4QMQIkGCUSEDEEIQQxA" +
+                       "ggSEDEGKBIQMQkyAxIxBykSEDEIIQUSEDEJKRIxBzIDEhAxAiEG" +
+                       "DRAxCCUSEBEQo3R4bomjYW10zScQo2ZlZc0KHqJmds0EuqJnaMQ" +
+                       "gf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmibHbNCK" +
+                       "GibHjEIH+DsWV/8fxTuS3BgUih1l38LUsfo9Z3KErd0gASbZBpo" +
+                       "3JjdsQg/ryguxRKWk6ntDikaBrIDmyhBby2B/xWUyXJVpX2ohOj" +
+                       "c25kxCBCXvSOi2ZbC4UGEsVqv6/lR+p33AnF8XRMyHRa3UbMkaR" +
+                       "0eXBlo3BheQ==")
+        self.assertEqual(golden_ltxn,
+                         encoding.msgpack_encode(ltxn))
 
     def test_limit_order_a(self):
         addr = "SKXZDBHECM6AS73GVPGJHMIRDMJKEAN5TUGMUPSKJCQ44E6M6TC2H2UJ3I"
