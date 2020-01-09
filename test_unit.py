@@ -1174,8 +1174,34 @@ class TestTemplate(unittest.TestCase):
         p = s.get_program()
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
-        sk, pk = account.generate_account()
-        s.get_swap_assets_transactions(1000, p, sk, 1234, 2234, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", 10)
+        sk = ("DTKVj7KMON3GSWBwMX9McQHtaDDi8SDEBi0bt4rOxlHNRah" +
+              "La0zVG+25BDIaHB1dSoIHIsUQ8FFcdnCdKoG+Bg==")
+        gh = "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
+        [stx_1, stx_2] = s.get_swap_assets_transactions(1000, p, sk, 1234,
+                                                        2234, gh, 10)
+
+        golden_txn_1 = ("gqRsc2lngaFsxLUBIAoAAQoCwMQHBJBOJIECi2omASCSr5GE5B" +
+                        "M8CX9mq8yTsREbEqIBvZ0Myj5KSKHOE8z0xTEWIhIxECMSEDEB" +
+                        "JA4QMgQjEkAAVTIEJRIxCCEEDRAxCTIDEhAzARAhBRIQMwERIQ" +
+                        "YSEDMBFCgSEDMBEzIDEhAzARIhBx01AjUBMQghCB01BDUDNAE0" +
+                        "Aw1AACQ0ATQDEjQCNAQPEEAAFgAxCSgSMQIhCQ0QMQcyAxIQMQ" +
+                        "giEhAQo3R4bomjYW10zIyjZmVlzQiiomZ2zQTSomdoxCB/g7Fl" +
+                        "f/H8U7ktwYFIodZd/C1LH6PWdyhK3dIAEm2QaaNncnDEIBZKtz" +
+                        "WDJ1br7SzgRxVB4GuldnngnHquscPjuK+YxU/homx2zQi6o3Jj" +
+                        "dsQgzUWoS2tM1RvtuQQyGhwdXUqCByLFEPBRXHZwnSqBvgajc2" +
+                        "5kxCCy5lZQqtBjR2Z2VlFOrpSPipyEsUiGthd9feBAjtIc9KR0" +
+                        "eXBlo3BheQ==")
+        golden_txn_2 = ("gqNzaWfEQMvoyBUpU+UgLIRDEOYa7FLhEKUuYWh5esjSqk6ZUm" +
+                        "bSjjGcsv60c18noWTOEIodQ7Rt0gvSqLGCenrnaSs0Nw+jdHhu" +
+                        "iqRhYW10zQPopGFyY3bEIJKvkYTkEzwJf2arzJOxERsSogG9nQ" +
+                        "zKPkpIoc4TzPTFo2ZlZc0JJKJmds0E0qJnaMQgf4OxZX/x/FO5" +
+                        "LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmjZ3JwxCAWSrc1gydW6+" +
+                        "0s4EcVQeBrpXZ54Jx6rrHD47ivmMVP4aJsds0IuqNzbmTEIM1F" +
+                        "qEtrTNUb7bkEMhocHV1KggcixRDwUVx2cJ0qgb4GpHR5cGWlYX" +
+                        "hmZXKkeGFpZM0nEA==")
+
+        self.assertEqual(encoding.msgpack_encode(stx_1), golden_txn_1)
+        self.assertEqual(encoding.msgpack_encode(stx_2), golden_txn_2)
 
 
 if __name__ == "__main__":
