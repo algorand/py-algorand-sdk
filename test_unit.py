@@ -1210,32 +1210,33 @@ class TestTemplate(unittest.TestCase):
         self.assertEqual(s.get_address(), golden_addr)
 
     def test_periodic_fee(self):
-        addr = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
-        s = template.PeriodicPayment(addr, 10000, 999, 11, 10, 123456)
-        s.lease_value = base64.b64decode("f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
+        addr = "SKXZDBHECM6AS73GVPGJHMIRDMJKEAN5TUGMUPSKJCQ44E6M6TC2H2UJ3I"
+        s = template.PeriodicPayment(addr, 500000, 95, 100, 1000, 2445756)
+        s.lease_value = base64.b64decode(
+            "AQIDBAUGBwgBAgMEBQYHCAECAwQFBgcIAQIDBAUGBwg=")
 
-        golden_addr = ("IJPPJDULMZNQXBIGCLCWVP5P4VD6U" +
-                       "564BHC7C5CMZB2FVXKGZSIVPJFPT4")
+        golden_addr = ("JMS3K4LSHPULANJIVQBTEDP5PZK6H" +
+                       "HMDQS4OKHIMHUZZ6OILYO3FVQW7IY")
 
-        golden = ("ASAHAQoLAOcHkE7AxAcmAiB/g7Flf/H8U7ktwYFIodZd/C1LH6PWdyhK" +
-                  "3dIAEm2QaSD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJclWlfaiEzEQ" +
-                  "IhIxASMOEDECJBglEhAxBCEEMQIIEhAxBigSEDEJMgMSMQcpEhAxCCEF" +
-                  "EhAxCSkSMQcyAxIQMQIhBg0QMQglEhAREA==")
+        golden = ("ASAHAegHZABfoMIevKOVASYCIAECAwQFBgcIAQIDBAUGBwgBAgMEBQYH" +
+                  "CAECAwQFBgcIIJKvkYTkEzwJf2arzJOxERsSogG9nQzKPkpIoc4TzPTF" +
+                  "MRAiEjEBIw4QMQIkGCUSEDEEIQQxAggSEDEGKBIQMQkyAxIxBykSEDEI" +
+                  "IQUSEDEJKRIxBzIDEhAxAiEGDRAxCCUSEBEQ")
         p = s.get_program()
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
-        ltxn = s.get_withdrawal_transaction(p, 1210, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
-
-        golden_ltxn = ("gqRsc2lngaFsxJcBIAcBCgsA5weQTsDEByYCIH+DsWV/8fxTuS3" +
-                       "BgUih1l38LUsfo9Z3KErd0gASbZBpIP68oLsUSlpOp7Q4pGgayA" +
-                       "5soQW8tgf8VlMlyVaV9qITMRAiEjEBIw4QMQIkGCUSEDEEIQQxA" +
-                       "ggSEDEGKBIQMQkyAxIxBykSEDEIIQUSEDEJKRIxBzIDEhAxAiEG" +
-                       "DRAxCCUSEBEQo3R4bomjYW10zScQo2ZlZc0KHqJmds0EuqJnaMQ" +
-                       "gf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmibHbNCK" +
-                       "GibHjEIH+DsWV/8fxTuS3BgUih1l38LUsfo9Z3KErd0gASbZBpo" +
-                       "3JjdsQg/ryguxRKWk6ntDikaBrIDmyhBby2B/xWUyXJVpX2ohOj" +
-                       "c25kxCBCXvSOi2ZbC4UGEsVqv6/lR+p33AnF8XRMyHRa3UbMkaR" +
-                       "0eXBlo3BheQ==")
+        gh = "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
+        ltxn = s.get_withdrawal_transaction(p, 1200, gh)
+        golden_ltxn = ("gqRsc2lngaFsxJkBIAcB6AdkAF+gwh68o5UBJgIgAQIDBAUGBwg" +
+                       "BAgMEBQYHCAECAwQFBgcIAQIDBAUGBwggkq+RhOQTPAl/ZqvMk7" +
+                       "ERGxKiAb2dDMo+SkihzhPM9MUxECISMQEjDhAxAiQYJRIQMQQhB" +
+                       "DECCBIQMQYoEhAxCTIDEjEHKRIQMQghBRIQMQkpEjEHMgMSEDEC" +
+                       "IQYNEDEIJRIQERCjdHhuiaNhbXTOAAehIKNmZWXOAAQDWKJmds0" +
+                       "EsKJnaMQgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkG" +
+                       "mibHbNBQ+ibHjEIAECAwQFBgcIAQIDBAUGBwgBAgMEBQYHCAECA" +
+                       "wQFBgcIo3JjdsQgkq+RhOQTPAl/ZqvMk7ERGxKiAb2dDMo+Skih" +
+                       "zhPM9MWjc25kxCBLJbVxcjvosDUorAMyDf1+VeOdg4S45R0MPTO" +
+                       "fOQvDtqR0eXBlo3BheQ==")
         self.assertEqual(golden_ltxn,
                          encoding.msgpack_encode(ltxn))
 

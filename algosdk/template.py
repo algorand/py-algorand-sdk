@@ -232,6 +232,10 @@ class PeriodicPayment(Template):
         """
         address = logic.address(contract)
         _, ints, bytearrays = logic.read_program(contract)
+        if not (len(ints) == 7 and len(bytearrays) == 2):
+            raise error.WrongContractError("Wrong contract provided; " +
+                                           "a periodic payment contra" +
+                                           "ct is needed")
         amount = ints[5]
         withdrawing_window = ints[4]
         period = ints[2]

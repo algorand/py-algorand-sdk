@@ -100,6 +100,11 @@ class PeriodicPaymentDivisibilityError(Exception):
     def __init__(self):
         Exception.__init__(self, "first_valid must be divisible by the period")
 
+
+class WrongContractError(Exception):
+    pass
+
+
 class KMDHTTPError(Exception):
     pass
 
