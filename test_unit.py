@@ -1209,7 +1209,7 @@ class TestTemplate(unittest.TestCase):
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
 
-    def test_periodic_fee(self):
+    def test_periodic_payment(self):
         addr = "SKXZDBHECM6AS73GVPGJHMIRDMJKEAN5TUGMUPSKJCQ44E6M6TC2H2UJ3I"
         s = template.PeriodicPayment(addr, 500000, 95, 100, 1000, 2445756)
         s.lease_value = base64.b64decode(
