@@ -1213,7 +1213,8 @@ class TestTemplate(unittest.TestCase):
         addr1 = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
         addr2 = "42NJMHTPFVPXVSDGA6JGKUV6TARV5UZTMPFIREMLXHETRKIVW34QFSDFRE"
         s = template.DynamicFee(addr1, 5000, 12345, 12346, addr2)
-        s.lease_value = base64.b64decode("f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
+        s.lease_value = base64.b64decode(
+            "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
 
         golden_addr = ("GCI4WWDIWUFATVPOQ372OZYG52EUL" +
                        "PUZKI7Y34MXK3ZJKIBZXHD2H5C5TI")
@@ -1226,17 +1227,31 @@ class TestTemplate(unittest.TestCase):
         p = s.get_program()
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
-        sk, pk = account.generate_account()
-        txn, lsig = s.sign_dynamic_fee(sk, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
+        sk = ("DTKVj7KMON3GSWBwMX9McQHtaDDi8SDEBi0bt4rOxlHNRah" +
+              "La0zVG+25BDIaHB1dSoIHIsUQ8FFcdnCdKoG+Bg==")
+        txn, lsig = s.sign_dynamic_fee(
+            sk, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
         txns = s.get_transactions(txn, lsig, sk, 10, 1234, 2234)
+        golden_txn_1 = ("i6NhbXTNE4ilY2xvc2XEIOaalh5vLV96yGYHkmVSvpgjXtMzY8" +
+                        "qIkYu5yTipFbb5o2ZlZc0LrqJmds0wOaJnaMQgf4OxZX/x/FO5" +
+                        "LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmjZ3JwxCAchHamB8nN9C" +
+                        "2Ua8ZyHboaCb6hN9ZYI1aeS8WyQBCQ6qJsds0wOqJseMQgf4Ox" +
+                        "ZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmjcmN2xCD+vK" +
+                        "C7FEpaTqe0OKRoGsgObKEFvLYH/FZTJclWlfaiE6NzbmTEIM1F" +
+                        "qEtrTNUb7bkEMhocHV1KggcixRDwUVx2cJ0qgb4GpHR5cGWjcGF5")
+        self.assertEqual(encoding.msgpack_decode(golden_txn_1),
+                         txns[0].transaction)
+        self.assertEqual(golden_txn_1, encoding.msgpack_encode(
+                         txns[0].transaction))
 
-        golden_txn_1 = transaction.PaymentTxn(pk, 10, 12345, 12346, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", addr1, 5000, close_remainder_to=addr2, lease=s.lease_value)
-        golden_txn_1.group = txn.group
-        self.assertEqual(golden_txn_1, txns[0].transaction)
-
-        golden_txn_2 = transaction.PaymentTxn(pk, 10, 1234, 2234, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", pk, golden_txn_1.fee, lease=s.lease_value)
-        golden_txn_2.group = txn.group
-        self.assertEqual(golden_txn_2, txns[1].transaction)
+        golden_txn_2 = ("iqNhbXTNC66jZmVlzQoeomZ2zQTSomdoxCB/g7Flf/H8U7ktwY" +
+                        "FIodZd/C1LH6PWdyhK3dIAEm2QaaNncnDEIByEdqYHyc30LZRr" +
+                        "xnIduhoJvqE31lgjVp5LxbJAEJDqomx2zQi6omx4xCB/g7Flf/" +
+                        "H8U7ktwYFIodZd/C1LH6PWdyhK3dIAEm2QaaNyY3bEIM1FqEtr" +
+                        "TNUb7bkEMhocHV1KggcixRDwUVx2cJ0qgb4Go3NuZMQgzUWoS2" +
+                        "tM1RvtuQQyGhwdXUqCByLFEPBRXHZwnSqBvgakdHlwZaNwYXk=")
+        self.assertEqual(golden_txn_2, encoding.msgpack_encode(
+                         txns[1].transaction))
 
     def test_limit_order_a(self):
         addr = "SKXZDBHECM6AS73GVPGJHMIRDMJKEAN5TUGMUPSKJCQ44E6M6TC2H2UJ3I"
@@ -1254,7 +1269,9 @@ class TestTemplate(unittest.TestCase):
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
         sk, pk = account.generate_account()
-        s.get_swap_assets_transactions(1000, p, sk, 1234, 2234, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", 10)
+        s.get_swap_assets_transactions(
+            1000, p, sk, 1234, 2234,
+            "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", 10)
 
 
 if __name__ == "__main__":
