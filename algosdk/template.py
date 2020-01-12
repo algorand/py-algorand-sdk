@@ -187,9 +187,7 @@ class DynamicFee(Template):
         first_valid (int): first valid round for the transaction
         last_valid (int, optional): last valid round for the transaction
             (defaults to first_valid + 1000)
-        close_remainder_address (str): if you would like to
-            close the account after the transfer, specify the address that
-            would recieve the remainder
+        close_remainder_address (str): the address that recieves the remainder
     """
 
     def __init__(self, receiver: str, amount: int, first_valid: int,
@@ -204,10 +202,8 @@ class DynamicFee(Template):
         self.amount = amount
         self.first_valid = first_valid
         self.close_remainder_address = close_remainder_address
-        if close_remainder_address is None:
-            self.close_remainder_address = bytes(constants.address_len)
         self.receiver = receiver
-        
+
     def get_program(self):
         """
         Return a byte array to be used in LogicSig.
