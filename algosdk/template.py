@@ -186,8 +186,8 @@ class DynamicFee(Template):
         amount (int): amount of assets to transfer
         first_valid (int): first valid round for the transaction
         last_valid (int, optional): last valid round for the transaction
-            (default to first_valid + 1000)
-        close_remainder_address (str, optional): if you would like to
+            (defaults to first_valid + 1000)
+        close_remainder_address (str): if you would like to
             close the account after the transfer, specify the address that
             would recieve the remainder
     """
@@ -225,7 +225,7 @@ class DynamicFee(Template):
         return inject(orig, offsets, values, types)
 
     @staticmethod
-    def get_transactions(txn, lsig, private_key, fee, first_valid, last_valid):
+    def get_transactions(txn, lsig, private_key, fee):
         """
         Create and sign the secondary dynamic fee transaction, update
         transaction fields, and sign as the fee payer; return both
@@ -237,19 +237,15 @@ class DynamicFee(Template):
             private_key (str): the secret key of the account that pays the fee
                 in base64
             fee (int): fee per byte, for both transactions
-            first_valid (int): first valid round for the transaction
-            last_valid (int): last valid round for the transaction
         """
-        txn.fv = first_valid
-        txn.lv = last_valid
         txn.fee = fee
         txn.fee = max(constants.min_txn_fee, fee*txn.estimate_size())
 
         # reimbursement transaction
         address = account.address_from_private_key(private_key)
-        txn_2 = transaction.PaymentTxn(address, fee, first_valid, last_valid,
-                                       txn.genesis_hash, txn.sender, txn.fee,
-                                       lease=txn.lease)
+        txn_2 = transaction.PaymentTxn(address, fee, txn.first_valid_round,
+                                       txn.last_valid_round, txn.genesis_hash,
+                                       txn.sender, txn.fee, lease=txn.lease)
 
         transaction.assign_group_id([txn, txn_2])
 
