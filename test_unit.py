@@ -1209,6 +1209,37 @@ class TestTemplate(unittest.TestCase):
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
 
+    def test_periodic_payment(self):
+        addr = "SKXZDBHECM6AS73GVPGJHMIRDMJKEAN5TUGMUPSKJCQ44E6M6TC2H2UJ3I"
+        s = template.PeriodicPayment(addr, 500000, 95, 100, 1000, 2445756)
+        s.lease_value = base64.b64decode(
+            "AQIDBAUGBwgBAgMEBQYHCAECAwQFBgcIAQIDBAUGBwg=")
+
+        golden_addr = ("JMS3K4LSHPULANJIVQBTEDP5PZK6H" +
+                       "HMDQS4OKHIMHUZZ6OILYO3FVQW7IY")
+
+        golden = ("ASAHAegHZABfoMIevKOVASYCIAECAwQFBgcIAQIDBAUGBwgBAgMEBQYH" +
+                  "CAECAwQFBgcIIJKvkYTkEzwJf2arzJOxERsSogG9nQzKPkpIoc4TzPTF" +
+                  "MRAiEjEBIw4QMQIkGCUSEDEEIQQxAggSEDEGKBIQMQkyAxIxBykSEDEI" +
+                  "IQUSEDEJKRIxBzIDEhAxAiEGDRAxCCUSEBEQ")
+        p = s.get_program()
+        self.assertEqual(p, base64.b64decode(golden))
+        self.assertEqual(s.get_address(), golden_addr)
+        gh = "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
+        ltxn = s.get_withdrawal_transaction(p, 1200, gh)
+        golden_ltxn = ("gqRsc2lngaFsxJkBIAcB6AdkAF+gwh68o5UBJgIgAQIDBAUGBwg" +
+                       "BAgMEBQYHCAECAwQFBgcIAQIDBAUGBwggkq+RhOQTPAl/ZqvMk7" +
+                       "ERGxKiAb2dDMo+SkihzhPM9MUxECISMQEjDhAxAiQYJRIQMQQhB" +
+                       "DECCBIQMQYoEhAxCTIDEjEHKRIQMQghBRIQMQkpEjEHMgMSEDEC" +
+                       "IQYNEDEIJRIQERCjdHhuiaNhbXTOAAehIKNmZWXOAAQDWKJmds0" +
+                       "EsKJnaMQgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkG" +
+                       "mibHbNBQ+ibHjEIAECAwQFBgcIAQIDBAUGBwgBAgMEBQYHCAECA" +
+                       "wQFBgcIo3JjdsQgkq+RhOQTPAl/ZqvMk7ERGxKiAb2dDMo+Skih" +
+                       "zhPM9MWjc25kxCBLJbVxcjvosDUorAMyDf1+VeOdg4S45R0MPTO" +
+                       "fOQvDtqR0eXBlo3BheQ==")
+        self.assertEqual(golden_ltxn,
+                         encoding.msgpack_encode(ltxn))
+
     def test_limit_order_a(self):
         addr = "SKXZDBHECM6AS73GVPGJHMIRDMJKEAN5TUGMUPSKJCQ44E6M6TC2H2UJ3I"
         s = template.LimitOrder(addr, 10000, 257, 36, 13579, 10, 123456)
