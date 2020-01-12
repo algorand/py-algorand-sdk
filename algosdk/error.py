@@ -96,6 +96,15 @@ class EmptyAddressError(Exception):
                                  "strict_empty_address_check is set to False")
 
 
+class PeriodicPaymentDivisibilityError(Exception):
+    def __init__(self):
+        Exception.__init__(self, "first_valid must be divisible by the period")
+
+
+class WrongContractError(Exception):
+    pass
+
+
 class KMDHTTPError(Exception):
     pass
 

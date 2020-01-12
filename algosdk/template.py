@@ -276,6 +276,87 @@ class DynamicFee(Template):
         return txn, lsig
 
 
+class PeriodicPayment(Template):
+    """
+    PeriodicPayment contract enables creating an account which allows the
+    withdrawal of a fixed amount of assets every fixed number of rounds to a
+    specific Algrorand Address. In addition, the contract allows to add
+    timeout, after which the address can withdraw the rest of the assets.
+
+    Args:
+        receiver (str): address to receive the assets
+        amount (int): amount of assets to transfer at every cycle
+        withdrawing_window (int): the number of blocks in which the user can
+            withdraw the asset once the period start (must be < 1000)
+        period (int): how often the address can withdraw assets (in rounds)
+        fee (int): maximum fee per transaction
+        timeout (int): a round in which the receiver can withdraw the rest of
+            the funds after
+    """
+    def __init__(self, receiver: str, amount: int, withdrawing_window: int,
+                 period: int, max_fee: int, timeout: int):
+        self.lease_value = bytes([random.randint(0, 255) for x in range(
+                                 constants.lease_length)])
+        self.receiver = receiver
+        self.amount = amount
+        self.withdrawing_window = withdrawing_window
+        self.period = period
+        self.max_fee = max_fee
+        self.timeout = timeout
+
+    def get_program(self):
+        """
+        Return a byte array to be used in LogicSig.
+        """
+        orig = ("ASAHAQoLAAwNDiYCAQYg/ryguxRKWk6ntDikaBrIDmyhBby2B/xWUyXJVp" +
+                "X2ohMxECISMQEjDhAxAiQYJRIQMQQhBDECCBIQMQYoEhAxCTIDEjEHKRIQ" +
+                "MQghBRIQMQkpEjEHMgMSEDECIQYNEDEIJRIQERA=")
+        orig = base64.b64decode(orig)
+        offsets = [4, 5, 7, 8, 9, 12, 15]
+        values = [self.max_fee, self.period, self.withdrawing_window,
+                  self.amount, self.timeout, base64.b64encode(
+                      self.lease_value), self.receiver]
+        types = [int, int, int, int, int, "base64", "address"]
+        return inject(orig, offsets, values, types)
+
+    @staticmethod
+    def get_withdrawal_transaction(contract, first_valid, gh):
+        """
+        Return the withdrawal transaction to be sent to the network.
+
+        Args:
+            contract (bytes): contract containing information, should be
+                received from payer
+            first_valid (int): first round the transaction should be valid;
+                this must be a multiple of self.period
+            gh (str): genesis hash in base64
+        """
+        address = logic.address(contract)
+        _, ints, bytearrays = logic.read_program(contract)
+        if not (len(ints) == 7 and len(bytearrays) == 2):
+            raise error.WrongContractError("Wrong contract provided; " +
+                                           "a periodic payment contra" +
+                                           "ct is needed")
+        amount = ints[5]
+        withdrawing_window = ints[4]
+        period = ints[2]
+        fee = ints[1]
+        lease_value = bytearrays[0]
+        receiver = encoding.encode_address(bytearrays[1])
+
+        if first_valid % period != 0:
+            raise error.PeriodicPaymentDivisibilityError
+        txn = transaction.PaymentTxn(address, fee,
+                                     first_valid, first_valid +
+                                     withdrawing_window, gh,
+                                     receiver, amount,
+                                     lease=lease_value)
+
+        lsig = transaction.LogicSig(contract)
+        stx = transaction.LogicSigTransaction(txn, lsig)
+        return stx
+
+
 class LimitOrder(Template):
     """
     Limit Order allows to trade Algos for other asests given a specific ratio;
