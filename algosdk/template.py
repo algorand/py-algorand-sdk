@@ -175,6 +175,107 @@ class HTLC(Template):
         return inject(orig, offsets, values, types)
 
 
+class DynamicFee(Template):
+    """
+    DynamicFee contract allows you to create a transaction without
+    specifying the fee. The fee will be determined at the moment of
+    transfer.
+
+    Args:
+        receiver (str): address to receive the assets
+        amount (int): amount of assets to transfer
+        first_valid (int): first valid round for the transaction
+        last_valid (int, optional): last valid round for the transaction
+            (defaults to first_valid + 1000)
+        close_remainder_address (str): the address that recieves the remainder
+    """
+
+    def __init__(self, receiver: str, amount: int, first_valid: int,
+                 last_valid: int = None, close_remainder_address: str = None):
+        self.lease_value = bytes([random.randint(0, 255) for x in range(
+                                 constants.lease_length)])
+
+        self.last_valid = last_valid
+        if last_valid is None:
+            last_valid = first_valid + 1000
+
+        self.amount = amount
+        self.first_valid = first_valid
+        self.close_remainder_address = close_remainder_address
+        self.receiver = receiver
+
+    def get_program(self):
+        """
+        Return a byte array to be used in LogicSig.
+        """
+        orig = ("ASAFAgEFBgcmAyD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJclWlfaiEy" +
+                "DmmpYeby1feshmB5JlUr6YI17TM2PKiJGLuck4qRW2+QEGMgQiEjMAECMS" +
+                "EDMABzEAEhAzAAgxARIQMRYjEhAxECMSEDEHKBIQMQkpEhAxCCQSEDECJR" +
+                "IQMQQhBBIQMQYqEhA=")
+        orig = base64.b64decode(orig)
+        offsets = [5, 6, 7, 11, 44, 76]
+        values = [self.amount, self.first_valid, self.last_valid,
+                  self.receiver, self.close_remainder_address,
+                  base64.b64encode(self.lease_value)]
+        types = [int, int, int, "address", "address", "base64"]
+        return inject(orig, offsets, values, types)
+
+    @staticmethod
+    def get_transactions(txn, lsig, private_key, fee):
+        """
+        Create and sign the secondary dynamic fee transaction, update
+        transaction fields, and sign as the fee payer; return both
+        transactions.
+
+        Args:
+            txn (Transaction): main transaction from payer
+            lsig (LogicSig): signed logic received from payer
+            private_key (str): the secret key of the account that pays the fee
+                in base64
+            fee (int): fee per byte, for both transactions
+        """
+        txn.fee = fee
+        txn.fee = max(constants.min_txn_fee, fee*txn.estimate_size())
+
+        # reimbursement transaction
+        address = account.address_from_private_key(private_key)
+        txn_2 = transaction.PaymentTxn(address, fee, txn.first_valid_round,
+                                       txn.last_valid_round, txn.genesis_hash,
+                                       txn.sender, txn.fee, lease=txn.lease)
+
+        transaction.assign_group_id([txn, txn_2])
+
+        stx_1 = transaction.LogicSigTransaction(txn, lsig)
+        stx_2 = txn_2.sign(private_key)
+
+        return [stx_1, stx_2]
+
+    def sign_dynamic_fee(self, private_key, gh):
+        """
+        Return the main transaction and signed logic needed to complete the
+        transfer. These should be sent to the fee payer, who can use
+        get_transactions() to update fields and create the auxiliary
+        transaction.
+
+        Args:
+            private_key (bytes): the secret key to sign the contract in base64
+            gh (str): genesis hash, in base64
+        """
+        sender = account.address_from_private_key(private_key)
+
+        # main transaction
+        close = None if self.close_remainder_address == bytes(
+            constants.address_len) else self.close_remainder_address
+        txn = transaction.PaymentTxn(sender, 0, self.first_valid,
+                                     self.last_valid, gh, self.receiver,
+                                     self.amount, lease=self.lease_value,
+                                     close_remainder_to=close)
+        lsig = transaction.LogicSig(self.get_program())
+        lsig.sign(private_key)
+
+        return txn, lsig
+
+
 class PeriodicPayment(Template):
     """
     PeriodicPayment contract enables creating an account which allows the
