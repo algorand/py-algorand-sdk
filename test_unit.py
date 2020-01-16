@@ -1241,46 +1241,24 @@ class TestTemplate(unittest.TestCase):
                          encoding.msgpack_encode(ltxn))
 
     def test_limit_order_a(self):
-        addr = "SKXZDBHECM6AS73GVPGJHMIRDMJKEAN5TUGMUPSKJCQ44E6M6TC2H2UJ3I"
-        s = template.LimitOrder(addr, 10000, 257, 36, 13579, 10, 123456)
+        addr = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
+        s = template.LimitOrder(addr, 12345, 30, 100, 123456, 5000000, 10000)
 
-        golden_addr = ("WLTFMUFK2BRUOZTWKZIU5LUUR6FJZ" +
-                       "BFRJCDLMF35PXQEBDWSDT2CSGMK3M")
+        golden_addr = ("LXQWT2XLIVNFS54VTLR63UY5K6AMIEWI7YTVE6LB4RWZDBZKH22ZO3S36I")
 
-        golden = ("ASAKAAEKAsDEBwSQTiSBAotqJgEgkq+RhOQTPAl/ZqvMk7ERGxKiAb2d" +
-                  "DMo+SkihzhPM9MUxFiISMRAjEhAxASQOEDIEIxJAAFUyBCUSMQghBA0Q" +
-                  "MQkyAxIQMwEQIQUSEDMBESEGEhAzARQoEhAzARMyAxIQMwESIQcdNQI1" +
-                  "ATEIIQgdNQQ1AzQBNAMNQAAkNAE0AxI0AjQEDxBAABYAMQkoEjECIQkN" +
-                  "EDEHMgMSEDEIIhIQEA==")
+        golden = ("ASAKAAHAlrECApBOBLlgZB7AxAcmASD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJclWlfaiEzEWIhIxECMSEDEBJA4QMgQjEkAAVTIEJRIxCCEEDRAxCTIDEhAzARAhBRIQMwERIQYSEDMBFCgSEDMBEzIDEhAzARIhBx01AjUBMQghCB01BDUDNAE0Aw1AACQ0ATQDEjQCNAQPEEAAFgAxCSgSMQIhCQ0QMQcyAxIQMQgiEhAQ")
         p = s.get_program()
+        
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
 
         sk = ("DTKVj7KMON3GSWBwMX9McQHtaDDi8SDEBi0bt4rOxlHNRah" +
               "La0zVG+25BDIaHB1dSoIHIsUQ8FFcdnCdKoG+Bg==")
         gh = "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
-        [stx_1, stx_2] = s.get_swap_assets_transactions(1000, p, sk, 1234,
+        [stx_1, stx_2] = s.get_swap_assets_transactions(p, 3000, 10000, sk, 1234,
                                                         2234, gh, 10)
-
-        golden_txn_1 = ("gqRsc2lngaFsxLUBIAoAAQoCwMQHBJBOJIECi2omASCSr5GE5B" +
-                        "M8CX9mq8yTsREbEqIBvZ0Myj5KSKHOE8z0xTEWIhIxECMSEDEB" +
-                        "JA4QMgQjEkAAVTIEJRIxCCEEDRAxCTIDEhAzARAhBRIQMwERIQ" +
-                        "YSEDMBFCgSEDMBEzIDEhAzARIhBx01AjUBMQghCB01BDUDNAE0" +
-                        "Aw1AACQ0ATQDEjQCNAQPEEAAFgAxCSgSMQIhCQ0QMQcyAxIQMQ" +
-                        "giEhAQo3R4bomjYW10zIyjZmVlzQiiomZ2zQTSomdoxCB/g7Fl" +
-                        "f/H8U7ktwYFIodZd/C1LH6PWdyhK3dIAEm2QaaNncnDEIBZKtz" +
-                        "WDJ1br7SzgRxVB4GuldnngnHquscPjuK+YxU/homx2zQi6o3Jj" +
-                        "dsQgzUWoS2tM1RvtuQQyGhwdXUqCByLFEPBRXHZwnSqBvgajc2" +
-                        "5kxCCy5lZQqtBjR2Z2VlFOrpSPipyEsUiGthd9feBAjtIc9KR0" +
-                        "eXBlo3BheQ==")
-        golden_txn_2 = ("gqNzaWfEQMvoyBUpU+UgLIRDEOYa7FLhEKUuYWh5esjSqk6ZUm" +
-                        "bSjjGcsv60c18noWTOEIodQ7Rt0gvSqLGCenrnaSs0Nw+jdHhu" +
-                        "iqRhYW10zQPopGFyY3bEIJKvkYTkEzwJf2arzJOxERsSogG9nQ" +
-                        "zKPkpIoc4TzPTFo2ZlZc0JJKJmds0E0qJnaMQgf4OxZX/x/FO5" +
-                        "LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmjZ3JwxCAWSrc1gydW6+" +
-                        "0s4EcVQeBrpXZ54Jx6rrHD47ivmMVP4aJsds0IuqNzbmTEIM1F" +
-                        "qEtrTNUb7bkEMhocHV1KggcixRDwUVx2cJ0qgb4GpHR5cGWlYX" +
-                        "hmZXKkeGFpZM0nEA==")
+        golden_txn_1 = ("gqRsc2lngaFsxLcBIAoAAcCWsQICkE4EuWBkHsDEByYBIP68oLsUSlpOp7Q4pGgayA5soQW8tgf8VlMlyVaV9qITMRYiEjEQIxIQMQEkDhAyBCMSQABVMgQlEjEIIQQNEDEJMgMSEDMBECEFEhAzAREhBhIQMwEUKBIQMwETMgMSEDMBEiEHHTUCNQExCCEIHTUENQM0ATQDDUAAJDQBNAMSNAI0BA8QQAAWADEJKBIxAiEJDRAxBzIDEhAxCCISEBCjdHhuiaNhbXTNJxCjZmVlzQisomZ2zQTSomdoxCB/g7Flf/H8U7ktwYFIodZd/C1LH6PWdyhK3dIAEm2QaaNncnDEIKz368WOGpdE/Ww0L8wUu5Ly2u2bpG3ZSMKCJvcvGApTomx2zQi6o3JjdsQgzUWoS2tM1RvtuQQyGhwdXUqCByLFEPBRXHZwnSqBvgajc25kxCBd4Wnq60VaWXeVmuPt0x1XgMQSyP4nUnlh5G2Rhyo+taR0eXBlo3BheQ==")
+        golden_txn_2 = ("gqNzaWfEQKXv8Z6OUDNmiZ5phpoQJHmfKyBal4gBZLPYsByYnlXCAlXMBeVFG5CLP1k5L6BPyEG2/XIbjbyM0CGG55CxxAKjdHhuiqRhYW10zQu4pGFyY3bEIP68oLsUSlpOp7Q4pGgayA5soQW8tgf8VlMlyVaV9qITo2ZlZc0JJKJmds0E0qJnaMQgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmjZ3JwxCCs9+vFjhqXRP1sNC/MFLuS8trtm6Rt2UjCgib3LxgKU6Jsds0IuqNzbmTEIM1FqEtrTNUb7bkEMhocHV1KggcixRDwUVx2cJ0qgb4GpHR5cGWlYXhmZXKkeGFpZM0wOQ==")
 
         self.assertEqual(encoding.msgpack_encode(stx_1), golden_txn_1)
         self.assertEqual(encoding.msgpack_encode(stx_2), golden_txn_2)
