@@ -302,7 +302,7 @@ class LimitOrder(Template):
 
     @staticmethod
     def get_swap_assets_transactions(contract: bytes, asset_amount: int,
-                                     algo_amount:int, 
+                                     microalgo_amount:int, 
                                      private_key: str, first_valid,
                                      last_valid, gh, fee):
         """
@@ -313,7 +313,7 @@ class LimitOrder(Template):
             contract (bytes): the contract containing information, should be
                 received from payer
             asset_amount (int): the amount of assets to be sent
-            algo_amount (int): the amount of algos to be received
+            microalgo_amount (int): the amount of algos to be received
             private_key (str): the secret key to sign the contract
             first_valid (int): first valid round for the transactions
             last_valid (int): last valid round for the transactions
@@ -332,20 +332,20 @@ class LimitOrder(Template):
         ratd = ints[7]
         owner = encoding.encode_address(bytearrays[0])
 
-        if algo_amount < min_trade:
+        if microalgo_amount < min_trade:
             raise error.TemplateError("At least " + str(min_trade) +
-                                      " algos must be requested")
+                                      " microalgos must be requested")
 
-        if asset_amount*ratd < algo_amount*ratn:
-            raise error.TemplateError("The exchange ratio of assets to algo" +
-                                      "s must be at least " + str(ratn) +
-                                      " / " + str(ratd))
+        if asset_amount*ratd < microalgo_amount*ratn:
+            raise error.TemplateError("The exchange ratio of assets to" +
+                                      "microalgos must be at least " +
+                                      str(ratn) + " / " + str(ratd))
 
         txn_1 = transaction.PaymentTxn(address, fee,
                                        first_valid, last_valid, gh,
                                        account.address_from_private_key(
                                        private_key), int(
-                                           algo_amount))
+                                           microalgo_amount))
 
         txn_2 = transaction.AssetTransferTxn(account.address_from_private_key(
                                              private_key), fee,
