@@ -215,7 +215,8 @@ class PaymentTxn(Transaction):
     @staticmethod
     def _undictify(d):
         args = {
-            "close_remainder_to": encoding.encode_address(d["close"]) if "close" in d else None,
+            "close_remainder_to": encoding.encode_address(
+                d["close"]) if "close" in d else None,
             "amt": d["amt"] if "amt" in d else 0,
             "receiver": encoding.encode_address(d["rcv"])
         }
@@ -724,11 +725,14 @@ class AssetTransferTxn(Transaction):
     @staticmethod
     def _undictify(d):
         args = {
-            "receiver": encoding.encode_address(d["arcv"]) if "arcv" in d else None,
+            "receiver": encoding.encode_address(
+                d["arcv"]) if "arcv" in d else None,
             "amt": d["aamt"] if "aamt" in d else 0,
             "index": d["xaid"] if "xaid" in d else None,
-            "close_assets_to": encoding.encode_address(d["aclose"]) if "aclose" in d else None,
-            "revocation_target": encoding.encode_address(d["asnd"]) if "asnd" in d else None
+            "close_assets_to": encoding.encode_address(
+                d["aclose"]) if "aclose" in d else None,
+            "revocation_target": encoding.encode_address(
+                d["asnd"]) if "asnd" in d else None
         }
 
         return args
