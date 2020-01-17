@@ -98,14 +98,16 @@ def read_int_const_block(program, pc):
     ints = []
     num_ints, bytes_used = parse_uvarint(program[pc + size:])
     if bytes_used <= 0:
-        raise error.InvalidProgram("could not decode int const block size at pc=%d" % (pc + size))
+        raise error.InvalidProgram(
+            "could not decode int const block size at pc=%d" % (pc + size))
     size += bytes_used
     for i in range(0, num_ints):
         if pc + size >= len(program):
             raise error.InvalidProgram("intcblock ran past end of program")
         num, bytes_used = parse_uvarint(program[pc + size:])
         if bytes_used <= 0:
-            raise error.InvalidProgram("could not decode int const[%d] at pc=%d" % (i, pc + size))
+            raise error.InvalidProgram(
+                "could not decode int const[%d] at pc=%d" % (i, pc + size))
         ints.append(num)
         size += bytes_used
     return size, ints
@@ -121,14 +123,16 @@ def read_byte_const_block(program, pc):
     bytearrays = []
     num_ints, bytes_used = parse_uvarint(program[pc + size:])
     if bytes_used <= 0:
-        raise error.InvalidProgram("could not decode []byte const block size at pc=%d" % (pc + size))
+        raise error.InvalidProgram(
+            "could not decode []byte const block size at pc=%d" % (pc + size))
     size += bytes_used
     for i in range(0, num_ints):
         if pc + size >= len(program):
             raise error.InvalidProgram("bytecblock ran past end of program")
         item_len, bytes_used = parse_uvarint(program[pc + size:])
         if bytes_used <= 0:
-            raise error.InvalidProgram("could not decode []byte const[%d] at pc=%d" % (i, pc + size))
+            raise error.InvalidProgram(
+                "could not decode []byte const[%d] at pc=%d" % (i, pc + size))
         size += bytes_used
         if pc + size >= len(program):
             raise error.InvalidProgram("bytecblock ran past end of program")

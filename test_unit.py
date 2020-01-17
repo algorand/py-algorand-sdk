@@ -1244,7 +1244,7 @@ class TestTemplate(unittest.TestCase):
         addr = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
         s = template.LimitOrder(addr, 12345, 30, 100, 123456, 5000000, 10000)
 
-        golden_addr = ("LXQWT2XLIVNFS54VTLR63UY5K6AMI"+
+        golden_addr = ("LXQWT2XLIVNFS54VTLR63UY5K6AMI" +
                        "EWI7YTVE6LB4RWZDBZKH22ZO3S36I")
 
         golden = ("ASAKAAHAlrECApBOBLlgZB7AxAcmASD+vKC7FEpaTqe0OKRoGsgObKEF" +
@@ -1253,7 +1253,7 @@ class TestTemplate(unittest.TestCase):
                   "AjUBMQghCB01BDUDNAE0Aw1AACQ0ATQDEjQCNAQPEEAAFgAxCSgSMQIh" +
                   "CQ0QMQcyAxIQMQgiEhAQ")
         p = s.get_program()
-        
+
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
 
