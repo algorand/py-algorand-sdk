@@ -302,7 +302,7 @@ class LimitOrder(Template):
 
     @staticmethod
     def get_swap_assets_transactions(contract: bytes, asset_amount: int,
-                                     microalgo_amount:int, 
+                                     microalgo_amount: int,
                                      private_key: str, first_valid,
                                      last_valid, gh, fee):
         """
@@ -341,17 +341,14 @@ class LimitOrder(Template):
                                       "microalgos must be at least " +
                                       str(ratn) + " / " + str(ratd))
 
-        txn_1 = transaction.PaymentTxn(address, fee,
-                                       first_valid, last_valid, gh,
-                                       account.address_from_private_key(
-                                       private_key), int(
-                                           microalgo_amount))
+        txn_1 = transaction.PaymentTxn(
+            address, fee, first_valid, last_valid, gh,
+            account.address_from_private_key(private_key),
+            int(microalgo_amount))
 
-        txn_2 = transaction.AssetTransferTxn(account.address_from_private_key(
-                                             private_key), fee,
-                                             first_valid, last_valid, gh,
-                                             owner, asset_amount,
-                                             asset_id)
+        txn_2 = transaction.AssetTransferTxn(
+            account.address_from_private_key(private_key), fee,
+            first_valid, last_valid, gh, owner, asset_amount, asset_id)
 
         transaction.assign_group_id([txn_1, txn_2])
 
