@@ -60,8 +60,9 @@ class Split(Template):
                 "EDMACCEFCzMBCCEGCxIQMwAIIQcPEBA=")
         orig = base64.b64decode(orig)
         offsets = [4, 7, 8, 9, 10, 14, 47, 80]
-        values = [self.max_fee, self.expiry_round, self.ratn, self.ratd,
-                  self.min_pay, self.owner, self.receiver_1, self.receiver_2]
+        values = [self.max_fee, self.expiry_round, self.ratn,
+                  self.ratd - self.ratn, self.min_pay, self.owner,
+                  self.receiver_1, self.receiver_2]
         types = [int, int, int, int, int, "address", "address", "address"]
         return inject(orig, offsets, values, types)
 
@@ -97,7 +98,7 @@ class Split(Template):
 
         if amount % ratd == 0:
             amt_1 = amount // ratd * ratn
-            amt_2 = amount - amt_2
+            amt_2 = amount - amt_1
         elif precise:
             raise error.NotDivisibleError
         else:
