@@ -65,14 +65,15 @@ class Split(Template):
         types = [int, int, int, int, int, "address", "address", "address"]
         return inject(orig, offsets, values, types)
 
-    def get_send_funds_transaction(self, amount: int, first_valid, last_valid,
-                                   gh, precise=True):
+    def get_send_funds_transaction(self, amount: int, fee: int, first_valid,
+                                   last_valid, gh, precise=True):
         """
         Return a group transactions array which transfers funds according to
         the contract's ratio.
 
         Args:
             amount (int): amount to be transferred
+            fee (int): fee per byte
             first_valid (int): first round where the transactions are valid
             gh (str): genesis hash in base64
             precise (bool, optional): precise treats the case where amount is
@@ -103,10 +104,10 @@ class Split(Template):
             amt_1 = round(amount / ratd * ratn)
             amt_2 = amount - amt_1
 
-        txn_1 = transaction.PaymentTxn(self.get_address(), self.max_fee,
+        txn_1 = transaction.PaymentTxn(self.get_address(), fee,
                                        first_valid, last_valid, gh,
                                        self.receiver_1, amt_1)
-        txn_2 = transaction.PaymentTxn(self.get_address(), self.max_fee,
+        txn_2 = transaction.PaymentTxn(self.get_address(), fee,
                                        first_valid, last_valid, gh,
                                        self.receiver_2, amt_2)
 

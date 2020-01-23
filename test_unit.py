@@ -1188,7 +1188,7 @@ class TestTemplate(unittest.TestCase):
                        "HUOFNV4UDSBDLC44CLIJPQWRTCPBU")
         self.assertEqual(s.get_program(), base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
-        s.get_send_funds_transaction(1000, 1234, 2234,
+        s.get_send_funds_transaction(1000, 10, 1234, 2234,
                                      "f4OxZX/x/FO5LcGBSKHWXf" +
                                      "wtSx+j1ncoSt3SABJtkGk=")
 
