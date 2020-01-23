@@ -67,7 +67,7 @@ class Split(Template):
         return inject(orig, offsets, values, types)
 
     def get_send_funds_transaction(self, amount: int, fee: int, first_valid,
-                                   last_valid, gh, precise=True):
+                                   last_valid, gh):
         """
         Return a group transactions array which transfers funds according to
         the contract's ratio.
@@ -77,17 +77,13 @@ class Split(Template):
             fee (int): fee per byte
             first_valid (int): first round where the transactions are valid
             gh (str): genesis hash in base64
-            precise (bool, optional): precise treats the case where amount is
-                not perfectly divisible based on the ratio. When set to False,
-                the amount will be divided as close as possible but one
-                address will get slightly more. When True, an error will be
-                raised. Defaults to True.
 
         Returns:
             Transaction[]
 
         Raises:
-            NotDivisibleError: see precise
+            NotDivisibleError: the amount provided must be exactly divisible
+                using the provided ratio
         """
         amt_1 = 0
         amt_2 = 0
@@ -99,11 +95,8 @@ class Split(Template):
         if amount % ratd == 0:
             amt_1 = amount // ratd * ratn
             amt_2 = amount - amt_1
-        elif precise:
-            raise error.NotDivisibleError
         else:
-            amt_1 = round(amount / ratd * ratn)
-            amt_2 = amount - amt_1
+            raise error.NotDivisibleError
 
         txn_1 = transaction.PaymentTxn(self.get_address(), fee,
                                        first_valid, last_valid, gh,
