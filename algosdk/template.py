@@ -218,7 +218,7 @@ class DynamicFee(Template):
         if close == None:
             close = encoding.encode_address(bytes(32))
         values = [self.amount, self.first_valid, self.last_valid,
-                  self.receiver, self.close_remainder_address,
+                  self.receiver, close,
                   base64.b64encode(self.lease_value)]
         types = [int, int, int, "address", "address", "base64"]
         return inject(orig, offsets, values, types)
