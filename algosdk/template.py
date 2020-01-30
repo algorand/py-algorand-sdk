@@ -187,7 +187,7 @@ class DynamicFee(Template):
         first_valid (int): first valid round for the transaction
         last_valid (int, optional): last valid round for the transaction
             (defaults to first_valid + 1000)
-        close_remainder_address (str): the address that recieves the remainder
+        close_remainder_address (str, optional): the address that recieves the remainder
     """
 
     def __init__(self, receiver: str, amount: int, first_valid: int,
@@ -214,6 +214,9 @@ class DynamicFee(Template):
                 "IQMQQhBBIQMQYqEhA=")
         orig = base64.b64decode(orig)
         offsets = [5, 6, 7, 11, 44, 76]
+        close = self.close_remainder_address
+        if close == None:
+            close = encoding.encode_address(bytes(32))
         values = [self.amount, self.first_valid, self.last_valid,
                   self.receiver, self.close_remainder_address,
                   base64.b64encode(self.lease_value)]
@@ -264,12 +267,10 @@ class DynamicFee(Template):
         sender = account.address_from_private_key(private_key)
 
         # main transaction
-        close = None if self.close_remainder_address == bytes(
-            constants.address_len) else self.close_remainder_address
         txn = transaction.PaymentTxn(sender, 0, self.first_valid,
                                      self.last_valid, gh, self.receiver,
                                      self.amount, lease=self.lease_value,
-                                     close_remainder_to=close)
+                                     close_remainder_to=self.close_remainder_address)
         lsig = transaction.LogicSig(self.get_program())
         lsig.sign(private_key)
 
