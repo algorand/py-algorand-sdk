@@ -313,7 +313,8 @@ class LimitOrder(Template):
             contract (bytes): the contract containing information, should be
                 received from payer
             asset_amount (int): the amount of assets to be sent
-            microalgo_amount (int): the amount of microalgos to be received
+            microalgo_amount (int): the amount of microalgos to be received;
+                must be in the correct ratio with asset_amount (ratn/ratd)
             private_key (str): the secret key to sign the contract
             first_valid (int): first valid round for the transactions
             last_valid (int): last valid round for the transactions
@@ -336,10 +337,10 @@ class LimitOrder(Template):
             raise error.TemplateError("At least " + str(min_trade) +
                                       " microalgos must be requested")
 
-        if asset_amount*ratd < microalgo_amount*ratn:
+        if asset_amount*ratd != microalgo_amount*ratn:
             raise error.TemplateError("The exchange ratio of assets to" +
-                                      "microalgos must be at least " +
-                                      str(ratn) + " / " + str(ratd))
+                                      "microalgos must be equal to " +
+                                      str(ratn) + "/" + str(ratd))
 
         txn_1 = transaction.PaymentTxn(
             address, fee, first_valid, last_valid, gh,
