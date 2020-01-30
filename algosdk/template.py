@@ -243,12 +243,12 @@ class DynamicFee(Template):
                                        txn.last_valid_round, txn.genesis_hash,
                                        txn.sender, txn.fee, lease=txn.lease)
 
-        transaction.assign_group_id([txn, txn_2])
+        transaction.assign_group_id([txn_2, txn])
 
         stx_1 = transaction.LogicSigTransaction(txn, lsig)
         stx_2 = txn_2.sign(private_key)
 
-        return [stx_1, stx_2]
+        return [stx_2, stx_1]
 
     def sign_dynamic_fee(self, private_key, gh):
         """
