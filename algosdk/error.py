@@ -105,6 +105,10 @@ class WrongContractError(Exception):
     pass
 
 
+class TemplateError(Exception):
+    pass
+
+
 class KMDHTTPError(Exception):
     pass
 

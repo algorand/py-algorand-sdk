@@ -372,10 +372,9 @@ class LimitOrder(Template):
         ratd (int): the denominator of the exchange rate
         expiry_round (int): the round on which the assets can be transferred
             back to owner
-        min_trade (int): the minimum amount (of Algos) to be traded away
         max_fee (int): the maximum fee that can be paid to the network by the
             account
-
+        min_trade (int): the minimum amount (of Algos) to be traded away
     """
     def __init__(self, owner: str, asset_id: int, ratn: int, ratd: int,
                  expiry_round: int, max_fee: int, min_trade: int):
@@ -403,7 +402,9 @@ class LimitOrder(Template):
         types = [int, int, int, int, int, int, "address"]
         return inject(orig, offsets, values, types)
 
-    def get_swap_assets_transactions(self, amount: int, contract: bytes,
+    @staticmethod
+    def get_swap_assets_transactions(contract: bytes, asset_amount: int,
+                                     microalgo_amount: int,
                                      private_key: str, first_valid,
                                      last_valid, gh, fee):
         """
@@ -411,26 +412,45 @@ class LimitOrder(Template):
         the contract's ratio.
 
         Args:
-            amount (int): the amount of assets to be sent
-            contract (bytes): the contract containg information, should be
-                recieved from payer
+            contract (bytes): the contract containing information, should be
+                received from payer
+            asset_amount (int): the amount of assets to be sent
+            microalgo_amount (int): the amount of microalgos to be received
             private_key (str): the secret key to sign the contract
             first_valid (int): first valid round for the transactions
             last_valid (int): last valid round for the transactions
             gh (str): genesis hash in base64
             fee (int): fee per byte
         """
-        txn_1 = transaction.PaymentTxn(self.get_address(), fee,
-                                       first_valid, last_valid, gh,
-                                       account.address_from_private_key(
-                                       private_key), int(
-                                           amount/self.ratn*self.ratd))
+        address = logic.address(contract)
+        _, ints, bytearrays = logic.read_program(contract)
+        if not (len(ints) == 10 and len(bytearrays) == 1):
+            raise error.WrongContractError("Wrong contract provided; " +
+                                           "a limit order contract" +
+                                           " is needed")
+        min_trade = ints[4]
+        asset_id = ints[6]
+        ratn = ints[8]
+        ratd = ints[7]
+        owner = encoding.encode_address(bytearrays[0])
 
-        txn_2 = transaction.AssetTransferTxn(account.address_from_private_key(
-                                             private_key), fee,
-                                             first_valid, last_valid, gh,
-                                             self.owner, amount,
-                                             self.asset_id)
+        if microalgo_amount < min_trade:
+            raise error.TemplateError("At least " + str(min_trade) +
+                                      " microalgos must be requested")
+
+        if asset_amount*ratd < microalgo_amount*ratn:
+            raise error.TemplateError("The exchange ratio of assets to" +
+                                      "microalgos must be at least " +
+                                      str(ratn) + " / " + str(ratd))
+
+        txn_1 = transaction.PaymentTxn(
+            address, fee, first_valid, last_valid, gh,
+            account.address_from_private_key(private_key),
+            int(microalgo_amount))
+
+        txn_2 = transaction.AssetTransferTxn(
+            account.address_from_private_key(private_key), fee,
+            first_valid, last_valid, gh, owner, asset_amount, asset_id)
 
         transaction.assign_group_id([txn_1, txn_2])
 
