@@ -1229,9 +1229,21 @@ class TestTemplate(unittest.TestCase):
         p = s.get_program()
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
-        template.HTLC.get_transaction(
+
+        golden_ltxn = (
+            "gqRsc2lngqFsxJcBIAToBwEAwM8kJgMg5pqWHm8tX3rIZgeSZVK+mCNe0zNjyo" +
+            "iRi7nJOKkVtvkgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGkg/ryg" +
+            "uxRKWk6ntDikaBrIDmyhBby2B/xWUyXJVpX2ohMxASIOMRAjEhAxBzIDEhAxCC" +
+            "QSEDEJKBItASkSEDEJKhIxAiUNEBEQo2FyZ5HEIH+DsWV/8fxTuS3BgUih1l38" +
+            "LUsfo9Z3KErd0gASbZBpo3R4boelY2xvc2XEIOaalh5vLV96yGYHkmVSvpgjXt" +
+            "MzY8qIkYu5yTipFbb5o2ZlZc0D6KJmdgGiZ2jEIH+DsWV/8fxTuS3BgUih1l38" +
+            "LUsfo9Z3KErd0gASbZBpomx2ZKNzbmTEIFNCP4JtpWHGzW5H9EJSwasC1THntU" +
+            "IiTJGurfnrDvCqpHR5cGWjcGF5")
+        ltxn = template.HTLC.get_transaction(
             p, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", 1,
             100, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", 0)
+        
+        self.assertEqual(golden_ltxn, encoding.msgpack_encode(ltxn))
 
     def test_dynamic_fee(self):
         addr1 = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
