@@ -1069,9 +1069,9 @@ class LogicSig:
 
     def dictify(self):
         od = OrderedDict()
-        od["l"] = self.logic
         if self.args:
             od["arg"] = self.args
+        od["l"] = self.logic
         if self.sig:
             od["sig"] = base64.b64decode(self.sig)
         elif self.msig:

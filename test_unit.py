@@ -1231,11 +1231,11 @@ class TestTemplate(unittest.TestCase):
         self.assertEqual(s.get_address(), golden_addr)
 
         golden_ltxn = (
-            "gqRsc2lngqFsxJcBIAToBwEAwM8kJgMg5pqWHm8tX3rIZgeSZVK+mCNe0zNjyo" +
-            "iRi7nJOKkVtvkgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGkg/ryg" +
-            "uxRKWk6ntDikaBrIDmyhBby2B/xWUyXJVpX2ohMxASIOMRAjEhAxBzIDEhAxCC" +
-            "QSEDEJKBItASkSEDEJKhIxAiUNEBEQo2FyZ5HEIH+DsWV/8fxTuS3BgUih1l38" +
-            "LUsfo9Z3KErd0gASbZBpo3R4boelY2xvc2XEIOaalh5vLV96yGYHkmVSvpgjXt" +
+            "gqRsc2lngqNhcmeRxCB/g7Flf/H8U7ktwYFIodZd/C1LH6PWdyhK3dIAEm2Qaa" +
+            "FsxJcBIAToBwEAwM8kJgMg5pqWHm8tX3rIZgeSZVK+mCNe0zNjyoiRi7nJOKkV" +
+            "tvkgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGkg/ryguxRKWk6ntD" +
+            "ikaBrIDmyhBby2B/xWUyXJVpX2ohMxASIOMRAjEhAxBzIDEhAxCCQSEDEJKBIt" +
+            "ASkSEDEJKhIxAiUNEBEQo3R4boelY2xvc2XEIOaalh5vLV96yGYHkmVSvpgjXt" +
             "MzY8qIkYu5yTipFbb5o2ZlZc0D6KJmdgGiZ2jEIH+DsWV/8fxTuS3BgUih1l38" +
             "LUsfo9Z3KErd0gASbZBpomx2ZKNzbmTEIFNCP4JtpWHGzW5H9EJSwasC1THntU" +
             "IiTJGurfnrDvCqpHR5cGWjcGF5")
