@@ -17,34 +17,36 @@ class Template:
 
 class Split(Template):
     """
-    Split allows locking assets in an account which allows transfering
-    to two predefined addresses in a specific M:N ratio. Note that the ratio is
-    specified by the first address part. For example, if you would like to
-    have a split where the first address receives 30 percent and the second
-    receives 70, set ratn and ratd to 30 and 100, respectively. Split also
-    have an expiry round, in which the owner can transfer back the assets.
+    Split allows locking algos in an account which allows transfering to two
+    predefined addresses in a specified ratio such that for the given ratn and
+    ratd parameters we have:
+        
+        first_recipient_amount * rat_2 == second_recipient_amount * rat_1
+    
+    Split also has an expiry round, after which the owner can transfer back
+    the funds.
 
     Arguments:
-        owner (str): an address that can receive the asset after the expiry
+        owner (str): an address that can receive the funds after the expiry
             round
-        receiver_1 (str): first address to receive assets
-        receiver_2 (str): second address to receive assets
-        ratn (int): the numerator of the first address fraction
-        ratd (int): the denominator of the first address fraction
-        expiry_round (int): the round on which the assets can be transferred
+        receiver_1 (str): first address to receive funds
+        receiver_2 (str): second address to receive funds
+        rat_1 (int): how much receiver_1 receives (proportionally)
+        rat_2 (int): how much receiver_2 receives (proportionally)
+        expiry_round (int): the round on which the funds can be transferred
             back to owner
-        min_pay (int): the minimum number of assets that can be transferred
+        min_pay (int): the minimum number of microalgos that can be transferred
             from the account to receiver_1
         max_fee (int): half the maximum fee that can be paid to the network by
             the account
     """
-    def __init__(self, owner: str, receiver_1: str, receiver_2: str, ratn: int,
-                 ratd: int, expiry_round: int, min_pay: int, max_fee: int):
+    def __init__(self, owner: str, receiver_1: str, receiver_2: str, rat_1: int,
+                 rat_2: int, expiry_round: int, min_pay: int, max_fee: int):
         self.owner = owner
         self.receiver_1 = receiver_1
         self.receiver_2 = receiver_2
-        self.ratn = ratn
-        self.ratd = ratd
+        self.rat_1 = rat_1
+        self.rat_2 = rat_2
         self.expiry_round = expiry_round
         self.min_pay = min_pay
         self.max_fee = max_fee
@@ -60,56 +62,64 @@ class Split(Template):
                 "EDMACCEFCzMBCCEGCxIQMwAIIQcPEBA=")
         orig = base64.b64decode(orig)
         offsets = [4, 7, 8, 9, 10, 14, 47, 80]
-        values = [self.max_fee, self.expiry_round, self.ratn,
-                  self.ratd - self.ratn, self.min_pay, self.owner,
+        values = [self.max_fee, self.expiry_round, self.rat_1,
+                  self.rat_2, self.min_pay, self.owner,
                   self.receiver_1, self.receiver_2]
         types = [int, int, int, int, int, "address", "address", "address"]
         return inject(orig, offsets, values, types)
 
-    def get_send_funds_transaction(self, amount: int, fee: int, first_valid,
+    @staticmethod
+    def get_split_funds_transaction(contract, amount: int, fee: int, first_valid,
                                    last_valid, gh):
         """
         Return a group transactions array which transfers funds according to
         the contract's ratio.
 
         Args:
-            amount (int): amount to be transferred
+            amount (int): total amount to be transferred
             fee (int): fee per byte
             first_valid (int): first round where the transactions are valid
             gh (str): genesis hash in base64
 
         Returns:
             Transaction[]
-
-        Raises:
-            NotDivisibleError: the amount provided must be exactly divisible
-                using the provided ratio
         """
+        address = logic.address(contract)
+        _, ints, bytearrays = logic.read_program(contract)
+        if not (len(ints) == 8 and len(bytearrays) == 3):
+            raise error.WrongContractError("split")
+        rat_1 = ints[5]
+        rat_2 = ints[6]
+        min_pay = ints[7]
+        receiver_1 = encoding.encode_address(bytearrays[0])
+        receiver_2 = encoding.encode_address(bytearrays[1])
+
         amt_1 = 0
         amt_2 = 0
 
-        gcd = math.gcd(self.ratn, self.ratd)
-        ratn = self.ratn // gcd
-        ratd = self.ratd // gcd
+        gcd = math.gcd(rat_1, rat_2)
+        rat_1 = rat_1 // gcd
+        rat_2 = rat_2 // gcd
 
-        if amount % ratd == 0:
-            amt_1 = amount // ratd * ratn
+        if amount % (rat_1 + rat_2) == 0:
+            amt_1 = amount // (rat_1 + rat_2) * rat_1
             amt_2 = amount - amt_1
         else:
-            raise error.NotDivisibleError
+            raise error.TemplateInputError(
+                "the specified amount cannot be split into two " +
+                "parts with the ratio", str(rat_1) + "/" + str(rat_2))
 
-        txn_1 = transaction.PaymentTxn(self.get_address(), fee,
-                                       first_valid, last_valid, gh,
-                                       self.receiver_1, amt_1)
-        txn_2 = transaction.PaymentTxn(self.get_address(), fee,
-                                       first_valid, last_valid, gh,
-                                       self.receiver_2, amt_2)
+        if amt_1 < min_pay:
+            raise error.TemplateInputError("the amount paid to receiver_1 must be greater than", min_pay)
+
+        txn_1 = transaction.PaymentTxn(
+            address, fee, first_valid, last_valid, gh, receiver_1, amt_1)
+        txn_2 = transaction.PaymentTxn(
+            address, fee, first_valid, last_valid, gh, receiver_2, amt_2)
 
         transaction.assign_group_id([txn_1, txn_2])
 
-        p = self.get_program()
-
-        lsig = transaction.LogicSig(p)
+        lsig = transaction.LogicSig(contract)
 
         stx_1 = transaction.LogicSigTransaction(txn_1, lsig)
         stx_2 = transaction.LogicSigTransaction(txn_2, lsig)
@@ -261,10 +271,9 @@ class DynamicFee(Template):
         # main transaction
         close = None if self.close_remainder_address == bytes(
             constants.address_len) else self.close_remainder_address
-        txn = transaction.PaymentTxn(sender, 0, self.first_valid,
-                                     self.last_valid, gh, self.receiver,
-                                     self.amount, lease=self.lease_value,
-                                     close_remainder_to=close)
+        txn = transaction.PaymentTxn(
+            sender, 0, self.first_valid, self.last_valid, gh, self.receiver,
+            self.amount, lease=self.lease_value, close_remainder_to=close)
         lsig = transaction.LogicSig(self.get_program())
         lsig.sign(private_key)
 
@@ -330,9 +339,7 @@ class PeriodicPayment(Template):
         address = logic.address(contract)
         _, ints, bytearrays = logic.read_program(contract)
         if not (len(ints) == 7 and len(bytearrays) == 2):
-            raise error.WrongContractError("Wrong contract provided; " +
-                                           "a periodic payment contra" +
-                                           "ct is needed")
+            raise error.WrongContractError("periodic payment")
         amount = ints[5]
         withdrawing_window = ints[4]
         period = ints[2]
@@ -340,12 +347,10 @@ class PeriodicPayment(Template):
         receiver = encoding.encode_address(bytearrays[1])
 
         if first_valid % period != 0:
-            raise error.PeriodicPaymentDivisibilityError
-        txn = transaction.PaymentTxn(address, fee,
-                                     first_valid, first_valid +
-                                     withdrawing_window, gh,
-                                     receiver, amount,
-                                     lease=lease_value)
+            raise error.TemplateInputError("first_valid must be divisible by the period")
+        txn = transaction.PaymentTxn(
+            address, fee, first_valid, first_valid + withdrawing_window, gh,
+            receiver, amount, lease=lease_value)
 
         lsig = transaction.LogicSig(contract)
         stx = transaction.LogicSigTransaction(txn, lsig)
@@ -354,7 +359,7 @@ class PeriodicPayment(Template):
 
 class LimitOrder(Template):
     """
-    Limit Order allows to trade Algos for other asests given a specific ratio;
+    Limit Order allows to trade Algos for other assets given a specific ratio;
     for N Algos, swap for Rate * N Assets.
     ...
 
@@ -414,11 +419,10 @@ class LimitOrder(Template):
             gh (str): genesis hash in base64
             fee (int): fee per byte
         """
-        txn_1 = transaction.PaymentTxn(self.get_address(), fee,
-                                       first_valid, last_valid, gh,
-                                       account.address_from_private_key(
-                                       private_key), int(
-                                           amount/self.ratn*self.ratd))
+        txn_1 = transaction.PaymentTxn(
+            self.get_address(), fee, first_valid, last_valid, gh,
+            account.address_from_private_key(private_key),
+            int(amount/self.ratn*self.ratd))
 
         txn_2 = transaction.AssetTransferTxn(account.address_from_private_key(
                                              private_key), fee,

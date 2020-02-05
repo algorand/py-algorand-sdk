@@ -1178,15 +1178,15 @@ class TestTemplate(unittest.TestCase):
         addr2 = "W6UUUSEAOGLBHT7VFT4H2SDATKKSG6ZBUIJXTZMSLW36YS44FRP5NVAU7U"
         addr3 = "XCIBIN7RT4ZXGBMVAMU3QS6L5EKB7XGROC5EPCNHHYXUIBAA5Q6C5Y7NEU"
         s = template.Split(addr1, addr2, addr3, 30, 100, 123456, 10000, 5000000)
-        golden = ("ASAIAcCWsQICAMDEBx5GkE4mAyCztwQn0+DycN+vsk+vJWcsoz/b7NDS" +
+        golden = ("ASAIAcCWsQICAMDEBx5kkE4mAyCztwQn0+DycN+vsk+vJWcsoz/b7NDS" +
                   "6i33HOkvTpf+YiC3qUpIgHGWE8/1LPh9SGCalSN7IaITeeWSXbfsS5ws" +
                   "XyC4kBQ38Z8zcwWVAym4S8vpFB/c0XC6R4mnPi9EBADsPDEQIhIxASMM" +
                   "EDIEJBJAABkxCSgSMQcyAxIQMQglEhAxAiEEDRAiQAAuMwAAMwEAEjEJ" +
                   "MgMSEDMABykSEDMBByoSEDMACCEFCzMBCCEGCxIQMwAIIQcPEBA=")
-        golden_addr = "VNG63AMZ7YXA3EJS2LEBIS2BRCTQQ5V4I3GY3ZXXAT4XYBUJKQIVOFDTIM"
+        golden_addr = "KPYGWKTV7CKMPMTLQRNGMEQRSYTYDHUOFNV4UDSBDLC44CLIJPQWRTCPBU"
         self.assertEqual(s.get_program(), base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
-        s.get_send_funds_transaction(1000, 10, 1234, 2234,
+        txns = s.get_split_funds_transaction(s.get_program(), 13000, 10, 1234, 2234,
                                      "f4OxZX/x/FO5LcGBSKHWXf" +
                                      "wtSx+j1ncoSt3SABJtkGk=")
 
