@@ -179,6 +179,31 @@ class HTLC(Template):
         types = [int, int, "address", "base64", "address", int]
         return inject(orig, offsets, values, types)
 
+    @staticmethod
+    def get_transaction(contract, preimage, receiver, first_valid, last_valid, gh, fee):
+        """
+        Return a group transactions array which transfer funds according to
+        the contract's ratio.
+
+        Args:
+            contract (bytes): the contract containing information, should be
+                received from payer
+            preimage (str): the preimage of the hash in base64
+            receiver (str): address of the account to receive funds
+            first_valid (int): first valid round for the transactions
+            last_valid (int): last valid round for the transactions
+            gh (str): genesis hash in base64
+            fee (int): fee per byte
+        
+        Returns:
+            LogicSigTransaction: transaction to claim algos from
+                contract account
+        """
+        lsig = transaction.LogicSig(contract, [base64.b64decode(preimage)])
+        txn = transaction.PaymentTxn(logic.address(contract), fee, first_valid, last_valid, gh, None, 0, close_remainder_to=receiver)
+        ltxn = transaction.LogicSigTransaction(txn, lsig)
+        return ltxn
+    
 
 class DynamicFee(Template):
     """
