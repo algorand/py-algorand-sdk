@@ -62,8 +62,8 @@ class Split(Template):
                 "EDMACCEFCzMBCCEGCxIQMwAIIQcPEBA=")
         orig = base64.b64decode(orig)
         offsets = [4, 7, 8, 9, 10, 14, 47, 80]
-        values = [self.max_fee, self.expiry_round, self.rat_1,
-                  self.rat_2, self.min_pay, self.owner,
+        values = [self.max_fee, self.expiry_round, self.rat_2,
+                  self.rat_1, self.min_pay, self.owner,
                   self.receiver_1, self.receiver_2]
         types = [int, int, int, int, int, "address", "address", "address"]
         return inject(orig, offsets, values, types)
@@ -88,11 +88,11 @@ class Split(Template):
         _, ints, bytearrays = logic.read_program(contract)
         if not (len(ints) == 8 and len(bytearrays) == 3):
             raise error.WrongContractError("split")
-        rat_1 = ints[5]
-        rat_2 = ints[6]
+        rat_1 = ints[6]
+        rat_2 = ints[5]
         min_pay = ints[7]
-        receiver_1 = encoding.encode_address(bytearrays[0])
-        receiver_2 = encoding.encode_address(bytearrays[1])
+        receiver_1 = encoding.encode_address(bytearrays[1])
+        receiver_2 = encoding.encode_address(bytearrays[2])
 
         amt_1 = 0
         amt_2 = 0
