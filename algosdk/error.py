@@ -92,11 +92,15 @@ class EmptyAddressError(Exception):
 
 class WrongContractError(Exception):
     def __init__(self, contract_type):
-        Exception.__init__(self, "Wrong contract provided; a",
-                           contract_type, "contract is needed")
+        Exception.__init__(self, "Wrong contract provided; a " +
+                           contract_type + " contract is needed")
     
 
 class TemplateInputError(Exception):
+    pass
+
+
+class TemplateError(Exception):
     pass
 
 
