@@ -16,7 +16,7 @@ setuptools.setup(
     project_urls={
         "Source": "https://github.com/algorand/py-algorand-sdk",
     },
-    install_requires=["pynacl", "cryptography>=2.7", "msgpack"],
+    install_requires=["pynacl", "pycryptodomex>=3.6.0", "msgpack"],
     packages=["algosdk"],
     python_requires=">=3.5",
     package_data={'': ['data/langspec.json']},

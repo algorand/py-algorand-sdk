@@ -1,8 +1,7 @@
 import base64
 import msgpack
 from collections import OrderedDict
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.backends import default_backend
+from Cryptodome.Hash import SHA512
 from . import transaction, error, auction, constants
 
 
@@ -168,6 +167,6 @@ def checksum(data):
     Returns:
         bytes: checksum of the data
     """
-    chksum = hashes.Hash(hashes.SHA512_256(), default_backend())
+    chksum = SHA512.new(truncate="256")
     chksum.update(data)
-    return chksum.finalize()
+    return chksum.digest()

@@ -1,6 +1,7 @@
 import math
 import random
 from . import error, encoding, constants, transaction, logic, account
+from Cryptodome.Hash import SHA256, keccak
 import base64
 
 
@@ -186,8 +187,7 @@ class HTLC(Template):
     @staticmethod
     def get_transaction(contract, preimage, first_valid, last_valid, gh, fee):
         """
-        Return a group transactions array which transfer funds according to
-        the contract's ratio.
+        Return a transaction which will release funds if a matching preimage is used.
 
         Args:
             contract (bytes): the contract containing information, should be
@@ -206,6 +206,23 @@ class HTLC(Template):
         if not (len(ints) == 4 and len(bytearrays) == 3):
             raise error.WrongContractError("split")
         max_fee = ints[0]
+        hash_function = contract[-15]
+        expected_hash_image = bytearrays[1]
+        if hash_function == 1:
+            hash_image = SHA256.new()
+            hash_image.update(base64.b64decode(preimage))
+            if hash_image.digest() != expected_hash_image:
+                raise error.TemplateInputError("the hash of the preimage does not match the expected hash image using hash function sha256")
+        elif hash_function == 2:
+            hash_image = keccak.new(digest_bits=256)
+            hash_image.update(base64.b64decode(preimage))
+            print(hash_image.digest())
+            print(expected_hash_image)
+            if hash_image.digest() != expected_hash_image:
+                raise error.TemplateInputError("the hash of the preimage does not match the expected hash image using hash function keccak256")
+        else:
+            raise error.TemplateInputError("an invalid hash function was provided in the contract")
+
         receiver = encoding.encode_address(bytearrays[0])
 
         lsig = transaction.LogicSig(contract, [base64.b64decode(preimage)])
