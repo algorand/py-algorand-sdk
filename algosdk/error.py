@@ -65,12 +65,6 @@ class InvalidProgram(Exception):
         Exception.__init__(self, message)
 
 
-class NotDivisibleError(Exception):
-    def __init(self):
-        Exception.__init__(self, "amount is not exactly divisible based on " +
-                                 "the given ratio")
-
-
 class TransactionGroupSizeError(Exception):
     def __init__(self):
         Exception.__init__(self, "transaction groups are limited to 16 " +
@@ -96,12 +90,13 @@ class EmptyAddressError(Exception):
                                  "strict_empty_address_check is set to False")
 
 
-class PeriodicPaymentDivisibilityError(Exception):
-    def __init__(self):
-        Exception.__init__(self, "first_valid must be divisible by the period")
-
-
 class WrongContractError(Exception):
+    def __init__(self, contract_type):
+        Exception.__init__(self, "Wrong contract provided; a " +
+                           contract_type + " contract is needed")
+    
+
+class TemplateInputError(Exception):
     pass
 
 

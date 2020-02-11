@@ -542,7 +542,7 @@ class TestTransaction(unittest.TestCase):
 
 class TestMnemonic(unittest.TestCase):
     def test_mnemonic_private_key(self):
-        priv_key, address = account.generate_account()
+        priv_key, _ = account.generate_account()
         mn = mnemonic.from_private_key(priv_key)
         self.assertEqual(len(mn.split(" ")), constants.mnemonic_len)
         self.assertEqual(priv_key, mnemonic.to_private_key(mn))
@@ -723,7 +723,7 @@ class TestMultisig(unittest.TestCase):
 
         # get random private key
         private_key_1, account_1 = account.generate_account()
-        private_key_2, account_2 = account.generate_account()
+        _, account_2 = account.generate_account()
         private_key_3, account_3 = account.generate_account()
 
         # create transaction
@@ -1177,20 +1177,41 @@ class TestTemplate(unittest.TestCase):
         addr1 = "WO3QIJ6T4DZHBX5PWJH26JLHFSRT7W7M2DJOULPXDTUS6TUX7ZRIO4KDFY"
         addr2 = "W6UUUSEAOGLBHT7VFT4H2SDATKKSG6ZBUIJXTZMSLW36YS44FRP5NVAU7U"
         addr3 = "XCIBIN7RT4ZXGBMVAMU3QS6L5EKB7XGROC5EPCNHHYXUIBAA5Q6C5Y7NEU"
-        s = template.Split(addr1, addr2, addr3, 30, 100, 123456,
-                           10000, 5000000)
-        golden = ("ASAIAcCWsQICAMDEBx5kkE4mAyCztwQn0+DycN+vsk+vJWcsoz/b7NDS" +
+        s = template.Split(addr1, addr2, addr3, 30, 100, 123456, 10000, 5000000)
+        golden = ("ASAIAcCWsQICAMDEB2QekE4mAyCztwQn0+DycN+vsk+vJWcsoz/b7NDS" +
                   "6i33HOkvTpf+YiC3qUpIgHGWE8/1LPh9SGCalSN7IaITeeWSXbfsS5ws" +
                   "XyC4kBQ38Z8zcwWVAym4S8vpFB/c0XC6R4mnPi9EBADsPDEQIhIxASMM" +
                   "EDIEJBJAABkxCSgSMQcyAxIQMQglEhAxAiEEDRAiQAAuMwAAMwEAEjEJ" +
                   "MgMSEDMABykSEDMBByoSEDMACCEFCzMBCCEGCxIQMwAIIQcPEBA=")
-        golden_addr = ("KPYGWKTV7CKMPMTLQRNGMEQRSYTYD" +
-                       "HUOFNV4UDSBDLC44CLIJPQWRTCPBU")
+        golden_addr = "HDY7A4VHBWQWQZJBEMASFOUZKBNGWBMJEMUXAGZ4SPIRQ6C24MJHUZKFGY"
         self.assertEqual(s.get_program(), base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
-        s.get_send_funds_transaction(1000, 1234, 2234,
-                                     "f4OxZX/x/FO5LcGBSKHWXf" +
-                                     "wtSx+j1ncoSt3SABJtkGk=")
+        txns = s.get_split_funds_transaction(
+            s.get_program(), 1300000, 10000, 1, 100,
+            "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
+        golden_txns = base64.b64decode(
+            "gqRsc2lngaFsxM4BIAgBwJaxAgIAwMQHZB6QTiYDILO3BCfT4PJw36+yT68lZy" +
+            "yjP9vs0NLqLfcc6S9Ol/5iILepSkiAcZYTz/Us+H1IYJqVI3shohN55ZJdt+xL" +
+            "nCxfILiQFDfxnzNzBZUDKbhLy+kUH9zRcLpHiac+L0QEAOw8MRAiEjEBIwwQMg" +
+            "QkEkAAGTEJKBIxBzIDEhAxCCUSEDECIQQNECJAAC4zAAAzAQASMQkyAxIQMwAH" +
+            "KRIQMwEHKhIQMwAIIQULMwEIIQYLEhAzAAghBw8QEKN0eG6Jo2FtdM4ABJPgo2" +
+            "ZlZc4AId/gomZ2AaJnaMQgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJt" +
+            "kGmjZ3JwxCBLA74bTV35FJNL1h0K9ZbRU24b4M1JRkD1YTogvvDXbqJsdmSjcm" +
+            "N2xCC3qUpIgHGWE8/1LPh9SGCalSN7IaITeeWSXbfsS5wsX6NzbmTEIDjx8HKn" +
+            "DaFoZSEjASK6mVBaawWJIylwGzyT0Rh4WuMSpHR5cGWjcGF5gqRsc2lngaFsxM" +
+            "4BIAgBwJaxAgIAwMQHZB6QTiYDILO3BCfT4PJw36+yT68lZyyjP9vs0NLqLfcc" +
+            "6S9Ol/5iILepSkiAcZYTz/Us+H1IYJqVI3shohN55ZJdt+xLnCxfILiQFDfxnz" +
+            "NzBZUDKbhLy+kUH9zRcLpHiac+L0QEAOw8MRAiEjEBIwwQMgQkEkAAGTEJKBIx" +
+            "BzIDEhAxCCUSEDECIQQNECJAAC4zAAAzAQASMQkyAxIQMwAHKRIQMwEHKhIQMw" +
+            "AIIQULMwEIIQYLEhAzAAghBw8QEKN0eG6Jo2FtdM4AD0JAo2ZlZc4AId/gomZ2" +
+            "AaJnaMQgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmjZ3JwxCBLA7" +
+            "4bTV35FJNL1h0K9ZbRU24b4M1JRkD1YTogvvDXbqJsdmSjcmN2xCC4kBQ38Z8z" +
+            "cwWVAym4S8vpFB/c0XC6R4mnPi9EBADsPKNzbmTEIDjx8HKnDaFoZSEjASK6mV" +
+            "BaawWJIylwGzyT0Rh4WuMSpHR5cGWjcGF5")
+        encoded_txns = b''
+        for txn in txns:
+            encoded_txns += base64.b64decode(encoding.msgpack_encode(txn))
+        self.assertEqual(encoded_txns, golden_txns)
 
     def test_HTLC(self):
         addr1 = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
