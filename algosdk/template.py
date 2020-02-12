@@ -196,7 +196,7 @@ class HTLC(Template):
             preimage (str): the preimage of the hash in base64
             params (dict): suggested params from algod
             first_valid (int, optional): first valid round for the transactions; overrides value in params
-            last_valid (int, optional): last valid round for the transactions; overrides value in params
+            last_valid (int, optional): last valid round for the transactions; overrides default value of first + 1000 or params["lastRound"] + 1000
             gh (str, optional): genesis hash in base64; overrides value in params
             fee (int, optional): fee per byte; overrides value in params
         
@@ -480,7 +480,7 @@ class LimitOrder(Template):
             private_key (str): the secret key to sign the contract
             params (dict): suggested params from algod
             first_valid (int, optional): first valid round for the transactions; overrides value in params
-            last_valid (int, optional): last valid round for the transactions; overrides value in params
+            last_valid (int, optional): last valid round for the transactions; overrides default value of first + 1000 or params["lastRound"] + 1000
             gh (str, optional): genesis hash in base64; overrides value in params
             fee (int, optional): fee per byte; overrides value in params
         """

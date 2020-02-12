@@ -196,15 +196,9 @@ class TestTransaction(unittest.TestCase):
         votelast = 10111
         votedilution = 11
 
-        params = {
-            "fee": 1000,
-            "lastRound": 322575,
-            "genesishashb64": gh
-        }
-
-        txn = transaction.KeyregTxn(pk, params, votepk, selpk, votefirst, votelast,
+        txn = transaction.KeyregTxn(pk, None, votepk, selpk, votefirst, votelast,
                                     votedilution,
-                                    flat_fee=fee)
+                                    flat_fee=fee, first=322575, gh=gh)
         signed_txn = txn.sign(sk)
 
         golden = ("gqNzaWfEQEA8ANbrvTRxU9c8v6WERcEPw7D/HacRgg4vICa61vEof60Ww" +
@@ -459,26 +453,17 @@ class TestTransaction(unittest.TestCase):
         firstRound1 = 710399
         note1 = base64.b64decode("wRKw5cJ0CMo=")
 
-        params = {
-            "fee": 0,
-            "lastRound": firstRound1,
-            "genesishashb64": genesisHash
-        }
         tx1 = transaction.PaymentTxn(
-            fromAddress, params, toAddress, amount,
-            note=note1, gen=genesisID, flat_fee=fee
+            fromAddress, None, toAddress, amount,
+            note=note1, gen=genesisID, flat_fee=fee, first=firstRound1, gh=genesisHash
         )
 
         firstRound2 = 710515
         note2 = base64.b64decode("dBlHI6BdrIg=")
-        params = {
-            "fee": 0,
-            "lastRound": firstRound2,
-            "genesishashb64": genesisHash
-        }
+        
         tx2 = transaction.PaymentTxn(
-            fromAddress, params, toAddress, amount,
-            note=note2, gen=genesisID, flat_fee=fee
+            fromAddress, None, toAddress, amount,
+            note=note2, gen=genesisID, flat_fee=fee, first=firstRound2, gh=genesisHash
         )
 
         # goal clerk send dumps unsigned transaction as signed with empty
@@ -1170,14 +1155,9 @@ class TestLogicSig(unittest.TestCase):
         genesisHash = "sC3P7e2SdbqKJK0tbiCdK9tdSpbe6XeCGKdoNzmlj0E="
         note = base64.b64decode("8xMCTuLQ810=")
 
-        params = {
-            "fee": 0,
-            "lastRound": firstRound,
-            "genesishashb64": genesisHash
-        }
         tx = transaction.PaymentTxn(
-            fromAddress, params, toAddress, amount,
-            note=note, gen=genesisID, flat_fee=fee
+            fromAddress, None, toAddress, amount,
+            note=note, gen=genesisID, flat_fee=fee, first=firstRound, gh=genesisHash
         )
 
         golden = (

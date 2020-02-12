@@ -14,11 +14,11 @@ class Transaction:
     """
     Superclass for various transaction types.
     """
-    def __init__(self, sender, params, note, lease, fee, first, last, gh, gen, txn_type):
+    def __init__(self, sender, params, note, lease, fee, flat_fee, first, last, gh, gen, txn_type):
         self.sender = sender
-        self.fee = fee if fee != None else params["fee"]
+        self.fee = fee if fee != None else flat_fee if flat_fee != None else params["fee"] 
         self.first_valid_round = first if first != None else params["lastRound"]
-        self.last_valid_round = last if last != None else params["lastRound"] + 1000
+        self.last_valid_round = last if last != None else first + 1000 if first != None else params["lastRound"] + 1000
         self.note = note
         self.genesis_id = gen
         self.genesis_hash = gh if gh != None else params["genesishashb64"]
@@ -164,7 +164,7 @@ class PaymentTxn(Transaction):
             with the same sender and lease can be confirmed in this
             transaction's valid rounds
         first (int, optional): first round for which the transaction is valid; overrides value in params
-        last (int, optional): last round for which the transaction is valid; overrides value in params
+        last (int, optional): last round for which the transaction is valid; overrides default value of first + 1000 or params["lastRound"] + 1000
         gh (str, optional): genesis_hash; overrides value in params
         gen (str, optional): genesis_id
         fee (int, optional): transaction fee (per byte); overrides value in params
@@ -190,7 +190,7 @@ class PaymentTxn(Transaction):
                  close_remainder_to=None, note=None,
                  lease=None, first=None, last=None, gh=None, gen=None, fee=None, flat_fee=None):
         Transaction.__init__(self, sender, params, note,
-                             lease, fee, first, last, gh, gen, constants.payment_txn)
+                             lease, fee, flat_fee, first, last, gh, gen, constants.payment_txn)
         self.receiver = receiver
         self.amt = amt
         self.close_remainder_to = close_remainder_to
@@ -251,7 +251,7 @@ class KeyregTxn(Transaction):
             with the same sender and lease can be confirmed in this
             transaction's valid rounds
         first (int, optional): first round for which the transaction is valid; overrides value in params
-        last (int, optional): last round for which the transaction is valid; overrides value in params
+        last (int, optional): last round for which the transaction is valid; overrides default value of first + 1000 or params["lastRound"] + 1000
         gh (str, optional): genesis_hash; overrides value in params
         gen (str, optional): genesis_id
         fee (int, optional): transaction fee (per byte); overrides value in params
@@ -279,7 +279,7 @@ class KeyregTxn(Transaction):
                  votelst, votekd, note=None,
                  lease=None, first=None, last=None, gh=None, gen=None, fee=None, flat_fee=None):
         Transaction.__init__(self, sender, params, note,
-                             lease, fee, first, last, gh, gen, constants.keyreg_txn)
+                             lease, fee, flat_fee, first, last, gh, gen, constants.keyreg_txn)
         self.votepk = votekey
         self.selkey = selkey
         self.votefst = votefst
@@ -378,7 +378,7 @@ class AssetConfigTxn(Transaction):
             base unit of the asset is in tenths. Must be between 0 and 19,
             inclusive. Defaults to 0.
         first (int, optional): first round for which the transaction is valid; overrides value in params
-        last (int, optional): last round for which the transaction is valid; overrides value in params
+        last (int, optional): last round for which the transaction is valid; overrides default value of first + 1000 or params["lastRound"] + 1000
         gh (str, optional): genesis_hash; overrides value in params
         gen (str, optional): genesis_id
         fee (int, optional): transaction fee (per byte); overrides value in params
@@ -416,7 +416,7 @@ class AssetConfigTxn(Transaction):
         lease=None, strict_empty_address_check=True, decimals=0, first=None,
         last=None, gh=None, gen=None, fee=None, flat_fee=None):
         Transaction.__init__(self, sender, params, note,
-                             lease, fee, first, last, gh, gen, constants.assetconfig_txn)
+                             lease, fee, flat_fee, first, last, gh, gen, constants.assetconfig_txn)
         if strict_empty_address_check:
             if not (manager and reserve and freeze and clawback):
                 raise error.EmptyAddressError
@@ -577,7 +577,7 @@ class AssetFreezeTxn(Transaction):
             with the same sender and lease can be confirmed in this
             transaction's valid rounds
         first (int, optional): first round for which the transaction is valid; overrides value in params
-        last (int, optional): last round for which the transaction is valid; overrides value in params
+        last (int, optional): last round for which the transaction is valid; overrides default value of first + 1000 or params["lastRound"] + 1000
         gh (str, optional): genesis_hash; overrides value in params
         gen (str, optional): genesis_id
         fee (int, optional): transaction fee (per byte); overrides value in params
@@ -601,7 +601,7 @@ class AssetFreezeTxn(Transaction):
     def __init__(self, sender, params, index, target, new_freeze_state, note=None,
                  lease=None, first=None, last=None, gh=None, gen=None, fee=None, flat_fee=None):
         Transaction.__init__(self, sender, params, note,
-                             lease, fee, first, last, gh, gen, constants.assetfreeze_txn)
+                             lease, fee, flat_fee, first, last, gh, gen, constants.assetfreeze_txn)
         self.index = index
         self.target = target
         self.new_freeze_state = new_freeze_state
@@ -670,7 +670,7 @@ class AssetTransferTxn(Transaction):
             with the same sender and lease can be confirmed in this
             transaction's valid rounds
         first (int, optional): first round for which the transaction is valid; overrides value in params
-        last (int, optional): last round for which the transaction is valid; overrides value in params
+        last (int, optional): last round for which the transaction is valid; overrides default value of first + 1000 or params["lastRound"] + 1000
         gh (str, optional): genesis_hash; overrides value in params
         gen (str, optional): genesis_id
         fee (int, optional): transaction fee (per byte); overrides value in params
@@ -697,7 +697,7 @@ class AssetTransferTxn(Transaction):
                  close_assets_to=None, revocation_target=None, note=None,
                  lease=None, first=None, last=None, gh=None, gen=None, fee=None, flat_fee=None):
         Transaction.__init__(self, sender, params, note,
-                             lease, fee, first, last, gh, gen, constants.assettransfer_txn)
+                             lease, fee, flat_fee, first, last, gh, gen, constants.assettransfer_txn)
         self.receiver = receiver
         self.amount = amt
         self.index = index
