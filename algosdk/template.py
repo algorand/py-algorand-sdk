@@ -70,17 +70,18 @@ class Split(Template):
         return inject(orig, offsets, values, types)
 
     @staticmethod
-    def get_split_funds_transaction(contract, amount: int, fee: int, first_valid,
-                                   last_valid, gh):
+    def get_split_funds_transaction(contract, amount: int, params, fee=None, first_valid=None,
+                                   last_valid=None, gh=None):
         """
         Return a group transactions array which transfers funds according to
         the contract's ratio.
 
         Args:
             amount (int): total amount to be transferred
-            fee (int): fee per byte
-            first_valid (int): first round where the transactions are valid
-            gh (str): genesis hash in base64
+            params (dict): suggested params from algod
+            fee (int, optional): fee per byte; overrides value in params
+            first_valid (int, optional): first round where the transactions are valid; overrides value in params
+            gh (str, optional): genesis hash in base64; overrides value in params
 
         Returns:
             Transaction[]
@@ -115,9 +116,9 @@ class Split(Template):
             raise error.TemplateInputError("the amount paid to receiver_1 must be greater than " + str(min_pay))
 
         txn_1 = transaction.PaymentTxn(
-            address, fee, first_valid, last_valid, gh, receiver_1, amt_1)
+            address, params, receiver_1, amt_1, fee=fee, first=first_valid, last=last_valid, gh=gh)
         txn_2 = transaction.PaymentTxn(
-            address, fee, first_valid, last_valid, gh, receiver_2, amt_2)
+            address, params, receiver_2, amt_2, fee=fee, first=first_valid, last=last_valid, gh=gh)
 
         transaction.assign_group_id([txn_1, txn_2])
 
@@ -185,7 +186,7 @@ class HTLC(Template):
         return inject(orig, offsets, values, types)
 
     @staticmethod
-    def get_transaction(contract, preimage, first_valid, last_valid, gh, fee):
+    def get_transaction(contract, preimage, params, fee=None, first_valid=None, last_valid=None, gh=None):
         """
         Return a transaction which will release funds if a matching preimage is used.
 
@@ -193,10 +194,11 @@ class HTLC(Template):
             contract (bytes): the contract containing information, should be
                 received from payer
             preimage (str): the preimage of the hash in base64
-            first_valid (int): first valid round for the transactions
-            last_valid (int): last valid round for the transactions
-            gh (str): genesis hash in base64
-            fee (int): fee per byte
+            params (dict): suggested params from algod
+            first_valid (int, optional): first valid round for the transactions; overrides value in params
+            last_valid (int, optional): last valid round for the transactions; overrides value in params
+            gh (str, optional): genesis hash in base64; overrides value in params
+            fee (int, optional): fee per byte; overrides value in params
         
         Returns:
             LogicSigTransaction: transaction to claim algos from
@@ -226,7 +228,7 @@ class HTLC(Template):
         receiver = encoding.encode_address(bytearrays[0])
 
         lsig = transaction.LogicSig(contract, [base64.b64decode(preimage)])
-        txn = transaction.PaymentTxn(logic.address(contract), fee, first_valid, last_valid, gh, None, 0, close_remainder_to=receiver)
+        txn = transaction.PaymentTxn(logic.address(contract), params, None, 0, close_remainder_to=receiver, fee=fee, first=first_valid, last=last_valid, gh=gh)
 
         if txn.fee > max_fee:
             raise error.TemplateInputError("the transaction fee should not be greater than " + str(max_fee))
@@ -302,9 +304,7 @@ class DynamicFee(Template):
 
         # reimbursement transaction
         address = account.address_from_private_key(private_key)
-        txn_2 = transaction.PaymentTxn(address, fee, txn.first_valid_round,
-                                       txn.last_valid_round, txn.genesis_hash,
-                                       txn.sender, txn.fee, lease=txn.lease)
+        txn_2 = transaction.PaymentTxn(address, None, txn.sender, txn.fee, lease=txn.lease, fee=fee, first=txn.first_valid_round, last=txn.last_valid_round, gh=txn.genesis_hash)
 
         transaction.assign_group_id([txn_2, txn])
 
@@ -328,9 +328,9 @@ class DynamicFee(Template):
 
         # main transaction
         txn = transaction.PaymentTxn(
-            sender, 0, self.first_valid, self.last_valid, gh, self.receiver,
+            sender, None, self.receiver,
             self.amount, lease=self.lease_value,
-            close_remainder_to=self.close_remainder_address)
+            close_remainder_to=self.close_remainder_address, fee=0, first=self.first_valid, last=self.last_valid, gh=gh)
         lsig = transaction.LogicSig(self.get_program())
         lsig.sign(private_key)
 
@@ -381,17 +381,18 @@ class PeriodicPayment(Template):
         return inject(orig, offsets, values, types)
 
     @staticmethod
-    def get_withdrawal_transaction(contract, first_valid, gh, fee):
+    def get_withdrawal_transaction(contract, params, first_valid=None, gh=None, fee=None):
         """
         Return the withdrawal transaction to be sent to the network.
 
         Args:
             contract (bytes): contract containing information, should be
                 received from payer
-            first_valid (int): first round the transaction should be valid;
-                this must be a multiple of self.period
-            gh (str): genesis hash in base64
-            fee (int): fee per byte
+            params (dict): suggested params from algod
+            first_valid (int, optional): first round the transaction should be valid;
+                this must be a multiple of self.period; overrides value in params
+            gh (str, optional): genesis hash in base64; overrides value in params
+            fee (int, optional): fee per byte; overrides value in params
         """
         address = logic.address(contract)
         _, ints, bytearrays = logic.read_program(contract)
@@ -407,8 +408,8 @@ class PeriodicPayment(Template):
         if first_valid % period != 0:
             raise error.TemplateInputError("first_valid must be divisible by the period")
         txn = transaction.PaymentTxn(
-            address, fee, first_valid, first_valid + withdrawing_window, gh,
-            receiver, amount, lease=lease_value)
+            address, None,
+            receiver, amount, lease=lease_value, fee=fee, first=first_valid, last=first_valid+withdrawing_window, gh=gh)
 
         if txn.fee > max_fee:
             raise error.TemplateInputError("the transaction fee should not be greater than " + str(max_fee))
@@ -465,8 +466,8 @@ class LimitOrder(Template):
     @staticmethod
     def get_swap_assets_transactions(contract: bytes, asset_amount: int,
                                      microalgo_amount: int,
-                                     private_key: str, first_valid,
-                                     last_valid, gh, fee):
+                                     private_key: str, params, first_valid=None,
+                                     last_valid=None, gh=None, fee=None):
         """
         Return a group transactions array which transfer funds according to
         the contract's ratio.
@@ -477,10 +478,11 @@ class LimitOrder(Template):
             asset_amount (int): the amount of assets to be sent
             microalgo_amount (int): the amount of microalgos to be received
             private_key (str): the secret key to sign the contract
-            first_valid (int): first valid round for the transactions
-            last_valid (int): last valid round for the transactions
-            gh (str): genesis hash in base64
-            fee (int): fee per byte
+            params (dict): suggested params from algod
+            first_valid (int, optional): first valid round for the transactions; overrides value in params
+            last_valid (int, optional): last valid round for the transactions; overrides value in params
+            gh (str, optional): genesis hash in base64; overrides value in params
+            fee (int, optional): fee per byte; overrides value in params
         """
         address = logic.address(contract)
         _, ints, bytearrays = logic.read_program(contract)
@@ -505,13 +507,13 @@ class LimitOrder(Template):
                                       str(ratn) + " / " + str(ratd))
 
         txn_1 = transaction.PaymentTxn(
-            address, fee, first_valid, last_valid, gh,
+            address, params,
             account.address_from_private_key(private_key),
-            int(microalgo_amount))
+            int(microalgo_amount), fee=fee, first=first_valid, last=last_valid, gh=gh)
 
         txn_2 = transaction.AssetTransferTxn(
-            account.address_from_private_key(private_key), fee,
-            first_valid, last_valid, gh, owner, asset_amount, asset_id)
+            account.address_from_private_key(private_key), params, owner, asset_amount,
+            asset_id, fee=fee, first=first_valid, last=last_valid, gh=gh)
 
         if txn_1.fee > max_fee or txn_2.fee > max_fee:
             raise error.TemplateInputError("the transaction fee should not be greater than " + str(max_fee))
