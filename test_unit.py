@@ -1216,19 +1216,31 @@ class TestTemplate(unittest.TestCase):
     def test_HTLC(self):
         addr1 = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
         addr2 = "42NJMHTPFVPXVSDGA6JGKUV6TARV5UZTMPFIREMLXHETRKIVW34QFSDFRE"
-        s = template.HTLC(addr1, addr2, "sha256",
-                          "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=",
-                          600000, 1000)
-        golden_addr = ("KNBD7ATNUVQ4NTLOI72EEUWBVMBNK" +
-                       "MPHWVBCETERV2W7T2YO6CVMLJRBM4")
+        preimage = "cHJlaW1hZ2U="
+        hash_image = "EHZhE08h/HwCIj1Qq56zYAvD/8NxJCOh5Hux+anb9V8="
+        s = template.HTLC(addr1, addr2, "sha256", hash_image, 600000, 1000)
+        golden_addr = (
+            "FBZIR3RWVT2BTGVOG25H3VAOLVD54RTCRNRLQCCJJO6SVSCT5IVDYKNCSU")
 
-        golden = ("ASAE6AcBAMDPJCYDIOaalh5vLV96yGYHkmVSvpgjXtMzY8qIkYu5yTip" +
-                  "Fbb5IH+DsWV/8fxTuS3BgUih1l38LUsfo9Z3KErd0gASbZBpIP68oLsU" +
-                  "SlpOp7Q4pGgayA5soQW8tgf8VlMlyVaV9qITMQEiDjEQIxIQMQcyAxIQ" +
-                  "MQgkEhAxCSgSLQEpEhAxCSoSMQIlDRAREA==")
+        golden = (
+            "ASAE6AcBAMDPJCYDIOaalh5vLV96yGYHkmVSvpgjXtMzY8qIkYu5yTipFbb5IB" +
+            "B2YRNPIfx8AiI9UKues2ALw//DcSQjoeR7sfmp2/VfIP68oLsUSlpOp7Q4pGga" +
+            "yA5soQW8tgf8VlMlyVaV9qITMQEiDjEQIxIQMQcyAxIQMQgkEhAxCSgSLQEpEh" +
+            "AxCSoSMQIlDRAREA==")
         p = s.get_program()
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
+        golden_ltxn = (
+            "gqRsc2lngqNhcmeRxAhwcmVpbWFnZaFsxJcBIAToBwEAwM8kJgMg5pqWHm8tX3" +
+            "rIZgeSZVK+mCNe0zNjyoiRi7nJOKkVtvkgEHZhE08h/HwCIj1Qq56zYAvD/8Nx" +
+            "JCOh5Hux+anb9V8g/ryguxRKWk6ntDikaBrIDmyhBby2B/xWUyXJVpX2ohMxAS" +
+            "IOMRAjEhAxBzIDEhAxCCQSEDEJKBItASkSEDEJKhIxAiUNEBEQo3R4boelY2xv" +
+            "c2XEIOaalh5vLV96yGYHkmVSvpgjXtMzY8qIkYu5yTipFbb5o2ZlZc0D6KJmdg" +
+            "GiZ2jEIH+DsWV/8fxTuS3BgUih1l38LUsfo9Z3KErd0gASbZBpomx2ZKNzbmTE" +
+            "IChyiO42rPQZmq42un3UDl1H3kZii2K4CElLvSrIU+oqpHR5cGWjcGF5")
+        ltxn = template.HTLC.get_transaction(p, preimage, 1,
+            100, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", 0)
+        self.assertEqual(golden_ltxn, encoding.msgpack_encode(ltxn))
 
     def test_dynamic_fee(self):
         addr1 = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
@@ -1304,17 +1316,16 @@ class TestTemplate(unittest.TestCase):
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
         gh = "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
-        ltxn = s.get_withdrawal_transaction(p, 1200, gh, 1000)
-        golden_ltxn = ("gqRsc2lngaFsxJkBIAcB6AdkAF+gwh68o5UBJgIgAQIDBAUGBwg" +
-                       "BAgMEBQYHCAECAwQFBgcIAQIDBAUGBwggkq+RhOQTPAl/ZqvMk7" +
-                       "ERGxKiAb2dDMo+SkihzhPM9MUxECISMQEjDhAxAiQYJRIQMQQhB" +
-                       "DECCBIQMQYoEhAxCTIDEjEHKRIQMQghBRIQMQkpEjEHMgMSEDEC" +
-                       "IQYNEDEIJRIQERCjdHhuiaNhbXTOAAehIKNmZWXOAAQDWKJmds0" +
-                       "EsKJnaMQgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkG" +
-                       "mibHbNBQ+ibHjEIAECAwQFBgcIAQIDBAUGBwgBAgMEBQYHCAECA" +
-                       "wQFBgcIo3JjdsQgkq+RhOQTPAl/ZqvMk7ERGxKiAb2dDMo+Skih" +
-                       "zhPM9MWjc25kxCBLJbVxcjvosDUorAMyDf1+VeOdg4S45R0MPTO" +
-                       "fOQvDtqR0eXBlo3BheQ==")
+        ltxn = s.get_withdrawal_transaction(p, 1200, gh, 0)
+        golden_ltxn = (
+            "gqRsc2lngaFsxJkBIAcB6AdkAF+gwh68o5UBJgIgAQIDBAUGBwgBAgMEBQYHCA" +
+            "ECAwQFBgcIAQIDBAUGBwggkq+RhOQTPAl/ZqvMk7ERGxKiAb2dDMo+SkihzhPM" +
+            "9MUxECISMQEjDhAxAiQYJRIQMQQhBDECCBIQMQYoEhAxCTIDEjEHKRIQMQghBR" +
+            "IQMQkpEjEHMgMSEDECIQYNEDEIJRIQERCjdHhuiaNhbXTOAAehIKNmZWXNA+ii" +
+            "ZnbNBLCiZ2jEIH+DsWV/8fxTuS3BgUih1l38LUsfo9Z3KErd0gASbZBpomx2zQ" +
+            "UPomx4xCABAgMEBQYHCAECAwQFBgcIAQIDBAUGBwgBAgMEBQYHCKNyY3bEIJKv" +
+            "kYTkEzwJf2arzJOxERsSogG9nQzKPkpIoc4TzPTFo3NuZMQgSyW1cXI76LA1KK" +
+            "wDMg39flXjnYOEuOUdDD0znzkLw7akdHlwZaNwYXk=")
         self.assertEqual(golden_ltxn,
                          encoding.msgpack_encode(ltxn))
 

@@ -1,6 +1,7 @@
 import math
 import random
 from . import error, encoding, constants, transaction, logic, account
+from Cryptodome.Hash import SHA256, keccak
 import base64
 
 
@@ -91,6 +92,7 @@ class Split(Template):
         rat_1 = ints[6]
         rat_2 = ints[5]
         min_pay = ints[7]
+        max_fee = ints[1]
         receiver_1 = encoding.encode_address(bytearrays[1])
         receiver_2 = encoding.encode_address(bytearrays[2])
 
@@ -123,6 +125,9 @@ class Split(Template):
 
         stx_1 = transaction.LogicSigTransaction(txn_1, lsig)
         stx_2 = transaction.LogicSigTransaction(txn_2, lsig)
+
+        if txn_1.fee > max_fee or txn_2.fee > max_fee:
+            raise error.TemplateInputError("the transaction fee should not be greater than " + str(max_fee))
 
         return [stx_1, stx_2]
 
@@ -179,6 +184,56 @@ class HTLC(Template):
         types = [int, int, "address", "base64", "address", int]
         return inject(orig, offsets, values, types)
 
+    @staticmethod
+    def get_transaction(contract, preimage, first_valid, last_valid, gh, fee):
+        """
+        Return a transaction which will release funds if a matching preimage is used.
+
+        Args:
+            contract (bytes): the contract containing information, should be
+                received from payer
+            preimage (str): the preimage of the hash in base64
+            first_valid (int): first valid round for the transactions
+            last_valid (int): last valid round for the transactions
+            gh (str): genesis hash in base64
+            fee (int): fee per byte
+        
+        Returns:
+            LogicSigTransaction: transaction to claim algos from
+                contract account
+        """
+        _, ints, bytearrays = logic.read_program(contract)
+        if not (len(ints) == 4 and len(bytearrays) == 3):
+            raise error.WrongContractError("split")
+        max_fee = ints[0]
+        hash_function = contract[-15]
+        expected_hash_image = bytearrays[1]
+        if hash_function == 1:
+            hash_image = SHA256.new()
+            hash_image.update(base64.b64decode(preimage))
+            if hash_image.digest() != expected_hash_image:
+                raise error.TemplateInputError("the hash of the preimage does not match the expected hash image using hash function sha256")
+        elif hash_function == 2:
+            hash_image = keccak.new(digest_bits=256)
+            hash_image.update(base64.b64decode(preimage))
+            print(hash_image.digest())
+            print(expected_hash_image)
+            if hash_image.digest() != expected_hash_image:
+                raise error.TemplateInputError("the hash of the preimage does not match the expected hash image using hash function keccak256")
+        else:
+            raise error.TemplateInputError("an invalid hash function was provided in the contract")
+
+        receiver = encoding.encode_address(bytearrays[0])
+
+        lsig = transaction.LogicSig(contract, [base64.b64decode(preimage)])
+        txn = transaction.PaymentTxn(logic.address(contract), fee, first_valid, last_valid, gh, None, 0, close_remainder_to=receiver)
+
+        if txn.fee > max_fee:
+            raise error.TemplateInputError("the transaction fee should not be greater than " + str(max_fee))
+
+        ltxn = transaction.LogicSigTransaction(txn, lsig)
+        return ltxn
+    
 
 class DynamicFee(Template):
     """
@@ -345,6 +400,7 @@ class PeriodicPayment(Template):
         amount = ints[5]
         withdrawing_window = ints[4]
         period = ints[2]
+        max_fee = ints[1]
         lease_value = bytearrays[0]
         receiver = encoding.encode_address(bytearrays[1])
 
@@ -353,6 +409,9 @@ class PeriodicPayment(Template):
         txn = transaction.PaymentTxn(
             address, fee, first_valid, first_valid + withdrawing_window, gh,
             receiver, amount, lease=lease_value)
+
+        if txn.fee > max_fee:
+            raise error.TemplateInputError("the transaction fee should not be greater than " + str(max_fee))
 
         lsig = transaction.LogicSig(contract)
         stx = transaction.LogicSigTransaction(txn, lsig)
@@ -433,6 +492,7 @@ class LimitOrder(Template):
         asset_id = ints[6]
         ratn = ints[8]
         ratd = ints[7]
+        max_fee = ints[2]
         owner = encoding.encode_address(bytearrays[0])
 
         if microalgo_amount < min_trade:
@@ -452,6 +512,10 @@ class LimitOrder(Template):
         txn_2 = transaction.AssetTransferTxn(
             account.address_from_private_key(private_key), fee,
             first_valid, last_valid, gh, owner, asset_amount, asset_id)
+
+        if txn_1.fee > max_fee or txn_2.fee > max_fee:
+            raise error.TemplateInputError("the transaction fee should not be greater than " + str(max_fee))
+
 
         transaction.assign_group_id([txn_1, txn_2])
 
