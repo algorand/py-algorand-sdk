@@ -154,7 +154,7 @@ class PaymentTxn(Transaction):
 
     Args:
         sender (str): address of the sender
-        params (dict): suggested params from algod
+        params (dict): suggested params from algod; may be None if fee or flat_fee, first, and gh are specified with keyword arguments
         receiver (str): address of the receiver
         amt (int): amount in microAlgos to be sent
         close_remainder_to (str, optional): if nonempty, account will be closed
@@ -240,7 +240,7 @@ class KeyregTxn(Transaction):
 
     Args:
         sender (str): address of sender
-        params (dict): suggested params from algod
+        params (dict): suggested params from algod; may be None if fee or flat_fee, first, and gh are specified with keyword arguments
         votekey (str): participation public key
         selkey (str): VRF public key
         votefst (int): first round to vote
@@ -345,7 +345,7 @@ class AssetConfigTxn(Transaction):
 
     Args:
         sender (str): address of the sender
-        params (dict): suggested params from algod
+        params (dict): suggested params from algod; may be None if fee or flat_fee, first, and gh are specified with keyword arguments
         index (int, optional): index of the asset
         total (int, optional): total number of base units of this asset created
         default_frozen (bool, optional): whether slots for this asset in user
@@ -567,7 +567,7 @@ class AssetFreezeTxn(Transaction):
     Args:
         sender (str): address of the sender, who must be the asset's freeze
             manager
-        params (dict): suggested params from algod
+        params (dict): suggested params from algod; may be None if fee or flat_fee, first, and gh are specified with keyword arguments
         index (int): index of the asset
         target (str): address having its assets frozen or unfrozen
         new_freeze_state (bool): true if the assets should be frozen, false if
@@ -656,7 +656,7 @@ class AssetTransferTxn(Transaction):
 
     Args:
         sender (str): address of the sender
-        params (dict): suggested params from algod
+        params (dict): suggested params from algod; may be None if fee or flat_fee, first, and gh are specified with keyword arguments
         receiver (str): address of the receiver
         amt (int): amount of asset base units to send
         index (int): index of the asset

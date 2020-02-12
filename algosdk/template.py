@@ -78,7 +78,7 @@ class Split(Template):
 
         Args:
             amount (int): total amount to be transferred
-            params (dict): suggested params from algod
+            params (dict): suggested params from algod; may be None if fee, first_valid, and gh are specified with keyword arguments
             fee (int, optional): fee per byte; overrides value in params
             first_valid (int, optional): first round where the transactions are valid; overrides value in params
             gh (str, optional): genesis hash in base64; overrides value in params
@@ -194,7 +194,7 @@ class HTLC(Template):
             contract (bytes): the contract containing information, should be
                 received from payer
             preimage (str): the preimage of the hash in base64
-            params (dict): suggested params from algod
+            params (dict): suggested params from algod; may be None if fee, first_valid, and gh are specified with keyword arguments
             first_valid (int, optional): first valid round for the transactions; overrides value in params
             last_valid (int, optional): last valid round for the transactions; overrides default value of first + 1000 or params["lastRound"] + 1000
             gh (str, optional): genesis hash in base64; overrides value in params
@@ -388,7 +388,7 @@ class PeriodicPayment(Template):
         Args:
             contract (bytes): contract containing information, should be
                 received from payer
-            params (dict): suggested params from algod
+            params (dict): suggested params from algod; may be None if fee, first_valid, and gh are specified with keyword arguments
             first_valid (int, optional): first round the transaction should be valid;
                 this must be a multiple of self.period; overrides value in params
             gh (str, optional): genesis hash in base64; overrides value in params
@@ -478,7 +478,7 @@ class LimitOrder(Template):
             asset_amount (int): the amount of assets to be sent
             microalgo_amount (int): the amount of microalgos to be received
             private_key (str): the secret key to sign the contract
-            params (dict): suggested params from algod
+            params (dict): suggested params from algod; may be None if fee, first_valid, and gh are specified with keyword arguments
             first_valid (int, optional): first valid round for the transactions; overrides value in params
             last_valid (int, optional): last valid round for the transactions; overrides default value of first + 1000 or params["lastRound"] + 1000
             gh (str, optional): genesis hash in base64; overrides value in params
