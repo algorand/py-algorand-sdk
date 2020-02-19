@@ -6,6 +6,7 @@ import base64
 from . import error
 from . import encoding
 from . import constants
+from . import transaction
 
 
 class AlgodClient:
@@ -225,7 +226,15 @@ class AlgodClient:
     def suggested_params(self, **kwargs):
         """Return suggested transaction parameters."""
         req = "/transactions/params"
-        return self.algod_request("GET", req, **kwargs)
+        res = self.algod_request("GET", req, **kwargs)
+
+        return transaction.SuggestedParams(
+            res["lastRound"],
+            res["lastRound"] + 1000,
+            res["genesishashb64"],
+            res["genesisID"],
+            res["fee"],
+            False)
 
     def send_raw_transaction(self, txn, **kwargs):
         """

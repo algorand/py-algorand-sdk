@@ -18,20 +18,17 @@ class TestTransaction(unittest.TestCase):
     def test_min_txn_fee(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
-        params = {
-            "fee": 0,
-            "lastRound": 1,
-            "genesishashb64": gh
-        }
-        txn = transaction.PaymentTxn(address, params, address,
-                                     1000, note=b'\x00', last = 100)
+        sp = transaction.SuggestedParams(1, 100, gh, None, 0)
+        txn = transaction.PaymentTxn(address, sp, address,
+                                     1000, note=b'\x00')
         self.assertEqual(constants.min_txn_fee, txn.fee)
 
     def test_serialize(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
-        txn = transaction.PaymentTxn(address, None, address,
-                                     1000, note=bytes([1, 32, 200]), fee=3, first=1, last=100, gh=gh)
+        sp = transaction.SuggestedParams(1, 100, gh, None, 3)
+        txn = transaction.PaymentTxn(address, sp, address,
+                                     1000, note=bytes([1, 32, 200]))
         enc = encoding.msgpack_encode(txn)
         re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
         self.assertEqual(enc, re_enc)
@@ -39,8 +36,9 @@ class TestTransaction(unittest.TestCase):
     def test_serialize_zero_amt(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
-        txn = transaction.PaymentTxn(address, None, address,
-                                     0, note=bytes([1, 32, 200]), fee=3, first=1, last=100, gh=gh)
+        sp = transaction.SuggestedParams(1, 100, gh, None, 3)
+        txn = transaction.PaymentTxn(address, sp, address,
+                                     0, note=bytes([1, 32, 200]))
         enc = encoding.msgpack_encode(txn)
         re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
         self.assertEqual(enc, re_enc)
@@ -48,9 +46,9 @@ class TestTransaction(unittest.TestCase):
     def test_serialize_gen(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
-        txn = transaction.PaymentTxn(address, None, address,
-                                     1000, gen="testnet-v1.0",
-                                     close_remainder_to=address, fee=3, first=1, last=100, gh=gh)
+        sp = transaction.SuggestedParams(1, 100, gh, "testnet-v1.0", 3)
+        txn = transaction.PaymentTxn(address, sp, address,
+                                     1000, close_remainder_to=address)
         enc = encoding.msgpack_encode(txn)
         re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
         self.assertEqual(enc, re_enc)
@@ -58,9 +56,9 @@ class TestTransaction(unittest.TestCase):
     def test_serialize_txgroup(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
-        txn = transaction.PaymentTxn(address, None, address,
-                                     1000, gen="testnet-v1.0",
-                                     close_remainder_to=address, fee=3, first=1, last=100, gh=gh)
+        sp = transaction.SuggestedParams(1, 100, gh, "testnet-v1.0", 3)
+        txn = transaction.PaymentTxn(address, sp, address,
+                                     1000,close_remainder_to=address)
         txid = txn.get_txid().encode()
         txid = base64.decodebytes(txid)
 
@@ -90,14 +88,9 @@ class TestTransaction(unittest.TestCase):
         close = "IDUTJEUIEVSMXTU4LGTJWZ2UE2E6TIODUKU6UW3FU3UKIQQ77RLUBBBFLA"
         sk = mnemonic.to_private_key(mn)
         pk = account.address_from_private_key(sk)
-        params = {
-            "fee": 4,
-            "lastRound": 12466,
-            "genesishashb64": gh
-        }
-        txn = transaction.PaymentTxn(pk, params, address, 1000,
+        sp = transaction.SuggestedParams(12466, 13466, gh, "devnet-v33.0", 4)
+        txn = transaction.PaymentTxn(pk, sp, address, 1000,
                                      note=base64.b64decode("6gAVR0Nsv5Y="),
-                                     gen="devnet-v33.0",
                                      close_remainder_to=close)
         stx = txn.sign(sk)
         golden = ("gqNzaWfEQPhUAZ3xkDDcc8FvOVo6UinzmKBCqs0woYSfodlmBMfQvGbeU" +
@@ -133,8 +126,8 @@ class TestTransaction(unittest.TestCase):
         note = base64.b64decode("6gAVR0Nsv5Y=")
         close = "IDUTJEUIEVSMXTU4LGTJWZ2UE2E6TIODUKU6UW3FU3UKIQQ77RLUBBBFLA"
         amount = 1000
-        txn = transaction.PaymentTxn(pk, None, to, amount, close, note, gen=gen,
-                                     fee=fee, first=first_round, last=last_round, gh=gh)
+        sp = transaction.SuggestedParams(first_round, last_round, gh, gen, fee)
+        txn = transaction.PaymentTxn(pk, sp, to, amount, close, note)
         signed_txn = txn.sign(sk)
 
         golden = ("gqNzaWfEQPhUAZ3xkDDcc8FvOVo6UinzmKBCqs0woYSfodlmBMfQvGbeU" +
@@ -164,9 +157,9 @@ class TestTransaction(unittest.TestCase):
         amount = 1000
         lease = bytes([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3,
                        4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
-        txn = transaction.PaymentTxn(pk, None, to,
-                                     amount, close_remainder_to=close, note=note, gen=gen, lease=lease,
-                                     fee=fee, first=first_round, last=last_round, gh=gh)
+        sp = transaction.SuggestedParams(first_round, last_round, gh, gen, fee)
+        txn = transaction.PaymentTxn(pk, sp, to,
+                                     amount, close_remainder_to=close, note=note, lease=lease)
         signed_txn = txn.sign(sk)
 
         golden = ("gqNzaWfEQOMmFSIKsZvpW0txwzhmbgQjxv6IyN7BbV5sZ2aNgFbVcrWUn" +
@@ -196,9 +189,9 @@ class TestTransaction(unittest.TestCase):
         votelast = 10111
         votedilution = 11
 
-        txn = transaction.KeyregTxn(pk, None, votepk, selpk, votefirst, votelast,
-                                    votedilution,
-                                    flat_fee=fee, first=322575, gh=gh)
+        sp = transaction.SuggestedParams(322575, 323575, gh, None, fee, flat_fee=True)
+        txn = transaction.KeyregTxn(pk, sp, votepk, selpk, votefirst, votelast,
+                                    votedilution)
         signed_txn = txn.sign(sk)
 
         golden = ("gqNzaWfEQEA8ANbrvTRxU9c8v6WERcEPw7D/HacRgg4vICa61vEof60Ww" +
@@ -227,11 +220,11 @@ class TestTransaction(unittest.TestCase):
         unitname = "tst"
         url = "website"
         metadata = bytes("fACPO4nRgO55j1ndAK3W6Sgc4APkcyFh", "ascii")
-
+        sp = transaction.SuggestedParams(first_round, last_round, gh, None, fee)
         txn = transaction.AssetConfigTxn(
-            pk, None, total=total, manager=pk, reserve=pk, freeze=pk, clawback=pk,
+            pk, sp, total=total, manager=pk, reserve=pk, freeze=pk, clawback=pk,
             unit_name=unitname, asset_name=assetname, url=url, metadata_hash=metadata,
-            default_frozen=False, fee=fee, first=first_round, last=last_round, gh=gh)
+            default_frozen=False)
         signed_txn = txn.sign(sk)
         golden = ("gqNzaWfEQEDd1OMRoQI/rzNlU4iiF50XQXmup3k5czI9hEsNqHT7K4Ksf" +
                   "mA/0DUVkbzOwtJdRsHS8trm3Arjpy9r7AXlbAujdHhuh6RhcGFyiaJhbc" +
@@ -261,12 +254,11 @@ class TestTransaction(unittest.TestCase):
         unitname = "tst"
         url = "website"
         metadata = bytes("fACPO4nRgO55j1ndAK3W6Sgc4APkcyFh", "ascii")
-
+        sp = transaction.SuggestedParams(first_round, last_round, gh, None, fee)
         txn = transaction.AssetConfigTxn(
-            pk, None, total=total, manager=pk, reserve=pk, freeze=pk, clawback=pk,
+            pk, sp, total=total, manager=pk, reserve=pk, freeze=pk, clawback=pk,
             unit_name=unitname, asset_name=assetname, url=url, metadata_hash=metadata,
-            default_frozen=False, decimals=1, fee=fee, first=first_round,
-            last=last_round, gh=gh)
+            default_frozen=False, decimals=1)
         signed_txn = txn.sign(sk)
         golden = ("gqNzaWfEQCj5xLqNozR5ahB+LNBlTG+d0gl0vWBrGdAXj1ibsCkvAwOsX" +
                   "s5KHZK1YdLgkdJecQiWm4oiZ+pm5Yg0m3KFqgqjdHhuh6RhcGFyiqJhbc" +
@@ -287,10 +279,10 @@ class TestTransaction(unittest.TestCase):
         last_round = 323575
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
         index = 1234
+        sp = transaction.SuggestedParams(first_round, last_round, gh, None, fee)
         self.assertRaises(error.EmptyAddressError, transaction.AssetConfigTxn,
-                          pk, None, reserve=pk,
-                          freeze=pk, clawback=pk, index=index,
-                          fee=fee, first=first_round, last=last_round, gh=gh)
+                          pk, sp, reserve=pk,
+                          freeze=pk, clawback=pk, index=index)
 
     def test_serialize_asset_config(self):
         mn = ("awful drop leaf tennis indoor begin mandate discover uncle se" +
@@ -303,9 +295,9 @@ class TestTransaction(unittest.TestCase):
         last_round = 323575
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
         index = 1234
+        sp = transaction.SuggestedParams(first_round, last_round, gh, None, fee)
         txn = transaction.AssetConfigTxn(
-            pk, None, manager=pk, reserve=pk, freeze=pk, clawback=pk, index=index,
-            fee=fee, first=first_round, last=last_round, gh=gh)
+            pk, sp, manager=pk, reserve=pk, freeze=pk, clawback=pk, index=index)
         signed_txn = txn.sign(sk)
         golden = ("gqNzaWfEQBBkfw5n6UevuIMDo2lHyU4dS80JCCQ/vTRUcTx5m0ivX68zT" +
                   "KyuVRrHaTbxbRRc3YpJ4zeVEnC9Fiw3Wf4REwejdHhuiKRhcGFyhKFjxC" +
@@ -329,9 +321,9 @@ class TestTransaction(unittest.TestCase):
         last_round = 323575
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
         index = 1
+        sp = transaction.SuggestedParams(first_round, last_round, gh, None, fee)
         txn = transaction.AssetConfigTxn(
-            pk, None, index=index, strict_empty_address_check=False,
-            fee=fee, first=first_round, last=last_round, gh=gh)
+            pk, sp, index=index, strict_empty_address_check=False)
         signed_txn = txn.sign(sk)
         golden = ("gqNzaWfEQBSP7HtzD/Lvn4aVvaNpeR4T93dQgo4LvywEwcZgDEoc/WVl3" +
                   "aKsZGcZkcRFoiWk8AidhfOZzZYutckkccB8RgGjdHhuh6RjYWlkAaNmZW" +
@@ -352,9 +344,9 @@ class TestTransaction(unittest.TestCase):
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
         index = 1
         target = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        sp = transaction.SuggestedParams(first_round, last_round, gh, None, fee)
         txn = transaction.AssetFreezeTxn(
-            pk, None, index=index, target=target, new_freeze_state=True,
-            fee=fee, first=first_round, last=last_round, gh=gh)
+            pk, sp, index=index, target=target, new_freeze_state=True)
         signed_txn = txn.sign(sk)
         golden = ("gqNzaWfEQAhru5V2Xvr19s4pGnI0aslqwY4lA2skzpYtDTAN9DKSH5+qs" +
                   "fQQhm4oq+9VHVj7e1rQC49S28vQZmzDTVnYDQGjdHhuiaRhZnJ6w6RmYW" +
@@ -378,9 +370,9 @@ class TestTransaction(unittest.TestCase):
         amount = 1
         to = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
         close = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        sp = transaction.SuggestedParams(first_round, last_round, gh, None, fee)
         txn = transaction.AssetTransferTxn(
-            pk, None, to, amount, index, close, fee=fee, 
-            first=first_round, last=last_round, gh=gh)
+            pk, sp, to, amount, index, close)
         signed_txn = txn.sign(sk)
         golden = ("gqNzaWfEQNkEs3WdfFq6IQKJdF1n0/hbV9waLsvojy9pM1T4fvwfMNdjG" +
                   "QDy+LeesuQUfQVTneJD4VfMP7zKx4OUlItbrwSjdHhuiqRhYW10AaZhY2" +
@@ -404,9 +396,9 @@ class TestTransaction(unittest.TestCase):
         index = 1
         amount = 0
         to = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        sp = transaction.SuggestedParams(first_round, last_round, gh, None, fee)
         txn = transaction.AssetTransferTxn(
-            pk, None, to, amount, index, fee=fee, first=first_round,
-            last=last_round, gh=gh)
+            pk, sp, to, amount, index)
         signed_txn = txn.sign(sk)
         golden = ("gqNzaWfEQJ7q2rOT8Sb/wB0F87ld+1zMprxVlYqbUbe+oz0WM63FctIi+" +
                   "K9eYFSqT26XBZ4Rr3+VTJpBE+JLKs8nctl9hgijdHhuiKRhcmN2xCAJ+9" +
@@ -429,9 +421,9 @@ class TestTransaction(unittest.TestCase):
         index = 1
         amount = 1
         to = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        sp = transaction.SuggestedParams(first_round, last_round, gh, None, fee)
         txn = transaction.AssetTransferTxn(
-            pk, None, to, amount, index, revocation_target=to, fee=fee,
-            first=first_round, last=last_round, gh=gh)
+            pk, sp, to, amount, index, revocation_target=to)
         signed_txn = txn.sign(sk)
         golden = ("gqNzaWfEQHsgfEAmEHUxLLLR9s+Y/yq5WeoGo/jAArCbany+7ZYwExMyS" +
                   "zAhmV7M7S8+LBtJalB4EhzEUMKmt3kNKk6+vAWjdHhuiqRhYW10AaRhcm" +
@@ -453,18 +445,20 @@ class TestTransaction(unittest.TestCase):
         firstRound1 = 710399
         note1 = base64.b64decode("wRKw5cJ0CMo=")
 
+        sp = transaction.SuggestedParams(firstRound1, firstRound1+1000, genesisHash,
+                                         genesisID, fee, flat_fee=True)
         tx1 = transaction.PaymentTxn(
-            fromAddress, None, toAddress, amount,
-            note=note1, gen=genesisID, flat_fee=fee, first=firstRound1, gh=genesisHash
-        )
+            fromAddress, sp, toAddress, amount,
+            note=note1)
 
         firstRound2 = 710515
         note2 = base64.b64decode("dBlHI6BdrIg=")
         
+        sp.first = firstRound2
+        sp.last = firstRound2 + 1000
         tx2 = transaction.PaymentTxn(
-            fromAddress, None, toAddress, amount,
-            note=note2, gen=genesisID, flat_fee=fee, first=firstRound2, gh=genesisHash
-        )
+            fromAddress, sp, toAddress, amount,
+            note=note2)
 
         # goal clerk send dumps unsigned transaction as signed with empty
         # signature in order to save tx type
@@ -630,14 +624,10 @@ class TestMultisig(unittest.TestCase):
         rcv = "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI"
         gh = "/rNsORAUOQDD2lVCyhg2sA/S+BlZElfNI/YEL5jINp0="
         close = "IDUTJEUIEVSMXTU4LGTJWZ2UE2E6TIODUKU6UW3FU3UKIQQ77RLUBBBFLA"
-        params = {
-            "fee": 0,
-            "lastRound": 62229,
-            "genesishashb64": gh
-        }
-        txn = transaction.PaymentTxn(sender, params, rcv, 1000,
+        
+        sp = transaction.SuggestedParams(62229, 63229, gh, "devnet-v38.0", 0)
+        txn = transaction.PaymentTxn(sender, sp, rcv, 1000,
                                      note=base64.b64decode("RSYiABhShvs="),
-                                     gen="devnet-v38.0",
                                      close_remainder_to=close)
 
         mtx = transaction.MultisigTransaction(txn, msig)
@@ -693,15 +683,10 @@ class TestMultisig(unittest.TestCase):
         rcv = "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         close = "IDUTJEUIEVSMXTU4LGTJWZ2UE2E6TIODUKU6UW3FU3UKIQQ77RLUBBBFLA"
-        params = {
-            "fee": 4,
-            "lastRound": 12466,
-            "genesishashb64": gh
-        }
-        txn = transaction.PaymentTxn(msig.address(), params,
+        sp = transaction.SuggestedParams(12466, 13466, gh, "devnet-v33.0", 4)
+        txn = transaction.PaymentTxn(msig.address(), sp,
                                      rcv, 1000,
                                      note=base64.b64decode("X4Bl4wQ9rCo="),
-                                     gen="devnet-v33.0",
                                      close_remainder_to=close)
         mtx = transaction.MultisigTransaction(txn, msig)
         mtx.sign(sk)
@@ -744,7 +729,8 @@ class TestMultisig(unittest.TestCase):
 
         # create transaction
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
-        txn = transaction.PaymentTxn(account_2, None, account_2, 1000, fee=3, first=1234, last=1334, gh=gh)
+        sp = transaction.SuggestedParams(1234, 1334, gh, None, 3)
+        txn = transaction.PaymentTxn(account_2, sp, account_2, 1000)
 
         # create multisig address with invalid version
         msig = transaction.Multisig(2, 2, [account_1, account_2])
@@ -1155,9 +1141,10 @@ class TestLogicSig(unittest.TestCase):
         genesisHash = "sC3P7e2SdbqKJK0tbiCdK9tdSpbe6XeCGKdoNzmlj0E="
         note = base64.b64decode("8xMCTuLQ810=")
 
+        sp = transaction.SuggestedParams(firstRound, firstRound+1000, genesisHash, genesisID, fee, flat_fee=True)
         tx = transaction.PaymentTxn(
-            fromAddress, None, toAddress, amount,
-            note=note, gen=genesisID, flat_fee=fee, first=firstRound, gh=genesisHash
+            fromAddress, sp, toAddress, amount,
+            note=note
         )
 
         golden = (
@@ -1200,9 +1187,9 @@ class TestTemplate(unittest.TestCase):
         golden_addr = "HDY7A4VHBWQWQZJBEMASFOUZKBNGWBMJEMUXAGZ4SPIRQ6C24MJHUZKFGY"
         self.assertEqual(s.get_program(), base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
+        sp = transaction.SuggestedParams(1, 100, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", None, 10000)
         txns = s.get_split_funds_transaction(
-            s.get_program(), 1300000, None, 10000, 1, 100,
-            "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
+            s.get_program(), 1300000, sp)
         golden_txns = base64.b64decode(
             "gqRsc2lngaFsxM4BIAgBwJaxAgIAwMQHZB6QTiYDILO3BCfT4PJw36+yT68lZy" +
             "yjP9vs0NLqLfcc6S9Ol/5iILepSkiAcZYTz/Us+H1IYJqVI3shohN55ZJdt+xL" +
@@ -1252,14 +1239,16 @@ class TestTemplate(unittest.TestCase):
             "c2XEIOaalh5vLV96yGYHkmVSvpgjXtMzY8qIkYu5yTipFbb5o2ZlZc0D6KJmdg" +
             "GiZ2jEIH+DsWV/8fxTuS3BgUih1l38LUsfo9Z3KErd0gASbZBpomx2ZKNzbmTE" +
             "IChyiO42rPQZmq42un3UDl1H3kZii2K4CElLvSrIU+oqpHR5cGWjcGF5")
-        ltxn = template.HTLC.get_transaction(p, preimage, None, 0, 1,
-            100, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
+        sp = transaction.SuggestedParams(1, 100, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", None, 0)
+        ltxn = template.HTLC.get_transaction(p, preimage, sp)
         self.assertEqual(golden_ltxn, encoding.msgpack_encode(ltxn))
 
     def test_dynamic_fee(self):
         addr1 = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
         addr2 = "42NJMHTPFVPXVSDGA6JGKUV6TARV5UZTMPFIREMLXHETRKIVW34QFSDFRE"
-        s = template.DynamicFee(addr1, 5000, 12345, 12346, addr2)
+        sp = transaction.SuggestedParams(12345, 12346, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", None, 0)
+
+        s = template.DynamicFee(addr1, 5000, sp, addr2)
         s.lease_value = base64.b64decode(
             "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
 
@@ -1276,8 +1265,7 @@ class TestTemplate(unittest.TestCase):
         self.assertEqual(s.get_address(), golden_addr)
         sk = ("cv8E0Ln24FSkwDgGeuXKStOTGcze5u8yldpXxgrBxumFP" +
               "YdMJymqcGoxdDeyuM8t6Kxixfq0PJCyJP71uhYT7w==")
-        txn, lsig = s.sign_dynamic_fee(
-            sk, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
+        txn, lsig = s.sign_dynamic_fee(sk)
 
 
         golden_txn = "iqNhbXTNE4ilY2xvc2XEIOaalh5vLV96yGYHkmVSvpgjXtMzY8qIkYu5yTipFbb5o2ZlZc0D6KJmds0wOaJnaMQgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmibHbNMDqibHjEIH+DsWV/8fxTuS3BgUih1l38LUsfo9Z3KErd0gASbZBpo3JjdsQg/ryguxRKWk6ntDikaBrIDmyhBby2B/xWUyXJVpX2ohOjc25kxCCFPYdMJymqcGoxdDeyuM8t6Kxixfq0PJCyJP71uhYT76R0eXBlo3BheQ=="
@@ -1330,7 +1318,9 @@ class TestTemplate(unittest.TestCase):
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
         gh = "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
-        ltxn = s.get_withdrawal_transaction(p, None, 1200, gh, 0)
+        sp = transaction.SuggestedParams(1200, None, gh, None, 0)
+
+        ltxn = s.get_withdrawal_transaction(p, sp)
         golden_ltxn = (
             "gqRsc2lngaFsxJkBIAcB6AdkAF+gwh68o5UBJgIgAQIDBAUGBwgBAgMEBQYHCA" +
             "ECAwQFBgcIAQIDBAUGBwggkq+RhOQTPAl/ZqvMk7ERGxKiAb2dDMo+SkihzhPM" +
@@ -1363,8 +1353,9 @@ class TestTemplate(unittest.TestCase):
         sk = ("DTKVj7KMON3GSWBwMX9McQHtaDDi8SDEBi0bt4rOxlHNRah" +
               "La0zVG+25BDIaHB1dSoIHIsUQ8FFcdnCdKoG+Bg==")
         gh = "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
+        sp = transaction.SuggestedParams(1234, 2234, gh, None, 10)
         [stx_1, stx_2] = s.get_swap_assets_transactions(
-            p, 3000, 10000, sk, None, 1234, 2234, gh, 10)
+            p, 3000, 10000, sk, sp)
         golden_txn_1 = (
             "gqRsc2lngaFsxLcBIAoAAcCWsQICkE4EuWBkHsDEByYBIP68oLsUSlpOp7Q4pG" +
             "gayA5soQW8tgf8VlMlyVaV9qITMRYiEjEQIxIQMQEkDhAyBCMSQABVMgQlEjEI" +
