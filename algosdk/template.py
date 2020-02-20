@@ -519,6 +519,10 @@ class LimitOrder(Template):
             raise error.TemplateInputError("the transaction fee should not be greater than " + str(max_fee))
 
 
+        if txn_1.fee > max_fee or txn_2.fee > max_fee:
+            raise error.TemplateInputError("the transaction fee should not be greater than " + str(max_fee))
+
+
         transaction.assign_group_id([txn_1, txn_2])
 
         lsig = transaction.LogicSig(contract)
