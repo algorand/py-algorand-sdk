@@ -17,8 +17,8 @@ class SuggestedParams:
     Args:
         first (int): first round for which the transaction is valid
         last (int): last round for which the transaction is valid
-        gh (str): genesis_hash
-        gen (str): genesis_id
+        gh (str): genesis hash
+        gen (str): genesis id
         fee (int): transaction fee (per byte)
         flat_fee (bool, optional): whether the specified fee is a flat fee
 
