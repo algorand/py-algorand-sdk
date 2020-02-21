@@ -13,7 +13,7 @@ from nacl.exceptions import BadSignatureError
 class SuggestedParams:
     """
     Contains various fields common to all transaction types.
-    
+
     Args:
         first (int): first round for which the transaction is valid
         last (int): last round for which the transaction is valid
@@ -30,6 +30,7 @@ class SuggestedParams:
         genesis_hash (str)
         flat_fee (bool)
     """
+
     def __init__(self, first, last, gh, gen, fee, flat_fee=False):
         self.first = first
         self.last = last
@@ -43,6 +44,7 @@ class Transaction:
     """
     Superclass for various transaction types.
     """
+
     def __init__(self, sender, sp, note, lease, txn_type):
         self.sender = sender
         self.fee = sp.fee
@@ -421,10 +423,11 @@ class AssetConfigTxn(Transaction):
     """
 
     def __init__(
-        self, sender, sp, index=None, total=None, default_frozen=None,
-        unit_name=None, asset_name=None, manager=None, reserve=None,
-        freeze=None, clawback=None, url=None, metadata_hash=None, note=None,
-        lease=None, strict_empty_address_check=True, decimals=0):
+            self, sender, sp, index=None, total=None, default_frozen=None,
+            unit_name=None, asset_name=None, manager=None, reserve=None,
+            freeze=None, clawback=None, url=None, metadata_hash=None,
+            note=None, lease=None, strict_empty_address_check=True,
+            decimals=0):
         Transaction.__init__(self, sender, sp, note,
                              lease, constants.assetconfig_txn)
         if strict_empty_address_check:
@@ -765,6 +768,7 @@ class SignedTransaction:
         transaction (Transaction)
         signature (str)
     """
+
     def __init__(self, transaction, signature):
         self.signature = signature
         self.transaction = transaction
@@ -804,6 +808,7 @@ class MultisigTransaction:
         transaction (Transaction)
         multisig (Multisig)
     """
+
     def __init__(self, transaction, multisig):
         self.transaction = transaction
         self.multisig = multisig
@@ -913,6 +918,7 @@ class Multisig:
         threshold (int)
         subsigs (MultisigSubsig[])
     """
+
     def __init__(self, version, threshold, addresses):
         self.version = version
         self.threshold = threshold
@@ -1013,6 +1019,7 @@ class MultisigSubsig:
         public_key (bytes)
         signature (bytes)
     """
+
     def __init__(self, public_key, signature=None):
         self.public_key = public_key
         self.signature = signature

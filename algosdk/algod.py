@@ -23,6 +23,7 @@ class AlgodClient:
         algod_address (str)
         headers (dict)
     """
+
     def __init__(self, algod_token, algod_address, headers=None):
         self.algod_token = algod_token
         self.algod_address = algod_address
@@ -54,7 +55,7 @@ class AlgodClient:
         if requrl not in constants.no_auth:
             header.update({
                 constants.algod_auth_header: self.algod_token
-                })
+            })
 
         if requrl not in constants.unversioned_paths:
             requrl = constants.api_version_path_prefix + requrl

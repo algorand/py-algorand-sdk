@@ -58,7 +58,7 @@ class TestTransaction(unittest.TestCase):
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         sp = transaction.SuggestedParams(1, 100, gh, "testnet-v1.0", 3)
         txn = transaction.PaymentTxn(address, sp, address,
-                                     1000,close_remainder_to=address)
+                                     1000, close_remainder_to=address)
         txid = txn.get_txid().encode()
         txid = base64.decodebytes(txid)
 
@@ -80,26 +80,28 @@ class TestTransaction(unittest.TestCase):
         self.assertEqual(enc, re_enc)
 
     def test_sign(self):
-        mn = ("advice pudding treat near rule blouse same whisper inner " +
-              "electric quit surface sunny dismiss leader blood seat " +
-              "clown cost exist hospital century reform able sponsor")
+        mn = (
+            "advice pudding treat near rule blouse same whisper inner electric"
+            " quit surface sunny dismiss leader blood seat clown cost exist ho"
+            "spital century reform able sponsor")
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         address = "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI"
         close = "IDUTJEUIEVSMXTU4LGTJWZ2UE2E6TIODUKU6UW3FU3UKIQQ77RLUBBBFLA"
         sk = mnemonic.to_private_key(mn)
         pk = account.address_from_private_key(sk)
         sp = transaction.SuggestedParams(12466, 13466, gh, "devnet-v33.0", 4)
-        txn = transaction.PaymentTxn(pk, sp, address, 1000,
-                                     note=base64.b64decode("6gAVR0Nsv5Y="),
-                                     close_remainder_to=close)
+        txn = transaction.PaymentTxn(
+            pk, sp, address, 1000, note=base64.b64decode("6gAVR0Nsv5Y="),
+            close_remainder_to=close)
         stx = txn.sign(sk)
-        golden = ("gqNzaWfEQPhUAZ3xkDDcc8FvOVo6UinzmKBCqs0woYSfodlmBMfQvGbeU" +
-                  "x3Srxy3dyJDzv7rLm26BRv9FnL2/AuT7NYfiAWjdHhui6NhbXTNA+ilY2" +
-                  "xvc2XEIEDpNJKIJWTLzpxZpptnVCaJ6aHDoqnqW2Wm6KRCH/xXo2ZlZc0" +
-                  "EmKJmds0wsqNnZW6sZGV2bmV0LXYzMy4womdoxCAmCyAJoJOohot5WHIv" +
-                  "peVG7eftF+TYXEx4r7BFJpDt0qJsds00mqRub3RlxAjqABVHQ2y/lqNyY" +
-                  "3bEIHts4k/rW6zAsWTinCIsV/X2PcOH1DkEglhBHF/hD3wCo3NuZMQg5/" +
-                  "D4TQaBHfnzHI2HixFV9GcdUaGFwgCQhmf0SVhwaKGkdHlwZaNwYXk=")
+        golden = (
+            "gqNzaWfEQPhUAZ3xkDDcc8FvOVo6UinzmKBCqs0woYSfodlmBMfQvGbeUx3Srxy3d"
+            "yJDzv7rLm26BRv9FnL2/AuT7NYfiAWjdHhui6NhbXTNA+ilY2xvc2XEIEDpNJKIJW"
+            "TLzpxZpptnVCaJ6aHDoqnqW2Wm6KRCH/xXo2ZlZc0EmKJmds0wsqNnZW6sZGV2bmV"
+            "0LXYzMy4womdoxCAmCyAJoJOohot5WHIvpeVG7eftF+TYXEx4r7BFJpDt0qJsds00"
+            "mqRub3RlxAjqABVHQ2y/lqNyY3bEIHts4k/rW6zAsWTinCIsV/X2PcOH1DkEglhBH"
+            "F/hD3wCo3NuZMQg5/D4TQaBHfnzHI2HixFV9GcdUaGFwgCQhmf0SVhwaKGkdHlwZa"
+            "NwYXk=")
         self.assertEqual(golden, encoding.msgpack_encode(stx))
         txid_golden = "5FJDJD5LMZC3EHUYYJNH5I23U4X6H2KXABNDGPIL557ZMJ33GZHQ"
         self.assertEqual(txn.get_txid(), txid_golden)
@@ -112,9 +114,10 @@ class TestTransaction(unittest.TestCase):
         self.assertEqual(enc, re_enc)
 
     def test_serialize_pay(self):
-        mn = ("advice pudding treat near rule blouse same whisper inner elec" +
-              "tric quit surface sunny dismiss leader blood seat clown cost " +
-              "exist hospital century reform able sponsor")
+        mn = (
+            "advice pudding treat near rule blouse same whisper inner electric"
+            " quit surface sunny dismiss leader blood seat clown cost exist ho"
+            "spital century reform able sponsor")
         sk = mnemonic.to_private_key(mn)
         pk = mnemonic.to_public_key(mn)
         to = "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI"
@@ -130,20 +133,22 @@ class TestTransaction(unittest.TestCase):
         txn = transaction.PaymentTxn(pk, sp, to, amount, close, note)
         signed_txn = txn.sign(sk)
 
-        golden = ("gqNzaWfEQPhUAZ3xkDDcc8FvOVo6UinzmKBCqs0woYSfodlmBMfQvGbeU" +
-                  "x3Srxy3dyJDzv7rLm26BRv9FnL2/AuT7NYfiAWjdHhui6NhbXTNA+ilY2" +
-                  "xvc2XEIEDpNJKIJWTLzpxZpptnVCaJ6aHDoqnqW2Wm6KRCH/xXo2ZlZc0" +
-                  "EmKJmds0wsqNnZW6sZGV2bmV0LXYzMy4womdoxCAmCyAJoJOohot5WHIv" +
-                  "peVG7eftF+TYXEx4r7BFJpDt0qJsds00mqRub3RlxAjqABVHQ2y/lqNyY" +
-                  "3bEIHts4k/rW6zAsWTinCIsV/X2PcOH1DkEglhBHF/hD3wCo3NuZMQg5/" +
-                  "D4TQaBHfnzHI2HixFV9GcdUaGFwgCQhmf0SVhwaKGkdHlwZaNwYXk=")
+        golden = (
+            "gqNzaWfEQPhUAZ3xkDDcc8FvOVo6UinzmKBCqs0woYSfodlmBMfQvGbeUx3Srxy3d"
+            "yJDzv7rLm26BRv9FnL2/AuT7NYfiAWjdHhui6NhbXTNA+ilY2xvc2XEIEDpNJKIJW"
+            "TLzpxZpptnVCaJ6aHDoqnqW2Wm6KRCH/xXo2ZlZc0EmKJmds0wsqNnZW6sZGV2bmV"
+            "0LXYzMy4womdoxCAmCyAJoJOohot5WHIvpeVG7eftF+TYXEx4r7BFJpDt0qJsds00"
+            "mqRub3RlxAjqABVHQ2y/lqNyY3bEIHts4k/rW6zAsWTinCIsV/X2PcOH1DkEglhBH"
+            "F/hD3wCo3NuZMQg5/D4TQaBHfnzHI2HixFV9GcdUaGFwgCQhmf0SVhwaKGkdHlwZa"
+            "NwYXk=")
 
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_serialize_pay_lease(self):
-        mn = ("advice pudding treat near rule blouse same whisper inner elec" +
-              "tric quit surface sunny dismiss leader blood seat clown cost " +
-              "exist hospital century reform able sponsor")
+        mn = (
+            "advice pudding treat near rule blouse same whisper inner electric"
+            " quit surface sunny dismiss leader blood seat clown cost exist ho"
+            "spital century reform able sponsor")
         sk = mnemonic.to_private_key(mn)
         pk = mnemonic.to_public_key(mn)
         to = "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI"
@@ -158,56 +163,61 @@ class TestTransaction(unittest.TestCase):
         lease = bytes([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3,
                        4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
         sp = transaction.SuggestedParams(first_round, last_round, gh, gen, fee)
-        txn = transaction.PaymentTxn(pk, sp, to,
-                                     amount, close_remainder_to=close, note=note, lease=lease)
+        txn = transaction.PaymentTxn(
+            pk, sp, to, amount, close_remainder_to=close, note=note,
+            lease=lease)
         signed_txn = txn.sign(sk)
 
-        golden = ("gqNzaWfEQOMmFSIKsZvpW0txwzhmbgQjxv6IyN7BbV5sZ2aNgFbVcrWUn" +
-                  "qPpQQxfPhV/wdu9jzEPUU1jAujYtcNCxJ7ONgejdHhujKNhbXTNA+ilY2" +
-                  "xvc2XEIEDpNJKIJWTLzpxZpptnVCaJ6aHDoqnqW2Wm6KRCH/xXo2ZlZc0" +
-                  "FLKJmds0wsqNnZW6sZGV2bmV0LXYzMy4womdoxCAmCyAJoJOohot5WHIv" +
-                  "peVG7eftF+TYXEx4r7BFJpDt0qJsds00mqJseMQgAQIDBAECAwQBAgMEA" +
-                  "QIDBAECAwQBAgMEAQIDBAECAwSkbm90ZcQI6gAVR0Nsv5ajcmN2xCB7bO" +
-                  "JP61uswLFk4pwiLFf19j3Dh9Q5BIJYQRxf4Q98AqNzbmTEIOfw+E0GgR3" +
-                  "58xyNh4sRVfRnHVGhhcIAkIZn9ElYcGihpHR5cGWjcGF5")
+        golden = (
+            "gqNzaWfEQOMmFSIKsZvpW0txwzhmbgQjxv6IyN7BbV5sZ2aNgFbVcrWUnqPpQQxfP"
+            "hV/wdu9jzEPUU1jAujYtcNCxJ7ONgejdHhujKNhbXTNA+ilY2xvc2XEIEDpNJKIJW"
+            "TLzpxZpptnVCaJ6aHDoqnqW2Wm6KRCH/xXo2ZlZc0FLKJmds0wsqNnZW6sZGV2bmV"
+            "0LXYzMy4womdoxCAmCyAJoJOohot5WHIvpeVG7eftF+TYXEx4r7BFJpDt0qJsds00"
+            "mqJseMQgAQIDBAECAwQBAgMEAQIDBAECAwQBAgMEAQIDBAECAwSkbm90ZcQI6gAVR"
+            "0Nsv5ajcmN2xCB7bOJP61uswLFk4pwiLFf19j3Dh9Q5BIJYQRxf4Q98AqNzbmTEIO"
+            "fw+E0GgR358xyNh4sRVfRnHVGhhcIAkIZn9ElYcGihpHR5cGWjcGF5")
 
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_serialize_keyreg(self):
-        mn = ("awful drop leaf tennis indoor begin mandate discover uncle se" +
-              "ven only coil atom any hospital uncover make any climb actor " +
-              "armed measure need above hundred")
+        mn = (
+            "awful drop leaf tennis indoor begin mandate discover uncle seven "
+            "only coil atom any hospital uncover make any climb actor armed me"
+            "asure need above hundred")
         sk = mnemonic.to_private_key(mn)
         pk = mnemonic.to_public_key(mn)
         fee = 1000
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
         votepk = encoding.encode_address(base64.b64decode(
-                            "Kv7QI7chi1y6axoy+t7wzAVpePqRq/rkjzWh/RMYyLo="))
+            "Kv7QI7chi1y6axoy+t7wzAVpePqRq/rkjzWh/RMYyLo="))
         selpk = encoding.encode_address(base64.b64decode(
-                            "bPgrv4YogPcdaUAxrt1QysYZTVyRAuUMD4zQmCu9llc="))
+            "bPgrv4YogPcdaUAxrt1QysYZTVyRAuUMD4zQmCu9llc="))
         votefirst = 10000
         votelast = 10111
         votedilution = 11
 
-        sp = transaction.SuggestedParams(322575, 323575, gh, None, fee, flat_fee=True)
+        sp = transaction.SuggestedParams(
+            322575, 323575, gh, None, fee, flat_fee=True)
         txn = transaction.KeyregTxn(pk, sp, votepk, selpk, votefirst, votelast,
                                     votedilution)
         signed_txn = txn.sign(sk)
 
-        golden = ("gqNzaWfEQEA8ANbrvTRxU9c8v6WERcEPw7D/HacRgg4vICa61vEof60Ww" +
-                  "tx6KJKDyvBuvViFeacLlngPY6vYCVP0DktTwQ2jdHhui6NmZWXNA+iiZn" +
-                  "bOAATsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiK" +
-                  "ibHbOAATv96ZzZWxrZXnEIGz4K7+GKID3HWlAMa7dUMrGGU1ckQLlDA+M" +
-                  "0JgrvZZXo3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224" +
-                  "f2kdHlwZaZrZXlyZWendm90ZWZzdM0nEKZ2b3Rla2QLp3ZvdGVrZXnEIC" +
-                  "r+0CO3IYtcumsaMvre8MwFaXj6kav65I81of0TGMi6p3ZvdGVsc3TNJ38=")
+        golden = (
+            "gqNzaWfEQEA8ANbrvTRxU9c8v6WERcEPw7D/HacRgg4vICa61vEof60Wwtx6KJKDy"
+            "vBuvViFeacLlngPY6vYCVP0DktTwQ2jdHhui6NmZWXNA+iiZnbOAATsD6JnaMQgSG"
+            "O1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOAATv96ZzZWxrZXnEIGz"
+            "4K7+GKID3HWlAMa7dUMrGGU1ckQLlDA+M0JgrvZZXo3NuZMQgCfvSdiwI+Gxa5r9t"
+            "16epAd5mdddQ4H6MXHaYZH224f2kdHlwZaZrZXlyZWendm90ZWZzdM0nEKZ2b3Rla"
+            "2QLp3ZvdGVrZXnEICr+0CO3IYtcumsaMvre8MwFaXj6kav65I81of0TGMi6p3ZvdG"
+            "Vsc3TNJ38=")
 
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_serialize_asset_create(self):
-        mn = ("awful drop leaf tennis indoor begin mandate discover uncle se" +
-              "ven only coil atom any hospital uncover make any climb actor " +
-              "armed measure need above hundred")
+        mn = (
+            "awful drop leaf tennis indoor begin mandate discover uncle seven "
+            "only coil atom any hospital uncover make any climb actor armed me"
+            "asure need above hundred")
         sk = mnemonic.to_private_key(mn)
         pk = mnemonic.to_public_key(mn)
         fee = 10
@@ -220,28 +230,30 @@ class TestTransaction(unittest.TestCase):
         unitname = "tst"
         url = "website"
         metadata = bytes("fACPO4nRgO55j1ndAK3W6Sgc4APkcyFh", "ascii")
-        sp = transaction.SuggestedParams(first_round, last_round, gh, None, fee)
+        sp = transaction.SuggestedParams(
+            first_round, last_round, gh, None, fee)
         txn = transaction.AssetConfigTxn(
-            pk, sp, total=total, manager=pk, reserve=pk, freeze=pk, clawback=pk,
-            unit_name=unitname, asset_name=assetname, url=url, metadata_hash=metadata,
-            default_frozen=False)
+            pk, sp, total=total, manager=pk, reserve=pk, freeze=pk,
+            clawback=pk, unit_name=unitname, asset_name=assetname, url=url,
+            metadata_hash=metadata, default_frozen=False)
         signed_txn = txn.sign(sk)
-        golden = ("gqNzaWfEQEDd1OMRoQI/rzNlU4iiF50XQXmup3k5czI9hEsNqHT7K4Ksf" +
-                  "mA/0DUVkbzOwtJdRsHS8trm3Arjpy9r7AXlbAujdHhuh6RhcGFyiaJhbc" +
-                  "QgZkFDUE80blJnTzU1ajFuZEFLM1c2U2djNEFQa2N5RmiiYW6odGVzdGN" +
-                  "vaW6iYXWnd2Vic2l0ZaFjxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxc" +
-                  "dphkfbbh/aFmxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/" +
-                  "aFtxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFyxCAJ+9" +
-                  "J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aF0ZKJ1bqN0c3SjZmV" +
-                  "lzQ+0omZ2zgAE7A+iZ2jEIEhjtRiks8hOyBDyLU8QgcsPcfBZp6wg3sYv" +
-                  "f3DlCToiomx2zgAE7/ejc25kxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgf" +
-                  "oxcdphkfbbh/aR0eXBlpGFjZmc=")
+        golden = (
+            "gqNzaWfEQEDd1OMRoQI/rzNlU4iiF50XQXmup3k5czI9hEsNqHT7K4KsfmA/0DUVk"
+            "bzOwtJdRsHS8trm3Arjpy9r7AXlbAujdHhuh6RhcGFyiaJhbcQgZkFDUE80blJnTz"
+            "U1ajFuZEFLM1c2U2djNEFQa2N5RmiiYW6odGVzdGNvaW6iYXWnd2Vic2l0ZaFjxCA"
+            "J+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFmxCAJ+9J2LAj4bFrmv23X"
+            "p6kB3mZ111Dgfoxcdphkfbbh/aFtxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcd"
+            "phkfbbh/aFyxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aF0ZKJ1bq"
+            "N0c3SjZmVlzQ+0omZ2zgAE7A+iZ2jEIEhjtRiks8hOyBDyLU8QgcsPcfBZp6wg3sY"
+            "vf3DlCToiomx2zgAE7/ejc25kxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphk"
+            "fbbh/aR0eXBlpGFjZmc=")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_serialize_asset_create_decimal(self):
-        mn = ("awful drop leaf tennis indoor begin mandate discover uncle se" +
-              "ven only coil atom any hospital uncover make any climb actor " +
-              "armed measure need above hundred")
+        mn = (
+            "awful drop leaf tennis indoor begin mandate discover uncle seven "
+            "only coil atom any hospital uncover make any climb actor armed me"
+            "asure need above hundred")
         sk = mnemonic.to_private_key(mn)
         pk = mnemonic.to_public_key(mn)
         fee = 10
@@ -254,22 +266,23 @@ class TestTransaction(unittest.TestCase):
         unitname = "tst"
         url = "website"
         metadata = bytes("fACPO4nRgO55j1ndAK3W6Sgc4APkcyFh", "ascii")
-        sp = transaction.SuggestedParams(first_round, last_round, gh, None, fee)
+        sp = transaction.SuggestedParams(
+            first_round, last_round, gh, None, fee)
         txn = transaction.AssetConfigTxn(
-            pk, sp, total=total, manager=pk, reserve=pk, freeze=pk, clawback=pk,
-            unit_name=unitname, asset_name=assetname, url=url, metadata_hash=metadata,
-            default_frozen=False, decimals=1)
+            pk, sp, total=total, manager=pk, reserve=pk, freeze=pk,
+            clawback=pk, unit_name=unitname, asset_name=assetname, url=url,
+            metadata_hash=metadata, default_frozen=False, decimals=1)
         signed_txn = txn.sign(sk)
-        golden = ("gqNzaWfEQCj5xLqNozR5ahB+LNBlTG+d0gl0vWBrGdAXj1ibsCkvAwOsX" +
-                  "s5KHZK1YdLgkdJecQiWm4oiZ+pm5Yg0m3KFqgqjdHhuh6RhcGFyiqJhbc" +
-                  "QgZkFDUE80blJnTzU1ajFuZEFLM1c2U2djNEFQa2N5RmiiYW6odGVzdGN" +
-                  "vaW6iYXWnd2Vic2l0ZaFjxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxc" +
-                  "dphkfbbh/aJkYwGhZsQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZ" +
-                  "H224f2hbcQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2hcs" +
-                  "QgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2hdGSidW6jdHN" +
-                  "0o2ZlZc0P3KJmds4ABOwPomdoxCBIY7UYpLPITsgQ8i1PEIHLD3HwWaes" +
-                  "IN7GL39w5Qk6IqJsds4ABO/3o3NuZMQgCfvSdiwI+Gxa5r9t16epAd5md" +
-                  "ddQ4H6MXHaYZH224f2kdHlwZaRhY2Zn")
+        golden = (
+            "gqNzaWfEQCj5xLqNozR5ahB+LNBlTG+d0gl0vWBrGdAXj1ibsCkvAwOsXs5KHZK1Y"
+            "dLgkdJecQiWm4oiZ+pm5Yg0m3KFqgqjdHhuh6RhcGFyiqJhbcQgZkFDUE80blJnTz"
+            "U1ajFuZEFLM1c2U2djNEFQa2N5RmiiYW6odGVzdGNvaW6iYXWnd2Vic2l0ZaFjxCA"
+            "J+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aJkYwGhZsQgCfvSdiwI+Gxa"
+            "5r9t16epAd5mdddQ4H6MXHaYZH224f2hbcQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4"
+            "H6MXHaYZH224f2hcsQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2hdG"
+            "SidW6jdHN0o2ZlZc0P3KJmds4ABOwPomdoxCBIY7UYpLPITsgQ8i1PEIHLD3HwWae"
+            "sIN7GL39w5Qk6IqJsds4ABO/3o3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6M"
+            "XHaYZH224f2kdHlwZaRhY2Zn")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_asset_empty_address_error(self):
@@ -279,15 +292,17 @@ class TestTransaction(unittest.TestCase):
         last_round = 323575
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
         index = 1234
-        sp = transaction.SuggestedParams(first_round, last_round, gh, None, fee)
+        sp = transaction.SuggestedParams(
+            first_round, last_round, gh, None, fee)
         self.assertRaises(error.EmptyAddressError, transaction.AssetConfigTxn,
                           pk, sp, reserve=pk,
                           freeze=pk, clawback=pk, index=index)
 
     def test_serialize_asset_config(self):
-        mn = ("awful drop leaf tennis indoor begin mandate discover uncle se" +
-              "ven only coil atom any hospital uncover make any climb actor " +
-              "armed measure need above hundred")
+        mn = (
+            "awful drop leaf tennis indoor begin mandate discover uncle seven "
+            "only coil atom any hospital uncover make any climb actor armed me"
+            "asure need above hundred")
         sk = mnemonic.to_private_key(mn)
         pk = mnemonic.to_public_key(mn)
         fee = 10
@@ -295,25 +310,29 @@ class TestTransaction(unittest.TestCase):
         last_round = 323575
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
         index = 1234
-        sp = transaction.SuggestedParams(first_round, last_round, gh, None, fee)
+        sp = transaction.SuggestedParams(
+            first_round, last_round, gh, None, fee)
         txn = transaction.AssetConfigTxn(
-            pk, sp, manager=pk, reserve=pk, freeze=pk, clawback=pk, index=index)
+            pk, sp, manager=pk, reserve=pk, freeze=pk, clawback=pk,
+            index=index)
         signed_txn = txn.sign(sk)
-        golden = ("gqNzaWfEQBBkfw5n6UevuIMDo2lHyU4dS80JCCQ/vTRUcTx5m0ivX68zT" +
-                  "KyuVRrHaTbxbRRc3YpJ4zeVEnC9Fiw3Wf4REwejdHhuiKRhcGFyhKFjxC" +
-                  "AJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFmxCAJ+9J2LAj" +
-                  "4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFtxCAJ+9J2LAj4bFrmv23X" +
-                  "p6kB3mZ111Dgfoxcdphkfbbh/aFyxCAJ+9J2LAj4bFrmv23Xp6kB3mZ11" +
-                  "1Dgfoxcdphkfbbh/aRjYWlkzQTSo2ZlZc0NSKJmds4ABOwPomdoxCBIY7" +
-                  "UYpLPITsgQ8i1PEIHLD3HwWaesIN7GL39w5Qk6IqJsds4ABO/3o3NuZMQ" +
-                  "gCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2kdHlwZaRhY2Zn")
+        golden = (
+            "gqNzaWfEQBBkfw5n6UevuIMDo2lHyU4dS80JCCQ/vTRUcTx5m0ivX68zTKyuVRrHa"
+            "TbxbRRc3YpJ4zeVEnC9Fiw3Wf4REwejdHhuiKRhcGFyhKFjxCAJ+9J2LAj4bFrmv2"
+            "3Xp6kB3mZ111Dgfoxcdphkfbbh/aFmxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfox"
+            "cdphkfbbh/aFtxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFyxCAJ"
+            "+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aRjYWlkzQTSo2ZlZc0NSKJmd"
+            "s4ABOwPomdoxCBIY7UYpLPITsgQ8i1PEIHLD3HwWaesIN7GL39w5Qk6IqJsds4ABO"
+            "/3o3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2kdHlwZaRhY2Z"
+            "n")
 
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_serialize_asset_destroy(self):
-        mn = ("awful drop leaf tennis indoor begin mandate discover uncle se" +
-              "ven only coil atom any hospital uncover make any climb actor " +
-              "armed measure need above hundred")
+        mn = (
+            "awful drop leaf tennis indoor begin mandate discover uncle seven "
+            "only coil atom any hospital uncover make any climb actor armed me"
+            "asure need above hundred")
         sk = mnemonic.to_private_key(mn)
         pk = mnemonic.to_public_key(mn)
         fee = 10
@@ -321,21 +340,23 @@ class TestTransaction(unittest.TestCase):
         last_round = 323575
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
         index = 1
-        sp = transaction.SuggestedParams(first_round, last_round, gh, None, fee)
+        sp = transaction.SuggestedParams(
+            first_round, last_round, gh, None, fee)
         txn = transaction.AssetConfigTxn(
             pk, sp, index=index, strict_empty_address_check=False)
         signed_txn = txn.sign(sk)
-        golden = ("gqNzaWfEQBSP7HtzD/Lvn4aVvaNpeR4T93dQgo4LvywEwcZgDEoc/WVl3" +
-                  "aKsZGcZkcRFoiWk8AidhfOZzZYutckkccB8RgGjdHhuh6RjYWlkAaNmZW" +
-                  "XNB1iiZnbOAATsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9" +
-                  "/cOUJOiKibHbOAATv96NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+" +
-                  "jFx2mGR9tuH9pHR5cGWkYWNmZw==")
+        golden = (
+            "gqNzaWfEQBSP7HtzD/Lvn4aVvaNpeR4T93dQgo4LvywEwcZgDEoc/WVl3aKsZGcZk"
+            "cRFoiWk8AidhfOZzZYutckkccB8RgGjdHhuh6RjYWlkAaNmZWXNB1iiZnbOAATsD6"
+            "JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOAATv96NzbmT"
+            "EIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWkYWNmZw==")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_serialize_asset_freeze(self):
-        mn = ("awful drop leaf tennis indoor begin mandate discover uncle se" +
-              "ven only coil atom any hospital uncover make any climb actor " +
-              "armed measure need above hundred")
+        mn = (
+            "awful drop leaf tennis indoor begin mandate discover uncle seven "
+            "only coil atom any hospital uncover make any climb actor armed me"
+            "asure need above hundred")
         sk = mnemonic.to_private_key(mn)
         pk = mnemonic.to_public_key(mn)
         fee = 10
@@ -344,22 +365,24 @@ class TestTransaction(unittest.TestCase):
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
         index = 1
         target = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
-        sp = transaction.SuggestedParams(first_round, last_round, gh, None, fee)
+        sp = transaction.SuggestedParams(
+            first_round, last_round, gh, None, fee)
         txn = transaction.AssetFreezeTxn(
             pk, sp, index=index, target=target, new_freeze_state=True)
         signed_txn = txn.sign(sk)
-        golden = ("gqNzaWfEQAhru5V2Xvr19s4pGnI0aslqwY4lA2skzpYtDTAN9DKSH5+qs" +
-                  "fQQhm4oq+9VHVj7e1rQC49S28vQZmzDTVnYDQGjdHhuiaRhZnJ6w6RmYW" +
-                  "RkxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aRmYWlkAaN" +
-                  "mZWXNCRqiZnbOAATsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDe" +
-                  "xi9/cOUJOiKibHbOAATv+KNzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXU" +
-                  "OB+jFx2mGR9tuH9pHR5cGWkYWZyeg==")
+        golden = (
+            "gqNzaWfEQAhru5V2Xvr19s4pGnI0aslqwY4lA2skzpYtDTAN9DKSH5+qsfQQhm4oq"
+            "+9VHVj7e1rQC49S28vQZmzDTVnYDQGjdHhuiaRhZnJ6w6RmYWRkxCAJ+9J2LAj4bF"
+            "rmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aRmYWlkAaNmZWXNCRqiZnbOAATsD6JnaMQ"
+            "gSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOAATv+KNzbmTEIAn7"
+            "0nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWkYWZyeg==")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_serialize_asset_transfer(self):
-        mn = ("awful drop leaf tennis indoor begin mandate discover uncle se" +
-              "ven only coil atom any hospital uncover make any climb actor " +
-              "armed measure need above hundred")
+        mn = (
+            "awful drop leaf tennis indoor begin mandate discover uncle seven "
+            "only coil atom any hospital uncover make any climb actor armed me"
+            "asure need above hundred")
         sk = mnemonic.to_private_key(mn)
         pk = mnemonic.to_public_key(mn)
         fee = 10
@@ -370,23 +393,25 @@ class TestTransaction(unittest.TestCase):
         amount = 1
         to = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
         close = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
-        sp = transaction.SuggestedParams(first_round, last_round, gh, None, fee)
+        sp = transaction.SuggestedParams(
+            first_round, last_round, gh, None, fee)
         txn = transaction.AssetTransferTxn(
             pk, sp, to, amount, index, close)
         signed_txn = txn.sign(sk)
-        golden = ("gqNzaWfEQNkEs3WdfFq6IQKJdF1n0/hbV9waLsvojy9pM1T4fvwfMNdjG" +
-                  "QDy+LeesuQUfQVTneJD4VfMP7zKx4OUlItbrwSjdHhuiqRhYW10AaZhY2" +
-                  "xvc2XEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pGFyY3b" +
-                  "EIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9o2ZlZc0KvqJm" +
-                  "ds4ABOwPomdoxCBIY7UYpLPITsgQ8i1PEIHLD3HwWaesIN7GL39w5Qk6I" +
-                  "qJsds4ABO/4o3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH" +
-                  "224f2kdHlwZaVheGZlcqR4YWlkAQ==")
+        golden = (
+            "gqNzaWfEQNkEs3WdfFq6IQKJdF1n0/hbV9waLsvojy9pM1T4fvwfMNdjGQDy+Lees"
+            "uQUfQVTneJD4VfMP7zKx4OUlItbrwSjdHhuiqRhYW10AaZhY2xvc2XEIAn70nYsCP"
+            "hsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pGFyY3bEIAn70nYsCPhsWua/bdenqQH"
+            "eZnXXUOB+jFx2mGR9tuH9o2ZlZc0KvqJmds4ABOwPomdoxCBIY7UYpLPITsgQ8i1P"
+            "EIHLD3HwWaesIN7GL39w5Qk6IqJsds4ABO/4o3NuZMQgCfvSdiwI+Gxa5r9t16epA"
+            "d5mdddQ4H6MXHaYZH224f2kdHlwZaVheGZlcqR4YWlkAQ==")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_serialize_asset_accept(self):
-        mn = ("awful drop leaf tennis indoor begin mandate discover uncle se" +
-              "ven only coil atom any hospital uncover make any climb actor " +
-              "armed measure need above hundred")
+        mn = (
+            "awful drop leaf tennis indoor begin mandate discover uncle seven "
+            "only coil atom any hospital uncover make any climb actor armed me"
+            "asure need above hundred")
         sk = mnemonic.to_private_key(mn)
         pk = mnemonic.to_public_key(mn)
         fee = 10
@@ -396,22 +421,24 @@ class TestTransaction(unittest.TestCase):
         index = 1
         amount = 0
         to = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
-        sp = transaction.SuggestedParams(first_round, last_round, gh, None, fee)
+        sp = transaction.SuggestedParams(
+            first_round, last_round, gh, None, fee)
         txn = transaction.AssetTransferTxn(
             pk, sp, to, amount, index)
         signed_txn = txn.sign(sk)
-        golden = ("gqNzaWfEQJ7q2rOT8Sb/wB0F87ld+1zMprxVlYqbUbe+oz0WM63FctIi+" +
-                  "K9eYFSqT26XBZ4Rr3+VTJpBE+JLKs8nctl9hgijdHhuiKRhcmN2xCAJ+9" +
-                  "J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aNmZWXNCOiiZnbOAAT" +
-                  "sD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbO" +
-                  "AATv96NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9p" +
-                  "HR5cGWlYXhmZXKkeGFpZAE=")
+        golden = (
+            "gqNzaWfEQJ7q2rOT8Sb/wB0F87ld+1zMprxVlYqbUbe+oz0WM63FctIi+K9eYFSqT"
+            "26XBZ4Rr3+VTJpBE+JLKs8nctl9hgijdHhuiKRhcmN2xCAJ+9J2LAj4bFrmv23Xp6"
+            "kB3mZ111Dgfoxcdphkfbbh/aNmZWXNCOiiZnbOAATsD6JnaMQgSGO1GKSzyE7IEPI"
+            "tTxCByw9x8FmnrCDexi9/cOUJOiKibHbOAATv96NzbmTEIAn70nYsCPhsWua/bden"
+            "qQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWlYXhmZXKkeGFpZAE=")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_serialize_asset_revoke(self):
-        mn = ("awful drop leaf tennis indoor begin mandate discover uncle se" +
-              "ven only coil atom any hospital uncover make any climb actor " +
-              "armed measure need above hundred")
+        mn = (
+            "awful drop leaf tennis indoor begin mandate discover uncle seven "
+            "only coil atom any hospital uncover make any climb actor armed me"
+            "asure need above hundred")
         sk = mnemonic.to_private_key(mn)
         pk = mnemonic.to_public_key(mn)
         fee = 10
@@ -421,17 +448,18 @@ class TestTransaction(unittest.TestCase):
         index = 1
         amount = 1
         to = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
-        sp = transaction.SuggestedParams(first_round, last_round, gh, None, fee)
+        sp = transaction.SuggestedParams(
+            first_round, last_round, gh, None, fee)
         txn = transaction.AssetTransferTxn(
             pk, sp, to, amount, index, revocation_target=to)
         signed_txn = txn.sign(sk)
-        golden = ("gqNzaWfEQHsgfEAmEHUxLLLR9s+Y/yq5WeoGo/jAArCbany+7ZYwExMyS" +
-                  "zAhmV7M7S8+LBtJalB4EhzEUMKmt3kNKk6+vAWjdHhuiqRhYW10AaRhcm" +
-                  "N2xCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aRhc25kxCA" +
-                  "J+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aNmZWXNCqqiZnbO" +
-                  "AATsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKib" +
-                  "HbOAATv96NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tu" +
-                  "H9pHR5cGWlYXhmZXKkeGFpZAE=")
+        golden = (
+            "gqNzaWfEQHsgfEAmEHUxLLLR9s+Y/yq5WeoGo/jAArCbany+7ZYwExMySzAhmV7M7"
+            "S8+LBtJalB4EhzEUMKmt3kNKk6+vAWjdHhuiqRhYW10AaRhcmN2xCAJ+9J2LAj4bF"
+            "rmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aRhc25kxCAJ+9J2LAj4bFrmv23Xp6kB3mZ"
+            "111Dgfoxcdphkfbbh/aNmZWXNCqqiZnbOAATsD6JnaMQgSGO1GKSzyE7IEPItTxCB"
+            "yw9x8FmnrCDexi9/cOUJOiKibHbOAATv96NzbmTEIAn70nYsCPhsWua/bdenqQHeZ"
+            "nXXUOB+jFx2mGR9tuH9pHR5cGWlYXhmZXKkeGFpZAE=")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_group_id(self):
@@ -445,15 +473,16 @@ class TestTransaction(unittest.TestCase):
         firstRound1 = 710399
         note1 = base64.b64decode("wRKw5cJ0CMo=")
 
-        sp = transaction.SuggestedParams(firstRound1, firstRound1+1000, genesisHash,
-                                         genesisID, fee, flat_fee=True)
+        sp = transaction.SuggestedParams(
+            firstRound1, firstRound1+1000, genesisHash, genesisID, fee,
+            flat_fee=True)
         tx1 = transaction.PaymentTxn(
             fromAddress, sp, toAddress, amount,
             note=note1)
 
         firstRound2 = 710515
         note2 = base64.b64decode("dBlHI6BdrIg=")
-        
+
         sp.first = firstRound2
         sp.last = firstRound2 + 1000
         tx2 = transaction.PaymentTxn(
@@ -466,16 +495,16 @@ class TestTransaction(unittest.TestCase):
         stx2 = transaction.SignedTransaction(tx2, None)
 
         goldenTx1 = (
-            "gaN0eG6Ko2FtdM0H0KNmZWXNA+iiZnbOAArW/6NnZW6rZGV2bmV0LXYxLjCiZ2j" +
-            "EILAtz+3tknW6iiStLW4gnSvbXUqW3ul3ghinaDc5pY9Bomx2zgAK2uekbm90Zc" +
-            "QIwRKw5cJ0CMqjcmN2xCCj8AKs8kPYlx63ppj1w5410qkMRGZ9FYofNYPXxGpNL" +
-            "KNzbmTEIKPwAqzyQ9iXHremmPXDnjXSqQxEZn0Vih81g9fEak0spHR5cGWjcGF5"
+            "gaN0eG6Ko2FtdM0H0KNmZWXNA+iiZnbOAArW/6NnZW6rZGV2bmV0LXYxLjCiZ2jEI"
+            "LAtz+3tknW6iiStLW4gnSvbXUqW3ul3ghinaDc5pY9Bomx2zgAK2uekbm90ZcQIwR"
+            "Kw5cJ0CMqjcmN2xCCj8AKs8kPYlx63ppj1w5410qkMRGZ9FYofNYPXxGpNLKNzbmT"
+            "EIKPwAqzyQ9iXHremmPXDnjXSqQxEZn0Vih81g9fEak0spHR5cGWjcGF5"
         )
         goldenTx2 = (
-            "gaN0eG6Ko2FtdM0H0KNmZWXNA+iiZnbOAArXc6NnZW6rZGV2bmV0LXYxLjCiZ2j" +
-            "EILAtz+3tknW6iiStLW4gnSvbXUqW3ul3ghinaDc5pY9Bomx2zgAK21ukbm90Zc" +
-            "QIdBlHI6BdrIijcmN2xCCj8AKs8kPYlx63ppj1w5410qkMRGZ9FYofNYPXxGpNL" +
-            "KNzbmTEIKPwAqzyQ9iXHremmPXDnjXSqQxEZn0Vih81g9fEak0spHR5cGWjcGF5"
+            "gaN0eG6Ko2FtdM0H0KNmZWXNA+iiZnbOAArXc6NnZW6rZGV2bmV0LXYxLjCiZ2jEI"
+            "LAtz+3tknW6iiStLW4gnSvbXUqW3ul3ghinaDc5pY9Bomx2zgAK21ukbm90ZcQIdB"
+            "lHI6BdrIijcmN2xCCj8AKs8kPYlx63ppj1w5410qkMRGZ9FYofNYPXxGpNLKNzbmT"
+            "EIKPwAqzyQ9iXHremmPXDnjXSqQxEZn0Vih81g9fEak0spHR5cGWjcGF5"
         )
 
         self.assertEqual(goldenTx1, encoding.msgpack_encode(stx1))
@@ -498,16 +527,16 @@ class TestTransaction(unittest.TestCase):
         ).decode()
 
         goldenTxg = (
-            "gaN0eG6Lo2FtdM0H0KNmZWXNA+iiZnbOAArW/6NnZW6rZGV2bmV0LXYxLjCiZ2j" +
-            "EILAtz+3tknW6iiStLW4gnSvbXUqW3ul3ghinaDc5pY9Bo2dycMQgLiQ9OBup9H" +
-            "/bZLSfQUH2S6iHUM6FQ3PLuv9FNKyt09SibHbOAAra56Rub3RlxAjBErDlwnQIy" +
-            "qNyY3bEIKPwAqzyQ9iXHremmPXDnjXSqQxEZn0Vih81g9fEak0so3NuZMQgo/AC" +
-            "rPJD2Jcet6aY9cOeNdKpDERmfRWKHzWD18RqTSykdHlwZaNwYXmBo3R4boujYW1" +
-            "0zQfQo2ZlZc0D6KJmds4ACtdzo2dlbqtkZXZuZXQtdjEuMKJnaMQgsC3P7e2Sdb" +
-            "qKJK0tbiCdK9tdSpbe6XeCGKdoNzmlj0GjZ3JwxCAuJD04G6n0f9tktJ9BQfZLq" +
-            "IdQzoVDc8u6/0U0rK3T1KJsds4ACttbpG5vdGXECHQZRyOgXayIo3JjdsQgo/AC" +
-            "rPJD2Jcet6aY9cOeNdKpDERmfRWKHzWD18RqTSyjc25kxCCj8AKs8kPYlx63ppj" +
-            "1w5410qkMRGZ9FYofNYPXxGpNLKR0eXBlo3BheQ=="
+            "gaN0eG6Lo2FtdM0H0KNmZWXNA+iiZnbOAArW/6NnZW6rZGV2bmV0LXYxLjCiZ2jEI"
+            "LAtz+3tknW6iiStLW4gnSvbXUqW3ul3ghinaDc5pY9Bo2dycMQgLiQ9OBup9H/bZL"
+            "SfQUH2S6iHUM6FQ3PLuv9FNKyt09SibHbOAAra56Rub3RlxAjBErDlwnQIyqNyY3b"
+            "EIKPwAqzyQ9iXHremmPXDnjXSqQxEZn0Vih81g9fEak0so3NuZMQgo/ACrPJD2Jce"
+            "t6aY9cOeNdKpDERmfRWKHzWD18RqTSykdHlwZaNwYXmBo3R4boujYW10zQfQo2ZlZ"
+            "c0D6KJmds4ACtdzo2dlbqtkZXZuZXQtdjEuMKJnaMQgsC3P7e2SdbqKJK0tbiCdK9"
+            "tdSpbe6XeCGKdoNzmlj0GjZ3JwxCAuJD04G6n0f9tktJ9BQfZLqIdQzoVDc8u6/0U"
+            "0rK3T1KJsds4ACttbpG5vdGXECHQZRyOgXayIo3JjdsQgo/ACrPJD2Jcet6aY9cOe"
+            "NdKpDERmfRWKHzWD18RqTSyjc25kxCCj8AKs8kPYlx63ppj1w5410qkMRGZ9FYofN"
+            "YPXxGpNLKR0eXBlo3BheQ=="
         )
 
         self.assertEqual(goldenTxg, txg)
@@ -550,28 +579,30 @@ class TestMnemonic(unittest.TestCase):
     def test_zero_mnemonic(self):
         zero_bytes = bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-        expected_mnemonic = ("abandon abandon abandon abandon abandon " +
-                             "abandon abandon abandon abandon abandon " +
-                             "abandon abandon abandon abandon abandon " +
-                             "abandon abandon abandon abandon abandon " +
-                             "abandon abandon abandon abandon invest")
+        expected_mnemonic = (
+            "abandon abandon abandon abandon abandon abandon abandon abandon "
+            "abandon abandon abandon abandon abandon abandon abandon abandon "
+            "abandon abandon abandon abandon abandon abandon abandon abandon "
+            "invest")
         result = mnemonic._from_key(zero_bytes)
         self.assertEqual(expected_mnemonic, result)
         result = mnemonic._to_key(result)
         self.assertEqual(zero_bytes, result)
 
     def test_wrong_checksum(self):
-        mn = ("abandon abandon abandon abandon abandon abandon abandon " +
-              "abandon abandon abandon abandon abandon abandon abandon " +
-              "abandon abandon abandon abandon abandon abandon abandon " +
-              "abandon abandon abandon abandon")
+        mn = (
+            "abandon abandon abandon abandon abandon abandon abandon abandon "
+            "abandon abandon abandon abandon abandon abandon abandon abandon "
+            "abandon abandon abandon abandon abandon abandon abandon abandon "
+            "abandon")
         self.assertRaises(error.WrongChecksumError, mnemonic._to_key, mn)
 
     def test_word_not_in_list(self):
-        mn = ("abandon abandon abandon abandon abandon abandon abandon " +
-              "abandon abandon abandon abandon abandon abandon abandon " +
-              "abandon abandon abandon venues abandon abandon abandon " +
-              "abandon abandon abandon invest")
+        mn = (
+            "abandon abandon abandon abandon abandon abandon abandon abandon "
+            "abandon abandon abandon abandon abandon abandon abandon abandon "
+            "abandon abandon abandon venues abandon abandon abandon abandon "
+            "invest")
         self.assertRaises(ValueError, mnemonic._to_key, mn)
 
     def test_wordlist(self):
@@ -615,58 +646,59 @@ class TestMultisig(unittest.TestCase):
             "BFRTECKTOOE7A5LHCF3TTEOH2A7BW46IYT2SX5VP6ANKEXHZYJY77SJTVM",
             "47YPQTIGQEO7T4Y4RWDYWEKV6RTR2UNBQXBABEEGM72ESWDQNCQ52OPASU"
         ])
-        mn = ("auction inquiry lava second expand liberty glass involve " +
-              "ginger illness length room item discover ahead table doctor " +
-              "term tackle cement bonus profit right above catch")
+        mn = (
+            "auction inquiry lava second expand liberty glass involve ginger i"
+            "llness length room item discover ahead table doctor term tackle c"
+            "ement bonus profit right above catch")
 
         sk = mnemonic.to_private_key(mn)
         sender = "RWJLJCMQAFZ2ATP2INM2GZTKNL6OULCCUBO5TQPXH3V2KR4AG7U5UA5JNM"
         rcv = "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI"
         gh = "/rNsORAUOQDD2lVCyhg2sA/S+BlZElfNI/YEL5jINp0="
         close = "IDUTJEUIEVSMXTU4LGTJWZ2UE2E6TIODUKU6UW3FU3UKIQQ77RLUBBBFLA"
-        
+
         sp = transaction.SuggestedParams(62229, 63229, gh, "devnet-v38.0", 0)
-        txn = transaction.PaymentTxn(sender, sp, rcv, 1000,
-                                     note=base64.b64decode("RSYiABhShvs="),
-                                     close_remainder_to=close)
+        txn = transaction.PaymentTxn(
+            sender, sp, rcv, 1000, note=base64.b64decode("RSYiABhShvs="),
+            close_remainder_to=close)
 
         mtx = transaction.MultisigTransaction(txn, msig)
         mtx.sign(sk)
-        golden = ("gqRtc2lng6ZzdWJzaWeTgqJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC" +
-                  "8mKvrEiCairgXihc8RAuLAFE0oma0skOoAmOzEwfPuLYpEWl4LINtsiLr" +
-                  "UqWQkDxh4WHb29//YCpj4MFbiSgD2jKYt0XKRD86zKCF4RDYGicGvEIAl" +
-                  "jMglTc4nwdWcRdzmRx9A+G3PIxPUr9q/wGqJc+cJxgaJwa8Qg5/D4TQaB" +
-                  "HfnzHI2HixFV9GcdUaGFwgCQhmf0SVhwaKGjdGhyAqF2AaN0eG6Lo2Ftd" +
-                  "M0D6KVjbG9zZcQgQOk0koglZMvOnFmmm2dUJonpocOiqepbZabopEIf/F" +
-                  "ejZmVlzQPoomZ2zfMVo2dlbqxkZXZuZXQtdjM4LjCiZ2jEIP6zbDkQFDk" +
-                  "Aw9pVQsoYNrAP0vgZWRJXzSP2BC+YyDadomx2zfb9pG5vdGXECEUmIgAY" +
-                  "Uob7o3JjdsQge2ziT+tbrMCxZOKcIixX9fY9w4fUOQSCWEEcX+EPfAKjc" +
-                  "25kxCCNkrSJkAFzoE36Q1mjZmpq/OosQqBd2cH3PuulR4A36aR0eXBlo3" +
-                  "BheQ==")
+        golden = (
+            "gqRtc2lng6ZzdWJzaWeTgqJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC8mKvrEiC"
+            "airgXihc8RAuLAFE0oma0skOoAmOzEwfPuLYpEWl4LINtsiLrUqWQkDxh4WHb29//"
+            "YCpj4MFbiSgD2jKYt0XKRD86zKCF4RDYGicGvEIAljMglTc4nwdWcRdzmRx9A+G3P"
+            "IxPUr9q/wGqJc+cJxgaJwa8Qg5/D4TQaBHfnzHI2HixFV9GcdUaGFwgCQhmf0SVhw"
+            "aKGjdGhyAqF2AaN0eG6Lo2FtdM0D6KVjbG9zZcQgQOk0koglZMvOnFmmm2dUJonpo"
+            "cOiqepbZabopEIf/FejZmVlzQPoomZ2zfMVo2dlbqxkZXZuZXQtdjM4LjCiZ2jEIP"
+            "6zbDkQFDkAw9pVQsoYNrAP0vgZWRJXzSP2BC+YyDadomx2zfb9pG5vdGXECEUmIgA"
+            "YUob7o3JjdsQge2ziT+tbrMCxZOKcIixX9fY9w4fUOQSCWEEcX+EPfAKjc25kxCCN"
+            "krSJkAFzoE36Q1mjZmpq/OosQqBd2cH3PuulR4A36aR0eXBlo3BheQ==")
         self.assertEqual(golden, encoding.msgpack_encode(mtx))
 
         mtx_2 = transaction.MultisigTransaction(txn,
                                                 msig.get_multisig_account())
-        mn2 = ("since during average anxiety protect cherry club long " +
-               "lawsuit loan expand embark forum theory winter park twenty " +
-               "ball kangaroo cram burst board host ability left")
+        mn2 = (
+            "since during average anxiety protect cherry club long lawsuit loa"
+            "n expand embark forum theory winter park twenty ball kangaroo cra"
+            "m burst board host ability left")
         sk2 = mnemonic.to_private_key(mn2)
         mtx_2.sign(sk2)
 
         mtx_final = transaction.MultisigTransaction.merge([mtx, mtx_2])
 
-        golden2 = ("gqRtc2lng6ZzdWJzaWeTgqJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUd" +
-                   "C8mKvrEiCairgXihc8RAuLAFE0oma0skOoAmOzEwfPuLYpEWl4LINtsi" +
-                   "LrUqWQkDxh4WHb29//YCpj4MFbiSgD2jKYt0XKRD86zKCF4RDYKicGvE" +
-                   "IAljMglTc4nwdWcRdzmRx9A+G3PIxPUr9q/wGqJc+cJxoXPEQBAhuyRj" +
-                   "sOrnHp3s/xI+iMKiL7QPsh8iJZ22YOJJP0aFUwedMr+a6wfdBXk1Oefy" +
-                   "rAN1wqJ9rq6O+DrWV1fH0ASBonBrxCDn8PhNBoEd+fMcjYeLEVX0Zx1R" +
-                   "oYXCAJCGZ/RJWHBooaN0aHICoXYBo3R4boujYW10zQPopWNsb3NlxCBA" +
-                   "6TSSiCVky86cWaabZ1Qmiemhw6Kp6ltlpuikQh/8V6NmZWXNA+iiZnbN" +
-                   "8xWjZ2VurGRldm5ldC12MzguMKJnaMQg/rNsORAUOQDD2lVCyhg2sA/S" +
-                   "+BlZElfNI/YEL5jINp2ibHbN9v2kbm90ZcQIRSYiABhShvujcmN2xCB7" +
-                   "bOJP61uswLFk4pwiLFf19j3Dh9Q5BIJYQRxf4Q98AqNzbmTEII2StImQ" +
-                   "AXOgTfpDWaNmamr86ixCoF3Zwfc+66VHgDfppHR5cGWjcGF5")
+        golden2 = (
+            "gqRtc2lng6ZzdWJzaWeTgqJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC8mKvrEiC"
+            "airgXihc8RAuLAFE0oma0skOoAmOzEwfPuLYpEWl4LINtsiLrUqWQkDxh4WHb29//"
+            "YCpj4MFbiSgD2jKYt0XKRD86zKCF4RDYKicGvEIAljMglTc4nwdWcRdzmRx9A+G3P"
+            "IxPUr9q/wGqJc+cJxoXPEQBAhuyRjsOrnHp3s/xI+iMKiL7QPsh8iJZ22YOJJP0aF"
+            "UwedMr+a6wfdBXk1OefyrAN1wqJ9rq6O+DrWV1fH0ASBonBrxCDn8PhNBoEd+fMcj"
+            "YeLEVX0Zx1RoYXCAJCGZ/RJWHBooaN0aHICoXYBo3R4boujYW10zQPopWNsb3NlxC"
+            "BA6TSSiCVky86cWaabZ1Qmiemhw6Kp6ltlpuikQh/8V6NmZWXNA+iiZnbN8xWjZ2V"
+            "urGRldm5ldC12MzguMKJnaMQg/rNsORAUOQDD2lVCyhg2sA/S+BlZElfNI/YEL5jI"
+            "Np2ibHbN9v2kbm90ZcQIRSYiABhShvujcmN2xCB7bOJP61uswLFk4pwiLFf19j3Dh"
+            "9Q5BIJYQRxf4Q98AqNzbmTEII2StImQAXOgTfpDWaNmamr86ixCoF3Zwfc+66VHgD"
+            "fppHR5cGWjcGF5")
         self.assertEqual(golden2, encoding.msgpack_encode(mtx_final))
 
     def test_sign(self):
@@ -675,32 +707,31 @@ class TestMultisig(unittest.TestCase):
             "BFRTECKTOOE7A5LHCF3TTEOH2A7BW46IYT2SX5VP6ANKEXHZYJY77SJTVM",
             "47YPQTIGQEO7T4Y4RWDYWEKV6RTR2UNBQXBABEEGM72ESWDQNCQ52OPASU"
         ])
-        mn = ("advice pudding treat near rule blouse same whisper inner " +
-              "electric quit surface sunny dismiss leader blood seat clown " +
-              "cost exist hospital century reform able sponsor")
+        mn = (
+            "advice pudding treat near rule blouse same whisper inner electric"
+            " quit surface sunny dismiss leader blood seat clown cost exist ho"
+            "spital century reform able sponsor")
         sk = mnemonic.to_private_key(mn)
 
         rcv = "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         close = "IDUTJEUIEVSMXTU4LGTJWZ2UE2E6TIODUKU6UW3FU3UKIQQ77RLUBBBFLA"
         sp = transaction.SuggestedParams(12466, 13466, gh, "devnet-v33.0", 4)
-        txn = transaction.PaymentTxn(msig.address(), sp,
-                                     rcv, 1000,
-                                     note=base64.b64decode("X4Bl4wQ9rCo="),
-                                     close_remainder_to=close)
+        txn = transaction.PaymentTxn(
+            msig.address(), sp, rcv, 1000,
+            note=base64.b64decode("X4Bl4wQ9rCo="), close_remainder_to=close)
         mtx = transaction.MultisigTransaction(txn, msig)
         mtx.sign(sk)
-        golden = ("gqRtc2lng6ZzdWJzaWeTgaJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC" +
-                  "8mKvrEiCairgXiBonBrxCAJYzIJU3OJ8HVnEXc5kcfQPhtzyMT1K/av8B" +
-                  "qiXPnCcYKicGvEIOfw+E0GgR358xyNh4sRVfRnHVGhhcIAkIZn9ElYcGi" +
-                  "hoXPEQF6nXZ7CgInd1h7NVspIPFZNhkPL+vGFpTNwH3Eh9gwPM8pf1EPT" +
-                  "HfPvjf14sS7xN7mTK+wrz7Odhp4rdWBNUASjdGhyAqF2AaN0eG6Lo2Ftd" +
-                  "M0D6KVjbG9zZcQgQOk0koglZMvOnFmmm2dUJonpocOiqepbZabopEIf/F" +
-                  "ejZmVlzQSYomZ2zTCyo2dlbqxkZXZuZXQtdjMzLjCiZ2jEICYLIAmgk6i" +
-                  "Gi3lYci+l5Ubt5+0X5NhcTHivsEUmkO3Somx2zTSapG5vdGXECF+AZeME" +
-                  "Pawqo3JjdsQge2ziT+tbrMCxZOKcIixX9fY9w4fUOQSCWEEcX+EPfAKjc" +
-                  "25kxCCNkrSJkAFzoE36Q1mjZmpq/OosQqBd2cH3PuulR4A36aR0eXBlo3" +
-                  "BheQ==")
+        golden = (
+            "gqRtc2lng6ZzdWJzaWeTgaJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC8mKvrEiC"
+            "airgXiBonBrxCAJYzIJU3OJ8HVnEXc5kcfQPhtzyMT1K/av8BqiXPnCcYKicGvEIO"
+            "fw+E0GgR358xyNh4sRVfRnHVGhhcIAkIZn9ElYcGihoXPEQF6nXZ7CgInd1h7NVsp"
+            "IPFZNhkPL+vGFpTNwH3Eh9gwPM8pf1EPTHfPvjf14sS7xN7mTK+wrz7Odhp4rdWBN"
+            "UASjdGhyAqF2AaN0eG6Lo2FtdM0D6KVjbG9zZcQgQOk0koglZMvOnFmmm2dUJonpo"
+            "cOiqepbZabopEIf/FejZmVlzQSYomZ2zTCyo2dlbqxkZXZuZXQtdjMzLjCiZ2jEIC"
+            "YLIAmgk6iGi3lYci+l5Ubt5+0X5NhcTHivsEUmkO3Somx2zTSapG5vdGXECF+AZeM"
+            "EPawqo3JjdsQge2ziT+tbrMCxZOKcIixX9fY9w4fUOQSCWEEcX+EPfAKjc25kxCCN"
+            "krSJkAFzoE36Q1mjZmpq/OosQqBd2cH3PuulR4A36aR0eXBlo3BheQ==")
         self.assertEqual(golden, encoding.msgpack_encode(mtx))
         txid_golden = "TDIO6RJWJIVDDJZELMSX5CPJW7MUNM3QR4YAHYAKHF3W2CFRTI7A"
         self.assertEqual(txn.get_txid(), txid_golden)
@@ -780,144 +811,146 @@ class TestMultisig(unittest.TestCase):
 
 class TestMsgpack(unittest.TestCase):
     def test_bid(self):
-        bid = ("gqFigqNiaWSGo2FpZAGjYXVjxCCokNFWl9DCqHrP9trjPICAMGOaRoX/OR+" +
-               "M6tHWhfUBkKZiaWRkZXLEIP1rCXe2x5+exPBfU3CZwGPMY8mzwvglET+Qtg" +
-               "fCPdCmo2N1cs8AAADN9kTOAKJpZM5JeDcCpXByaWNlzQMgo3NpZ8RAiR06J" +
-               "4suAixy13BKHlw4VrORKzLT5CJr9n3YSj0Ao6byV23JHGU0yPf7u9/o4ECw" +
-               "4Xy9hc9pWopLW97xKXRfA6F0oWI=")
+        bid = (
+            "gqFigqNiaWSGo2FpZAGjYXVjxCCokNFWl9DCqHrP9trjPICAMGOaRoX/OR+M6tHWh"
+            "fUBkKZiaWRkZXLEIP1rCXe2x5+exPBfU3CZwGPMY8mzwvglET+QtgfCPdCmo2N1cs"
+            "8AAADN9kTOAKJpZM5JeDcCpXByaWNlzQMgo3NpZ8RAiR06J4suAixy13BKHlw4VrO"
+            "RKzLT5CJr9n3YSj0Ao6byV23JHGU0yPf7u9/o4ECw4Xy9hc9pWopLW97xKXRfA6F0"
+            "oWI=")
         self.assertEqual(bid, encoding.msgpack_encode(
                          encoding.msgpack_decode(bid)))
 
     def test_signed_txn(self):
-        stxn = ("gqNzaWfEQGdpjnStb70k2iXzOlu+RSMgCYLe25wkUfbgRsXs7jx6rbW61i" +
-                "vCs6/zGs3gZAZf4L2XAQak7OjMh3lw9MTCIQijdHhuiaNhbXTOAAGGoKNm" +
-                "ZWXNA+iiZnbNcl+jZ2Vuq25ldHdvcmstdjM4omdoxCBN/+nfiNPXLbuigk" +
-                "8M/TXsMUfMK7dV//xB1wkoOhNu9qJsds1yw6NyY3bEIPRUuVDPVUFC7Jk3" +
-                "+xDjHJfwWFDp+Wjy+Hx3cwL9ncVYo3NuZMQgGC5kQiOIPooA8mrvoHRyFt" +
-                "k27F/PPN08bAufGhnp0BGkdHlwZaNwYXk=")
+        stxn = (
+            "gqNzaWfEQGdpjnStb70k2iXzOlu+RSMgCYLe25wkUfbgRsXs7jx6rbW61ivCs6/zG"
+            "s3gZAZf4L2XAQak7OjMh3lw9MTCIQijdHhuiaNhbXTOAAGGoKNmZWXNA+iiZnbNcl"
+            "+jZ2Vuq25ldHdvcmstdjM4omdoxCBN/+nfiNPXLbuigk8M/TXsMUfMK7dV//xB1wk"
+            "oOhNu9qJsds1yw6NyY3bEIPRUuVDPVUFC7Jk3+xDjHJfwWFDp+Wjy+Hx3cwL9ncVY"
+            "o3NuZMQgGC5kQiOIPooA8mrvoHRyFtk27F/PPN08bAufGhnp0BGkdHlwZaNwYXk=")
         self.assertEqual(stxn, encoding.msgpack_encode(
                          encoding.msgpack_decode(stxn)))
 
     def test_payment_txn(self):
-        paytxn = ("iaNhbXTOAAGGoKNmZWXNA+iiZnbNcq2jZ2Vuq25ldHdvcmstdjM4omdo" +
-                  "xCBN/+nfiNPXLbuigk8M/TXsMUfMK7dV//xB1wkoOhNu9qJsds1zEaNy" +
-                  "Y3bEIAZ2cvp4J0OiBy5eAHIX/njaRko955rEdN4AUNEl4rxTo3NuZMQg" +
-                  "GC5kQiOIPooA8mrvoHRyFtk27F/PPN08bAufGhnp0BGkdHlwZaNwYXk=")
+        paytxn = (
+            "iaNhbXTOAAGGoKNmZWXNA+iiZnbNcq2jZ2Vuq25ldHdvcmstdjM4omdoxCBN/+nfi"
+            "NPXLbuigk8M/TXsMUfMK7dV//xB1wkoOhNu9qJsds1zEaNyY3bEIAZ2cvp4J0OiBy"
+            "5eAHIX/njaRko955rEdN4AUNEl4rxTo3NuZMQgGC5kQiOIPooA8mrvoHRyFtk27F/"
+            "PPN08bAufGhnp0BGkdHlwZaNwYXk=")
         self.assertEqual(paytxn, encoding.msgpack_encode(
                          encoding.msgpack_decode(paytxn)))
 
     def test_multisig_txn(self):
-        msigtxn = ("gqRtc2lng6ZzdWJzaWeSgqJwa8Qg1ke3gkLuR0MUN/Ku0oyiRVIm9P1" +
-                   "QFDaiEhT5vtfLmd+hc8RAIEbfnhccjWfYQFQp/P4aJjATFdgaDDpnhy" +
-                   "JF0tU/37CO5I5hhoCvUCRH/A/6X94Ewz9YEtk5dANEGKQW+/WyAIKic" +
-                   "GvEIKgAZfZ4iDC+UY/P5F3tgs5rqeyYt08LT0c/D78u0V7KoXPEQCxU" +
-                   "kQgTVC9lLpKVzcZGKesSCQcZL9UjXTzrteADicvcca7KT3WP0crGgAf" +
-                   "J3a17Na5cykJzFEn7pq2SHgwD/QujdGhyAqF2AaN0eG6Jo2FtdM0D6K" +
-                   "NmZWXNA+iiZnbNexSjZ2Vuq25ldHdvcmstdjM4omdoxCBN/+nfiNPXL" +
-                   "buigk8M/TXsMUfMK7dV//xB1wkoOhNu9qJsds17eKNyY3bEIBguZEIj" +
-                   "iD6KAPJq76B0chbZNuxfzzzdPGwLnxoZ6dARo3NuZMQgpuIJvJzW8E4" +
-                   "uxsQGCW0S3n1u340PbHTB2zhtXo/AiI6kdHlwZaNwYXk=")
+        msigtxn = (
+            "gqRtc2lng6ZzdWJzaWeSgqJwa8Qg1ke3gkLuR0MUN/Ku0oyiRVIm9P1QFDaiEhT5v"
+            "tfLmd+hc8RAIEbfnhccjWfYQFQp/P4aJjATFdgaDDpnhyJF0tU/37CO5I5hhoCvUC"
+            "RH/A/6X94Ewz9YEtk5dANEGKQW+/WyAIKicGvEIKgAZfZ4iDC+UY/P5F3tgs5rqey"
+            "Yt08LT0c/D78u0V7KoXPEQCxUkQgTVC9lLpKVzcZGKesSCQcZL9UjXTzrteADicvc"
+            "ca7KT3WP0crGgAfJ3a17Na5cykJzFEn7pq2SHgwD/QujdGhyAqF2AaN0eG6Jo2Ftd"
+            "M0D6KNmZWXNA+iiZnbNexSjZ2Vuq25ldHdvcmstdjM4omdoxCBN/+nfiNPXLbuigk"
+            "8M/TXsMUfMK7dV//xB1wkoOhNu9qJsds17eKNyY3bEIBguZEIjiD6KAPJq76B0chb"
+            "ZNuxfzzzdPGwLnxoZ6dARo3NuZMQgpuIJvJzW8E4uxsQGCW0S3n1u340PbHTB2zht"
+            "Xo/AiI6kdHlwZaNwYXk=")
         self.assertEqual(msigtxn, encoding.msgpack_encode(
                          encoding.msgpack_decode(msigtxn)))
 
     def test_keyreg_txn(self):
-        keyregtxn = ("jKNmZWXNA+iiZnbNcoqjZ2Vuq25ldHdvcmstdjM4omdoxCBN/+nfi" +
-                     "NPXLbuigk8M/TXsMUfMK7dV//xB1wkoOhNu9qJsds1y7qZzZWxrZX" +
-                     "nEIBguZEIjiD6KAPJq76B0chbZNuxfzzzdPGwLnxoZ6dARo3NuZMQ" +
-                     "gGC5kQiOIPooA8mrvoHRyFtk27F/PPN08bAufGhnp0BGkdHlwZaZr" +
-                     "ZXlyZWendm90ZWZzdM1yiqZ2b3Rla2TNMDmndm90ZWtlecQgGC5kQ" +
-                     "iOIPooA8mrvoHRyFtk27F/PPN08bAufGhnp0BGndm90ZWxzdM1y7g==")
+        keyregtxn = (
+            "jKNmZWXNA+iiZnbNcoqjZ2Vuq25ldHdvcmstdjM4omdoxCBN/+nfiNPXLbuigk8M/"
+            "TXsMUfMK7dV//xB1wkoOhNu9qJsds1y7qZzZWxrZXnEIBguZEIjiD6KAPJq76B0ch"
+            "bZNuxfzzzdPGwLnxoZ6dARo3NuZMQgGC5kQiOIPooA8mrvoHRyFtk27F/PPN08bAu"
+            "fGhnp0BGkdHlwZaZrZXlyZWendm90ZWZzdM1yiqZ2b3Rla2TNMDmndm90ZWtlecQg"
+            "GC5kQiOIPooA8mrvoHRyFtk27F/PPN08bAufGhnp0BGndm90ZWxzdM1y7g==")
         self.assertEqual(keyregtxn, encoding.msgpack_encode(
                          encoding.msgpack_decode(keyregtxn)))
 
     def test_asset_create(self):
-        golden = ("gqNzaWfEQEDd1OMRoQI/rzNlU4iiF50XQXmup3k5czI9hEsNqHT7K4Ksf" +
-                  "mA/0DUVkbzOwtJdRsHS8trm3Arjpy9r7AXlbAujdHhuh6RhcGFyiaJhbc" +
-                  "QgZkFDUE80blJnTzU1ajFuZEFLM1c2U2djNEFQa2N5RmiiYW6odGVzdGN" +
-                  "vaW6iYXWnd2Vic2l0ZaFjxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxc" +
-                  "dphkfbbh/aFmxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/" +
-                  "aFtxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFyxCAJ+9" +
-                  "J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aF0ZKJ1bqN0c3SjZmV" +
-                  "lzQ+0omZ2zgAE7A+iZ2jEIEhjtRiks8hOyBDyLU8QgcsPcfBZp6wg3sYv" +
-                  "f3DlCToiomx2zgAE7/ejc25kxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgf" +
-                  "oxcdphkfbbh/aR0eXBlpGFjZmc=")
+        golden = (
+            "gqNzaWfEQEDd1OMRoQI/rzNlU4iiF50XQXmup3k5czI9hEsNqHT7K4KsfmA/0DUVk"
+            "bzOwtJdRsHS8trm3Arjpy9r7AXlbAujdHhuh6RhcGFyiaJhbcQgZkFDUE80blJnTz"
+            "U1ajFuZEFLM1c2U2djNEFQa2N5RmiiYW6odGVzdGNvaW6iYXWnd2Vic2l0ZaFjxCA"
+            "J+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFmxCAJ+9J2LAj4bFrmv23X"
+            "p6kB3mZ111Dgfoxcdphkfbbh/aFtxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcd"
+            "phkfbbh/aFyxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aF0ZKJ1bq"
+            "N0c3SjZmVlzQ+0omZ2zgAE7A+iZ2jEIEhjtRiks8hOyBDyLU8QgcsPcfBZp6wg3sY"
+            "vf3DlCToiomx2zgAE7/ejc25kxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphk"
+            "fbbh/aR0eXBlpGFjZmc=")
         self.assertEqual(golden, encoding.msgpack_encode(
                          encoding.msgpack_decode(golden)))
 
     def test_asset_config(self):
-        assettxn = ("gqNzaWfEQBBkfw5n6UevuIMDo2lHyU4dS80JCCQ/vTRUcTx5m0ivX6" +
-                    "8zTKyuVRrHaTbxbRRc3YpJ4zeVEnC9Fiw3Wf4REwejdHhuiKRhcGFy" +
-                    "hKFjxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFmxC" +
-                    "AJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFtxCAJ+9J2" +
-                    "LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFyxCAJ+9J2LAj4bF" +
-                    "rmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aRjYWlkzQTSo2ZlZc0NSKJm" +
-                    "ds4ABOwPomdoxCBIY7UYpLPITsgQ8i1PEIHLD3HwWaesIN7GL39w5Q" +
-                    "k6IqJsds4ABO/3o3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6M" +
-                    "XHaYZH224f2kdHlwZaRhY2Zn")
+        assettxn = (
+            "gqNzaWfEQBBkfw5n6UevuIMDo2lHyU4dS80JCCQ/vTRUcTx5m0ivX68zTKyuVRrHa"
+            "TbxbRRc3YpJ4zeVEnC9Fiw3Wf4REwejdHhuiKRhcGFyhKFjxCAJ+9J2LAj4bFrmv2"
+            "3Xp6kB3mZ111Dgfoxcdphkfbbh/aFmxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfox"
+            "cdphkfbbh/aFtxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aFyxCAJ"
+            "+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aRjYWlkzQTSo2ZlZc0NSKJmd"
+            "s4ABOwPomdoxCBIY7UYpLPITsgQ8i1PEIHLD3HwWaesIN7GL39w5Qk6IqJsds4ABO"
+            "/3o3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2kdHlwZaRhY2Z"
+            "n")
         self.assertEqual(assettxn, encoding.msgpack_encode(
                          encoding.msgpack_decode(assettxn)))
 
     def test_asset_config_with_decimal(self):
-        assettxn = ("gqNzaWfEQBBkfw5n6UevuIMDo2lHyU4dS80JCCQ/vTRUcTx5m0ivX6" +
-                    "8zTKyuVRrHaTbxbRRc3YpJ4zeVEnC9Fiw3Wf4REwejdHhuiKRhcGFy" +
-                    "haFjxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aJkYw" +
-                    "yhZsQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2hbcQg" +
-                    "CfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2hcsQgCfvSdi" +
-                    "wI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2kY2FpZM0E0qNmZWXN" +
-                    "DUiiZnbOAATsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi" +
-                    "9/cOUJOiKibHbOAATv96NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXX" +
-                    "UOB+jFx2mGR9tuH9pHR5cGWkYWNmZw==")
+        assettxn = (
+            "gqNzaWfEQBBkfw5n6UevuIMDo2lHyU4dS80JCCQ/vTRUcTx5m0ivX68zTKyuVRrHa"
+            "TbxbRRc3YpJ4zeVEnC9Fiw3Wf4REwejdHhuiKRhcGFyhaFjxCAJ+9J2LAj4bFrmv2"
+            "3Xp6kB3mZ111Dgfoxcdphkfbbh/aJkYwyhZsQgCfvSdiwI+Gxa5r9t16epAd5mddd"
+            "Q4H6MXHaYZH224f2hbcQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2h"
+            "csQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2kY2FpZM0E0qNmZWXND"
+            "UiiZnbOAATsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibH"
+            "bOAATv96NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGW"
+            "kYWNmZw==")
         self.assertEqual(assettxn, encoding.msgpack_encode(
                          encoding.msgpack_decode(assettxn)))
 
     def test_asset_destroy(self):
-        assettxn = ("gqNzaWfEQBSP7HtzD/Lvn4aVvaNpeR4T93dQgo4LvywEwcZgDEoc/W" +
-                    "Vl3aKsZGcZkcRFoiWk8AidhfOZzZYutckkccB8RgGjdHhuh6RjYWlk" +
-                    "AaNmZWXNB1iiZnbOAATsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8F" +
-                    "mnrCDexi9/cOUJOiKibHbOAATv96NzbmTEIAn70nYsCPhsWua/bden" +
-                    "qQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWkYWNmZw==")
+        assettxn = (
+            "gqNzaWfEQBSP7HtzD/Lvn4aVvaNpeR4T93dQgo4LvywEwcZgDEoc/WVl3aKsZGcZk"
+            "cRFoiWk8AidhfOZzZYutckkccB8RgGjdHhuh6RjYWlkAaNmZWXNB1iiZnbOAATsD6"
+            "JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOAATv96NzbmT"
+            "EIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWkYWNmZw==")
         self.assertEqual(assettxn, encoding.msgpack_encode(
                          encoding.msgpack_decode(assettxn)))
 
     def test_asset_freeze(self):
-        assettxn = ("gqNzaWfEQAhru5V2Xvr19s4pGnI0aslqwY4lA2skzpYtDTAN9DKSH5" +
-                    "+qsfQQhm4oq+9VHVj7e1rQC49S28vQZmzDTVnYDQGjdHhuiaRhZnJ6" +
-                    "w6RmYWRkxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/a" +
-                    "RmYWlkAaNmZWXNCRqiZnbOAATsD6JnaMQgSGO1GKSzyE7IEPItTxCB" +
-                    "yw9x8FmnrCDexi9/cOUJOiKibHbOAATv+KNzbmTEIAn70nYsCPhsWu" +
-                    "a/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWkYWZyeg==")
+        assettxn = (
+            "gqNzaWfEQAhru5V2Xvr19s4pGnI0aslqwY4lA2skzpYtDTAN9DKSH5+qsfQQhm4oq"
+            "+9VHVj7e1rQC49S28vQZmzDTVnYDQGjdHhuiaRhZnJ6w6RmYWRkxCAJ+9J2LAj4bF"
+            "rmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aRmYWlkAaNmZWXNCRqiZnbOAATsD6JnaMQ"
+            "gSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOAATv+KNzbmTEIAn7"
+            "0nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWkYWZyeg==")
         self.assertEqual(assettxn, encoding.msgpack_encode(
                          encoding.msgpack_decode(assettxn)))
 
     def test_asset_transfer(self):
-        assettxn = ("gqNzaWfEQNkEs3WdfFq6IQKJdF1n0/hbV9waLsvojy9pM1T4fvwfMN" +
-                    "djGQDy+LeesuQUfQVTneJD4VfMP7zKx4OUlItbrwSjdHhuiqRhYW10" +
-                    "AaZhY2xvc2XEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tu" +
-                    "H9pGFyY3bEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9" +
-                    "o2ZlZc0KvqJmds4ABOwPomdoxCBIY7UYpLPITsgQ8i1PEIHLD3HwWa" +
-                    "esIN7GL39w5Qk6IqJsds4ABO/4o3NuZMQgCfvSdiwI+Gxa5r9t16ep" +
-                    "Ad5mdddQ4H6MXHaYZH224f2kdHlwZaVheGZlcqR4YWlkAQ==")
+        assettxn = (
+            "gqNzaWfEQNkEs3WdfFq6IQKJdF1n0/hbV9waLsvojy9pM1T4fvwfMNdjGQDy+Lees"
+            "uQUfQVTneJD4VfMP7zKx4OUlItbrwSjdHhuiqRhYW10AaZhY2xvc2XEIAn70nYsCP"
+            "hsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pGFyY3bEIAn70nYsCPhsWua/bdenqQH"
+            "eZnXXUOB+jFx2mGR9tuH9o2ZlZc0KvqJmds4ABOwPomdoxCBIY7UYpLPITsgQ8i1P"
+            "EIHLD3HwWaesIN7GL39w5Qk6IqJsds4ABO/4o3NuZMQgCfvSdiwI+Gxa5r9t16epA"
+            "d5mdddQ4H6MXHaYZH224f2kdHlwZaVheGZlcqR4YWlkAQ==")
         self.assertEqual(assettxn, encoding.msgpack_encode(
                          encoding.msgpack_decode(assettxn)))
 
     def test_asset_accept(self):
-        assettxn = ("gqNzaWfEQJ7q2rOT8Sb/wB0F87ld+1zMprxVlYqbUbe+oz0WM63Fct" +
-                    "Ii+K9eYFSqT26XBZ4Rr3+VTJpBE+JLKs8nctl9hgijdHhuiKRhcmN2" +
-                    "xCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aNmZWXNCO" +
-                    "iiZnbOAATsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/" +
-                    "cOUJOiKibHbOAATv96NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUO" +
-                    "B+jFx2mGR9tuH9pHR5cGWlYXhmZXKkeGFpZAE=")
+        assettxn = (
+            "gqNzaWfEQJ7q2rOT8Sb/wB0F87ld+1zMprxVlYqbUbe+oz0WM63FctIi+K9eYFSqT"
+            "26XBZ4Rr3+VTJpBE+JLKs8nctl9hgijdHhuiKRhcmN2xCAJ+9J2LAj4bFrmv23Xp6"
+            "kB3mZ111Dgfoxcdphkfbbh/aNmZWXNCOiiZnbOAATsD6JnaMQgSGO1GKSzyE7IEPI"
+            "tTxCByw9x8FmnrCDexi9/cOUJOiKibHbOAATv96NzbmTEIAn70nYsCPhsWua/bden"
+            "qQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWlYXhmZXKkeGFpZAE=")
         self.assertEqual(assettxn, encoding.msgpack_encode(
                          encoding.msgpack_decode(assettxn)))
 
     def test_asset_revoke(self):
-        assettxn = ("gqNzaWfEQHsgfEAmEHUxLLLR9s+Y/yq5WeoGo/jAArCbany+7ZYwEx" +
-                    "MySzAhmV7M7S8+LBtJalB4EhzEUMKmt3kNKk6+vAWjdHhuiqRhYW10" +
-                    "AaRhcmN2xCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/a" +
-                    "Rhc25kxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aNm" +
-                    "ZWXNCqqiZnbOAATsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrC" +
-                    "Dexi9/cOUJOiKibHbOAATv96NzbmTEIAn70nYsCPhsWua/bdenqQHe" +
-                    "ZnXXUOB+jFx2mGR9tuH9pHR5cGWlYXhmZXKkeGFpZAE=")
+        assettxn = (
+            "gqNzaWfEQHsgfEAmEHUxLLLR9s+Y/yq5WeoGo/jAArCbany+7ZYwExMySzAhmV7M7"
+            "S8+LBtJalB4EhzEUMKmt3kNKk6+vAWjdHhuiqRhYW10AaRhcmN2xCAJ+9J2LAj4bF"
+            "rmv23Xp6kB3mZ111Dgfoxcdphkfbbh/aRhc25kxCAJ+9J2LAj4bFrmv23Xp6kB3mZ"
+            "111Dgfoxcdphkfbbh/aNmZWXNCqqiZnbOAATsD6JnaMQgSGO1GKSzyE7IEPItTxCB"
+            "yw9x8FmnrCDexi9/cOUJOiKibHbOAATv96NzbmTEIAn70nYsCPhsWua/bdenqQHeZ"
+            "nXXUOB+jFx2mGR9tuH9pHR5cGWlYXhmZXKkeGFpZAE=")
         self.assertEqual(assettxn, encoding.msgpack_encode(
                          encoding.msgpack_decode(assettxn)))
 
@@ -962,8 +995,9 @@ class TestLogic(unittest.TestCase):
         self.assertEqual(size, len(data))
 
     def test_parse_bytecblock(self):
-        data = (b"\x26\x02\x0d\x31\x32\x33\x34\x35\x36\x37\x38\x39\x30\x31" +
-                b"\x32\x33\x02\x01\x02")
+        data = (
+            b"\x26\x02\x0d\x31\x32\x33\x34\x35\x36\x37\x38\x39\x30\x31"
+            b"\x32\x33\x02\x01\x02")
         size = logic.check_byte_const_block(data, 0)
         self.assertEqual(size, len(data))
 
@@ -1012,8 +1046,8 @@ class TestLogicSig(unittest.TestCase):
             lsig = transaction.LogicSig(b"")
 
         program = b"\x01\x20\x01\x01\x22"  # int 1
-        program_hash = ("6Z3C3LDVWGMX23BMSYMANACQOSINP" +
-                        "FIRF77H7N3AWJZYV6OH6GWTJKVMXY")
+        program_hash = (
+            "6Z3C3LDVWGMX23BMSYMANACQOSINPFIRF77H7N3AWJZYV6OH6GWTJKVMXY")
         public_key = encoding.decode_address(program_hash)
 
         lsig = transaction.LogicSig(program)
@@ -1126,13 +1160,14 @@ class TestLogicSig(unittest.TestCase):
         self.assertTrue(verifed)
 
     def test_transaction(self):
-        fromAddress = ("47YPQTIGQEO7T4Y4RWDYWEKV6RTR2" +
-                       "UNBQXBABEEGM72ESWDQNCQ52OPASU")
-        toAddress = ("PNWOET7LLOWMBMLE4KOCELCX6X3D3" +
-                     "Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI")
-        mn = ("advice pudding treat near rule blouse same whisper inner " +
-              "electric quit surface sunny dismiss leader blood seat " +
-              "clown cost exist hospital century reform able sponsor")
+        fromAddress = (
+            "47YPQTIGQEO7T4Y4RWDYWEKV6RTR2UNBQXBABEEGM72ESWDQNCQ52OPASU")
+        toAddress = (
+            "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI")
+        mn = (
+            "advice pudding treat near rule blouse same whisper inner electric"
+            " quit surface sunny dismiss leader blood seat clown cost exist ho"
+            "spital century reform able sponsor")
         fee = 1000
         amount = 2000
         firstRound = 2063137
@@ -1141,20 +1176,21 @@ class TestLogicSig(unittest.TestCase):
         genesisHash = "sC3P7e2SdbqKJK0tbiCdK9tdSpbe6XeCGKdoNzmlj0E="
         note = base64.b64decode("8xMCTuLQ810=")
 
-        sp = transaction.SuggestedParams(firstRound, firstRound+1000, genesisHash, genesisID, fee, flat_fee=True)
+        sp = transaction.SuggestedParams(
+            firstRound, firstRound+1000, genesisHash, genesisID, fee,
+            flat_fee=True)
         tx = transaction.PaymentTxn(
             fromAddress, sp, toAddress, amount,
             note=note
         )
 
         golden = (
-            "gqRsc2lng6NhcmeSxAMxMjPEAzQ1NqFsxAUBIAEBIqNzaWfEQE6HXaI5K0lcq5" +
-            "0o/y3bWOYsyw9TLi/oorZB4xaNdn1Z14351u2f6JTON478fl+JhIP4HNRRAIh/" +
-            "I8EWXBPpJQ2jdHhuiqNhbXTNB9CjZmVlzQPoomZ2zgAfeyGjZ2Vuq2Rldm5ldC" +
-            "12MS4womdoxCCwLc/t7ZJ1uookrS1uIJ0r211Klt7pd4IYp2g3OaWPQaJsds4A" +
-            "H38JpG5vdGXECPMTAk7i0PNdo3JjdsQge2ziT+tbrMCxZOKcIixX9fY9w4fUOQ" +
-            "SCWEEcX+EPfAKjc25kxCDn8PhNBoEd+fMcjYeLEVX0Zx1RoYXCAJCGZ/RJWHBo" +
-            "oaR0eXBlo3BheQ=="
+            "gqRsc2lng6NhcmeSxAMxMjPEAzQ1NqFsxAUBIAEBIqNzaWfEQE6HXaI5K0lcq50o/"
+            "y3bWOYsyw9TLi/oorZB4xaNdn1Z14351u2f6JTON478fl+JhIP4HNRRAIh/I8EWXB"
+            "PpJQ2jdHhuiqNhbXTNB9CjZmVlzQPoomZ2zgAfeyGjZ2Vuq2Rldm5ldC12MS4womd"
+            "oxCCwLc/t7ZJ1uookrS1uIJ0r211Klt7pd4IYp2g3OaWPQaJsds4AH38JpG5vdGXE"
+            "CPMTAk7i0PNdo3JjdsQge2ziT+tbrMCxZOKcIixX9fY9w4fUOQSCWEEcX+EPfAKjc"
+            "25kxCDn8PhNBoEd+fMcjYeLEVX0Zx1RoYXCAJCGZ/RJWHBooaR0eXBlo3BheQ=="
         )
 
         program = b"\x01\x20\x01\x01\x22"  # int 1
@@ -1178,37 +1214,41 @@ class TestTemplate(unittest.TestCase):
         addr1 = "WO3QIJ6T4DZHBX5PWJH26JLHFSRT7W7M2DJOULPXDTUS6TUX7ZRIO4KDFY"
         addr2 = "W6UUUSEAOGLBHT7VFT4H2SDATKKSG6ZBUIJXTZMSLW36YS44FRP5NVAU7U"
         addr3 = "XCIBIN7RT4ZXGBMVAMU3QS6L5EKB7XGROC5EPCNHHYXUIBAA5Q6C5Y7NEU"
-        s = template.Split(addr1, addr2, addr3, 30, 100, 123456, 10000, 5000000)
-        golden = ("ASAIAcCWsQICAMDEB2QekE4mAyCztwQn0+DycN+vsk+vJWcsoz/b7NDS" +
-                  "6i33HOkvTpf+YiC3qUpIgHGWE8/1LPh9SGCalSN7IaITeeWSXbfsS5ws" +
-                  "XyC4kBQ38Z8zcwWVAym4S8vpFB/c0XC6R4mnPi9EBADsPDEQIhIxASMM" +
-                  "EDIEJBJAABkxCSgSMQcyAxIQMQglEhAxAiEEDRAiQAAuMwAAMwEAEjEJ" +
-                  "MgMSEDMABykSEDMBByoSEDMACCEFCzMBCCEGCxIQMwAIIQcPEBA=")
-        golden_addr = "HDY7A4VHBWQWQZJBEMASFOUZKBNGWBMJEMUXAGZ4SPIRQ6C24MJHUZKFGY"
+        s = template.Split(addr1, addr2, addr3, 30,
+                           100, 123456, 10000, 5000000)
+        golden = (
+            "ASAIAcCWsQICAMDEB2QekE4mAyCztwQn0+DycN+vsk+vJWcsoz/b7NDS6i33HOkvT"
+            "pf+YiC3qUpIgHGWE8/1LPh9SGCalSN7IaITeeWSXbfsS5wsXyC4kBQ38Z8zcwWVAy"
+            "m4S8vpFB/c0XC6R4mnPi9EBADsPDEQIhIxASMMEDIEJBJAABkxCSgSMQcyAxIQMQg"
+            "lEhAxAiEEDRAiQAAuMwAAMwEAEjEJMgMSEDMABykSEDMBByoSEDMACCEFCzMBCCEG"
+            "CxIQMwAIIQcPEBA=")
+        golden_addr = (
+            "HDY7A4VHBWQWQZJBEMASFOUZKBNGWBMJEMUXAGZ4SPIRQ6C24MJHUZKFGY")
         self.assertEqual(s.get_program(), base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
-        sp = transaction.SuggestedParams(1, 100, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", None, 10000)
+        sp = transaction.SuggestedParams(
+            1, 100, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", None,
+            10000)
         txns = s.get_split_funds_transaction(
             s.get_program(), 1300000, sp)
         golden_txns = base64.b64decode(
-            "gqRsc2lngaFsxM4BIAgBwJaxAgIAwMQHZB6QTiYDILO3BCfT4PJw36+yT68lZy" +
-            "yjP9vs0NLqLfcc6S9Ol/5iILepSkiAcZYTz/Us+H1IYJqVI3shohN55ZJdt+xL" +
-            "nCxfILiQFDfxnzNzBZUDKbhLy+kUH9zRcLpHiac+L0QEAOw8MRAiEjEBIwwQMg" +
-            "QkEkAAGTEJKBIxBzIDEhAxCCUSEDECIQQNECJAAC4zAAAzAQASMQkyAxIQMwAH" +
-            "KRIQMwEHKhIQMwAIIQULMwEIIQYLEhAzAAghBw8QEKN0eG6Jo2FtdM4ABJPgo2" +
-            "ZlZc4AId/gomZ2AaJnaMQgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJt" +
-            "kGmjZ3JwxCBLA74bTV35FJNL1h0K9ZbRU24b4M1JRkD1YTogvvDXbqJsdmSjcm" +
-            "N2xCC3qUpIgHGWE8/1LPh9SGCalSN7IaITeeWSXbfsS5wsX6NzbmTEIDjx8HKn" +
-            "DaFoZSEjASK6mVBaawWJIylwGzyT0Rh4WuMSpHR5cGWjcGF5gqRsc2lngaFsxM" +
-            "4BIAgBwJaxAgIAwMQHZB6QTiYDILO3BCfT4PJw36+yT68lZyyjP9vs0NLqLfcc" +
-            "6S9Ol/5iILepSkiAcZYTz/Us+H1IYJqVI3shohN55ZJdt+xLnCxfILiQFDfxnz" +
-            "NzBZUDKbhLy+kUH9zRcLpHiac+L0QEAOw8MRAiEjEBIwwQMgQkEkAAGTEJKBIx" +
-            "BzIDEhAxCCUSEDECIQQNECJAAC4zAAAzAQASMQkyAxIQMwAHKRIQMwEHKhIQMw" +
-            "AIIQULMwEIIQYLEhAzAAghBw8QEKN0eG6Jo2FtdM4AD0JAo2ZlZc4AId/gomZ2" +
-            "AaJnaMQgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmjZ3JwxCBLA7" +
-            "4bTV35FJNL1h0K9ZbRU24b4M1JRkD1YTogvvDXbqJsdmSjcmN2xCC4kBQ38Z8z" +
-            "cwWVAym4S8vpFB/c0XC6R4mnPi9EBADsPKNzbmTEIDjx8HKnDaFoZSEjASK6mV" +
-            "BaawWJIylwGzyT0Rh4WuMSpHR5cGWjcGF5")
+            "gqRsc2lngaFsxM4BIAgBwJaxAgIAwMQHZB6QTiYDILO3BCfT4PJw36+yT68lZyyjP"
+            "9vs0NLqLfcc6S9Ol/5iILepSkiAcZYTz/Us+H1IYJqVI3shohN55ZJdt+xLnCxfIL"
+            "iQFDfxnzNzBZUDKbhLy+kUH9zRcLpHiac+L0QEAOw8MRAiEjEBIwwQMgQkEkAAGTE"
+            "JKBIxBzIDEhAxCCUSEDECIQQNECJAAC4zAAAzAQASMQkyAxIQMwAHKRIQMwEHKhIQ"
+            "MwAIIQULMwEIIQYLEhAzAAghBw8QEKN0eG6Jo2FtdM4ABJPgo2ZlZc4AId/gomZ2A"
+            "aJnaMQgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmjZ3JwxCBLA74bTV"
+            "35FJNL1h0K9ZbRU24b4M1JRkD1YTogvvDXbqJsdmSjcmN2xCC3qUpIgHGWE8/1LPh"
+            "9SGCalSN7IaITeeWSXbfsS5wsX6NzbmTEIDjx8HKnDaFoZSEjASK6mVBaawWJIylw"
+            "GzyT0Rh4WuMSpHR5cGWjcGF5gqRsc2lngaFsxM4BIAgBwJaxAgIAwMQHZB6QTiYDI"
+            "LO3BCfT4PJw36+yT68lZyyjP9vs0NLqLfcc6S9Ol/5iILepSkiAcZYTz/Us+H1IYJ"
+            "qVI3shohN55ZJdt+xLnCxfILiQFDfxnzNzBZUDKbhLy+kUH9zRcLpHiac+L0QEAOw"
+            "8MRAiEjEBIwwQMgQkEkAAGTEJKBIxBzIDEhAxCCUSEDECIQQNECJAAC4zAAAzAQAS"
+            "MQkyAxIQMwAHKRIQMwEHKhIQMwAIIQULMwEIIQYLEhAzAAghBw8QEKN0eG6Jo2Ftd"
+            "M4AD0JAo2ZlZc4AId/gomZ2AaJnaMQgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt"
+            "3SABJtkGmjZ3JwxCBLA74bTV35FJNL1h0K9ZbRU24b4M1JRkD1YTogvvDXbqJsdmS"
+            "jcmN2xCC4kBQ38Z8zcwWVAym4S8vpFB/c0XC6R4mnPi9EBADsPKNzbmTEIDjx8HKn"
+            "DaFoZSEjASK6mVBaawWJIylwGzyT0Rh4WuMSpHR5cGWjcGF5")
         encoded_txns = b''
         for txn in txns:
             encoded_txns += base64.b64decode(encoding.msgpack_encode(txn))
@@ -1224,79 +1264,94 @@ class TestTemplate(unittest.TestCase):
             "FBZIR3RWVT2BTGVOG25H3VAOLVD54RTCRNRLQCCJJO6SVSCT5IVDYKNCSU")
 
         golden = (
-            "ASAE6AcBAMDPJCYDIOaalh5vLV96yGYHkmVSvpgjXtMzY8qIkYu5yTipFbb5IB" +
-            "B2YRNPIfx8AiI9UKues2ALw//DcSQjoeR7sfmp2/VfIP68oLsUSlpOp7Q4pGga" +
-            "yA5soQW8tgf8VlMlyVaV9qITMQEiDjEQIxIQMQcyAxIQMQgkEhAxCSgSLQEpEh" +
-            "AxCSoSMQIlDRAREA==")
+            "ASAE6AcBAMDPJCYDIOaalh5vLV96yGYHkmVSvpgjXtMzY8qIkYu5yTipFbb5IBB2Y"
+            "RNPIfx8AiI9UKues2ALw//DcSQjoeR7sfmp2/VfIP68oLsUSlpOp7Q4pGgayA5soQ"
+            "W8tgf8VlMlyVaV9qITMQEiDjEQIxIQMQcyAxIQMQgkEhAxCSgSLQEpEhAxCSoSMQI"
+            "lDRAREA==")
         p = s.get_program()
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
         golden_ltxn = (
-            "gqRsc2lngqNhcmeRxAhwcmVpbWFnZaFsxJcBIAToBwEAwM8kJgMg5pqWHm8tX3" +
-            "rIZgeSZVK+mCNe0zNjyoiRi7nJOKkVtvkgEHZhE08h/HwCIj1Qq56zYAvD/8Nx" +
-            "JCOh5Hux+anb9V8g/ryguxRKWk6ntDikaBrIDmyhBby2B/xWUyXJVpX2ohMxAS" +
-            "IOMRAjEhAxBzIDEhAxCCQSEDEJKBItASkSEDEJKhIxAiUNEBEQo3R4boelY2xv" +
-            "c2XEIOaalh5vLV96yGYHkmVSvpgjXtMzY8qIkYu5yTipFbb5o2ZlZc0D6KJmdg" +
-            "GiZ2jEIH+DsWV/8fxTuS3BgUih1l38LUsfo9Z3KErd0gASbZBpomx2ZKNzbmTE" +
-            "IChyiO42rPQZmq42un3UDl1H3kZii2K4CElLvSrIU+oqpHR5cGWjcGF5")
-        sp = transaction.SuggestedParams(1, 100, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", None, 0)
+            "gqRsc2lngqNhcmeRxAhwcmVpbWFnZaFsxJcBIAToBwEAwM8kJgMg5pqWHm8tX3rIZ"
+            "geSZVK+mCNe0zNjyoiRi7nJOKkVtvkgEHZhE08h/HwCIj1Qq56zYAvD/8NxJCOh5H"
+            "ux+anb9V8g/ryguxRKWk6ntDikaBrIDmyhBby2B/xWUyXJVpX2ohMxASIOMRAjEhA"
+            "xBzIDEhAxCCQSEDEJKBItASkSEDEJKhIxAiUNEBEQo3R4boelY2xvc2XEIOaalh5v"
+            "LV96yGYHkmVSvpgjXtMzY8qIkYu5yTipFbb5o2ZlZc0D6KJmdgGiZ2jEIH+DsWV/8"
+            "fxTuS3BgUih1l38LUsfo9Z3KErd0gASbZBpomx2ZKNzbmTEIChyiO42rPQZmq42un"
+            "3UDl1H3kZii2K4CElLvSrIU+oqpHR5cGWjcGF5")
+        sp = transaction.SuggestedParams(
+            1, 100, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", None, 0)
         ltxn = template.HTLC.get_transaction(p, preimage, sp)
         self.assertEqual(golden_ltxn, encoding.msgpack_encode(ltxn))
 
     def test_dynamic_fee(self):
         addr1 = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
         addr2 = "42NJMHTPFVPXVSDGA6JGKUV6TARV5UZTMPFIREMLXHETRKIVW34QFSDFRE"
-        sp = transaction.SuggestedParams(12345, 12346, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=", None, 0)
+        sp = transaction.SuggestedParams(
+            12345, 12346, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=",
+            None, 0)
 
         s = template.DynamicFee(addr1, 5000, sp, addr2)
         s.lease_value = base64.b64decode(
             "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=")
 
-        golden_addr = ("GCI4WWDIWUFATVPOQ372OZYG52EUL" +
-                       "PUZKI7Y34MXK3ZJKIBZXHD2H5C5TI")
+        golden_addr = (
+            "GCI4WWDIWUFATVPOQ372OZYG52EULPUZKI7Y34MXK3ZJKIBZXHD2H5C5TI")
 
-        golden = ("ASAFAgGIJ7lgumAmAyD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJclW" +
-                  "lfaiEyDmmpYeby1feshmB5JlUr6YI17TM2PKiJGLuck4qRW2+SB/g7Fl" +
-                  "f/H8U7ktwYFIodZd/C1LH6PWdyhK3dIAEm2QaTIEIhIzABAjEhAzAAcx" +
-                  "ABIQMwAIMQESEDEWIxIQMRAjEhAxBygSEDEJKRIQMQgkEhAxAiUSEDEE" +
-                  "IQQSEDEGKhIQ")
+        golden = (
+            "ASAFAgGIJ7lgumAmAyD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJclWlfaiEyDmm"
+            "pYeby1feshmB5JlUr6YI17TM2PKiJGLuck4qRW2+SB/g7Flf/H8U7ktwYFIodZd/C"
+            "1LH6PWdyhK3dIAEm2QaTIEIhIzABAjEhAzAAcxABIQMwAIMQESEDEWIxIQMRAjEhA"
+            "xBygSEDEJKRIQMQgkEhAxAiUSEDEEIQQSEDEGKhIQ")
         p = s.get_program()
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
-        sk = ("cv8E0Ln24FSkwDgGeuXKStOTGcze5u8yldpXxgrBxumFP" +
-              "YdMJymqcGoxdDeyuM8t6Kxixfq0PJCyJP71uhYT7w==")
+        sk = (
+            "cv8E0Ln24FSkwDgGeuXKStOTGcze5u8yldpXxgrBxumFPYdMJymqcGoxdDeyuM8t6"
+            "Kxixfq0PJCyJP71uhYT7w==")
         txn, lsig = s.sign_dynamic_fee(sk)
 
-
-        golden_txn = "iqNhbXTNE4ilY2xvc2XEIOaalh5vLV96yGYHkmVSvpgjXtMzY8qIkYu5yTipFbb5o2ZlZc0D6KJmds0wOaJnaMQgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmibHbNMDqibHjEIH+DsWV/8fxTuS3BgUih1l38LUsfo9Z3KErd0gASbZBpo3JjdsQg/ryguxRKWk6ntDikaBrIDmyhBby2B/xWUyXJVpX2ohOjc25kxCCFPYdMJymqcGoxdDeyuM8t6Kxixfq0PJCyJP71uhYT76R0eXBlo3BheQ=="
-        golden_lsig = "gqFsxLEBIAUCAYgnuWC6YCYDIP68oLsUSlpOp7Q4pGgayA5soQW8tgf8VlMlyVaV9qITIOaalh5vLV96yGYHkmVSvpgjXtMzY8qIkYu5yTipFbb5IH+DsWV/8fxTuS3BgUih1l38LUsfo9Z3KErd0gASbZBpMgQiEjMAECMSEDMABzEAEhAzAAgxARIQMRYjEhAxECMSEDEHKBIQMQkpEhAxCCQSEDECJRIQMQQhBBIQMQYqEhCjc2lnxEAhLNdfdDp9Wbi0YwsEQCpP7TVHbHG7y41F4MoESNW/vL1guS+5Wj4f5V9fmM63/VKTSMFidHOSwm5o+pbV5lYH"
+        golden_txn = (
+            "iqNhbXTNE4ilY2xvc2XEIOaalh5vLV96yGYHkmVSvpgjXtMzY8qIkYu5yTipFbb5"
+            "o2ZlZc0D6KJmds0wOaJnaMQgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtk"
+            "GmibHbNMDqibHjEIH+DsWV/8fxTuS3BgUih1l38LUsfo9Z3KErd0gASbZBpo3Jjds"
+            "Qg/ryguxRKWk6ntDikaBrIDmyhBby2B/xWUyXJVpX2ohOjc25kxCCFPYdMJymqcGo"
+            "xdDeyuM8t6Kxixfq0PJCyJP71uhYT76R0eXBlo3BheQ==")
+        golden_lsig = (
+            "gqFsxLEBIAUCAYgnuWC6YCYDIP68oLsUSlpOp7Q4pGgayA5soQW8tgf8VlMlyVaV9"
+            "qITIOaalh5vLV96yGYHkmVSvpgjXtMzY8qIkYu5yTipFbb5IH+DsWV/8fxTuS3BgU"
+            "ih1l38LUsfo9Z3KErd0gASbZBpMgQiEjMAECMSEDMABzEAEhAzAAgxARIQMRYjEhA"
+            "xECMSEDEHKBIQMQkpEhAxCCQSEDECJRIQMQQhBBIQMQYqEhCjc2lnxEAhLNdfdDp9"
+            "Wbi0YwsEQCpP7TVHbHG7y41F4MoESNW/vL1guS+5Wj4f5V9fmM63/VKTSMFidHOSw"
+            "m5o+pbV5lYH")
 
         self.assertEqual(golden_txn, encoding.msgpack_encode(txn))
         self.assertEqual(golden_lsig, encoding.msgpack_encode(lsig))
 
-        sk_2 = ("2qjz96Vj9M6YOqtNlfJUOKac13EHCXyDty94ozCjuww" +
-                "riI+jzFgStFx9E6kEk1l4+lFsW4Te2PY1KV8kNcccRg==")
+        sk_2 = (
+            "2qjz96Vj9M6YOqtNlfJUOKac13EHCXyDty94ozCjuwwriI+jzFgStFx9E6kEk1l4+"
+            "lFsW4Te2PY1KV8kNcccRg==")
         txns = s.get_transactions(txn, lsig, sk_2, 1234)
 
         golden_txns = (
-            "gqNzaWfEQJBNVry9qdpnco+uQzwFicUWHteYUIxwDkdHqY5Qw2Q8Fc2StrQUgN" +
-            "+2k8q4rC0LKrTMJQnE+mLWhZgMMJvq3QCjdHhuiqNhbXTOAAWq6qNmZWXOAATz" +
-            "vqJmds0wOaJnaMQgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmjZ3" +
-            "JwxCCCVfqhCinRBXKMIq9eSrJQIXZ+7iXUTig91oGd/mZEAqJsds0wOqJseMQg" +
-            "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmjcmN2xCCFPYdMJymqcG" +
-            "oxdDeyuM8t6Kxixfq0PJCyJP71uhYT76NzbmTEICuIj6PMWBK0XH0TqQSTWXj6" +
-            "UWxbhN7Y9jUpXyQ1xxxGpHR5cGWjcGF5gqRsc2lngqFsxLEBIAUCAYgnuWC6YC" +
-            "YDIP68oLsUSlpOp7Q4pGgayA5soQW8tgf8VlMlyVaV9qITIOaalh5vLV96yGYH" +
-            "kmVSvpgjXtMzY8qIkYu5yTipFbb5IH+DsWV/8fxTuS3BgUih1l38LUsfo9Z3KE" +
-            "rd0gASbZBpMgQiEjMAECMSEDMABzEAEhAzAAgxARIQMRYjEhAxECMSEDEHKBIQ" +
-            "MQkpEhAxCCQSEDECJRIQMQQhBBIQMQYqEhCjc2lnxEAhLNdfdDp9Wbi0YwsEQC" +
-            "pP7TVHbHG7y41F4MoESNW/vL1guS+5Wj4f5V9fmM63/VKTSMFidHOSwm5o+pbV" +
-            "5lYHo3R4boujYW10zROIpWNsb3NlxCDmmpYeby1feshmB5JlUr6YI17TM2PKiJ" +
-            "GLuck4qRW2+aNmZWXOAAWq6qJmds0wOaJnaMQgf4OxZX/x/FO5LcGBSKHWXfwt" +
-            "Sx+j1ncoSt3SABJtkGmjZ3JwxCCCVfqhCinRBXKMIq9eSrJQIXZ+7iXUTig91o" +
-            "Gd/mZEAqJsds0wOqJseMQgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJt" +
-            "kGmjcmN2xCD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJclWlfaiE6NzbmTEII" +
-            "U9h0wnKapwajF0N7K4zy3orGLF+rQ8kLIk/vW6FhPvpHR5cGWjcGF5")
+            "gqNzaWfEQJBNVry9qdpnco+uQzwFicUWHteYUIxwDkdHqY5Qw2Q8Fc2StrQUgN+2k"
+            "8q4rC0LKrTMJQnE+mLWhZgMMJvq3QCjdHhuiqNhbXTOAAWq6qNmZWXOAATzvqJmds"
+            "0wOaJnaMQgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmjZ3JwxCCCVfq"
+            "hCinRBXKMIq9eSrJQIXZ+7iXUTig91oGd/mZEAqJsds0wOqJseMQgf4OxZX/x/FO5"
+            "LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmjcmN2xCCFPYdMJymqcGoxdDeyuM8t6Kxix"
+            "fq0PJCyJP71uhYT76NzbmTEICuIj6PMWBK0XH0TqQSTWXj6UWxbhN7Y9jUpXyQ1xx"
+            "xGpHR5cGWjcGF5gqRsc2lngqFsxLEBIAUCAYgnuWC6YCYDIP68oLsUSlpOp7Q4pGg"
+            "ayA5soQW8tgf8VlMlyVaV9qITIOaalh5vLV96yGYHkmVSvpgjXtMzY8qIkYu5yTip"
+            "Fbb5IH+DsWV/8fxTuS3BgUih1l38LUsfo9Z3KErd0gASbZBpMgQiEjMAECMSEDMAB"
+            "zEAEhAzAAgxARIQMRYjEhAxECMSEDEHKBIQMQkpEhAxCCQSEDECJRIQMQQhBBIQMQ"
+            "YqEhCjc2lnxEAhLNdfdDp9Wbi0YwsEQCpP7TVHbHG7y41F4MoESNW/vL1guS+5Wj4"
+            "f5V9fmM63/VKTSMFidHOSwm5o+pbV5lYHo3R4boujYW10zROIpWNsb3NlxCDmmpYe"
+            "by1feshmB5JlUr6YI17TM2PKiJGLuck4qRW2+aNmZWXOAAWq6qJmds0wOaJnaMQgf"
+            "4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmjZ3JwxCCCVfqhCinRBXKMIq"
+            "9eSrJQIXZ+7iXUTig91oGd/mZEAqJsds0wOqJseMQgf4OxZX/x/FO5LcGBSKHWXfw"
+            "tSx+j1ncoSt3SABJtkGmjcmN2xCD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJclW"
+            "lfaiE6NzbmTEIIU9h0wnKapwajF0N7K4zy3orGLF+rQ8kLIk/vW6FhPvpHR5cGWjc"
+            "GF5")
         actual = (base64.b64decode(encoding.msgpack_encode(txns[0])) +
                   base64.b64decode(encoding.msgpack_encode(txns[1])))
         self.assertEqual(golden_txns, base64.b64encode(actual).decode())
@@ -1307,13 +1362,14 @@ class TestTemplate(unittest.TestCase):
         s.lease_value = base64.b64decode(
             "AQIDBAUGBwgBAgMEBQYHCAECAwQFBgcIAQIDBAUGBwg=")
 
-        golden_addr = ("JMS3K4LSHPULANJIVQBTEDP5PZK6H" +
-                       "HMDQS4OKHIMHUZZ6OILYO3FVQW7IY")
+        golden_addr = (
+            "JMS3K4LSHPULANJIVQBTEDP5PZK6HHMDQS4OKHIMHUZZ6OILYO3FVQW7IY")
 
-        golden = ("ASAHAegHZABfoMIevKOVASYCIAECAwQFBgcIAQIDBAUGBwgBAgMEBQYH" +
-                  "CAECAwQFBgcIIJKvkYTkEzwJf2arzJOxERsSogG9nQzKPkpIoc4TzPTF" +
-                  "MRAiEjEBIw4QMQIkGCUSEDEEIQQxAggSEDEGKBIQMQkyAxIxBykSEDEI" +
-                  "IQUSEDEJKRIxBzIDEhAxAiEGDRAxCCUSEBEQ")
+        golden = (
+            "ASAHAegHZABfoMIevKOVASYCIAECAwQFBgcIAQIDBAUGBwgBAgMEBQYHCAECAwQFB"
+            "gcIIJKvkYTkEzwJf2arzJOxERsSogG9nQzKPkpIoc4TzPTFMRAiEjEBIw4QMQIkGC"
+            "USEDEEIQQxAggSEDEGKBIQMQkyAxIxBykSEDEIIQUSEDEJKRIxBzIDEhAxAiEGDRA"
+            "xCCUSEBEQ")
         p = s.get_program()
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
@@ -1322,57 +1378,56 @@ class TestTemplate(unittest.TestCase):
 
         ltxn = s.get_withdrawal_transaction(p, sp)
         golden_ltxn = (
-            "gqRsc2lngaFsxJkBIAcB6AdkAF+gwh68o5UBJgIgAQIDBAUGBwgBAgMEBQYHCA" +
-            "ECAwQFBgcIAQIDBAUGBwggkq+RhOQTPAl/ZqvMk7ERGxKiAb2dDMo+SkihzhPM" +
-            "9MUxECISMQEjDhAxAiQYJRIQMQQhBDECCBIQMQYoEhAxCTIDEjEHKRIQMQghBR" +
-            "IQMQkpEjEHMgMSEDECIQYNEDEIJRIQERCjdHhuiaNhbXTOAAehIKNmZWXNA+ii" +
-            "ZnbNBLCiZ2jEIH+DsWV/8fxTuS3BgUih1l38LUsfo9Z3KErd0gASbZBpomx2zQ" +
-            "UPomx4xCABAgMEBQYHCAECAwQFBgcIAQIDBAUGBwgBAgMEBQYHCKNyY3bEIJKv" +
-            "kYTkEzwJf2arzJOxERsSogG9nQzKPkpIoc4TzPTFo3NuZMQgSyW1cXI76LA1KK" +
-            "wDMg39flXjnYOEuOUdDD0znzkLw7akdHlwZaNwYXk=")
-        self.assertEqual(golden_ltxn,
-                         encoding.msgpack_encode(ltxn))
+            "gqRsc2lngaFsxJkBIAcB6AdkAF+gwh68o5UBJgIgAQIDBAUGBwgBAgMEBQYHCAECA"
+            "wQFBgcIAQIDBAUGBwggkq+RhOQTPAl/ZqvMk7ERGxKiAb2dDMo+SkihzhPM9MUxEC"
+            "ISMQEjDhAxAiQYJRIQMQQhBDECCBIQMQYoEhAxCTIDEjEHKRIQMQghBRIQMQkpEjE"
+            "HMgMSEDECIQYNEDEIJRIQERCjdHhuiaNhbXTOAAehIKNmZWXNA+iiZnbNBLCiZ2jE"
+            "IH+DsWV/8fxTuS3BgUih1l38LUsfo9Z3KErd0gASbZBpomx2zQUPomx4xCABAgMEB"
+            "QYHCAECAwQFBgcIAQIDBAUGBwgBAgMEBQYHCKNyY3bEIJKvkYTkEzwJf2arzJOxER"
+            "sSogG9nQzKPkpIoc4TzPTFo3NuZMQgSyW1cXI76LA1KKwDMg39flXjnYOEuOUdDD0"
+            "znzkLw7akdHlwZaNwYXk=")
+        self.assertEqual(golden_ltxn, encoding.msgpack_encode(ltxn))
 
     def test_limit_order_a(self):
         addr = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
         s = template.LimitOrder(addr, 12345, 30, 100, 123456, 5000000, 10000)
 
-        golden_addr = ("LXQWT2XLIVNFS54VTLR63UY5K6AMI" +
-                       "EWI7YTVE6LB4RWZDBZKH22ZO3S36I")
+        golden_addr = (
+            "LXQWT2XLIVNFS54VTLR63UY5K6AMIEWI7YTVE6LB4RWZDBZKH22ZO3S36I")
 
-        golden = ("ASAKAAHAlrECApBOBLlgZB7AxAcmASD+vKC7FEpaTqe0OKRoGsgObKEF" +
-                  "vLYH/FZTJclWlfaiEzEWIhIxECMSEDEBJA4QMgQjEkAAVTIEJRIxCCEE" +
-                  "DRAxCTIDEhAzARAhBRIQMwERIQYSEDMBFCgSEDMBEzIDEhAzARIhBx01" +
-                  "AjUBMQghCB01BDUDNAE0Aw1AACQ0ATQDEjQCNAQPEEAAFgAxCSgSMQIh" +
-                  "CQ0QMQcyAxIQMQgiEhAQ")
+        golden = (
+            "ASAKAAHAlrECApBOBLlgZB7AxAcmASD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJ"
+            "clWlfaiEzEWIhIxECMSEDEBJA4QMgQjEkAAVTIEJRIxCCEEDRAxCTIDEhAzARAhBR"
+            "IQMwERIQYSEDMBFCgSEDMBEzIDEhAzARIhBx01AjUBMQghCB01BDUDNAE0Aw1AACQ"
+            "0ATQDEjQCNAQPEEAAFgAxCSgSMQIhCQ0QMQcyAxIQMQgiEhAQ")
         p = s.get_program()
 
         self.assertEqual(p, base64.b64decode(golden))
         self.assertEqual(s.get_address(), golden_addr)
 
-        sk = ("DTKVj7KMON3GSWBwMX9McQHtaDDi8SDEBi0bt4rOxlHNRah" +
-              "La0zVG+25BDIaHB1dSoIHIsUQ8FFcdnCdKoG+Bg==")
+        sk = (
+            "DTKVj7KMON3GSWBwMX9McQHtaDDi8SDEBi0bt4rOxlHNRahLa0zVG+25BDIaHB1dS"
+            "oIHIsUQ8FFcdnCdKoG+Bg==")
         gh = "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
         sp = transaction.SuggestedParams(1234, 2234, gh, None, 10)
         [stx_1, stx_2] = s.get_swap_assets_transactions(
             p, 3000, 10000, sk, sp)
         golden_txn_1 = (
-            "gqRsc2lngaFsxLcBIAoAAcCWsQICkE4EuWBkHsDEByYBIP68oLsUSlpOp7Q4pG" +
-            "gayA5soQW8tgf8VlMlyVaV9qITMRYiEjEQIxIQMQEkDhAyBCMSQABVMgQlEjEI" +
-            "IQQNEDEJMgMSEDMBECEFEhAzAREhBhIQMwEUKBIQMwETMgMSEDMBEiEHHTUCNQ" +
-            "ExCCEIHTUENQM0ATQDDUAAJDQBNAMSNAI0BA8QQAAWADEJKBIxAiEJDRAxBzID" +
-            "EhAxCCISEBCjdHhuiaNhbXTNJxCjZmVlzQisomZ2zQTSomdoxCB/g7Flf/H8U7" +
-            "ktwYFIodZd/C1LH6PWdyhK3dIAEm2QaaNncnDEIKz368WOGpdE/Ww0L8wUu5Ly" +
-            "2u2bpG3ZSMKCJvcvGApTomx2zQi6o3JjdsQgzUWoS2tM1RvtuQQyGhwdXUqCBy" +
-            "LFEPBRXHZwnSqBvgajc25kxCBd4Wnq60VaWXeVmuPt0x1XgMQSyP4nUnlh5G2R" +
-            "hyo+taR0eXBlo3BheQ==")
+            "gqRsc2lngaFsxLcBIAoAAcCWsQICkE4EuWBkHsDEByYBIP68oLsUSlpOp7Q4pGgay"
+            "A5soQW8tgf8VlMlyVaV9qITMRYiEjEQIxIQMQEkDhAyBCMSQABVMgQlEjEIIQQNED"
+            "EJMgMSEDMBECEFEhAzAREhBhIQMwEUKBIQMwETMgMSEDMBEiEHHTUCNQExCCEIHTU"
+            "ENQM0ATQDDUAAJDQBNAMSNAI0BA8QQAAWADEJKBIxAiEJDRAxBzIDEhAxCCISEBCj"
+            "dHhuiaNhbXTNJxCjZmVlzQisomZ2zQTSomdoxCB/g7Flf/H8U7ktwYFIodZd/C1LH"
+            "6PWdyhK3dIAEm2QaaNncnDEIKz368WOGpdE/Ww0L8wUu5Ly2u2bpG3ZSMKCJvcvGA"
+            "pTomx2zQi6o3JjdsQgzUWoS2tM1RvtuQQyGhwdXUqCByLFEPBRXHZwnSqBvgajc25"
+            "kxCBd4Wnq60VaWXeVmuPt0x1XgMQSyP4nUnlh5G2Rhyo+taR0eXBlo3BheQ==")
         golden_txn_2 = (
-            "gqNzaWfEQKXv8Z6OUDNmiZ5phpoQJHmfKyBal4gBZLPYsByYnlXCAlXMBeVFG5" +
-            "CLP1k5L6BPyEG2/XIbjbyM0CGG55CxxAKjdHhuiqRhYW10zQu4pGFyY3bEIP68" +
-            "oLsUSlpOp7Q4pGgayA5soQW8tgf8VlMlyVaV9qITo2ZlZc0JJKJmds0E0qJnaM" +
-            "Qgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmjZ3JwxCCs9+vFjhqX" +
-            "RP1sNC/MFLuS8trtm6Rt2UjCgib3LxgKU6Jsds0IuqNzbmTEIM1FqEtrTNUb7b" +
-            "kEMhocHV1KggcixRDwUVx2cJ0qgb4GpHR5cGWlYXhmZXKkeGFpZM0wOQ==")
+            "gqNzaWfEQKXv8Z6OUDNmiZ5phpoQJHmfKyBal4gBZLPYsByYnlXCAlXMBeVFG5CLP"
+            "1k5L6BPyEG2/XIbjbyM0CGG55CxxAKjdHhuiqRhYW10zQu4pGFyY3bEIP68oLsUSl"
+            "pOp7Q4pGgayA5soQW8tgf8VlMlyVaV9qITo2ZlZc0JJKJmds0E0qJnaMQgf4OxZX/"
+            "x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmjZ3JwxCCs9+vFjhqXRP1sNC/MFLuS"
+            "8trtm6Rt2UjCgib3LxgKU6Jsds0IuqNzbmTEIM1FqEtrTNUb7bkEMhocHV1Kggcix"
+            "RDwUVx2cJ0qgb4GpHR5cGWlYXhmZXKkeGFpZM0wOQ==")
 
         self.assertEqual(encoding.msgpack_encode(stx_1), golden_txn_1)
         self.assertEqual(encoding.msgpack_encode(stx_2), golden_txn_2)
