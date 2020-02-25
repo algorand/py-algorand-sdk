@@ -321,7 +321,7 @@ metadata = bytes("fACPO4nRgO55j1ndAK3W6Sgc4APkcyFh", "ascii") # should be a 32-b
 default_frozen = False # whether accounts should be frozen by default
 
 # create the asset creation transaction
-sp = transaction.SuggestedParams(first_valid_round, last_valid_round, genesis_hash, None, fee_per_byte)
+sp = transaction.SuggestedParams(fee_per_byte, first_valid_round, last_valid_round, genesis_hash)
 txn = transaction.AssetConfigTxn(address, sp, total=total, manager=manager,
             reserve=reserve, freeze=freeze, clawback=clawback,
             unit_name=unitname, asset_name=assetname, url=url,
@@ -350,7 +350,7 @@ genesis_hash = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
 index = 1234 # identifying index of the asset
 
 # create the asset config transaction
-sp = transaction.SuggestedParams(first_valid_round, last_valid_round, genesis_hash, None, fee_per_byte)
+sp = transaction.SuggestedParams(fee_per_byte, first_valid_round, last_valid_round, genesis_hash)
 txn = transaction.AssetConfigTxn(manager_address, sp, manager=new_manager, reserve=new_reserve,
             freeze=new_freeze, clawback=new_clawback, index=index)
 
@@ -374,7 +374,7 @@ genesis_hash = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
 index = 1234 # identifying index of the asset
 
 # create the asset destroy transaction
-sp = transaction.SuggestedParams(first_valid_round, last_valid_round, genesis_hash, None, fee_per_byte)
+sp = transaction.SuggestedParams(fee_per_byte, first_valid_round, last_valid_round, genesis_hash)
 txn = transaction.AssetConfigTxn(creator_address, sp, index=index, strict_empty_address_check=False)
 
 # sign the transaction
@@ -398,7 +398,7 @@ freeze_target = "address to be frozen or unfrozen"
 index = 1234 # identifying index of the asset
 
 # create the asset freeze transaction
-sp = transaction.SuggestedParams(first_valid_round, last_valid_round, genesis_hash, None, fee_per_byte)
+sp = transaction.SuggestedParams(fee_per_byte, first_valid_round, last_valid_round, genesis_hash)
 txn = transaction.AssetFreezeTxn(freeze_address, sp, index=index, target=freeze_target,
             new_freeze_state=True)
 
@@ -424,7 +424,7 @@ amount = 100 # amount of assets to transfer
 index = 1234 # identifying index of the asset
 
 # create the asset transfer transaction
-sp = transaction.SuggestedParams(first_valid_round, last_valid_round, genesis_hash, None, fee_per_byte)
+sp = transaction.SuggestedParams(fee_per_byte, first_valid_round, last_valid_round, genesis_hash)
 txn = transaction.AssetTransferTxn(sender_address, sp,
                 receiver, amount, index, close_assets_to)
 
@@ -449,7 +449,7 @@ amount = 0 # to start accepting assets, set amount to 0
 index = 1234 # identifying index of the asset
 
 # create the asset accept transaction
-sp = transaction.SuggestedParams(first_valid_round, last_valid_round, genesis_hash, None, fee_per_byte)
+sp = transaction.SuggestedParams(fee_per_byte, first_valid_round, last_valid_round, genesis_hash)
 txn = transaction.AssetTransferTxn(address, sp,
                 receiver, amount, index)
 
@@ -476,7 +476,7 @@ amount = 100
 index = 1234 # identifying index of the asset
 
 # create the asset transfer transaction
-sp = transaction.SuggestedParams(first_valid_round, last_valid_round, genesis_hash, None, fee_per_byte)
+sp = transaction.SuggestedParams(fee_per_byte, first_valid_round, last_valid_round, genesis_hash)
 txn = transaction.AssetTransferTxn(clawback_address, sp,
                 receiver, amount, index, revocation_target=target)
 

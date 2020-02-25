@@ -31,7 +31,7 @@ class SuggestedParams:
         flat_fee (bool)
     """
 
-    def __init__(self, first, last, gh, gen, fee, flat_fee=False):
+    def __init__(self, fee, first, last, gh, gen=None, flat_fee=False):
         self.first = first
         self.last = last
         self.gh = gh
@@ -134,11 +134,11 @@ class Transaction:
     @staticmethod
     def undictify(d):
         sp = SuggestedParams(
+            d["fee"],
             d["fv"] if "fv" in d else 0,
             d["lv"],
             base64.b64encode(d["gh"]).decode(),
             d["gen"] if "gen" in d else None,
-            d["fee"],
             flat_fee=True)
         args = {
             "sp": sp,

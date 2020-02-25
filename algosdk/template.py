@@ -312,11 +312,11 @@ class DynamicFee(Template):
 
         # reimbursement transaction
         sp = transaction.SuggestedParams(
+            fee,
             txn.first_valid_round,
             txn.last_valid_round,
             txn.genesis_hash,
-            txn.genesis_id,
-            fee)
+            txn.genesis_id)
         address = account.address_from_private_key(private_key)
         txn_2 = transaction.PaymentTxn(
             address, sp, txn.sender, txn.fee, lease=txn.lease)
@@ -342,11 +342,11 @@ class DynamicFee(Template):
 
         # main transaction
         sp = transaction.SuggestedParams(
+            0,
             self.first_valid,
             self.last_valid,
             self.gh,
-            self.gen,
-            0)
+            self.gen)
         txn = transaction.PaymentTxn(
             sender, sp, self.receiver,
             self.amount, lease=self.lease_value,
@@ -428,11 +428,11 @@ class PeriodicPayment(Template):
                 "first_valid must be divisible by the period")
 
         sp_copy = transaction.SuggestedParams(
+            sp.fee,
             sp.first,
             sp.first + withdrawing_window,
             sp.gh,
             sp.gen,
-            sp.fee,
             flat_fee=sp.flat_fee
         )
 
