@@ -230,11 +230,11 @@ class AlgodClient:
         res = self.algod_request("GET", req, **kwargs)
 
         return transaction.SuggestedParams(
+            res["fee"],
             res["lastRound"],
             res["lastRound"] + 1000,
             res["genesishashb64"],
             res["genesisID"],
-            res["fee"],
             False)
 
     def send_raw_transaction(self, txn, **kwargs):
