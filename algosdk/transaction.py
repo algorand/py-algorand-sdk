@@ -15,19 +15,19 @@ class SuggestedParams:
     Contains various fields common to all transaction types.
 
     Args:
+        fee (int): transaction fee (per byte)
         first (int): first round for which the transaction is valid
         last (int): last round for which the transaction is valid
         gh (str): genesis hash
-        gen (str): genesis id
-        fee (int): transaction fee (per byte)
+        gen (str, optional): genesis id
         flat_fee (bool, optional): whether the specified fee is a flat fee
 
     Attributes:
         fee (int)
-        first_valid_round (int)
-        last_valid_round (int)
-        genesis_id (str)
-        genesis_hash (str)
+        first (int)
+        last (int)
+        gen (str)
+        gh (str)
         flat_fee (bool)
     """
 
