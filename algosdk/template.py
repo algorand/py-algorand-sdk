@@ -410,7 +410,9 @@ class PeriodicPayment(Template):
         Args:
             contract (bytes): contract containing information, should be
                 received from payer
-            sp (SuggestedParams): suggested params from algod
+            sp (SuggestedParams): suggested params from algod; the value of
+                sp.last will not be used. Instead, the last valid round will
+                be calculated from first valid round and withdrawing window
         """
         address = logic.address(contract)
         _, ints, bytearrays = logic.read_program(contract)
