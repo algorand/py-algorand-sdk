@@ -197,7 +197,7 @@ class TestTransaction(unittest.TestCase):
         votedilution = 11
 
         sp = transaction.SuggestedParams(
-            fee, 322575, 323575, gh,flat_fee=True)
+            fee, 322575, 323575, gh, flat_fee=True)
         txn = transaction.KeyregTxn(pk, sp, votepk, selpk, votefirst, votelast,
                                     votedilution)
         signed_txn = txn.sign(sk)
