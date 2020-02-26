@@ -766,6 +766,15 @@ class SignedTransaction:
         self.signature = signature
         self.transaction = transaction
 
+    def get_txid(self):
+        """
+        Get the transaction's ID.
+
+        Returns:
+            str: transaction ID
+        """
+        return self.transaction.get_txid()
+
     def dictify(self):
         od = OrderedDict()
         if self.signature:
@@ -834,6 +843,15 @@ class MultisigTransaction:
             raise error.InvalidSecretKeyError
         sig = self.transaction.raw_sign(private_key)
         self.multisig.subsigs[index].signature = sig
+
+    def get_txid(self):
+        """
+        Get the transaction's ID.
+
+        Returns:
+            str: transaction ID
+        """
+        return self.transaction.get_txid()
 
     def dictify(self):
         od = OrderedDict()
@@ -1233,6 +1251,15 @@ class LogicSigTransaction:
         """
         public_key = encoding.decode_address(self.transaction.sender)
         return self.lsig.verify(public_key)
+
+    def get_txid(self):
+        """
+        Get the transaction's ID.
+
+        Returns:
+            str: transaction ID
+        """
+        return self.transaction.get_txid()
 
     def dictify(self):
         od = OrderedDict()
