@@ -5,7 +5,7 @@ from . import encoding, constants
 
 def generate_account():
     """
-    Generate an account.
+    Generate an account. test push
 
     Returns:
         (str, str): private key, account address
