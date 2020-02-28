@@ -78,20 +78,15 @@ mn = mnemonic.from_private_key(private_key_1)
 print("Mnemonic for the first account: " + mn + "\n")
 
 # get suggested parameters
-params = acl.suggested_params()
-gen = params["genesisID"]
-gh = params["genesishashb64"]
-last_round = params["lastRound"]
-fee = params["fee"]
+sp = acl.suggested_params()
 
 # get last block info
-block_info = acl.block_info(last_round)
-print("Block", last_round, "info:", json.dumps(block_info, indent=2), "\n")
+block_info = acl.block_info(sp.first)
+print("Block", sp.first, "info:", json.dumps(block_info, indent=2), "\n")
 
 # create a transaction
 amount = 100000
-txn = transaction.PaymentTxn(existing_account, fee, last_round,
-                             last_round+100, gh, address_1, amount, gen=gen)
+txn = transaction.PaymentTxn(existing_account, sp, address_1, amount)
 print("Encoded transaction:", encoding.msgpack_encode(txn), "\n")
 
 # sign transaction with kmd
@@ -119,7 +114,7 @@ print("Transaction ID: " + transaction_id + "\n")
 
 # wait 2 rounds and then try to see the transaction
 print("Now let's wait a bit for the transaction to process.\n")
-acl.status_after_block(last_round+2)
+acl.status_after_block(sp.first+2)
 print("Transaction info:", acl.transaction_info(existing_account,
                                                 transaction_id))
 

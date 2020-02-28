@@ -6,6 +6,7 @@ import base64
 from . import error
 from . import encoding
 from . import constants
+from . import transaction
 
 
 class AlgodClient:
@@ -22,6 +23,7 @@ class AlgodClient:
         algod_address (str)
         headers (dict)
     """
+
     def __init__(self, algod_token, algod_address, headers=None):
         self.algod_token = algod_token
         self.algod_address = algod_address
@@ -53,7 +55,7 @@ class AlgodClient:
         if requrl not in constants.no_auth:
             header.update({
                 constants.algod_auth_header: self.algod_token
-                })
+            })
 
         if requrl not in constants.unversioned_paths:
             requrl = constants.api_version_path_prefix + requrl
@@ -225,7 +227,15 @@ class AlgodClient:
     def suggested_params(self, **kwargs):
         """Return suggested transaction parameters."""
         req = "/transactions/params"
-        return self.algod_request("GET", req, **kwargs)
+        res = self.algod_request("GET", req, **kwargs)
+
+        return transaction.SuggestedParams(
+            res["fee"],
+            res["lastRound"],
+            res["lastRound"] + 1000,
+            res["genesishashb64"],
+            res["genesisID"],
+            False)
 
     def send_raw_transaction(self, txn, **kwargs):
         """

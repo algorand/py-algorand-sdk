@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'algosdk'
-copyright = '2019 Algorand'
+copyright = '2020 Algorand'
 author = 'Algorand'
 
 
