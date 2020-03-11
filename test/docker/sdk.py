@@ -1,16 +1,6 @@
 #!/usr/bin/env python3
 
-import argparse
-import git
-import os
-import pprint
-import shutil
 import subprocess
-import tarfile
-import time
-import json
-import urllib.request
-from os.path import expanduser, join
 import sys
 
 default_dirs = { 
@@ -23,7 +13,8 @@ def setup_sdk():
     """
     Setup python cucumber environment.
     """    
-    pass
+    subprocess.check_call(['git clone --single-branch --branch michelle/test https://github.com/algorand/algorand-sdk-testing.git temp'], shell=True)
+
 
 def test_sdk():
     sys.stdout.flush()
