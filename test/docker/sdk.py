@@ -13,8 +13,7 @@ def setup_sdk():
     """
     Setup python cucumber environment.
     """    
-    subprocess.check_call(['git clone --single-branch --branch michelle/test https://github.com/algorand/algorand-sdk-testing.git temp'], shell=True)
-
+    pass
 
 def test_sdk():
     sys.stdout.flush()
