@@ -4,4 +4,6 @@ python:
   - "3.7"
 
 script:
+  - set -e
+  - python3 test_unit.py
   - test/cucumber/docker/run_docker.sh
