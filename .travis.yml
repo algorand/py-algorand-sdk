@@ -4,4 +4,4 @@ python:
   - "3.7"
 
 script:
-  - test/docker/run_docker.sh
+  - test/cucumber/docker/run_docker.sh

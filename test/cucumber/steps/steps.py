@@ -326,7 +326,7 @@ def send_txn_kmd(context):
 
 
 @when("I send the bogus kmd-signed transaction")
-def send_txn_kmd(context):
+def send_txn_kmd_bogus(context):
     try:
         context.acl.send_transaction(context.stx_kmd)
     except:
@@ -432,7 +432,7 @@ def suggested_params(context):
 
 
 @when("I get the suggested fee")
-def suggested_params(context):
+def suggested_fee(context):
     context.fee = context.acl.suggested_fee()["fee"]
 
 
@@ -495,7 +495,7 @@ def mn_for_mdk(context, mn):
 
 
 @when("I convert the master derivation key back to a mnemonic")
-def sk_to_mn(context):
+def mdk_to_mn(context):
     context.mn = mnemonic.from_master_derivation_key(context.mdk)
 
 
@@ -641,7 +641,7 @@ def default_asset_creation_txn(context, total):
 
 
 @given("default-frozen asset creation transaction with total issuance {total}")
-def default_asset_creation_txn(context, total):
+def default_frozen_asset_creation_txn(context, total):
     context.total = int(total)
     params = context.acl.suggested_params()
     context.last_round = params.first
@@ -668,36 +668,36 @@ def default_asset_creation_txn(context, total):
         "url": ""
     }
 
-@Given("asset test fixture")
+@given("asset test fixture")
 def asset_fixture(context):
     context.expected_asset_info = dict()
     context.rcv = context.accounts[1]
 
 
-@When("I update the asset index")
+@when("I update the asset index")
 def update_asset_index(context):
     assets = context.acl.list_assets()["assets"]
     indices = [a["AssetIndex"] for a in assets]
     context.asset_index = max(indices)
 
 
-@When("I get the asset info")
+@when("I get the asset info")
 def get_asset_info(context):
     context.asset_info = context.acl.asset_info(context.asset_index)
 
 
-@Then("the asset info should match the expected asset info")
+@then("the asset info should match the expected asset info")
 def asset_info_match(context):
     for k in context.expected_asset_info:
         assert (context.expected_asset_info[k] == context.asset_info.get(k)) or ((not context.expected_asset_info[k]) and (not context.asset_info.get(k)))
 
 
-@When("I create an asset destroy transaction")
+@when("I create an asset destroy transaction")
 def create_asset_destroy_txn(context):
     context.txn = transaction.AssetConfigTxn(context.pk, context.acl.suggested_params(), index=context.asset_index, strict_empty_address_check=False)
 
 
-@Then("I should be unable to get the asset info")
+@then("I should be unable to get the asset info")
 def err_asset_info(context):
     err = False
     try:
@@ -707,44 +707,44 @@ def err_asset_info(context):
     assert err
 
 
-@When("I create a no-managers asset reconfigure transaction")
+@when("I create a no-managers asset reconfigure transaction")
 def no_manager_txn(context):
     context.txn = transaction.AssetConfigTxn(context.pk, context.acl.suggested_params(), index=context.asset_index, reserve=context.pk, clawback=context.pk, freeze=context.pk, strict_empty_address_check=False)
 
     context.expected_asset_info["managerkey"] = ""
 
 
-@When("I create a transaction for a second account, signalling asset acceptance")
+@when("I create a transaction for a second account, signalling asset acceptance")
 def accept_asset_txn(context):
     params = context.acl.suggested_params()
     context.txn = transaction.AssetTransferTxn(context.rcv, params, context.rcv, 0, context.asset_index)
 
 
-@When("I create a transaction transferring {amount} assets from creator to a second account")
+@when("I create a transaction transferring {amount} assets from creator to a second account")
 def transfer_assets(context, amount):
     params = context.acl.suggested_params()
     context.txn = transaction.AssetTransferTxn(context.pk, params, context.rcv, int(amount), context.asset_index)
 
 
-@When("I create a transaction transferring {amount} assets from a second account to creator")
-def transfer_assets(context, amount):
+@when("I create a transaction transferring {amount} assets from a second account to creator")
+def transfer_assets_to_creator(context, amount):
     params = context.acl.suggested_params()
     context.txn = transaction.AssetTransferTxn(context.rcv, params, context.pk, int(amount), context.asset_index)
 
 
-@Then("the creator should have {exp_balance} assets remaining")
+@then("the creator should have {exp_balance} assets remaining")
 def check_asset_balance(context, exp_balance):
     asset_info = context.acl.account_info(context.pk)["assets"][str(context.asset_index)]
     assert asset_info["amount"] == int(exp_balance)
 
 
-@When("I create a freeze transaction targeting the second account")
+@when("I create a freeze transaction targeting the second account")
 def freeze_txn(context):
     params = context.acl.suggested_params()
     context.txn = transaction.AssetFreezeTxn(context.pk, params, context.asset_index, context.rcv, True)
 
 
-@When("I create an un-freeze transaction targeting the second account")
+@when("I create an un-freeze transaction targeting the second account")
 def unfreeze_txn(context):
     params = context.acl.suggested_params()
     context.txn = transaction.AssetFreezeTxn(context.pk, params, context.asset_index, context.rcv, False)
@@ -807,7 +807,7 @@ def periodic_pay_contract(context, wd_window, period):
 
 @when("I claim the periodic payment")
 def claim_periodic(context):
-    contex.params.first = context.params.first//context.template.period * context.template.period
+    context.params.first = context.params.first//context.template.period * context.template.period
     ltxn = context.template.get_withdrawal_transaction(context.template.get_program(), context.params)
     context.txn = ltxn.transaction
     context.acl.send_transaction(ltxn)
