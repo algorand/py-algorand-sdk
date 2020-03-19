@@ -578,8 +578,8 @@ def keyreg_txn_params(context, fee, fv, lv, gh, votekey, selkey, votefst, votels
     context.fv = int(fv)
     context.lv = int(lv)
     context.gh = gh
-    context.votekey = encoding.encode_address(base64.b64decode(votekey))
-    context.selkey = encoding.encode_address(base64.b64decode(selkey))
+    context.votekey = votekey
+    context.selkey = selkey
     context.votefst = int(votefst)
     context.votelst = int(votelst)
     context.votekd = int(votekd)
