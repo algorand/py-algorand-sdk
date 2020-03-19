@@ -267,8 +267,8 @@ class KeyregTxn(Transaction):
     Args:
         sender (str): address of sender
         sp (SuggestedParams): suggested params from algod
-        votekey (str): participation public key
-        selkey (str): VRF public key
+        votekey (str): participation public key in base64
+        selkey (str): VRF public key in base64
         votefst (int): first round to vote
         votelst (int): last round to vote
         votekd (int): vote key dilution
