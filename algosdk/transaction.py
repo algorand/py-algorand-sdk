@@ -328,7 +328,7 @@ class KeyregTxn(Transaction):
     def _undictify(d):
         args = {
             "votekey": base64.b64encode(d["votekey"]).decode(),
-            "selkey": base64.b64decode(d["selkey"]).decode(),
+            "selkey": base64.b64encode(d["selkey"]).decode(),
             "votefst": d["votefst"],
             "votelst": d["votelst"],
             "votekd": d["votekd"]
