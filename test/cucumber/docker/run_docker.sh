@@ -4,7 +4,7 @@ set -e
 
 rm -rf temp
 rm -rf test/cucumber/features
-git clone --single-branch --branch michelle/test https://github.com/algorand/algorand-sdk-testing.git temp
+git clone --single-branch --branch templates https://github.com/algorand/algorand-sdk-testing.git temp
 
 cp test/cucumber/docker/sdk.py temp/docker
 mv temp/features test/cucumber/features
