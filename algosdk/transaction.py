@@ -267,8 +267,8 @@ class KeyregTxn(Transaction):
     Args:
         sender (str): address of sender
         sp (SuggestedParams): suggested params from algod
-        votekey (str): participation public key
-        selkey (str): VRF public key
+        votekey (str): participation public key in base64
+        selkey (str): VRF public key in base64
         votefst (int): first round to vote
         votelst (int): last round to vote
         votekd (int): vote key dilution
@@ -313,10 +313,10 @@ class KeyregTxn(Transaction):
 
     def dictify(self):
         d = {
-            "selkey": encoding.decode_address(self.selkey),
+            "selkey": base64.b64decode(self.selkey),
             "votefst": self.votefst,
             "votekd": self.votekd,
-            "votekey": encoding.decode_address(self.votepk),
+            "votekey": base64.b64decode(self.votepk),
             "votelst": self.votelst
         }
         d.update(super(KeyregTxn, self).dictify())
@@ -327,8 +327,8 @@ class KeyregTxn(Transaction):
     @staticmethod
     def _undictify(d):
         args = {
-            "votekey": encoding.encode_address(d["votekey"]),
-            "selkey": encoding.encode_address(d["selkey"]),
+            "votekey": base64.b64encode(d["votekey"]).decode(),
+            "selkey": base64.b64encode(d["selkey"]).decode(),
             "votefst": d["votefst"],
             "votelst": d["votelst"],
             "votekd": d["votekd"]

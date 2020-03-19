@@ -187,11 +187,11 @@ class TestTransaction(unittest.TestCase):
         sk = mnemonic.to_private_key(mn)
         pk = mnemonic.to_public_key(mn)
         fee = 1000
+        first_round = 10000
+        last_round = 11000
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
-        votepk = encoding.encode_address(base64.b64decode(
-            "Kv7QI7chi1y6axoy+t7wzAVpePqRq/rkjzWh/RMYyLo="))
-        selpk = encoding.encode_address(base64.b64decode(
-            "bPgrv4YogPcdaUAxrt1QysYZTVyRAuUMD4zQmCu9llc="))
+        votepk = "Kv7QI7chi1y6axoy+t7wzAVpePqRq/rkjzWh/RMYyLo="
+        selpk = "bPgrv4YogPcdaUAxrt1QysYZTVyRAuUMD4zQmCu9llc="
         votefirst = 10000
         votelast = 10111
         votedilution = 11
@@ -201,7 +201,7 @@ class TestTransaction(unittest.TestCase):
         txn = transaction.KeyregTxn(pk, sp, votepk, selpk, votefirst, votelast,
                                     votedilution)
         signed_txn = txn.sign(sk)
-
+        
         golden = (
             "gqNzaWfEQEA8ANbrvTRxU9c8v6WERcEPw7D/HacRgg4vICa61vEof60Wwtx6KJKDy"
             "vBuvViFeacLlngPY6vYCVP0DktTwQ2jdHhui6NmZWXNA+iiZnbOAATsD6JnaMQgSG"
@@ -210,7 +210,6 @@ class TestTransaction(unittest.TestCase):
             "16epAd5mdddQ4H6MXHaYZH224f2kdHlwZaZrZXlyZWendm90ZWZzdM0nEKZ2b3Rla"
             "2QLp3ZvdGVrZXnEICr+0CO3IYtcumsaMvre8MwFaXj6kav65I81of0TGMi6p3ZvdG"
             "Vsc3TNJ38=")
-
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_serialize_asset_create(self):
