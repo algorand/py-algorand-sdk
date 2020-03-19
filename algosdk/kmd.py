@@ -21,6 +21,7 @@ class KMDClient:
         kmd_token (str)
         kmd_address (str)
     """
+
     def __init__(self, kmd_token, kmd_address):
         self.kmd_token = kmd_token
         self.kmd_address = kmd_address
@@ -43,7 +44,7 @@ class KMDClient:
         else:
             header = {
                 constants.kmd_auth_header: self.kmd_token
-                }
+            }
         if requrl not in constants.unversioned_paths:
             requrl = constants.api_version_path_prefix + requrl
         if params:
@@ -104,7 +105,7 @@ class KMDClient:
             "wallet_driver_name": driver_name,
             "wallet_name": name,
             "wallet_password": pswd
-            }
+        }
         if master_deriv_key:
             query["master_derivation_key"] = master_deriv_key
         return self.kmd_request("POST", req, data=query)["wallet"]
@@ -138,7 +139,7 @@ class KMDClient:
         query = {
             "wallet_id": id,
             "wallet_password": password
-            }
+        }
         return self.kmd_request("POST", req, data=query)["wallet_handle_token"]
 
     def release_wallet_handle(self, handle):
@@ -169,7 +170,7 @@ class KMDClient:
         req = "/wallet/renew"
         query = {
             "wallet_handle_token": handle
-            }
+        }
         return self.kmd_request("POST", req, data=query)["wallet_handle"]
 
     def rename_wallet(self, id, password, new_name):
@@ -189,7 +190,7 @@ class KMDClient:
             "wallet_id": id,
             "wallet_password": password,
             "wallet_name": new_name
-            }
+        }
         return self.kmd_request("POST", req, data=query)["wallet"]
 
     def export_master_derivation_key(self, handle, password):
@@ -207,7 +208,7 @@ class KMDClient:
         query = {
             "wallet_handle_token": handle,
             "wallet_password": password
-            }
+        }
         result = self.kmd_request("POST", req, data=query)
         return result["master_derivation_key"]
 
@@ -226,7 +227,7 @@ class KMDClient:
         query = {
             "wallet_handle_token": handle,
             "private_key": private_key
-            }
+        }
         return self.kmd_request("POST", req, data=query)["address"]
 
     def export_key(self, handle, password, address):
@@ -246,7 +247,7 @@ class KMDClient:
             "wallet_handle_token": handle,
             "wallet_password": password,
             "address": address
-            }
+        }
         return self.kmd_request("POST", req, data=query)["private_key"]
 
     def generate_key(self, handle, display_mnemonic=True):
@@ -264,7 +265,7 @@ class KMDClient:
         req = "/key"
         query = {
             "wallet_handle_token": handle
-            }
+        }
         return self.kmd_request("POST", req, data=query)["address"]
 
     def delete_key(self, handle, password, address):
@@ -284,7 +285,7 @@ class KMDClient:
             "wallet_handle_token": handle,
             "wallet_password": password,
             "address": address
-            }
+        }
         result = self.kmd_request("DELETE", req, data=query)
         return result == {}
 
@@ -301,7 +302,7 @@ class KMDClient:
         req = "/key/list"
         query = {
             "wallet_handle_token": handle
-            }
+        }
 
         result = self.kmd_request("POST", req, data=query)
         if result:
@@ -326,7 +327,7 @@ class KMDClient:
             "wallet_handle_token": handle,
             "wallet_password": password,
             "transaction": txn
-            }
+        }
         result = self.kmd_request("POST", req, data=query)
         result = result["signed_transaction"]
         return encoding.msgpack_decode(result)
@@ -344,7 +345,7 @@ class KMDClient:
         req = "/multisig/list"
         query = {
             "wallet_handle_token": handle
-            }
+        }
         result = self.kmd_request("POST", req, data=query)
         if result == {}:
             return []
@@ -368,7 +369,7 @@ class KMDClient:
             "threshold": multisig.threshold,
             "pks": [base64.b64encode(s.public_key).decode()
                     for s in multisig.subsigs]
-            }
+        }
         return self.kmd_request("POST", req, data=query)["address"]
 
     def export_multisig(self, handle, address):
@@ -386,7 +387,7 @@ class KMDClient:
         query = {
             "wallet_handle_token": handle,
             "address": address
-            }
+        }
         result = self.kmd_request("POST", req, data=query)
         pks = result["pks"]
         pks = [encoding.encode_address(base64.b64decode(p)) for p in pks]
@@ -411,7 +412,7 @@ class KMDClient:
             "wallet_handle_token": handle,
             "wallet_password": password,
             "address": address
-            }
+        }
         result = self.kmd_request("DELETE", req, data=query)
         return result == {}
 
@@ -440,7 +441,7 @@ class KMDClient:
             "transaction": txn,
             "public_key": public_key,
             "partial_multisig": partial
-            }
+        }
         result = self.kmd_request("POST", req, data=query)["multisig"]
         msig = encoding.msgpack_decode(result)
         mtx.multisig = msig

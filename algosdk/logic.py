@@ -3,6 +3,7 @@ import os
 
 from . import constants
 from . import error
+from . import encoding
 
 spec = None
 opcodes = None
@@ -13,16 +14,20 @@ def check_program(program, args=None):
     Performs program checking for max length and cost
 
     Args:
-        program (bytes)
-        args (list[bytes])
+        program (bytes): compiled program
+        args (list[bytes]): args are not signed, but are checked by logic
 
     Returns:
-        True on success
+        bool: True on success
 
     Raises:
-        InvalidProgram on error
+        InvalidProgram: on error
     """
+    ok, _, _ = read_program(program, args)
+    return ok
 
+
+def read_program(program, args=None):
     global spec, opcodes
     intcblock_opcode = 32
     bytecblock_opcode = 38
@@ -39,7 +44,7 @@ def check_program(program, args=None):
         with open(langspec_file, "rt") as fin:
             spec = json.load(fin)
 
-    version, vlen = parse_uvariant(program)
+    version, vlen = parse_uvarint(program)
     if vlen <= 0 or version > spec["EvalMaxVersion"]:
         raise error.InvalidProgram("unsupported version")
 
@@ -56,6 +61,8 @@ def check_program(program, args=None):
         for op in spec['Ops']:
             opcodes[op['Opcode']] = op
 
+    ints = []
+    bytearrays = []
     pc = vlen
     while pc < len(program):
         op = opcodes.get(program[pc], None)
@@ -66,9 +73,11 @@ def check_program(program, args=None):
         size = op['Size']
         if size == 0:
             if op['Opcode'] == intcblock_opcode:
-                size += check_int_const_block(program, pc)
+                size_inc, ints = read_int_const_block(program, pc)
+                size += size_inc
             elif op['Opcode'] == bytecblock_opcode:
-                size += check_byte_const_block(program, pc)
+                size_inc, bytearrays = read_byte_const_block(program, pc)
+                size += size_inc
             else:
                 raise error.InvalidProgram("invalid instruction")
         pc += size
@@ -76,45 +85,63 @@ def check_program(program, args=None):
     if cost >= constants.logic_sig_max_cost:
         raise error.InvalidProgram("program too costly to run")
 
-    return True
+    return True, ints, bytearrays
 
 
 def check_int_const_block(program, pc):
+    size, _ = read_int_const_block(program, pc)
+    return size
+
+
+def read_int_const_block(program, pc):
     size = 1
-    num_ints, bytes_used = parse_uvariant(program[pc + size:])
+    ints = []
+    num_ints, bytes_used = parse_uvarint(program[pc + size:])
     if bytes_used <= 0:
-        raise error.InvalidProgram("could not decode int const block size at pc=%d" % (pc + size))
+        raise error.InvalidProgram(
+            "could not decode int const block size at pc=%d" % (pc + size))
     size += bytes_used
     for i in range(0, num_ints):
         if pc + size >= len(program):
             raise error.InvalidProgram("intcblock ran past end of program")
-        _, bytes_used = parse_uvariant(program[pc + size:])
+        num, bytes_used = parse_uvarint(program[pc + size:])
         if bytes_used <= 0:
-            raise error.InvalidProgram("could not decode int const[%d] at pc=%d" % (i, pc + size))
+            raise error.InvalidProgram(
+                "could not decode int const[%d] at pc=%d" % (i, pc + size))
+        ints.append(num)
         size += bytes_used
-    return size
+    return size, ints
 
 
 def check_byte_const_block(program, pc):
+    size, _ = read_byte_const_block(program, pc)
+    return size
+
+
+def read_byte_const_block(program, pc):
     size = 1
-    num_ints, bytes_used = parse_uvariant(program[pc + size:])
+    bytearrays = []
+    num_ints, bytes_used = parse_uvarint(program[pc + size:])
     if bytes_used <= 0:
-        raise error.InvalidProgram("could not decode []byte const block size at pc=%d" % (pc + size))
+        raise error.InvalidProgram(
+            "could not decode []byte const block size at pc=%d" % (pc + size))
     size += bytes_used
     for i in range(0, num_ints):
         if pc + size >= len(program):
             raise error.InvalidProgram("bytecblock ran past end of program")
-        item_len, bytes_used = parse_uvariant(program[pc + size:])
+        item_len, bytes_used = parse_uvarint(program[pc + size:])
         if bytes_used <= 0:
-            raise error.InvalidProgram("could not decode []byte const[%d] at pc=%d" % (i, pc + size))
+            raise error.InvalidProgram(
+                "could not decode []byte const[%d] at pc=%d" % (i, pc + size))
         size += bytes_used
         if pc + size >= len(program):
             raise error.InvalidProgram("bytecblock ran past end of program")
+        bytearrays.append(program[pc+size:pc+size+item_len])
         size += item_len
-    return size
+    return size, bytearrays
 
 
-def parse_uvariant(buf):
+def parse_uvarint(buf):
     x = 0
     s = 0
     for i, b in enumerate(buf):
@@ -126,3 +153,18 @@ def parse_uvariant(buf):
         s += 7
 
     return 0, 0
+
+
+def address(program):
+    """
+    Return the address of the program.
+
+    Args:
+        program (bytes): compiled program
+
+    Returns:
+        str: program address
+    """
+    to_sign = constants.logic_prefix + program
+    checksum = encoding.checksum(to_sign)
+    return encoding.encode_address(checksum)

@@ -5,7 +5,9 @@ from . import constants
 from . import encoding
 from . import error
 from . import kmd
+from . import logic
 from . import mnemonic
+from . import template
 from . import transaction
 from . import util
 from . import wallet

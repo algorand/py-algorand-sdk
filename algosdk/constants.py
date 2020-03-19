@@ -65,14 +65,16 @@ min_txn_fee = 1000
 """int: minimum transaction fee"""
 microalgos_to_algos_ratio = 1000000
 """int: how many microalgos per algo"""
-unit_name_length = 8
-"""int: length of asset unit names"""
-asset_name_length = 32
-"""int: length of asset names"""
-url_length = 32
-"""int: length of urls"""
 metadata_length = 32
 """int: length of asset metadata"""
+lease_length = 32
+"""int: byte length of leases"""
+multisig_account_limit = 255
+"""int: maximum number of addresses in a multisig account"""
+tx_group_limit = 16
+"""int: maximum number of transaction in a transaction group"""
+max_asset_decimals = 19
+"""int: maximum value for decimals in assets"""
 
 # logic sig related
 logic_sig_max_cost = 20000

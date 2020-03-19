@@ -1,8 +1,7 @@
 import base64
 import msgpack
 from collections import OrderedDict
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.backends import default_backend
+from Cryptodome.Hash import SHA512
 from . import transaction, error, auction, constants
 
 
@@ -27,9 +26,32 @@ def msgpack_encode(obj):
         the most recent version of msgpack rather than the older msgpack
         version that had no "bin" family).
     """
-    if not isinstance(obj, OrderedDict):
-        obj = obj.dictify()
-    return base64.b64encode(msgpack.packb(obj, use_bin_type=True)).decode()
+    d = obj
+    if not isinstance(obj, dict):
+        d = obj.dictify()
+    od = _sort_dict(d)
+    return base64.b64encode(msgpack.packb(od, use_bin_type=True)).decode()
+
+
+def _sort_dict(d):
+    """
+    Sorts a dictionary recursively and removes all zero values.
+
+    Args:
+        d (dict): dictionary to be sorted
+
+    Returns:
+        OrderedDict: sorted dictionary with no zero values
+    """
+    od = OrderedDict()
+    for k, v in sorted(d.items()):
+        if isinstance(v, dict):
+            od[k] = _sort_dict(v)
+        else:
+            od[k] = v
+        if not od[k]:
+            del od[k]
+    return od
 
 
 def msgpack_decode(enc):
@@ -45,16 +67,7 @@ def msgpack_decode(enc):
     """
     decoded = msgpack.unpackb(base64.b64decode(enc), raw=False)
     if "type" in decoded:
-        if decoded["type"] == constants.payment_txn:
-            return transaction.PaymentTxn.undictify(decoded)
-        elif decoded["type"] == constants.keyreg_txn:
-            return transaction.KeyregTxn.undictify(decoded)
-        elif decoded["type"] == constants.assetconfig_txn:
-            return transaction.AssetConfigTxn.undictify(decoded)
-        elif decoded["type"] == constants.assetfreeze_txn:
-            return transaction.AssetFreezeTxn.undictify(decoded)
-        elif decoded["type"] == constants.assettransfer_txn:
-            return transaction.AssetTransferTxn.undictify(decoded)
+        return transaction.Transaction.undictify(decoded)
     if "l" in decoded:
         return transaction.LogicSig.undictify(decoded)
     if "msig" in decoded:
@@ -177,6 +190,6 @@ def checksum(data):
     Returns:
         bytes: checksum of the data
     """
-    chksum = hashes.Hash(hashes.SHA512_256(), default_backend())
+    chksum = SHA512.new(truncate="256")
     chksum.update(data)
-    return chksum.finalize()
+    return chksum.digest()
