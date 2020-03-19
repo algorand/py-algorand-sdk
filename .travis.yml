@@ -1,14 +1,9 @@
 dist: bionic
 language: python
 python:
-  - "3.6"
   - "3.7"
 
-install:
-  - pip3 install -r requirements.txt
-  - curl https://raw.githubusercontent.com/algorand/algorand-sdk-testing/master/scripts/sdkupdate.sh -o ~/sdkupdate.sh
-  - chmod +x ~/sdkupdate.sh
-
 script:
+  - set -e
   - python3 test_unit.py
-  - ~/sdkupdate.sh --py
+  - test/cucumber/docker/run_docker.sh
