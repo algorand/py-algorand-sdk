@@ -313,10 +313,10 @@ class KeyregTxn(Transaction):
 
     def dictify(self):
         d = {
-            "selkey": encoding.decode_address(self.selkey),
+            "selkey": base64.b64decode(self.selkey),
             "votefst": self.votefst,
             "votekd": self.votekd,
-            "votekey": encoding.decode_address(self.votepk),
+            "votekey": base64.b64decode(self.votepk),
             "votelst": self.votelst
         }
         d.update(super(KeyregTxn, self).dictify())
@@ -327,8 +327,8 @@ class KeyregTxn(Transaction):
     @staticmethod
     def _undictify(d):
         args = {
-            "votekey": encoding.encode_address(d["votekey"]),
-            "selkey": encoding.encode_address(d["selkey"]),
+            "votekey": base64.b64encode(d["votekey"]).decode(),
+            "selkey": base64.b64encode(d["selkey"]).decode(),
             "votefst": d["votefst"],
             "votelst": d["votelst"],
             "votekd": d["votekd"]
