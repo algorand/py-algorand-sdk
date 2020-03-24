@@ -7,6 +7,7 @@ from . import error
 from . import encoding
 from . import constants
 from . import transaction
+from . import future
 
 
 class AlgodClient:
@@ -227,9 +228,14 @@ class AlgodClient:
     def suggested_params(self, **kwargs):
         """Return suggested transaction parameters."""
         req = "/transactions/params"
+        return self.algod_request("GET", req, **kwargs)
+
+    def suggested_params_as_object(self, **kwargs):
+        """Return suggested transaction parameters."""
+        req = "/transactions/params"
         res = self.algod_request("GET", req, **kwargs)
 
-        return transaction.SuggestedParams(
+        return future.transaction.SuggestedParams(
             res["fee"],
             res["lastRound"],
             res["lastRound"] + 1000,

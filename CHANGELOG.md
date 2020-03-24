@@ -1,10 +1,12 @@
 # Changelog
-# 2.0.0
+# 1.2.0
 # Added
 - Added support for Algorand Smart Contracts (ASC) 
     - Dynamic fee contract
     - Limit order contract
     - Periodic payment contract
+- Added SuggestedParams, which contains fee, first valid round, last valid round, genesis hash, and genesis ID; transactions and templates from 'future' take SuggestedParams as an argument.
+    - Added suggested_params_as_object() in algod
 
 # Changed
 - Transactions and templates now take suggested params obtained from algod as an argument; the SuggestedParams object contains fee, first valid round, last valid round, genesis hash, and genesis ID
