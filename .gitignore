@@ -108,3 +108,7 @@ venv.bak/
 
 # DS_Store
 .DS_Store
+
+# Testing files
+*.feature
+temp

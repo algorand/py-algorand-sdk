@@ -24,6 +24,7 @@ class Bid:
         auction_id (int)
 
     """
+
     def __init__(self, bidder, bid_currency, max_price, bid_id, auction_key,
                  auction_id):
         self.bidder = bidder
@@ -90,6 +91,7 @@ class SignedBid:
         bid (Bid)
         signature (str)
     """
+
     def __init__(self, bid, signature):
         self.bid = bid
         self.signature = signature
@@ -125,6 +127,7 @@ class NoteField:
         signed_bid (SignedBid)
         note_field_type (str)
     """
+
     def __init__(self, signed_bid, note_field_type):
         self.signed_bid = signed_bid
         self.note_field_type = note_field_type

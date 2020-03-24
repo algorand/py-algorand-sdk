@@ -139,15 +139,11 @@ acl = algod.AlgodClient(params.algod_token, params.algod_address)
 kcl = kmd.KMDClient(params.kmd_token, params.kmd_address)
 
 # get suggested parameters
-params = acl.suggested_params()
-gen = params["genesisID"]
-gh = params["genesishashb64"]
-last_round = params["lastRound"]
-fee = params["fee"]
+sp = acl.suggested_params()
 
 # create a transaction
 amount = 10000
-txn = transaction.PaymentTxn(sender, fee, last_round, last_round+100, gh, receiver, amount)
+txn = transaction.PaymentTxn(sender, sp, receiver, amount)
 
 # write to file
 txns = [txn]
@@ -180,16 +176,12 @@ threshold = 2  # how many signatures are necessary
 msig = transaction.Multisig(version, threshold, [account_1, account_2])
 
 # get suggested parameters
-params = acl.suggested_params()
-gen = params["genesisID"]
-gh = params["genesishashb64"]
-last_round = params["lastRound"]
-fee = params["fee"]
+sp = acl.suggested_params()
 
 # create a transaction
 sender = msig.address()
 amount = 10000
-txn = transaction.PaymentTxn(sender, fee, last_round, last_round+100, gh, account_3, amount)
+txn = transaction.PaymentTxn(sender, sp, account_3, amount)
 
 # create a SignedTransaction object
 mtx = transaction.MultisigTransaction(txn, msig)
@@ -216,11 +208,7 @@ acl = algod.AlgodClient("API-TOKEN", "API-Address")
 sk = mnemonic.to_private_key(passphrase)
 
 # get suggested parameters
-params = acl.suggested_params()
-gen = params["genesisID"]
-gh = params["genesishashb64"]
-last_round = params["lastRound"]
-fee = params["fee"]
+sp = acl.suggested_params()
 
 # Set other parameters
 amount = 100000
@@ -228,7 +216,7 @@ note = "Some Text".encode()
 receiver = "receiver Algorand Address"
 
 # create the transaction
-txn = transaction.PaymentTxn(account.address_from_private_key(sk), fee, last_round, last_round+1000, gh, receiver, amount, note=note)
+txn = transaction.PaymentTxn(account.address_from_private_key(sk), sp, receiver, amount, note=note)
 
 # sign it
 stx = txn.sign(sk)
@@ -257,16 +245,12 @@ acl = algod.AlgodClient(params.algod_token, params.algod_address)
 kcl = kmd.KMDClient(params.kmd_token, params.kmd_address)
 
 # get suggested parameters
-params = acl.suggested_params()
-gen = params["genesisID"]
-gh = params["genesishashb64"]
-last_round = params["lastRound"]
-fee = params["fee"]
+sp = acl.suggested_params()
 
 # create a transaction
 amount = 10000
-txn1 = transaction.PaymentTxn(sender, fee, last_round, last_round+100, gh, receiver, amount)
-txn2 = transaction.PaymentTxn(receiver, fee, last_round, last_round+100, gh, sender, amount)
+txn1 = transaction.PaymentTxn(sender, sp, receiver, amount)
+txn2 = transaction.PaymentTxn(receiver, sp, sender, amount)
 
 # get group id and assign it to transactions
 gid = transaction.calculate_group_id([txn1, txn2])
@@ -297,15 +281,11 @@ sender = lsig.address()
 acl = algod.AlgodClient(params.algod_token, params.algod_address)
 
 # get suggested parameters
-params = acl.suggested_params()
-gen = params["genesisID"]
-gh = params["genesishashb64"]
-last_round = params["lastRound"]
-fee = params["fee"]
+sp = acl.suggested_params()
 
 # create a transaction
 amount = 10000
-txn = transaction.PaymentTxn(sender, fee, last_round, last_round+100, gh, receiver, amount)
+txn = transaction.PaymentTxn(sender, sp, receiver, amount)
 
 # note, transaction is signed by logic only (no delegation)
 # that means sender address must match to program hash
@@ -341,8 +321,8 @@ metadata = bytes("fACPO4nRgO55j1ndAK3W6Sgc4APkcyFh", "ascii") # should be a 32-b
 default_frozen = False # whether accounts should be frozen by default
 
 # create the asset creation transaction
-txn = transaction.AssetConfigTxn(address, fee_per_byte, first_valid_round,
-            last_valid_round, genesis_hash, total=total, manager=manager,
+sp = transaction.SuggestedParams(fee_per_byte, first_valid_round, last_valid_round, genesis_hash)
+txn = transaction.AssetConfigTxn(address, sp, total=total, manager=manager,
             reserve=reserve, freeze=freeze, clawback=clawback,
             unit_name=unitname, asset_name=assetname, url=url,
             metadata_hash=metadata, default_frozen=default_frozen)
@@ -370,8 +350,8 @@ genesis_hash = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
 index = 1234 # identifying index of the asset
 
 # create the asset config transaction
-txn = transaction.AssetConfigTxn(manager_address, fee_per_byte, first_valid_round,
-            last_valid_round, genesis_hash, manager=new_manager, reserve=new_reserve,
+sp = transaction.SuggestedParams(fee_per_byte, first_valid_round, last_valid_round, genesis_hash)
+txn = transaction.AssetConfigTxn(manager_address, sp, manager=new_manager, reserve=new_reserve,
             freeze=new_freeze, clawback=new_clawback, index=index)
 
 # sign the transaction
@@ -394,8 +374,9 @@ genesis_hash = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
 index = 1234 # identifying index of the asset
 
 # create the asset destroy transaction
-txn = transaction.AssetConfigTxn(creator_address, fee_per_byte, first_valid_round, last_valid_round, genesis_hash,
-                                         index=index, strict_empty_address_check=False)
+sp = transaction.SuggestedParams(fee_per_byte, first_valid_round, last_valid_round, genesis_hash)
+txn = transaction.AssetConfigTxn(creator_address, sp, index=index, strict_empty_address_check=False)
+
 # sign the transaction
 signed_txn = txn.sign(creator_private_key)
 ```
@@ -417,8 +398,8 @@ freeze_target = "address to be frozen or unfrozen"
 index = 1234 # identifying index of the asset
 
 # create the asset freeze transaction
-txn = transaction.AssetFreezeTxn(freeze_address, fee_per_byte, first_valid_round,
-            last_valid_round, genesis_hash, index=index, target=freeze_target,
+sp = transaction.SuggestedParams(fee_per_byte, first_valid_round, last_valid_round, genesis_hash)
+txn = transaction.AssetFreezeTxn(freeze_address, sp, index=index, target=freeze_target,
             new_freeze_state=True)
 
 # sign the transaction
@@ -443,8 +424,8 @@ amount = 100 # amount of assets to transfer
 index = 1234 # identifying index of the asset
 
 # create the asset transfer transaction
-txn = transaction.AssetTransferTxn(sender_address, fee_per_byte, 
-                first_valid_round, last_valid_round, genesis_hash,
+sp = transaction.SuggestedParams(fee_per_byte, first_valid_round, last_valid_round, genesis_hash)
+txn = transaction.AssetTransferTxn(sender_address, sp,
                 receiver, amount, index, close_assets_to)
 
 # sign the transaction
@@ -468,8 +449,8 @@ amount = 0 # to start accepting assets, set amount to 0
 index = 1234 # identifying index of the asset
 
 # create the asset accept transaction
-txn = transaction.AssetTransferTxn(address, fee_per_byte, 
-                first_valid_round, last_valid_round, genesis_hash,
+sp = transaction.SuggestedParams(fee_per_byte, first_valid_round, last_valid_round, genesis_hash)
+txn = transaction.AssetTransferTxn(address, sp,
                 receiver, amount, index)
 
 # sign the transaction
@@ -495,8 +476,8 @@ amount = 100
 index = 1234 # identifying index of the asset
 
 # create the asset transfer transaction
-txn = transaction.AssetTransferTxn(clawback_address, fee_per_byte, 
-                first_valid_round, last_valid_round, genesis_hash,
+sp = transaction.SuggestedParams(fee_per_byte, first_valid_round, last_valid_round, genesis_hash)
+txn = transaction.AssetTransferTxn(clawback_address, sp,
                 receiver, amount, index, revocation_target=target)
 
 # sign the transaction

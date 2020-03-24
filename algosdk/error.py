@@ -1,7 +1,7 @@
 class BadTxnSenderError(Exception):
     def __init__(self):
-        Exception.__init__(self, "transaction sender does not " +
-                                 "match multisig parameters")
+        Exception.__init__(self, "transaction sender does not match multisig "
+                                 "parameters")
 
 
 class InvalidThresholdError(Exception):
@@ -11,8 +11,8 @@ class InvalidThresholdError(Exception):
 
 class InvalidSecretKeyError(Exception):
     def __init__(self):
-        Exception.__init__(self, "secret key has no corresponding " +
-                                 "public key in multisig")
+        Exception.__init__(self, "secret key has no corresponding public key "
+                                 "in multisig")
 
 
 class MergeKeysMismatchError(Exception):
@@ -65,35 +65,43 @@ class InvalidProgram(Exception):
         Exception.__init__(self, message)
 
 
-class NotDivisibleError(Exception):
-    def __init(self):
-        Exception.__init__(self, "amount is not exactly divisible based on " +
-                                 "the given ratio")
-
-
 class TransactionGroupSizeError(Exception):
     def __init__(self):
-        Exception.__init__(self, "transaction groups are limited to 16 " +
+        Exception.__init__(self, "transaction groups are limited to 16 "
                                  "transactions")
 
 
 class MultisigAccountSizeError(Exception):
     def __init__(self):
-        Exception.__init__(self, "multisig accounts are limited to 256 " +
+        Exception.__init__(self, "multisig accounts are limited to 256 "
                                  "addresses")
 
 
 class OutOfRangeDecimalsError(Exception):
     def __init__(self):
-        Exception.__init__(self, "decimals must be between 0 and 19, " +
+        Exception.__init__(self, "decimals must be between 0 and 19, "
                                  "inclusive")
 
 
 class EmptyAddressError(Exception):
     def __init__(self):
-        Exception.__init__(self, "manager, freeze, reserve, and clawback " +
-                                 "should not be empty unless " +
+        Exception.__init__(self, "manager, freeze, reserve, and clawback "
+                                 "should not be empty unless "
                                  "strict_empty_address_check is set to False")
+
+
+class WrongContractError(Exception):
+    def __init__(self, contract_type):
+        Exception.__init__(self, "Wrong contract provided; a "
+                           + contract_type + " contract is needed")
+
+
+class TemplateInputError(Exception):
+    pass
+
+
+class TemplateError(Exception):
+    pass
 
 
 class KMDHTTPError(Exception):

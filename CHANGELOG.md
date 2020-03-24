@@ -1,10 +1,19 @@
 # Changelog
-# 1.1.1
-# Added
+## 1.2.0
+### Added
+- Added support for Algorand Smart Contracts (ASC) 
+    - Dynamic fee contract
+    - Limit order contract
+    - Periodic payment contract
+- Added SuggestedParams, which contains fee, first valid round, last valid round, genesis hash, and genesis ID; transactions and templates from 'future' take SuggestedParams as an argument.
+    - Added suggested_params_as_object() in algod
+
+## 1.1.1
+### Added
 - Added asset decimals field.
 
-# 1.1.0
-# Added
+## 1.1.0
+### Added
 - Added support for Algorand Standardized Assets (ASA)
 - Added support for Algorand Smart Contracts (ASC) 
     - Added support for Hashed Time Lock Contract (HTLC) 

@@ -48,11 +48,7 @@ class TestIntegration(unittest.TestCase):
         account_1 = self.kcl.generate_key(handle, False)
 
         # get suggested parameters and fee
-        params = self.acl.suggested_params()
-        gen = params["genesisID"]
-        gh = params["genesishashb64"]
-        last_round = params["lastRound"]
-        fee = params["fee"]
+        sp = self.acl.suggested_params()
 
         # get self.account_0 private key
         private_key_0 = self.kcl.export_key(handle, wallet_pswd,
@@ -65,10 +61,9 @@ class TestIntegration(unittest.TestCase):
         nf = auction.NoteField(sb, constants.note_field_type_bid)
 
         # create transaction
-        txn = transaction.PaymentTxn(self.account_0, fee,
-                                     last_round, last_round+100, gh,
+        txn = transaction.PaymentTxn(self.account_0, sp,
                                      account_1, 100000, note=base64.b64decode(
-                                        encoding.msgpack_encode(nf)), gen=gen)
+                                        encoding.msgpack_encode(nf)))
 
         # sign transaction with account
         signed_account = txn.sign(private_key_0)
@@ -141,16 +136,11 @@ class TestIntegration(unittest.TestCase):
         account_2 = self.kcl.generate_key(handle, False)
 
         # get suggested parameters and fee
-        params = self.acl.suggested_params()
-        gen = params["genesisID"]
-        gh = params["genesishashb64"]
-        last_round = params["lastRound"]
-        fee = params["fee"]
+        sp = self.acl.suggested_params()
 
         # create transaction
-        txn = transaction.PaymentTxn(self.account_0, fee,
-                                     last_round, last_round+100, gh,
-                                     account_1, 100000, gen=gen)
+        txn = transaction.PaymentTxn(self.account_0, sp,
+                                     account_1, 100000)
 
         # sign transaction with kmd
         signed_kmd = self.kcl.sign_transaction(handle, wallet_pswd, txn)
@@ -174,11 +164,11 @@ class TestIntegration(unittest.TestCase):
         self.assertEqual(self.acl.pending_transaction_info(txid)["tx"], txid)
 
         # wait for transaction to send
-        self.acl.status_after_block(last_round+2)
+        self.acl.status_after_block(sp.first+2)
 
         # get transaction info two different ways
-        info_1 = self.acl.transactions_by_address(self.account_0, last_round-2,
-                                                  last_round+2)
+        info_1 = self.acl.transactions_by_address(self.account_0, sp.first-2,
+                                                  sp.first+2)
         info_2 = self.acl.transaction_info(self.account_0, txid)
         self.assertIn("transactions", info_1)
         self.assertIn("type", info_2)
@@ -209,17 +199,12 @@ class TestIntegration(unittest.TestCase):
         private_key_2 = self.kcl.export_key(handle, wallet_pswd, account_2)
 
         # get suggested parameters and fee
-        params = self.acl.suggested_params()
-        gen = params["genesisID"]
-        gh = params["genesishashb64"]
-        last_round = params["lastRound"]
-        fee = params["fee"]
+        sp = self.acl.suggested_params()
 
         # create multisig account and transaction
         msig = transaction.Multisig(1, 2, [account_1, account_2])
-        txn = transaction.PaymentTxn(msig.address(), fee,
-                                     last_round, last_round+100, gh,
-                                     self.account_0, 1000, gen=gen)
+        txn = transaction.PaymentTxn(msig.address(), sp,
+                                     self.account_0, 1000)
 
         # check that the multisig account is valid
         msig.validate()
@@ -312,16 +297,11 @@ class TestIntegration(unittest.TestCase):
         private_key_2 = w.export_key(account_2)
 
         # get suggested parameters and fee
-        params = self.acl.suggested_params()
-        gen = params["genesisID"]
-        gh = params["genesishashb64"]
-        last_round = params["lastRound"]
-        fee = params["fee"]
+        sp = self.acl.suggested_params()
 
         # create transaction
-        txn = transaction.PaymentTxn(self.account_0, fee,
-                                     last_round, last_round+100, gh,
-                                     account_1, 100000, gen=gen)
+        txn = transaction.PaymentTxn(self.account_0, sp,
+                                     account_1, 100000)
 
         # sign transaction with wallet
         signed_kmd = w.sign_transaction(txn)
@@ -338,9 +318,8 @@ class TestIntegration(unittest.TestCase):
 
         # create multisig account and transaction
         msig = transaction.Multisig(1, 2, [account_1, account_2])
-        txn = transaction.PaymentTxn(msig.address(), fee,
-                                     last_round, last_round+100, gh,
-                                     self.account_0, 1000, gen=gen)
+        txn = transaction.PaymentTxn(msig.address(), sp,
+                                     self.account_0, 1000)
 
         # import multisig account
         msig_address = w.import_multisig(msig)
@@ -394,14 +373,10 @@ class TestIntegration(unittest.TestCase):
 
     def test_file_read_write(self):
         # get suggested parameters and fee
-        params = self.acl.suggested_params()
-        gh = params["genesishashb64"]
-        last_round = params["lastRound"]
-        fee = params["fee"]
+        sp = self.acl.suggested_params()
 
         # create transaction
-        txn = transaction.PaymentTxn(self.account_0, fee,
-                                     last_round, last_round+100, gh,
+        txn = transaction.PaymentTxn(self.account_0, sp,
                                      self.account_0, 1000)
 
         # get private key
@@ -477,16 +452,11 @@ class TestIntegration(unittest.TestCase):
                                             self.account_0)
 
         # get suggested parameters and fee
-        params = self.acl.suggested_params()
-        gen = params["genesisID"]
-        gh = params["genesishashb64"]
-        last_round = params["lastRound"]
-        fee = params["fee"]
+        sp = self.acl.suggested_params()
 
         # create transaction
-        txn = transaction.PaymentTxn(self.account_0, fee,
-                                     last_round, last_round+100, gh,
-                                     self.account_0, 1000, gen=gen)
+        txn = transaction.PaymentTxn(self.account_0, sp,
+                                     self.account_0, 1000)
 
         # calculate group id
         gid = transaction.calculate_group_id([txn])

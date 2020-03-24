@@ -1,8 +1,7 @@
 import base64
 import msgpack
 from collections import OrderedDict
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.backends import default_backend
+from Cryptodome.Hash import SHA512
 from . import transaction, error, auction, constants
 
 
@@ -27,9 +26,32 @@ def msgpack_encode(obj):
         the most recent version of msgpack rather than the older msgpack
         version that had no "bin" family).
     """
-    if not isinstance(obj, OrderedDict):
-        obj = obj.dictify()
-    return base64.b64encode(msgpack.packb(obj, use_bin_type=True)).decode()
+    d = obj
+    if not isinstance(obj, dict):
+        d = obj.dictify()
+    od = _sort_dict(d)
+    return base64.b64encode(msgpack.packb(od, use_bin_type=True)).decode()
+
+
+def _sort_dict(d):
+    """
+    Sorts a dictionary recursively and removes all zero values.
+
+    Args:
+        d (dict): dictionary to be sorted
+
+    Returns:
+        OrderedDict: sorted dictionary with no zero values
+    """
+    od = OrderedDict()
+    for k, v in sorted(d.items()):
+        if isinstance(v, dict):
+            od[k] = _sort_dict(v)
+        else:
+            od[k] = v
+        if not od[k]:
+            del od[k]
+    return od
 
 
 def msgpack_decode(enc):
@@ -168,6 +190,6 @@ def checksum(data):
     Returns:
         bytes: checksum of the data
     """
-    chksum = hashes.Hash(hashes.SHA512_256(), default_backend())
+    chksum = SHA512.new(truncate="256")
     chksum.update(data)
-    return chksum.finalize()
+    return chksum.digest()
