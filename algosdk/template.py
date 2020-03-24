@@ -124,7 +124,6 @@ class Split(Template):
         transaction.assign_group_id([txn_1, txn_2])
 
         lsig = transaction.LogicSig(contract)
-        lsig = transaction.LogicSig(base64.b64decode(p))
 
         stx_1 = transaction.LogicSigTransaction(txn_1, lsig)
         stx_2 = transaction.LogicSigTransaction(txn_2, lsig)
