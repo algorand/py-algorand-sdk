@@ -1,29 +1,59 @@
 import base64
 import msgpack
 from collections import OrderedDict
-from . import account
-from . import constants
-from . import encoding
-from . import error
-from . import logic
-from . import future
+from .. import account
+from .. import constants
+from .. import encoding
+from .. import error
+from .. import logic
+from .. import transaction
 from nacl.signing import SigningKey, VerifyKey
 from nacl.exceptions import BadSignatureError
+
+
+class SuggestedParams:
+    """
+    Contains various fields common to all transaction types.
+
+    Args:
+        fee (int): transaction fee (per byte)
+        first (int): first round for which the transaction is valid
+        last (int): last round for which the transaction is valid
+        gh (str): genesis hash
+        gen (str, optional): genesis id
+        flat_fee (bool, optional): whether the specified fee is a flat fee
+
+    Attributes:
+        fee (int)
+        first (int)
+        last (int)
+        gen (str)
+        gh (str)
+        flat_fee (bool)
+    """
+
+    def __init__(self, fee, first, last, gh, gen=None, flat_fee=False):
+        self.first = first
+        self.last = last
+        self.gh = gh
+        self.gen = gen
+        self.fee = fee
+        self.flat_fee = flat_fee
 
 
 class Transaction:
     """
     Superclass for various transaction types.
     """
-    def __init__(self, sender, fee, first, last, note, gen, gh, lease,
-                 txn_type):
+
+    def __init__(self, sender, sp, note, lease, txn_type):
         self.sender = sender
-        self.fee = fee
-        self.first_valid_round = first
-        self.last_valid_round = last
+        self.fee = sp.fee
+        self.first_valid_round = sp.first
+        self.last_valid_round = sp.last
         self.note = note
-        self.genesis_id = gen
-        self.genesis_hash = gh
+        self.genesis_id = sp.gen
+        self.genesis_hash = sp.gh
         self.group = None
         self.lease = lease
         if self.lease is not None:
@@ -34,6 +64,7 @@ class Transaction:
     def get_txid(self):
         """
         Get the transaction's ID.
+
         Returns:
             str: transaction ID
         """
@@ -46,8 +77,10 @@ class Transaction:
     def sign(self, private_key):
         """
         Sign the transaction with a private key.
+
         Args:
             private_key (str): the private key of the signing account
+
         Returns:
             SignedTransaction: signed transaction with the signature
         """
@@ -59,8 +92,10 @@ class Transaction:
     def raw_sign(self, private_key):
         """
         Sign the transaction.
+
         Args:
             private_key (str): the private key of the signing account
+
         Returns:
             bytes: signature
         """
@@ -99,16 +134,18 @@ class Transaction:
 
     @staticmethod
     def undictify(d):
+        sp = SuggestedParams(
+            d["fee"],
+            d["fv"] if "fv" in d else 0,
+            d["lv"],
+            base64.b64encode(d["gh"]).decode(),
+            d["gen"] if "gen" in d else None,
+            flat_fee=True)
         args = {
+            "sp": sp,
             "sender": encoding.encode_address(d["snd"]),
-            "fee": d["fee"],
-            "first": d["fv"] if "fv" in d else 0,
-            "last": d["lv"],
-            "gh": base64.b64encode(d["gh"]).decode(),
             "note": d["note"] if "note" in d else None,
-            "gen": d["gen"] if "gen" in d else None,
-            "flat_fee": True,
-            "lease": d["lx"] if "lx" in d else None,
+            "lease": d["lx"] if "lx" in d else None
         }
         if d["type"] == constants.payment_txn:
             args.update(PaymentTxn._undictify(d))
@@ -132,7 +169,7 @@ class Transaction:
     def __eq__(self, other):
         if not isinstance(other, (
                 Transaction,
-                future.transaction.Transaction)):
+                transaction.Transaction)):
             return False
         return (self.sender == other.sender and
                 self.fee == other.fee and
@@ -149,22 +186,19 @@ class Transaction:
 class PaymentTxn(Transaction):
     """
     Represents a payment transaction.
+
     Args:
         sender (str): address of the sender
-        fee (int): transaction fee (per byte if flat_fee is false)
-        first (int): first round for which the transaction is valid
-        last (int): last round for which the transaction is valid
-        gh (str): genesis_hash
+        sp (SuggestedParams): suggested params from algod
         receiver (str): address of the receiver
         amt (int): amount in microAlgos to be sent
         close_remainder_to (str, optional): if nonempty, account will be closed
             and remaining algos will be sent to this address
         note (bytes, optional): arbitrary optional bytes
-        gen (str, optional): genesis_id
-        flat_fee (bool, optional): whether the specified fee is a flat fee
         lease (byte[32], optional): specifies a lease, and no other transaction
             with the same sender and lease can be confirmed in this
             transaction's valid rounds
+
     Attributes:
         sender (str)
         fee (int)
@@ -181,15 +215,15 @@ class PaymentTxn(Transaction):
         lease (byte[32])
     """
 
-    def __init__(self, sender, fee, first, last, gh, receiver, amt,
-                 close_remainder_to=None, note=None, gen=None, flat_fee=False,
+    def __init__(self, sender, sp, receiver, amt,
+                 close_remainder_to=None, note=None,
                  lease=None):
-        Transaction.__init__(self,  sender, fee, first, last, note, gen, gh,
+        Transaction.__init__(self, sender, sp, note,
                              lease, constants.payment_txn)
         self.receiver = receiver
         self.amt = amt
         self.close_remainder_to = close_remainder_to
-        if flat_fee:
+        if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
             self.fee = max(self.estimate_size()*self.fee,
@@ -223,7 +257,7 @@ class PaymentTxn(Transaction):
     def __eq__(self, other):
         if not isinstance(other, (
                 PaymentTxn,
-                future.transaction.PaymentTxn)):
+                transaction.PaymentTxn)):
             return False
         return (super(PaymentTxn, self).__eq__(other) and
                 self.receiver == other.receiver and
@@ -234,23 +268,20 @@ class PaymentTxn(Transaction):
 class KeyregTxn(Transaction):
     """
     Represents a key registration transaction.
+
     Args:
         sender (str): address of sender
-        fee (int): transaction fee (per byte if flat_fee is false)
-        first (int): first round for which the transaction is valid
-        last (int): last round for which the transaction is valid
-        gh (str): genesis_hash
-        votekey (str): participation public key
-        selkey (str): VRF public key
+        sp (SuggestedParams): suggested params from algod
+        votekey (str): participation public key in base64
+        selkey (str): VRF public key in base64
         votefst (int): first round to vote
         votelst (int): last round to vote
         votekd (int): vote key dilution
         note (bytes, optional): arbitrary optional bytes
-        gen (str, optional): genesis_id
-        flat_fee (bool, optional): whether the specified fee is a flat fee
         lease (byte[32], optional): specifies a lease, and no other transaction
             with the same sender and lease can be confirmed in this
             transaction's valid rounds
+
     Attributes:
         sender (str)
         fee (int)
@@ -269,17 +300,17 @@ class KeyregTxn(Transaction):
         lease (byte[32])
     """
 
-    def __init__(self, sender, fee, first, last, gh, votekey, selkey, votefst,
-                 votelst, votekd, note=None, gen=None, flat_fee=False,
+    def __init__(self, sender, sp, votekey, selkey, votefst,
+                 votelst, votekd, note=None,
                  lease=None):
-        Transaction.__init__(self, sender, fee, first, last, note, gen, gh,
+        Transaction.__init__(self, sender, sp, note,
                              lease, constants.keyreg_txn)
         self.votepk = votekey
         self.selkey = selkey
         self.votefst = votefst
         self.votelst = votelst
         self.votekd = votekd
-        if flat_fee:
+        if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
             self.fee = max(self.estimate_size()*self.fee,
@@ -287,10 +318,10 @@ class KeyregTxn(Transaction):
 
     def dictify(self):
         d = {
-            "selkey": encoding.decode_address(self.selkey),
+            "selkey": base64.b64decode(self.selkey),
             "votefst": self.votefst,
             "votekd": self.votekd,
-            "votekey": encoding.decode_address(self.votepk),
+            "votekey": base64.b64decode(self.votepk),
             "votelst": self.votelst
         }
         d.update(super(KeyregTxn, self).dictify())
@@ -301,8 +332,8 @@ class KeyregTxn(Transaction):
     @staticmethod
     def _undictify(d):
         args = {
-            "votekey": encoding.encode_address(d["votekey"]),
-            "selkey": encoding.encode_address(d["selkey"]),
+            "votekey": base64.b64encode(d["votekey"]).decode(),
+            "selkey": base64.b64encode(d["selkey"]).decode(),
             "votefst": d["votefst"],
             "votelst": d["votelst"],
             "votekd": d["votekd"]
@@ -312,7 +343,7 @@ class KeyregTxn(Transaction):
     def __eq__(self, other):
         if not isinstance(other, (
                 KeyregTxn,
-                future.transaction.KeyregTxn)):
+                transaction.KeyregTxn)):
             return False
         return (super(KeyregTxn, self).__eq__(self, other) and
                 self.votepk == other.votepk and
@@ -326,21 +357,22 @@ class AssetConfigTxn(Transaction):
     """
     Represents a transaction for asset creation, reconfiguration, or
     destruction.
+
     To create an asset, include the following:
         total, default_frozen, unit_name, asset_name,
         manager, reserve, freeze, clawback, url, metadata,
         decimals
+
     To destroy an asset, include the following:
         index, strict_empty_address_check (set to False)
+
     To update asset configuration, include the following:
         index, manager, reserve, freeze, clawback,
         strict_empty_address_check (optional)
+
     Args:
         sender (str): address of the sender
-        fee (int): transaction fee (per byte if flat_fee is false)
-        first (int): first round for which the transaction is valid
-        last (int): last round for which the transaction is valid
-        gh (str): genesis_hash
+        sp (SuggestedParams): suggested params from algod
         index (int, optional): index of the asset
         total (int, optional): total number of base units of this asset created
         default_frozen (bool, optional): whether slots for this asset in user
@@ -360,8 +392,6 @@ class AssetConfigTxn(Transaction):
         metadata_hash (byte[32], optional): a commitment to some unspecified
             asset metadata (32 byte hash)
         note (bytes, optional): arbitrary optional bytes
-        gen (str, optional): genesis_id
-        flat_fee (bool, optional): whether the specified fee is a flat fee
         lease (byte[32], optional): specifies a lease, and no other transaction
             with the same sender and lease can be confirmed in this
             transaction's valid rounds
@@ -374,6 +404,7 @@ class AssetConfigTxn(Transaction):
             decimal. If set to 0, the asset is not divisible. If set to 1, the
             base unit of the asset is in tenths. Must be between 0 and 19,
             inclusive. Defaults to 0.
+
     Attributes:
         sender (str)
         fee (int)
@@ -398,13 +429,13 @@ class AssetConfigTxn(Transaction):
         decimals (int)
     """
 
-    def __init__(self, sender, fee, first, last, gh, index=None,
-                 total=None, default_frozen=None, unit_name=None,
-                 asset_name=None, manager=None, reserve=None,
-                 freeze=None, clawback=None, url=None, metadata_hash=None,
-                 note=None, gen=None, flat_fee=False, lease=None,
-                 strict_empty_address_check=True, decimals=0):
-        Transaction.__init__(self,  sender, fee, first, last, note, gen, gh,
+    def __init__(
+            self, sender, sp, index=None, total=None, default_frozen=None,
+            unit_name=None, asset_name=None, manager=None, reserve=None,
+            freeze=None, clawback=None, url=None, metadata_hash=None,
+            note=None, lease=None, strict_empty_address_check=True,
+            decimals=0):
+        Transaction.__init__(self, sender, sp, note,
                              lease, constants.assetconfig_txn)
         if strict_empty_address_check:
             if not (manager and reserve and freeze and clawback):
@@ -426,7 +457,7 @@ class AssetConfigTxn(Transaction):
         if metadata_hash is not None:
             if len(metadata_hash) != constants.metadata_length:
                 raise error.WrongMetadataLengthError
-        if flat_fee:
+        if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
             self.fee = max(self.estimate_size()*self.fee,
@@ -533,7 +564,7 @@ class AssetConfigTxn(Transaction):
     def __eq__(self, other):
         if not isinstance(other, (
                 AssetConfigTxn,
-                future.transaction.AssetConfigTxn)):
+                transaction.AssetConfigTxn)):
             return False
         return (super(AssetConfigTxn, self).__eq__(other) and
                 self.index == other.index and
@@ -554,23 +585,20 @@ class AssetFreezeTxn(Transaction):
     """
     Represents a transaction for freezing or unfreezing an account's asset
     holdings. Must be issued by the asset's freeze manager.
+
     Args:
         sender (str): address of the sender, who must be the asset's freeze
             manager
-        fee (int): transaction fee (per byte if flat_fee is false)
-        first (int): first round for which the transaction is valid
-        last (int): last round for which the transaction is valid
-        gh (str): genesis_hash
+        sp (SuggestedParams): suggested params from algod
         index (int): index of the asset
         target (str): address having its assets frozen or unfrozen
         new_freeze_state (bool): true if the assets should be frozen, false if
             they should be transferrable
         note (bytes, optional): arbitrary optional bytes
-        gen (str, optional): genesis_id
-        flat_fee (bool, optional): whether the specified fee is a flat fee
         lease (byte[32], optional): specifies a lease, and no other transaction
             with the same sender and lease can be confirmed in this
             transaction's valid rounds
+
     Attributes:
         sender (str)
         fee (int)
@@ -586,15 +614,14 @@ class AssetFreezeTxn(Transaction):
         lease (byte[32])
     """
 
-    def __init__(self, sender, fee, first, last, gh, index, target,
-                 new_freeze_state, note=None, gen=None, flat_fee=False,
+    def __init__(self, sender, sp, index, target, new_freeze_state, note=None,
                  lease=None):
-        Transaction.__init__(self, sender, fee, first, last, note, gen, gh,
+        Transaction.__init__(self, sender, sp, note,
                              lease, constants.assetfreeze_txn)
         self.index = index
         self.target = target
         self.new_freeze_state = new_freeze_state
-        if flat_fee:
+        if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
             self.fee = max(self.estimate_size()*self.fee,
@@ -627,7 +654,7 @@ class AssetFreezeTxn(Transaction):
     def __eq__(self, other):
         if not isinstance(other, (
                 AssetFreezeTxn,
-                future.transaction.AssetFreezeTxn)):
+                transaction.AssetFreezeTxn)):
             return False
         return (super(AssetFreezeTxn, self).__eq__(other) and
                 self.index == other.index and
@@ -638,16 +665,16 @@ class AssetFreezeTxn(Transaction):
 class AssetTransferTxn(Transaction):
     """
     Represents a transaction for asset transfer.
+
     To begin accepting an asset, supply the same address as both sender and
     receiver, and set amount to 0.
+
     To revoke an asset, set revocation_target, and issue the transaction from
     the asset's revocation manager account.
+
     Args:
         sender (str): address of the sender
-        fee (int): transaction fee (per byte if flat_fee is false)
-        first (int): first round for which the transaction is valid
-        last (int): last round for which the transaction is valid
-        gh (str): genesis_hash
+        sp (SuggestedParams): suggested params from algod
         receiver (str): address of the receiver
         amt (int): amount of asset base units to send
         index (int): index of the asset
@@ -657,11 +684,10 @@ class AssetTransferTxn(Transaction):
             rather than the sender's address (can only be used by an asset's
             revocation manager, also known as clawback)
         note (bytes, optional): arbitrary optional bytes
-        gen (str, optional): genesis_id
-        flat_fee (bool, optional): whether the specified fee is a flat fee
         lease (byte[32], optional): specifies a lease, and no other transaction
             with the same sender and lease can be confirmed in this
             transaction's valid rounds
+
     Attributes:
         sender (str)
         fee (int)
@@ -679,17 +705,17 @@ class AssetTransferTxn(Transaction):
         lease (byte[32])
     """
 
-    def __init__(self, sender, fee, first, last, gh, receiver, amt, index,
+    def __init__(self, sender, sp, receiver, amt, index,
                  close_assets_to=None, revocation_target=None, note=None,
-                 gen=None, flat_fee=False, lease=None):
-        Transaction.__init__(self,  sender, fee, first, last, note, gen, gh,
+                 lease=None):
+        Transaction.__init__(self, sender, sp, note,
                              lease, constants.assettransfer_txn)
         self.receiver = receiver
         self.amount = amt
         self.index = index
         self.close_assets_to = close_assets_to
         self.revocation_target = revocation_target
-        if flat_fee:
+        if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
             self.fee = max(self.estimate_size()*self.fee,
@@ -733,7 +759,7 @@ class AssetTransferTxn(Transaction):
     def __eq__(self, other):
         if not isinstance(other, (
                 AssetTransferTxn,
-                future.transaction.AssetTransferTxn)):
+                transaction.AssetTransferTxn)):
             return False
         return (super(AssetTransferTxn, self).__eq__(other) and
                 self.index == other.index and
@@ -746,16 +772,28 @@ class AssetTransferTxn(Transaction):
 class SignedTransaction:
     """
     Represents a signed transaction.
+
     Args:
         transaction (Transaction): transaction that was signed
         signature (str): signature of a single address
+
     Attributes:
         transaction (Transaction)
         signature (str)
     """
+
     def __init__(self, transaction, signature):
         self.signature = signature
         self.transaction = transaction
+
+    def get_txid(self):
+        """
+        Get the transaction's ID.
+
+        Returns:
+            str: transaction ID
+        """
+        return self.transaction.get_txid()
 
     def dictify(self):
         od = OrderedDict()
@@ -776,7 +814,7 @@ class SignedTransaction:
     def __eq__(self, other):
         if not isinstance(other, (
                 SignedTransaction,
-                future.transaction.SignedTransaction)):
+                transaction.SignedTransaction)):
             return False
         return (self.transaction == other.transaction and
                 self.signature == other.signature)
@@ -785,13 +823,16 @@ class SignedTransaction:
 class MultisigTransaction:
     """
     Represents a signed transaction.
+
     Args:
         transaction (Transaction): transaction that was signed
         multisig (Multisig): multisig account and signatures
+
     Attributes:
         transaction (Transaction)
         multisig (Multisig)
     """
+
     def __init__(self, transaction, multisig):
         self.transaction = transaction
         self.multisig = multisig
@@ -799,8 +840,10 @@ class MultisigTransaction:
     def sign(self, private_key):
         """
         Sign the multisig transaction.
+
         Args:
             private_key (str): private key of signing account
+
         Note:
             A new signature will replace the old if there is already a
             signature for the address. To sign another transaction, you can
@@ -824,6 +867,15 @@ class MultisigTransaction:
         sig = self.transaction.raw_sign(private_key)
         self.multisig.subsigs[index].signature = sig
 
+    def get_txid(self):
+        """
+        Get the transaction's ID.
+
+        Returns:
+            str: transaction ID
+        """
+        return self.transaction.get_txid()
+
     def dictify(self):
         od = OrderedDict()
         if self.multisig:
@@ -844,11 +896,14 @@ class MultisigTransaction:
     def merge(part_stxs):
         """
         Merge partially signed multisig transactions.
+
         Args:
             part_stxs (MultisigTransaction[]): list of partially signed
                 multisig transactions
+
         Returns:
             MultisigTransaction: multisig transaction containing signatures
+
         Note:
             Only use this if you are given two partially signed multisig
             transactions. To append a signature to a multisig transaction, just
@@ -878,7 +933,7 @@ class MultisigTransaction:
     def __eq__(self, other):
         if not isinstance(other, (
                 MultisigTransaction,
-                future.transaction.MultisigTransaction)):
+                transaction.MultisigTransaction)):
             return False
         return (self.transaction == other.transaction and
                 self.multisig == other.multisig)
@@ -887,15 +942,18 @@ class MultisigTransaction:
 class Multisig:
     """
     Represents a multisig account and signatures.
+
     Args:
         version (int): currently, the version is 1
         threshold (int): how many signatures are necessary
         addresses (str[]): addresses in the multisig account
+
     Attributes:
         version (int)
         threshold (int)
         subsigs (MultisigSubsig[])
     """
+
     def __init__(self, version, threshold, addresses):
         self.version = version
         self.threshold = threshold
@@ -985,7 +1043,7 @@ class Multisig:
     def __eq__(self, other):
         if not isinstance(other, (
                 Multisig,
-                future.transaction.Multisig)):
+                transaction.Multisig)):
             return False
         return (self.version == other.version and
                 self.threshold == other.threshold and
@@ -998,6 +1056,7 @@ class MultisigSubsig:
         public_key (bytes)
         signature (bytes)
     """
+
     def __init__(self, public_key, signature=None):
         self.public_key = public_key
         self.signature = signature
@@ -1028,7 +1087,7 @@ class MultisigSubsig:
     def __eq__(self, other):
         if not isinstance(other, (
                 MultisigSubsig,
-                future.transaction.MultisigSubsig)):
+                transaction.MultisigSubsig)):
             return False
         return (self.public_key == other.public_key and
                 self.signature == other.signature)
@@ -1037,9 +1096,11 @@ class MultisigSubsig:
 class LogicSig:
     """
     Represents a logic signature
+
     Arguments:
         logic (bytes): compiled program
         args (list[bytes]): args are not signed, but are checked by logic
+
     Attributes:
         logic (bytes)
         sig (bytes)
@@ -1078,8 +1139,10 @@ class LogicSig:
     def verify(self, public_key):
         """
         Verifies LogicSig against the transaction's sender address
+
         Args:
             public_key (bytes): sender address
+
         Returns:
             bool: true if the signature is valid (the sender address matches\
                 the logic hash or the signature is valid against the sender\
@@ -1113,6 +1176,7 @@ class LogicSig:
         """
         Compute hash of the logic sig program (that is the same as escrow
         account address) as string address
+
         Returns:
             str: program address
         """
@@ -1144,10 +1208,12 @@ class LogicSig:
     def sign(self, private_key, multisig=None):
         """
         Creates signature (if no pk provided) or multi signature
+
         Args:
             private_key (str): private key of signing account
             multisig (Multisig): optional multisig account without signatures
                 to sign with
+
         Raises:
             InvalidSecretKeyError: if no matching private key in multisig\
                 object
@@ -1164,8 +1230,10 @@ class LogicSig:
     def append_to_multisig(self, private_key):
         """
         Appends a signature to multi signature
+
         Args:
             private_key (str): private key of signing account
+
         Raises:
             InvalidSecretKeyError: if no matching private key in multisig\
                 object
@@ -1180,7 +1248,7 @@ class LogicSig:
     def __eq__(self, other):
         if not isinstance(other, (
                 LogicSig,
-                future.transaction.LogicSig)):
+                transaction.LogicSig)):
             return False
         return (self.logic == other.logic and
                 self.args == other.args and
@@ -1191,9 +1259,11 @@ class LogicSig:
 class LogicSigTransaction:
     """
     Represents a logic signed transaction
+
     Arguments:
         transaction (Transaction)
         lsig (LogicSig)
+
     Attributes:
         transaction (Transaction)
         lsig (LogicSig)
@@ -1206,6 +1276,7 @@ class LogicSigTransaction:
     def verify(self):
         """
         Verify LogicSig against the transaction
+
         Returns:
             bool: true if the signature is valid (the sender address matches\
                 the logic hash or the signature is valid against the sender\
@@ -1213,6 +1284,15 @@ class LogicSigTransaction:
         """
         public_key = encoding.decode_address(self.transaction.sender)
         return self.lsig.verify(public_key)
+
+    def get_txid(self):
+        """
+        Get the transaction's ID.
+
+        Returns:
+            str: transaction ID
+        """
+        return self.transaction.get_txid()
 
     def dictify(self):
         od = OrderedDict()
@@ -1233,7 +1313,7 @@ class LogicSigTransaction:
     def __eq__(self, other):
         if not isinstance(other, (
                 LogicSigTransaction,
-                future.transaction.LogicSigTransaction)):
+                transaction.LogicSigTransaction)):
             return False
         return (self.lsig == other.lsig and
                 self.transaction == other.transaction)
@@ -1242,12 +1322,14 @@ class LogicSigTransaction:
 def write_to_file(txns, path, overwrite=True):
     """
     Write signed or unsigned transactions to a file.
+
     Args:
         txns (Transaction[], SignedTransaction[], or MultisigTransaction[]):\
             can be a mix of the three
         path (str): file to write to
         overwrite (bool): whether or not to overwrite what's already in the
             file; if False, transactions will be appended to the file
+
     Returns:
         bool: true if the transactions have been written to the file
     """
@@ -1272,8 +1354,10 @@ def write_to_file(txns, path, overwrite=True):
 def retrieve_from_file(path):
     """
     Retrieve signed or unsigned transactions from a file.
+
     Args:
         path (str): file to read from
+
     Returns:
         Transaction[], SignedTransaction[], or MultisigTransaction[]:\
             can be a mix of the three
@@ -1322,8 +1406,10 @@ class TxGroup:
 def calculate_group_id(txns):
     """
     Calculate group id for a given list of unsigned transactions
+
     Args:
         txns (list): list of unsigned transactions
+
     Returns:
         bytes: checksum value representing the group id
     """
@@ -1346,10 +1432,12 @@ def calculate_group_id(txns):
 def assign_group_id(txns, address=None):
     """
     Assign group id to a given list of unsigned transactions
+
     Args:
         txns (list): list of unsigned transactions
         address (str): optional sender address specifying which transaction
             return
+
     Returns:
         txns (list): list of unsigned transactions with group property set
     """

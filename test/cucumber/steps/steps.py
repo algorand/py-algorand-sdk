@@ -1,7 +1,7 @@
 from behave import given, when, then
 import base64
 from algosdk import kmd
-from algosdk import transaction
+from algosdk.future import transaction
 from algosdk import encoding
 from algosdk import algod
 from algosdk import account
@@ -10,7 +10,7 @@ from algosdk import wallet
 from algosdk import auction
 from algosdk import util
 from algosdk import constants
-from algosdk import template
+from algosdk.future import template
 import os
 from datetime import datetime
 import hashlib
@@ -283,7 +283,7 @@ def wallet_info(context):
 
 @given('default transaction with parameters {amt} "{note}"')
 def default_txn(context, amt, note):
-    params = context.acl.suggested_params()
+    params = context.acl.suggested_params_as_object()
     context.last_round = params.first
     if note == "none":
         note = None
@@ -295,7 +295,7 @@ def default_txn(context, amt, note):
 
 @given('default multisig transaction with parameters {amt} "{note}"')
 def default_msig_txn(context, amt, note):
-    params = context.acl.suggested_params()
+    params = context.acl.suggested_params_as_object()
     context.last_round = params.first
     if note == "none":
         note = None
@@ -428,7 +428,7 @@ def check_health(context):
 
 @when("I get the suggested params")
 def suggested_params(context):
-    context.params = context.acl.suggested_params()
+    context.params = context.acl.suggested_params_as_object()
 
 
 @when("I get the suggested fee")
@@ -614,7 +614,7 @@ def step_impl(context, cnt):
 @given("default asset creation transaction with total issuance {total}")
 def default_asset_creation_txn(context, total):
     context.total = int(total)
-    params = context.acl.suggested_params()
+    params = context.acl.suggested_params_as_object()
     context.last_round = params.first
     context.pk = context.accounts[0]
     asset_name = "asset"
@@ -643,7 +643,7 @@ def default_asset_creation_txn(context, total):
 @given("default-frozen asset creation transaction with total issuance {total}")
 def default_frozen_asset_creation_txn(context, total):
     context.total = int(total)
-    params = context.acl.suggested_params()
+    params = context.acl.suggested_params_as_object()
     context.last_round = params.first
     context.pk = context.accounts[0]
     asset_name = "asset"
@@ -694,7 +694,7 @@ def asset_info_match(context):
 
 @when("I create an asset destroy transaction")
 def create_asset_destroy_txn(context):
-    context.txn = transaction.AssetConfigTxn(context.pk, context.acl.suggested_params(), index=context.asset_index, strict_empty_address_check=False)
+    context.txn = transaction.AssetConfigTxn(context.pk, context.acl.suggested_params_as_object(), index=context.asset_index, strict_empty_address_check=False)
 
 
 @then("I should be unable to get the asset info")
@@ -709,26 +709,26 @@ def err_asset_info(context):
 
 @when("I create a no-managers asset reconfigure transaction")
 def no_manager_txn(context):
-    context.txn = transaction.AssetConfigTxn(context.pk, context.acl.suggested_params(), index=context.asset_index, reserve=context.pk, clawback=context.pk, freeze=context.pk, strict_empty_address_check=False)
+    context.txn = transaction.AssetConfigTxn(context.pk, context.acl.suggested_params_as_object(), index=context.asset_index, reserve=context.pk, clawback=context.pk, freeze=context.pk, strict_empty_address_check=False)
 
     context.expected_asset_info["managerkey"] = ""
 
 
 @when("I create a transaction for a second account, signalling asset acceptance")
 def accept_asset_txn(context):
-    params = context.acl.suggested_params()
+    params = context.acl.suggested_params_as_object()
     context.txn = transaction.AssetTransferTxn(context.rcv, params, context.rcv, 0, context.asset_index)
 
 
 @when("I create a transaction transferring {amount} assets from creator to a second account")
 def transfer_assets(context, amount):
-    params = context.acl.suggested_params()
+    params = context.acl.suggested_params_as_object()
     context.txn = transaction.AssetTransferTxn(context.pk, params, context.rcv, int(amount), context.asset_index)
 
 
 @when("I create a transaction transferring {amount} assets from a second account to creator")
 def transfer_assets_to_creator(context, amount):
-    params = context.acl.suggested_params()
+    params = context.acl.suggested_params_as_object()
     context.txn = transaction.AssetTransferTxn(context.rcv, params, context.pk, int(amount), context.asset_index)
 
 
@@ -740,25 +740,25 @@ def check_asset_balance(context, exp_balance):
 
 @when("I create a freeze transaction targeting the second account")
 def freeze_txn(context):
-    params = context.acl.suggested_params()
+    params = context.acl.suggested_params_as_object()
     context.txn = transaction.AssetFreezeTxn(context.pk, params, context.asset_index, context.rcv, True)
 
 
 @when("I create an un-freeze transaction targeting the second account")
 def unfreeze_txn(context):
-    params = context.acl.suggested_params()
+    params = context.acl.suggested_params_as_object()
     context.txn = transaction.AssetFreezeTxn(context.pk, params, context.asset_index, context.rcv, False)
 
 
 @when("I create a transaction revoking {amount} assets from a second account to creator")
 def revoke_txn(context, amount):
-    params = context.acl.suggested_params()
+    params = context.acl.suggested_params_as_object()
     context.txn = transaction.AssetTransferTxn(context.pk, params, context.pk, int(amount), context.asset_index, revocation_target=context.rcv)
 
 
 @given("a split contract with ratio {ratn} to {ratd} and minimum payment {min_pay}")
 def split_contract(context, ratn, ratd, min_pay):
-    context.params = context.acl.suggested_params()
+    context.params = context.acl.suggested_params_as_object()
     context.template = template.Split(context.accounts[0], context.accounts[1], context.accounts[2], int(ratn), int(ratd), context.params.last, int(min_pay), 20000)
     context.fund_amt = int(2*context.template.min_pay*(int(ratn)+int(ratd))/int(ratn))
 
@@ -775,7 +775,7 @@ def send_split(context):
 @given('an HTLC contract with hash preimage "{preimage}"')
 def htlc_contract(context, preimage):
     context.preimage = bytes(preimage, "ascii")
-    context.params = context.acl.suggested_params()
+    context.params = context.acl.suggested_params_as_object()
     h = base64.b64encode(hashlib.sha256(context.preimage).digest()).decode()
     context.fund_amt = 1000000
     context.template = template.HTLC(context.accounts[0], context.accounts[1], "sha256", h, context.params.last, 2000)
@@ -798,7 +798,7 @@ def claim_algos(context):
 
 @given("a periodic payment contract with withdrawing window {wd_window} and period {period}")
 def periodic_pay_contract(context, wd_window, period):
-    context.params = context.acl.suggested_params()
+    context.params = context.acl.suggested_params_as_object()
     context.template = template.PeriodicPayment(context.accounts[1], 12345, int(wd_window),
                                                 int(period), 2000, int(context.params.last))
     context.fund_amt = 1000000
@@ -820,7 +820,7 @@ def contract_fixture(context):
 
 @given("a limit order contract with parameters {ratn} {ratd} {min_trade}")
 def limit_order_contract(context, ratn, ratd, min_trade):
-    context.params = context.acl.suggested_params()
+    context.params = context.acl.suggested_params_as_object()
     context.ratn = int(ratn)
     context.ratd = int(ratd)
     context.template = template.LimitOrder(context.accounts[1], context.asset_index, int(ratn), int(ratd), context.params.last, 2000, int(min_trade))
@@ -837,7 +837,7 @@ def swap_assets(context):
 
 @given("a dynamic fee contract with amount {amt}")
 def dynamic_fee_contract(context, amt):
-    context.params = context.acl.suggested_params()
+    context.params = context.acl.suggested_params_as_object()
     context.sk = context.wallet.export_key(context.accounts[0])
     context.template = template.DynamicFee(context.accounts[1], int(amt), context.params)
     txn, lsig = context.template.sign_dynamic_fee(context.sk)
