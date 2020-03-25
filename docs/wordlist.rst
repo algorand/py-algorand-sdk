@@ -1,5 +1,5 @@
-algodsdk.wordlist
-=================
+wordlist
+========
 
 .. automodule:: algosdk.wordlist
    :members:

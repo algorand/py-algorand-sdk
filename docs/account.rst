@@ -1,5 +1,5 @@
-algosdk.account
-===============
+account
+=======
 
 .. automodule:: algosdk.account
    :members:
