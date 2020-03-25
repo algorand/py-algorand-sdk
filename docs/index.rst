@@ -3,7 +3,6 @@
 Modules
 =======
 .. toctree::
-   :glob:
 
    account
    algod
@@ -11,7 +10,7 @@ Modules
    constants
    encoding
    error
-   future/index*
+   future/index
    kmd
    logic
    mnemonic
