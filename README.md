@@ -129,7 +129,8 @@ You can also recover accounts using mnemonic.to_private_key().
 If you don't want to send your transactions now, you can write them to file. This works with both signed and unsigned transactions.
 ```python
 import params
-from algosdk import algod, kmd, transaction
+from algosdk import algod, kmd
+from algosdk.future import transaction
 
 sender = "sender_address"
 receiver = "receiver_address"
@@ -161,7 +162,8 @@ read_txns = transaction.retrieve_from_file("pathtofile.tx")
 
 ```python
 import params
-from algosdk import account, transaction, algod, encoding
+from algosdk import account, algod, encoding
+from algosdk.future import transaction
 
 acl = algod.AlgodClient(params.algod_token, params.algod_address)
 
@@ -198,7 +200,8 @@ print(encoding.msgpack_encode(mtx))
 We can put things in the "note" field of a transaction; here's an example with an auction bid. Note that you can put any bytes you want in the "note" field; you don't have to use the NoteField object.
 
 ```python
-from algosdk import algod, mnemonic, transaction, account
+from algosdk import algod, mnemonic, account
+from algosdk.future import transaction
 
 passphrase = "teach chat health avocado broken avocado trick adapt parade witness damp gift behave harbor maze truth figure below scatter taste slow sustain aspect absorb nuclear"
 
@@ -235,7 +238,8 @@ print(decoded.dictify())
 ### working with transaction group
 ```python
 import params
-from algosdk import algod, kmd, transaction
+from algosdk import algod, kmd
+from algosdk.future import transaction
 
 private_key_sender, sender = account.generate_account()
 private_key_receiver, receiver = account.generate_account()
@@ -271,7 +275,8 @@ Example below creates a LogicSig transaction signed by a program that never appr
 
 ```python
 import params
-from algosdk import algod, transaction
+from algosdk import algod
+from algosdk.future import transaction
 
 program = b"\x01\x20\x01\x00\x22"  # int 0
 lsig = transaction.LogicSig(program)
@@ -300,7 +305,8 @@ acl.send_transaction(lstx)
 Assets can be managed by sending three types of transactions: AssetConfigTxn, AssetFreezeTxn, and AssetTransferTxn. Shown below are examples of how to use these transactions.
 #### creating an asset
 ```python
-from algosdk import account, transaction
+from algosdk import account
+from algosdk.future import transaction
 
 private_key, address = account.generate_account() # creator
 _, freeze = account.generate_account() # account that can freeze other accounts for this asset
@@ -333,7 +339,8 @@ signed_txn = txn.sign(private_key)
 #### updating asset configuration
 This transaction must be sent from the manager's account.
 ```python
-from algosdk import account, transaction
+from algosdk import account
+from algosdk.future import transaction
 
 manager_private_key = "manager private key"
 manager_address = "manager address"
@@ -361,7 +368,8 @@ signed_txn = txn.sign(manager_private_key)
 #### destroying an asset
 This transaction must be sent from the creator's account.
 ```python
-from algosdk import account, transaction
+from algosdk import account
+from algosdk.future import transaction
 
 creator_private_key = "creator private key"
 creator_address = "creator address"
@@ -384,7 +392,8 @@ signed_txn = txn.sign(creator_private_key)
 #### freezing or unfreezing an account
 This transaction must be sent from the account specified as the freeze manager for the asset.
 ```python
-from algosdk import account, transaction
+from algosdk import account
+from algosdk.future import transaction
 
 freeze_private_key = "freeze private key"
 freeze_address = "freeze address"
@@ -408,7 +417,8 @@ signed_txn = txn.sign(freeze_private_key)
 
 #### sending assets
 ```python
-from algosdk import account, transaction
+from algosdk import account
+from algosdk.future import transaction
 
 sender_private_key = "freeze private key"
 sender_address = "freeze address"
@@ -434,7 +444,8 @@ signed_txn = txn.sign(sender_private_key)
 
 #### accepting assets
 ```python
-from algosdk import account, transaction
+from algosdk import account
+from algosdk.future import transaction
 
 private_key = "freeze private key"
 address = "freeze address"
@@ -460,7 +471,8 @@ signed_txn = txn.sign(private_key)
 #### revoking assets
 This transaction must be sent by the asset's clawback manager.
 ```python
-from algosdk import account, transaction
+from algosdk import account
+from algosdk.future import transaction
 
 clawback_private_key = "clawback private key"
 clawback_address = "clawback address"

@@ -1,5 +1,5 @@
-algosdk.constants
-=================
+constants
+=========
 
 .. automodule:: algosdk.constants
    :members:

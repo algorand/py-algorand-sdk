@@ -60,7 +60,8 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 #
 html_theme = 'sphinx_rtd_theme'
 html_theme_options = {
-    'display_version': False}
+    'display_version': False,
+    "collapse_navigation" : False}
 
 add_module_names = False
 autodoc_member_order = 'bysource'

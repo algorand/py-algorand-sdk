@@ -1,5 +1,5 @@
-algosdk.algod
-=============
+algod
+=====
 
 .. automodule:: algosdk.algod
    :members:
