@@ -316,6 +316,7 @@ class AlgodClient:
         req = "/block/" + str(round) + '?raw=1'
         kwargs['raw_response'] = True
         response = self.algod_request("GET", req, **kwargs)
-        if contentType != 'application/x-algorand-block-v1':
-            raise Exception()
+        block_type = 'application/x-algorand-block-v1'
+        if contentType != block_type:
+            raise Exception('expected "Content-Type: {}" but got {!r}'.format(block_type, contentType))
         return msgpack.loads(response.read())
