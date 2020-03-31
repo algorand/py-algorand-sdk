@@ -6,7 +6,6 @@ import base64
 from .. import error
 from .. import encoding
 from .. import constants
-from .. import transaction
 
 
 class IndexerClient:

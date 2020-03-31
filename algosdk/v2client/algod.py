@@ -6,7 +6,6 @@ import base64
 from .. import error
 from .. import encoding
 from .. import constants
-from .. import transaction
 
 api_version_path_prefix = "/v2"
 
@@ -201,7 +200,7 @@ class AlgodClient:
             no_wait (bool, optional): don't wait for transaction to commit
                 before returning response
         """
-        req = "/v2/register-participation-keys/" + address
+        req = "/register-participation-keys/" + address
         query = dict()
         if fee:
             query["fee"] = fee
