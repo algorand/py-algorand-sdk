@@ -2,7 +2,7 @@ import base64
 import copy
 import unittest
 import random
-from algosdk import transaction
+from algosdk.future import transaction
 from algosdk import encoding
 from algosdk import account
 from algosdk import mnemonic
@@ -11,7 +11,7 @@ from algosdk import error
 from algosdk import constants
 from algosdk import util
 from algosdk import logic
-from algosdk import template
+from algosdk.future import template
 
 
 class TestTransaction(unittest.TestCase):
@@ -187,8 +187,6 @@ class TestTransaction(unittest.TestCase):
         sk = mnemonic.to_private_key(mn)
         pk = mnemonic.to_public_key(mn)
         fee = 1000
-        first_round = 10000
-        last_round = 11000
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
         votepk = "Kv7QI7chi1y6axoy+t7wzAVpePqRq/rkjzWh/RMYyLo="
         selpk = "bPgrv4YogPcdaUAxrt1QysYZTVyRAuUMD4zQmCu9llc="
@@ -201,7 +199,7 @@ class TestTransaction(unittest.TestCase):
         txn = transaction.KeyregTxn(pk, sp, votepk, selpk, votefirst, votelast,
                                     votedilution)
         signed_txn = txn.sign(sk)
-        
+
         golden = (
             "gqNzaWfEQEA8ANbrvTRxU9c8v6WERcEPw7D/HacRgg4vICa61vEof60Wwtx6KJKDy"
             "vBuvViFeacLlngPY6vYCVP0DktTwQ2jdHhui6NmZWXNA+iiZnbOAATsD6JnaMQgSG"

@@ -1,8 +1,5 @@
-.. mdinclude:: ../README.md
-
-Modules
-=======
 .. toctree::
+   :maxdepth: 4
 
    account
    algod
@@ -10,7 +7,8 @@ Modules
    constants
    encoding
    error
-   future/index
+   future/transaction
+   future/template
    kmd
    logic
    mnemonic

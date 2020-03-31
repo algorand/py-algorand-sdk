@@ -1,7 +1,7 @@
-algosdk.kmd
-===========
+auction
+=======
 
-.. automodule:: algosdk.kmd
+.. automodule:: algosdk.auction
    :members:
    :undoc-members:
    :show-inheritance:

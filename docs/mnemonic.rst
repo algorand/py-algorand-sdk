@@ -1,5 +1,5 @@
-algosdk.mnemonic
-================
+mnemonic
+========
 
 .. automodule:: algosdk.mnemonic
    :members:

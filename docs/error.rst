@@ -1,5 +1,5 @@
-algosdk.error
-=============
+error
+=====
 
 .. automodule:: algosdk.error
    :members:

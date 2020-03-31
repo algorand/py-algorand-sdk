@@ -1,7 +1,7 @@
-algosdk.util
-============
+wallet
+======
 
-.. automodule:: algosdk.util
+.. automodule:: algosdk.wallet
    :members:
    :undoc-members:
    :show-inheritance:

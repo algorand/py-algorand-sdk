@@ -1,5 +1,5 @@
-algosdk.logic
-=============
+logic
+=====
 
 .. automodule:: algosdk.logic
    :members:

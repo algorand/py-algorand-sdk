@@ -1,5 +1,5 @@
-algosdk.encoding
-================
+encoding
+========
 
 .. automodule:: algosdk.encoding
    :members:

@@ -1,5 +1,5 @@
-algosdk.template
-================
+template
+========
 
 .. automodule:: algosdk.template
    :members:
