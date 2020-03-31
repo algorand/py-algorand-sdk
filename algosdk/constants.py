@@ -2,9 +2,6 @@
 Contains useful constants.
 """
 
-# change if version changes
-api_version_path_prefix = "/v1"
-"""str: current path prefix for requests"""
 kmd_auth_header = "X-KMD-API-Token"
 """str: header key for kmd requests"""
 algod_auth_header = "X-Algo-API-Token"

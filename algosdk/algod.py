@@ -8,6 +8,8 @@ from . import encoding
 from . import constants
 from . import transaction
 
+api_version_path_prefix = "/v1"
+
 
 class AlgodClient:
     """
@@ -58,7 +60,7 @@ class AlgodClient:
             })
 
         if requrl not in constants.unversioned_paths:
-            requrl = constants.api_version_path_prefix + requrl
+            requrl = api_version_path_prefix + requrl
         if params:
             requrl = requrl + "?" + parse.urlencode(params)
 
