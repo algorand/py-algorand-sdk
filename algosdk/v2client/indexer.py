@@ -161,9 +161,9 @@ class IndexerClient:
                 specified round
             asset_id (int, optional): include transactions for the specified
                 asset
-            start_time (str, optional): include results before the given time;
+            end_time (str, optional): include results before the given time;
                 must be an RFC 3339 formatted string
-            end_time (str, optional): include results after the given time;
+            start_time (str, optional): include results after the given time;
                 must be an RFC 3339 formatted string
             min_amount (int, optional): results should have an amount greater
                 than this value; microalgos are the default currency unless an
@@ -182,8 +182,77 @@ class IndexerClient:
                 receiver, if you would like to exclude them set this parameter
                 to true
         """
+        req = "/transactions"
+        query = dict()
+        if limit:
+            query["limit"] = limit
+        if next_page:
+            query["next"] = next_page
+        if note_prefix:
+            query["note-prefix"] = note_prefix
+        if txn_type:
+            query["tx-type"] = txn_type
+        if sig_type:
+            query["sig-type"] = sig_type
+        if txid:
+            query["tx-id"] = txid
+        if round:
+            query["round"] = round
+        if min_round:
+            query["min-round"] = min_round
+        if max_round:
+            query["max-round"] = max_round
+        if asset_id:
+            query["asset-id"] = asset_id
+        if end_time:
+            query["before-time"] = end_time
+        if start_time:
+            query["after_time"] = start_time
+        if min_amount:
+            query["currency-greater-than"] = min_amount
+        if max_amount:
+            query["currency-less-than"] = max_amount
+        if address:
+            query["address"] = address
+        if address_role:
+            query["address-role"] = address_role
+        if exclude_close_to:
+            query["exclude-close-to"] = exclude_close_to
 
+        return self.algod_request("GET", req, query, **kwargs)
 
+    def search_assets(
+        self, limit=None, next_page=None, creator=None, name=None, unit=None,
+        asset_id=None, **kwargs):
+        """
+        Return assets that satisfy the conditions.
+
+        Args:
+            limit (int, optional): maximum number of results to return
+            next_page (str, optional): the next page of results; use the next
+                token provided by the previous results
+            creator (str, optional): filter just assets with the given creator
+                address
+            name (str, optional): filter just assets with the given name
+            unit (str, optional): filter just assets with the given unit
+            asset_id (int, optional): return only the asset with this ID
+        """
+        req = "/assets"
+        query = dict()
+        if limit:
+            query["limit"] = limit
+        if next_page:
+            query["next"] = next_page
+        if creator:
+            query["creator"] = creator
+        if name:
+            query["name"] = name
+        if unit:
+            query["unit"] = unit
+        if asset_id:
+            query["asset-id"] = asset_id
+        
+        return self.algod_request("GET", req, query, **kwargs)
 
     def asset_info(self, index, **kwargs):
         """
@@ -194,52 +263,3 @@ class IndexerClient:
         """
         req = "/asset/" + str(index)
         return self.algod_request("GET", req, **kwargs)
-
-    def list_assets(self, max_index=None, max_assets=None, **kwargs):
-        """
-        Return a list of up to max_assets assets, where the maximum asset
-        index is max_index.
-
-        Args:
-            max_index (int, optional): maximum asset index; defaults to 0,
-                which lists most recent assets
-            max_assets (int, optional): maximum number of assets (0 to 100);
-                defaults to 100
-        """
-        query = dict()
-        query["assetIdx"] = max_index if max_index is not None else 0
-        query["max"] = max_assets if max_assets is not None else 100
-        req = "/assets"
-        return self.algod_request("GET", req, params=query, **kwargs)
-
-    def transaction_info(self, address, transaction_id, **kwargs):
-        """
-        Return transaction information.
-
-        Args:
-            address (str): account public key
-            transaction_id (str): transaction ID
-        """
-        req = "/account/" + address + "/transaction/" + transaction_id
-        return self.algod_request("GET", req, **kwargs)
-
-    def pending_transaction_info(self, transaction_id, **kwargs):
-        """
-        Return transaction information for a pending transaction.
-
-        Args:
-            transaction_id (str): transaction ID
-        """
-        req = "/transactions/pending/" + transaction_id
-        return self.algod_request("GET", req, **kwargs)
-
-    def transaction_by_id(self, transaction_id, **kwargs):
-        """
-        Return transaction information; only works if indexer is enabled.
-
-        Args:
-            transaction_id (str): transaction ID
-        """
-        req = "/transaction/" + transaction_id
-        return self.algod_request("GET", req, **kwargs)
-
