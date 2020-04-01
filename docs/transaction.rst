@@ -1,5 +1,5 @@
-algosdk.transaction
-===================
+transaction
+===========
 
 .. automodule:: algosdk.transaction
    :members:

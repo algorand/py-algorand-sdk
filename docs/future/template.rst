@@ -1,7 +1,7 @@
-algosdk.auction
+future.template
 ===============
 
-.. automodule:: algosdk.auction
+.. automodule:: algosdk.future.template
    :members:
    :undoc-members:
    :show-inheritance:
