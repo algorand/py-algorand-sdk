@@ -1280,7 +1280,7 @@ class LogicSigTransaction:
                 self.transaction == other.transaction)
 
 
-def write_to_file(txns, path, overwrite=True):
+def write_to_file(objs, path, overwrite=True):
     """
     Write signed or unsigned transactions to a file.
 
@@ -1295,49 +1295,49 @@ def write_to_file(txns, path, overwrite=True):
         bool: true if the transactions have been written to the file
     """
 
+    """
+    Write objects to a file.
+    Args:
+        objs (Object[]): list of encodable objects
+        path (str): file to write to
+        overwrite (bool): whether or not to overwrite what's already in the
+            file; if False, transactions will be appended to the file
+    Returns:
+        bool: true if the transactions have been written to the file
+    """
+
     f = None
     if overwrite:
         f = open(path, "wb")
     else:
         f = open(path, "ab")
 
-    for txn in txns:
-        if isinstance(txn, Transaction):
-            enc = msgpack.packb({"txn": txn.dictify()}, use_bin_type=True)
-            f.write(enc)
+    for obj in objs:
+        if isinstance(obj, Transaction):
+            f.write(base64.b64decode(encoding.msgpack_encode({"txn": obj.dictify()})))
         else:
-            enc = msgpack.packb(txn.dictify(), use_bin_type=True)
-            f.write(enc)
+            f.write(base64.b64decode(encoding.msgpack_encode(obj)))
+
     f.close()
     return True
 
 
 def retrieve_from_file(path):
     """
-    Retrieve signed or unsigned transactions from a file.
-
+    Retrieve encoded objects from a file.
     Args:
         path (str): file to read from
-
     Returns:
-        Transaction[], SignedTransaction[], or MultisigTransaction[]:\
-            can be a mix of the three
+        Object[]: list of objects
     """
 
     f = open(path, "rb")
-    txns = []
+    objs = []
     unp = msgpack.Unpacker(f, raw=False)
-    for txn in unp:
-        if "msig" in txn:
-            txns.append(MultisigTransaction.undictify(txn))
-        elif "sig" in txn:
-            txns.append(SignedTransaction.undictify(txn))
-        elif "lsig" in txn:
-            txns.append(LogicSigTransaction.undictify(txn))
-        elif "type" in txn:
-            txns.append(Transaction.undictify(txn))
+    for obj in unp:
+        objs.append(encoding.msgpack_decode(obj))
     f.close()
-    return txns
+    return objs
 
 
 class TxGroup:
