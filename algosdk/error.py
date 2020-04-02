@@ -110,3 +110,6 @@ class KMDHTTPError(Exception):
 
 class AlgodHTTPError(Exception):
     pass
+
+class IndexerHTTPError(Exception):
+    pass

@@ -3,6 +3,7 @@ from urllib import parse
 import urllib.error
 import json
 import base64
+import msgpack
 from . import error
 from . import encoding
 from . import constants
@@ -33,7 +34,7 @@ class AlgodClient:
         self.headers = headers
 
     def algod_request(self, method, requrl, params=None, data=None,
-                      headers=None):
+                      headers=None, raw_response=False):
         """
         Execute a given request.
 
@@ -43,6 +44,7 @@ class AlgodClient:
             params (dict, optional): parameters for the request
             data (dict, optional): data in the body of the request
             headers (dict, optional): additional header for request
+            raw_response (bool, default False): return the HttpResponse object
 
         Returns:
             dict: loaded from json response body
@@ -72,10 +74,14 @@ class AlgodClient:
             resp = urlopen(req)
         except urllib.error.HTTPError as e:
             e = e.read().decode("utf-8")
+            raisex = e
             try:
-                raise error.AlgodHTTPError(json.loads(e)["message"])
+                raisex = json.loads(e)["message"]
             except:
-                raise error.AlgodHTTPError(e)
+                pass
+            raise error.AlgodHTTPError(raisex)
+        if raw_response:
+            return resp
         return json.loads(resp.read().decode("utf-8"))
 
     def status(self, **kwargs):
@@ -302,3 +308,20 @@ class AlgodClient:
         """
         req = "/block/" + str(round)
         return self.algod_request("GET", req, **kwargs)
+
+    def block_raw(self, round, **kwargs):
+        """
+        Return decoded raw block as the network sees it.
+
+        Args:
+            round (int): block number
+        """
+        req = "/block/" + str(round)
+        query = {"raw": 1}
+        kwargs['raw_response'] = True
+        response = self.algod_request("GET", req, query, **kwargs)
+        block_type = 'application/x-algorand-block-v1'
+        content_type = response.info().get_content_type()
+        if content_type != block_type:
+            raise Exception('expected "Content-Type: {}" but got {!r}'.format(block_type, content_type))
+        return msgpack.loads(response.read())

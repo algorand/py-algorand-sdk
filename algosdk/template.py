@@ -26,6 +26,7 @@ class Split(Template):
 
     Split also has an expiry round, after which the owner can transfer back
     the funds.
+
     Arguments:
         owner (str): an address that can receive the funds after the expiry
             round

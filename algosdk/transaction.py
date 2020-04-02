@@ -1325,8 +1325,10 @@ def write_to_file(objs, path, overwrite=True):
 def retrieve_from_file(path):
     """
     Retrieve encoded objects from a file.
+
     Args:
         path (str): file to read from
+
     Returns:
         Object[]: list of objects
     """

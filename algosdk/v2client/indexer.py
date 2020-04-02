@@ -10,26 +10,26 @@ from .. import constants
 
 class IndexerClient:
     """
-    Client class for kmd. Handles all algod requests.
+    Client class for kmd. Handles all indexer requests.
 
     Args:
-        algod_token (str): algod API token
-        algod_address (str): algod address
+        indexer_token (str): indexer API token
+        indexer_address (str): indexer address
         headers (dict, optional): extra header name/value for all requests
 
     Attributes:
-        algod_token (str)
-        algod_address (str)
+        indexer_token (str)
+        indexer_address (str)
         headers (dict)
     """
 
-    def __init__(self, algod_token, algod_address, headers=None):
-        self.algod_token = algod_token
-        self.algod_address = algod_address
+    def __init__(self, indexer_token, indexer_address, headers=None):
+        self.indexer_token = indexer_token
+        self.indexer_address = indexer_address
         self.headers = headers
 
-    def algod_request(self, method, requrl, params=None, data=None,
-                      headers=None):
+    def indexer_request(self, method, requrl, params=None, data=None,
+                        headers=None):
         """
         Execute a given request.
 
@@ -53,13 +53,13 @@ class IndexerClient:
 
         if requrl not in constants.no_auth:
             header.update({
-                constants.algod_auth_header: self.algod_token
+                constants.algod_auth_header: self.indexer_token
             })
 
         if params:
             requrl = requrl + "?" + parse.urlencode(params)
 
-        req = Request(self.algod_address+requrl, headers=header, method=method,
+        req = Request(self.indexer_address+requrl, headers=header, method=method,
                       data=data)
 
         try:
@@ -67,9 +67,9 @@ class IndexerClient:
         except urllib.error.HTTPError as e:
             e = e.read().decode("utf-8")
             try:
-                raise error.AlgodHTTPError(json.loads(e)["message"])
+                raise error.IndexerHTTPError(json.loads(e)["message"])
             except:
-                raise error.AlgodHTTPError(e)
+                raise error.IndexerHTTPError(e)
         return json.loads(resp.read().decode("utf-8"))
 
     def accounts(
@@ -106,7 +106,7 @@ class IndexerClient:
             query["currency-less-than"] = max_balance
         if round:
             query["round"] = round
-        return self.algod_request("GET", req, **kwargs)
+        return self.indexer_request("GET", req, **kwargs)
 
     def block_info(self, round, **kwargs):
         """
@@ -117,7 +117,7 @@ class IndexerClient:
         """
         query = {"format": format}
         req = "/blocks/" + str(round)
-        return self.algod_request("GET", req, query, **kwargs)
+        return self.indexer_request("GET", req, query, **kwargs)
 
     def account_info(self, address, round=None, **kwargs):
         """
@@ -131,7 +131,7 @@ class IndexerClient:
         query = dict()
         if round:
             query["account-id"] = round
-        return self.algod_request("GET", req, **kwargs)
+        return self.indexer_request("GET", req, **kwargs)
 
     def search_transactions(
         self, limit=None, next_page=None, note_prefix=None, txn_type=None,
@@ -218,7 +218,7 @@ class IndexerClient:
         if exclude_close_to:
             query["exclude-close-to"] = exclude_close_to
 
-        return self.algod_request("GET", req, query, **kwargs)
+        return self.indexer_request("GET", req, query, **kwargs)
 
     def search_assets(
         self, limit=None, next_page=None, creator=None, name=None, unit=None,
@@ -251,7 +251,7 @@ class IndexerClient:
         if asset_id:
             query["asset-id"] = asset_id
         
-        return self.algod_request("GET", req, query, **kwargs)
+        return self.indexer_request("GET", req, query, **kwargs)
 
     def asset_info(self, index, **kwargs):
         """
@@ -261,4 +261,4 @@ class IndexerClient:
             index (int): asset index
         """
         req = "/asset/" + str(index)
-        return self.algod_request("GET", req, **kwargs)
+        return self.indexer_request("GET", req, **kwargs)
