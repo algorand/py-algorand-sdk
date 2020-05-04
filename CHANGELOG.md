@@ -1,4 +1,8 @@
 # Changelog
+## 1.3.0
+### Added
+- Support for indexer and algod 2.0
+
 ## 1.2.0
 ### Added
 - Added support for Algorand Smart Contracts (ASC) 

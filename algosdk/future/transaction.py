@@ -22,6 +22,8 @@ class SuggestedParams:
         gh (str): genesis hash
         gen (str, optional): genesis id
         flat_fee (bool, optional): whether the specified fee is a flat fee
+        consensus_version (str, optional): the consensus protocol version as of 'first'
+        min_fee (int, optional): the minimum transaction fee (flat)
 
     Attributes:
         fee (int)
@@ -30,15 +32,20 @@ class SuggestedParams:
         gen (str)
         gh (str)
         flat_fee (bool)
+        consensus_version (str)
+        min_fee (int)
     """
 
-    def __init__(self, fee, first, last, gh, gen=None, flat_fee=False):
+    def __init__(self, fee, first, last, gh, gen=None, flat_fee=False,
+                 consensus_version=None, min_fee=None):
         self.first = first
         self.last = last
         self.gh = gh
         self.gen = gen
         self.fee = fee
         self.flat_fee = flat_fee
+        self.consensus_version = consensus_version
+        self.min_fee = min_fee
 
 
 class Transaction:
@@ -147,19 +154,22 @@ class Transaction:
             "note": d["note"] if "note" in d else None,
             "lease": d["lx"] if "lx" in d else None
         }
-        if d["type"] == constants.payment_txn:
+        txn_type = d["type"]
+        if not isinstance(d["type"], str):
+            txn_type = txn_type.decode()
+        if txn_type == constants.payment_txn:
             args.update(PaymentTxn._undictify(d))
             txn = PaymentTxn(**args)
-        elif d["type"] == constants.keyreg_txn:
+        elif txn_type == constants.keyreg_txn:
             args.update(KeyregTxn._undictify(d))
             txn = KeyregTxn(**args)
-        elif d["type"] == constants.assetconfig_txn:
+        elif txn_type == constants.assetconfig_txn:
             args.update(AssetConfigTxn._undictify(d))
             txn = AssetConfigTxn(**args)
-        elif d["type"] == constants.assetfreeze_txn:
+        elif txn_type == constants.assetfreeze_txn:
             args.update(AssetFreezeTxn._undictify(d))
             txn = AssetFreezeTxn(**args)
-        elif d["type"] == constants.assettransfer_txn:
+        elif txn_type == constants.assettransfer_txn:
             args.update(AssetTransferTxn._undictify(d))
             txn = AssetTransferTxn(**args)
         if "grp" in d:

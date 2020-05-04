@@ -6,9 +6,11 @@ kmd_auth_header = "X-KMD-API-Token"
 """str: header key for kmd requests"""
 algod_auth_header = "X-Algo-API-Token"
 """str: header key for algod requests"""
+indexer_auth_header = "X-Indexer-API-Token"
+"""str: header key for indexer requests"""
 unversioned_paths = ["/health", "/versions", "/metrics"]
 """str[]: paths that don't use the version path prefix"""
-no_auth = ["/health"]
+no_auth = []
 """str[]: requests that don't require authentication"""
 
 

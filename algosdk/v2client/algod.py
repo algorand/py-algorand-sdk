@@ -6,6 +6,8 @@ import base64
 from .. import error
 from .. import encoding
 from .. import constants
+from .. import future
+import msgpack
 
 api_version_path_prefix = "/v2"
 
@@ -31,7 +33,7 @@ class AlgodClient:
         self.headers = headers
 
     def algod_request(self, method, requrl, params=None, data=None,
-                      headers=None):
+                      headers=None, response_format="json"):
         """
         Execute a given request.
 
@@ -74,7 +76,11 @@ class AlgodClient:
                 raise error.AlgodHTTPError(json.loads(e)["message"])
             except:
                 raise error.AlgodHTTPError(e)
-        return json.loads(resp.read().decode("utf-8"))
+        res = resp.read().decode("utf-8")
+        if response_format == "json":
+            return json.loads(res) if res else None
+        else:
+            return base64.b64decode(res)
 
     def account_info(self, address, **kwargs):
         """
@@ -99,24 +105,37 @@ class AlgodClient:
             response_format (str): the format in which the response is returne: either
                 "json" or "msgpack"
         """
-        query = dict()
+        query = {"format": response_format}
         if limit:
             query["max"] = limit
         req = "/accounts/" + address + "/transactions/pending"
-        return self.algod_request("GET", req, params=query, **kwargs)
+        res = self.algod_request(
+            "GET", req, params=query, response_format=response_format, 
+            **kwargs)
+        if response_format == "msgpack":
+            res = msgpack.unpackb(res, raw=False)
+            for i in range(len(res["top-transactions"])):
+                res["top-transactions"][i] = encoding.msgpack_decode(
+                    res["top-transactions"][i])
+        print(res)
+        return res
 
-    def block_info(self, round, response_format="json", **kwargs):
+    def block_info(self, block, response_format="json", **kwargs):
         """
         Get the block for the given round.
 
         Args:
-            round (int): block number
+            block (int): block number
             response_format (str): the format in which the response is returne: either
                 "json" or "msgpack"
         """
-        query = {"format": format}
-        req = "/blocks/" + str(round)
-        return self.algod_request("GET", req, query, **kwargs)
+        query = {"format": response_format}
+        req = "/blocks/" + str(block)
+        res = self.algod_request("GET", req, query, response_format=response_format, **kwargs)
+        if response_format == "msgpack":
+            res = msgpack.unpackb(res, raw=False)
+        return res
+
 
     def ledger_supply(self, **kwargs):
         """Return supply details for node's ledger."""
@@ -209,22 +228,33 @@ class AlgodClient:
         if last_valid_round:
             query["round-last-valid"] = last_valid_round
         if no_wait:
-            query["no-wait"] = no_wait
+            query["no-wait"] = "true"
         
         return self.algod_request("POST", req, query, **kwargs)
 
 
-    def pending_transactions(self, max_txns=0, format="json", **kwargs):
+    def pending_transactions(self, max_txns=0, response_format="json", **kwargs):
         """
         Return pending transactions.
 
         Args:
             max_txns (int): maximum number of transactions to return;
                 if max_txns is 0, return all pending transactions
+            response_format (str): the format in which the response is returne: either
+                "json" or "msgpack"
         """
-        query = {"max": max_txns, "format": format}
+        query = {"format": response_format}
+        if max_txns:
+            query["max"] = max_txns
         req = "/transactions/pending"
-        return self.algod_request("GET", req, params=query, **kwargs)
+        res = self.algod_request("GET", req, params=query, response_format=response_format, **kwargs)
+        if response_format == "msgpack":
+            res = msgpack.unpackb(res, raw=False)
+            for i in range(len(res["top-transactions"])):
+                res["top-transactions"][i] = encoding.msgpack_decode(
+                    res["top-transactions"][i])
+        print(res)
+        return res
 
     def pending_transaction_info(self, transaction_id, response_format="json", **kwargs):
         """
@@ -237,8 +267,13 @@ class AlgodClient:
         """
         req = "/transactions/pending/" + transaction_id
         query = {"format": response_format}
-        return self.algod_request("GET", req, query, **kwargs)
-    
+        res = self.algod_request("GET", req, params=query, response_format=response_format, **kwargs)
+        if response_format == "msgpack":
+            res = msgpack.unpackb(res, raw=False)
+            res["txn"] = encoding.msgpack_decode(res["txn"])
+        print(res)
+        return res
+
     def health(self, **kwargs):
         """Return null if the node is running."""
         req = "/health"
@@ -267,3 +302,19 @@ class AlgodClient:
 
         return self.send_raw_transaction(base64.b64encode(
                                          b''.join(serialized)), **kwargs)
+
+    def suggested_params(self, **kwargs):
+        """Return suggested transaction parameters."""
+        req = "/transactions/params"
+        res = self.algod_request("GET", req, **kwargs)
+
+        return future.transaction.SuggestedParams(
+            res["fee"],
+            res["last-round"],
+            res["last-round"] + 1000,
+            res["genesis-hash"],
+            res["genesis-id"],
+            False,
+            res["consensus-version"],
+            res["min-fee"]
+            )

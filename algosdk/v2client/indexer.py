@@ -53,7 +53,7 @@ class IndexerClient:
 
         if requrl not in constants.no_auth:
             header.update({
-                constants.algod_auth_header: self.indexer_token
+                constants.indexer_auth_header: self.indexer_token
             })
 
         if params:
@@ -74,21 +74,21 @@ class IndexerClient:
 
     def accounts(
         self, asset_id=None, limit=None, next_page=None, min_balance=None,
-        max_balance=None, round=None, **kwargs):
+        max_balance=None, block=None, **kwargs):
         """
         Return accounts that hold the asset; microalgos are the default
         currency unless asset_id is specified, in which case the asset will
         be used.
 
         Args:
-            asset_id (str, optional): include accounts holding this asset
+            asset_id (int, optional): include accounts holding this asset
             limit (int, optional): maximum number of results to return
             next_page (str, optional): the next page of results; use the next
                 token provided by the previous results
             min_balance (int, optional): results should have an amount greater
                 than this value
             max_balance (int, optional): results should have an amount less
-            round (int, optional): include results for the specified round;
+            block (int, optional): include results for the specified round;
                 for performance reasons, this parameter may be disabled on
                 some configurations
         """
@@ -104,38 +104,70 @@ class IndexerClient:
             query["currency-greater-than"] = min_balance
         if max_balance:
             query["currency-less-than"] = max_balance
-        if round:
-            query["round"] = round
-        return self.indexer_request("GET", req, **kwargs)
+        if block:
+            query["round"] = block
+        return self.indexer_request("GET", req, query, **kwargs)
+    
+    def asset_balances(self, asset_id, limit=None, next_page=None, min_balance=None,
+        max_balance=None, block=None, **kwargs):
+        """
+        Return accounts that hold the asset; microalgos are the default
+        currency unless asset_id is specified, in which case the asset will
+        be used.
 
-    def block_info(self, round, **kwargs):
+        Args:
+            asset_id (int): include accounts holding this asset
+            limit (int, optional): maximum number of results to return
+            next_page (str, optional): the next page of results; use the next
+                token provided by the previous results
+            min_balance (int, optional): results should have an amount greater
+                than this value
+            max_balance (int, optional): results should have an amount less
+            block (int, optional): include results for the specified round;
+                for performance reasons, this parameter may be disabled on
+                some configurations
+        """
+        req = "/assets/" + str(asset_id) + "/balances"
+        query = dict()
+        if limit:
+            query["limit"] = limit
+        if next_page:
+            query["next"] = next_page
+        if min_balance:
+            query["currency-greater-than"] = min_balance
+        if max_balance:
+            query["currency-less-than"] = max_balance
+        if block:
+            query["round"] = block
+        return self.indexer_request("GET", req, query, **kwargs)
+
+    def block_info(self, block, **kwargs):
         """
         Get the block for the given round.
 
         Args:
-            round (int): block number
+            block (int): block number
         """
-        query = {"format": format}
-        req = "/blocks/" + str(round)
-        return self.indexer_request("GET", req, query, **kwargs)
+        req = "/blocks/" + str(block)
+        return self.indexer_request("GET", req, **kwargs)
 
-    def account_info(self, address, round=None, **kwargs):
+    def account_info(self, address, block=None, **kwargs):
         """
         Return account information.
 
         Args:
             address (str): account public key
-            round (int, optional): use results from the specified round
+            block (int, optional): use results from the specified round
         """
         req = "/accounts/" + address
         query = dict()
-        if round:
-            query["account-id"] = round
-        return self.indexer_request("GET", req, **kwargs)
+        if block:
+            query["round"] = block
+        return self.indexer_request("GET", req, query, **kwargs)
 
     def search_transactions(
         self, limit=None, next_page=None, note_prefix=None, txn_type=None,
-        sig_type=None, txid=None, round=None, min_round=None, max_round=None,
+        sig_type=None, txid=None, block=None, min_round=None, max_round=None,
         asset_id=None, start_time=None, end_time=None, min_amount=None,
         max_amount=None, address=None, address_role=None,
         exclude_close_to=False, **kwargs):
@@ -153,7 +185,7 @@ class IndexerClient:
             sig_type (str, optional): type of signature; one of "sig", "msig",
                 "lsig"
             txid (str, optional): lookup a specific transaction by ID
-            round (int, optional): include results for the specified round
+            block (int, optional): include results for the specified round
             min_round (int, optional): include results at or after the
                 specified round
             max_round (int, optional): include results at or before the
@@ -188,15 +220,15 @@ class IndexerClient:
         if next_page:
             query["next"] = next_page
         if note_prefix:
-            query["note-prefix"] = note_prefix
+            query["note-prefix"] = base64.b64encode(note_prefix).decode()
         if txn_type:
             query["tx-type"] = txn_type
         if sig_type:
             query["sig-type"] = sig_type
         if txid:
             query["tx-id"] = txid
-        if round:
-            query["round"] = round
+        if block:
+            query["round"] = block
         if min_round:
             query["min-round"] = min_round
         if max_round:
@@ -216,10 +248,180 @@ class IndexerClient:
         if address_role:
             query["address-role"] = address_role
         if exclude_close_to:
-            query["exclude-close-to"] = exclude_close_to
+            query["exclude-close-to"] = "true"
 
         return self.indexer_request("GET", req, query, **kwargs)
 
+    def search_transactions_by_address(
+        self, address, limit=None, next_page=None, note_prefix=None,
+        txn_type=None, sig_type=None, txid=None, block=None, min_round=None,
+        max_round=None, asset_id=None, start_time=None, end_time=None,
+        min_amount=None, max_amount=None, address_role=None,
+        exclude_close_to=False, **kwargs):
+        """
+        Return a list of transactions satisfying the conditions for the address.
+
+        Args:
+            address (str): only include transactions with this
+                address in one of the transaction fields
+            limit (int, optional): maximum number of results to return
+            next_page (str, optional): the next page of results; use the next
+                token provided by the previous results
+            note_prefix (bytes, optional): specifies a prefix which must be
+                contained in the note field
+            txn_type (str, optional): type of transaction; one of "pay",
+                "keyreg", "acfg", "axfer", "afrz"
+            sig_type (str, optional): type of signature; one of "sig", "msig",
+                "lsig"
+            txid (str, optional): lookup a specific transaction by ID
+            block (int, optional): include results for the specified round
+            min_round (int, optional): include results at or after the
+                specified round
+            max_round (int, optional): include results at or before the
+                specified round
+            asset_id (int, optional): include transactions for the specified
+                asset
+            end_time (str, optional): include results before the given time;
+                must be an RFC 3339 formatted string
+            start_time (str, optional): include results after the given time;
+                must be an RFC 3339 formatted string
+            min_amount (int, optional): results should have an amount greater
+                than this value; microalgos are the default currency unless an
+                asset-id is provided, in which case the asset will be used
+            max_amount (int, optional): results should have an amount less
+                than this value, microalgos are the default currency unless an
+                asset-id is provided, in which case the asset will be used
+            address_role (str, optional): one of "sender" or "receiver";
+                combine with the address parameter to define what type of
+                address to search for
+            exclude_close_to (bool, optional): combine with address and
+                address_role parameters to define what type of address to
+                search for; the close to fields are normally treated as a
+                receiver, if you would like to exclude them set this parameter
+                to true
+        """
+        req = "/accounts/" + address + "/transactions"
+        query = dict()
+        if limit:
+            query["limit"] = limit
+        if next_page:
+            query["next"] = next_page
+        if note_prefix:
+            query["note-prefix"] = base64.b64encode(note_prefix).decode()
+        if txn_type:
+            query["tx-type"] = txn_type
+        if sig_type:
+            query["sig-type"] = sig_type
+        if txid:
+            query["tx-id"] = txid
+        if block:
+            query["round"] = block
+        if min_round:
+            query["min-round"] = min_round
+        if max_round:
+            query["max-round"] = max_round
+        if asset_id:
+            query["asset-id"] = asset_id
+        if end_time:
+            query["before-time"] = end_time
+        if start_time:
+            query["after_time"] = start_time
+        if min_amount:
+            query["currency-greater-than"] = min_amount
+        if max_amount:
+            query["currency-less-than"] = max_amount
+        if address_role:
+            query["address-role"] = address_role
+        if exclude_close_to:
+            query["exclude-close-to"] = "true"
+
+        return self.indexer_request("GET", req, query, **kwargs)
+
+    def search_asset_transactions(self, asset_id, limit=None, next_page=None, note_prefix=None,
+        txn_type=None, sig_type=None, txid=None, block=None, min_round=None,
+        max_round=None, address=None, start_time=None, end_time=None,
+        min_amount=None, max_amount=None, address_role=None,
+        exclude_close_to=False, **kwargs):
+        """
+        Return a list of transactions satisfying the conditions for the address.
+
+        Args:
+            asset_id (int): include transactions for the specified
+                asset
+                
+            limit (int, optional): maximum number of results to return
+            next_page (str, optional): the next page of results; use the next
+                token provided by the previous results
+            note_prefix (bytes, optional): specifies a prefix which must be
+                contained in the note field
+            txn_type (str, optional): type of transaction; one of "pay",
+                "keyreg", "acfg", "axfer", "afrz"
+            sig_type (str, optional): type of signature; one of "sig", "msig",
+                "lsig"
+            txid (str, optional): lookup a specific transaction by ID
+            block (int, optional): include results for the specified round
+            min_round (int, optional): include results at or after the
+                specified round
+            max_round (int, optional): include results at or before the
+                specified round
+            address (str, optional): only include transactions with this
+                address in one of the transaction fields
+            end_time (str, optional): include results before the given time;
+                must be an RFC 3339 formatted string
+            start_time (str, optional): include results after the given time;
+                must be an RFC 3339 formatted string
+            min_amount (int, optional): results should have an amount greater
+                than this value; microalgos are the default currency unless an
+                asset-id is provided, in which case the asset will be used
+            max_amount (int, optional): results should have an amount less
+                than this value, microalgos are the default currency unless an
+                asset-id is provided, in which case the asset will be used
+            address_role (str, optional): one of "sender" or "receiver";
+                combine with the address parameter to define what type of
+                address to search for
+            exclude_close_to (bool, optional): combine with address and
+                address_role parameters to define what type of address to
+                search for; the close to fields are normally treated as a
+                receiver, if you would like to exclude them set this parameter
+                to true
+        """
+        req = "/assets/" + str(asset_id) + "/transactions"
+        query = dict()
+        if limit:
+            query["limit"] = limit
+        if next_page:
+            query["next"] = next_page
+        if note_prefix:
+            query["note-prefix"] = base64.b64encode(note_prefix).decode()
+        if txn_type:
+            query["tx-type"] = txn_type
+        if sig_type:
+            query["sig-type"] = sig_type
+        if txid:
+            query["tx-id"] = txid
+        if block:
+            query["round"] = block
+        if min_round:
+            query["min-round"] = min_round
+        if max_round:
+            query["max-round"] = max_round
+        if end_time:
+            query["before-time"] = end_time
+        if start_time:
+            query["after_time"] = start_time
+        if min_amount:
+            query["currency-greater-than"] = min_amount
+        if max_amount:
+            query["currency-less-than"] = max_amount
+        if address:
+            query["address"] = address
+        if address_role:
+            query["address-role"] = address_role
+        if exclude_close_to:
+            query["exclude-close-to"] = "true"
+
+        return self.indexer_request("GET", req, query, **kwargs)
+    
     def search_assets(
         self, limit=None, next_page=None, creator=None, name=None, unit=None,
         asset_id=None, **kwargs):
@@ -253,12 +455,12 @@ class IndexerClient:
         
         return self.indexer_request("GET", req, query, **kwargs)
 
-    def asset_info(self, index, **kwargs):
+    def asset_info(self, asset_id, **kwargs):
         """
         Return asset information.
 
         Args:
-            index (int): asset index
+            asset_id (int): asset index
         """
-        req = "/asset/" + str(index)
+        req = "/assets/" + str(asset_id)
         return self.indexer_request("GET", req, **kwargs)
