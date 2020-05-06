@@ -9,14 +9,14 @@ rm -rf temp
 rm -rf test/cucumber/features
 git clone --single-branch --branch develop https://github.com/algorand/algorand-sdk-testing.git temp
 
+# Copy feature files into project
 mv temp/features test/cucumber/features
-
-docker build -t py-sdk-testing -f test/cucumber/docker/Dockerfile "$(pwd)"
 
 # Start test harness environment
 ./temp/scripts/up.sh
 
 # Build and launch SDK testing container
+docker build -t py-sdk-testing -f test/cucumber/docker/Dockerfile "$(pwd)"
 docker run -it \
      --network host \
      py-sdk-testing:latest 
