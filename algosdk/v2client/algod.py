@@ -186,53 +186,6 @@ class AlgodClient:
         req = "/transactions"
         return self.algod_request("POST", req, data=txn, **kwargs)["txId"]
 
-    def shutdown(self, timeout=0, **kwargs):
-        """
-        Shut down the node.
-
-        Args:
-            timeout (int): number of seconds after which the node should begin
-                shutting down
-        """
-        req = "/shutdown"
-        query = dict()
-        if timeout:
-            query["timeout"] = timeout
-        return self.algod_request("GET", req, query, **kwargs)
-
-    def register_participation_keys(
-        self, address="all", fee=None, key_dilution=None,
-        last_valid_round=None, no_wait=False, **kwargs):
-        """
-        Generate or renew and register participation keys on the node for a
-        given account address.
-        
-        Args:
-            address (str, optional): the account to update; if unspecified,
-                update all accounts
-            fee (int, optional): the fee to use when submitting key
-                registration transactions; defaults to the suggested fee
-            key_dilution (int, optional): value to use for two-level
-                participation key
-            last_valid_round (int, optional): the last round for which the
-                generated participation keys will be valid
-            no_wait (bool, optional): don't wait for transaction to commit
-                before returning response
-        """
-        req = "/register-participation-keys/" + address
-        query = dict()
-        if fee:
-            query["fee"] = fee
-        if key_dilution:
-            query["key-dilution"] = key_dilution
-        if last_valid_round:
-            query["round-last-valid"] = last_valid_round
-        if no_wait:
-            query["no-wait"] = "true"
-        
-        return self.algod_request("POST", req, query, **kwargs)
-
-
     def pending_transactions(self, max_txns=0, response_format="json", **kwargs):
         """
         Return pending transactions.

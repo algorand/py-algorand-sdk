@@ -58,10 +58,10 @@ class IndexerClient:
 
         if params:
             requrl = requrl + "?" + parse.urlencode(params)
-
+        
         req = Request(self.indexer_address+requrl, headers=header, method=method,
                       data=data)
-
+        print(req.get_full_url())
         try:
             resp = urlopen(req)
         except urllib.error.HTTPError as e:
@@ -226,7 +226,7 @@ class IndexerClient:
         if sig_type:
             query["sig-type"] = sig_type
         if txid:
-            query["tx-id"] = txid
+            query["txid"] = txid
         if block:
             query["round"] = block
         if min_round:
@@ -238,7 +238,7 @@ class IndexerClient:
         if end_time:
             query["before-time"] = end_time
         if start_time:
-            query["after_time"] = start_time
+            query["after-time"] = start_time
         if min_amount:
             query["currency-greater-than"] = min_amount
         if max_amount:
@@ -325,7 +325,7 @@ class IndexerClient:
         if end_time:
             query["before-time"] = end_time
         if start_time:
-            query["after_time"] = start_time
+            query["after-time"] = start_time
         if min_amount:
             query["currency-greater-than"] = min_amount
         if max_amount:
@@ -408,7 +408,7 @@ class IndexerClient:
         if end_time:
             query["before-time"] = end_time
         if start_time:
-            query["after_time"] = start_time
+            query["after-time"] = start_time
         if min_amount:
             query["currency-greater-than"] = min_amount
         if max_amount:
