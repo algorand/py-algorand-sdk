@@ -61,7 +61,7 @@ class IndexerClient:
         
         req = Request(self.indexer_address+requrl, headers=header, method=method,
                       data=data)
-        print(req.get_full_url())
+
         try:
             resp = urlopen(req)
         except urllib.error.HTTPError as e:

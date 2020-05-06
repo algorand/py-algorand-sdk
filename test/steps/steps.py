@@ -138,7 +138,6 @@ def sign_with_sk(context):
 
 @then('the signed transaction should equal the golden "{golden}"')
 def equal_golden(context, golden):
-    print(encoding.msgpack_encode(context.stx))
     assert encoding.msgpack_encode(context.stx) == golden
 
 
