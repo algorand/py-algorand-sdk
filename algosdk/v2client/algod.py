@@ -77,7 +77,10 @@ class AlgodClient:
             except:
                 raise error.AlgodHTTPError(e)
         res = resp.read().decode("utf-8")
-        return json.loads(res) if res else None
+        if response_format == "json":
+            return json.loads(res) if res else None
+        else:
+            return res
 
     def account_info(self, address, **kwargs):
         """

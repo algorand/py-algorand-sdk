@@ -155,10 +155,12 @@ def pending_txn_any2(context):
 
 @then('the parsed Pending Transaction Information response should have sender "{sender}"')
 def parse_pending_txn(context, sender):
+    context.response = json.loads(context.response)
     assert encoding.encode_address(base64.b64decode(context.response["txn"]["txn"]["snd"])) == sender
 
 @then('the parsed Pending Transactions Information response should contain an array of len {length} and element number {idx} should have sender "{sender}"')
 def parse_pending_txns(context, length, idx, sender):
+    context.response = json.loads(context.response)
     assert len(context.response["top-transactions"]) == int(length)
     assert encoding.encode_address(base64.b64decode(context.response["top-transactions"][int(idx)]["txn"]["snd"])) == sender
 
@@ -172,6 +174,7 @@ def pending_txns_by_addr_any(context):
 
 @then('the parsed Pending Transactions By Address response should contain an array of len {length} and element number {idx} should have sender "{sender}"')
 def parse_pend_by_addr(context, length, idx, sender):
+    context.response = json.loads(context.response)
     assert len(context.response["top-transactions"]) == int(length)
     assert encoding.encode_address(base64.b64decode(context.response["top-transactions"][int(idx)]["txn"]["snd"])) == sender
 
@@ -235,6 +238,7 @@ def block_any(context):
 
 @then('the parsed Get Block response should have rewards pool "{pool}"')
 def parse_block(context, pool):
+    context.response = json.loads(context.response)
     assert context.response["block"]["rwd"] == pool
 
 @when('I get the next page using {indexer} to lookup asset balances for {assetid} with {currencygt}, {currencylt}, {limit}')
