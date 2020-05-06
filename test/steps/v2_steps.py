@@ -71,7 +71,6 @@ class FileHandler(http.server.SimpleHTTPRequestHandler):
             f.close()
             if "base64" in mock_response_path:
                 s = encode_bytes(msgpack.unpackb(base64.b64decode(s), raw=False))
-                print(s)
                 self.wfile.write(bytes(json.dumps(s), "ascii"))
             else:
                 s = bytes(s, "ascii")
@@ -565,12 +564,10 @@ def check_before(context, before):
 
 @then('Every transaction is newer than "{after}"')
 def check_after(context, after):
-    print(context.response["transactions"])
     t = True
     for txn in context.response["transactions"]:
         t = datetime.fromisoformat(after.replace("Z", "+00:00"))
         if not txn["round-time"] >= datetime.timestamp(t):
-            print(datetime.timestamp(t), txn["round-time"])
             t = False
     assert t
 
@@ -674,9 +671,9 @@ def parse_suggested(context, roundNum):
 
 @then('expect the path used to be "{path}"')
 def expect_path(context, path):
-    print(path)
-    print(context.response)
     context.server.shutdown()
+    if isinstance(context.response, str):
+        context.response = json.loads(context.response)
     exp_path, exp_query = urllib.parse.splitquery(path)
     exp_query = urllib.parse.parse_qs(exp_query)
 

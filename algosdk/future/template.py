@@ -223,8 +223,6 @@ class HTLC(Template):
         elif hash_function == 2:
             hash_image = keccak.new(digest_bits=256)
             hash_image.update(base64.b64decode(preimage))
-            print(hash_image.digest())
-            print(expected_hash_image)
             if hash_image.digest() != expected_hash_image:
                 raise error.TemplateInputError(
                     "the hash of the preimage does not match the expected "
