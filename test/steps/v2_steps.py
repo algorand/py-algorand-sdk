@@ -227,11 +227,6 @@ def block_any(context):
 
 @then('the parsed Get Block response should have rewards pool "{pool}"')
 def parse_block(context, pool):
-    print(pool)
-    print(base64.b64decode(pool))
-    print(base64.b64decode(context.response["block"]["rwd"]))
-    print(context.response["block"]["rwd"])
-    print(base64.b64encode(context.response["block"]["rwd"]).decode())
     assert base64.b64encode(context.response["block"]["rwd"]).decode() == pool
 
 @when('I get the next page using {indexer} to lookup asset balances for {assetid} with {currencygt}, {currencylt}, {limit}')
@@ -240,10 +235,11 @@ def next_asset_balance(context, indexer, assetid, currencygt, currencylt, limit)
 
 @then('There are {numaccounts} with the asset, the first is "{account}" has "{isfrozen}" and {amount}')
 def check_asset_balance(context, numaccounts, account, isfrozen, amount):
+    print(context.response["balances"])
     assert len(context.response["balances"]) == int(numaccounts)
     assert context.response["balances"][0]["address"] == account
-    assert context.response["balances"][0]["amount"] == amount
-    assert context.response["balances"][0]["is-frozn"] == (isfrozen == "true")
+    assert context.response["balances"][0]["amount"] == int(amount)
+    assert context.response["balances"][0]["is-frozen"] == (isfrozen == "true")
 
 @when('we make a Lookup Asset Balances call against asset index {index} with limit {limit} afterAddress "{afterAddress:EmptyString}" round {block} currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan}')
 def asset_balance(context, index, limit, afterAddress, block, currencyGreaterThan, currencyLessThan):
@@ -400,17 +396,28 @@ def lookup_account_any(context):
 def parse_account(context, address):
     assert context.response["account"]["address"] == address
 
-@when('I use {indexer} to lookup asset {assetid}')
-def icl_lookup_asset(context, indexer, assetid):
-    context.response = context.icls[indexer].asset_info(int(assetid))
-
 @when('I use {indexer} to lookup asset balances for {assetid} with {currencygt}, {currencylt}, {limit} and token "{token}"')
 def icl_asset_balance(context, indexer, assetid, currencygt, currencylt, limit, token):
-    print(assetid)
-    print(currencygt)
-    print(currencylt)
-    print(limit)
     context.response = context.icls[indexer].asset_balances(int(assetid), min_balance=int(currencygt), max_balance=int(currencylt), limit=int(limit), next_page=token)
+
+def parse_args(assetid):
+    print(assetid)
+    t = assetid.split(" ")
+    l = {
+        "assetid": t[2],
+        "currencygt": t[4][:-1],
+        "currencylt": t[5][:-1],
+        "limit": t[6],
+        "token": t[9][1:-1]
+        }
+    return l
+
+@when('I use {indexer} to lookup asset {assetid}')
+def icl_lookup_asset(context, indexer, assetid):
+    try:
+        context.response = context.icls[indexer].asset_info(int(assetid))
+    except:
+        icl_asset_balance(context, indexer, **parse_args(assetid))
 
 @then('The asset found has: "{name}", "{units}", "{creator}", {decimals}, "{defaultfrozen}", {total}, "{clawback}"')
 def check_lookup_asset(context, name, units, creator, decimals, defaultfrozen, total, clawback):
@@ -451,7 +458,6 @@ def search_accounts_nex(context, indexer, assetid, limit, currencygt, currencylt
 
 @then('There are {num}, the first has {pendingrewards}, {rewardsbase}, {rewards}, {withoutrewards}, "{address}", {amount}, "{status}", "{sigtype:EmptyString}"')
 def check_search_accounts(context, num, pendingrewards, rewardsbase, rewards, withoutrewards, address, amount, status, sigtype):
-    print(context.response["accounts"][0])
     assert len(context.response["accounts"]) == int(num)
     assert context.response["accounts"][0]["pending-rewards"] == int(pendingrewards)
     assert context.response["accounts"][0].get("rewards-base", 0) == int(rewardsbase)
@@ -464,8 +470,6 @@ def check_search_accounts(context, num, pendingrewards, rewardsbase, rewards, wi
 
 @then('The first account is online and has "{address}", {keydilution}, {firstvalid}, {lastvalid}, "{votekey}", "{selectionkey}"')
 def check_search_accounts_online(context, address, keydilution, firstvalid, lastvalid, votekey, selectionkey):
-    print(context.response["accounts"][0])
-    print(keydilution)
     assert context.response["accounts"][0]["status"] == "Online"
     assert context.response["accounts"][0]["address"] == address
     assert context.response["accounts"][0]["participation"]["vote-key-dilution"] == int(keydilution)
@@ -562,8 +566,6 @@ def check_after(context, after):
 @then('Every transaction moves between {currencygt} and {currencylt} currency')
 def check_currency(context, currencygt, currencylt):
     for txn in context.response["transactions"]:
-        print(txn)
-        print(currencygt, currencylt)
         amt = 0
         if "asset-transfer-transaction" in txn:
             amt = txn["asset-transfer-transaction"]["amount"]
@@ -666,8 +668,6 @@ def expect_path(context, path):
 
     actual_path, actual_query = urllib.parse.splitquery(context.response["path"])
     actual_query = urllib.parse.parse_qs(actual_query)
-    print(exp_path)
-    print(actual_path)
     assert exp_path == actual_path.replace("%3A", ":")
     assert exp_query == actual_query
 
