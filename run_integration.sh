@@ -19,6 +19,8 @@ docker build -t py-sdk-testing -f Dockerfile "$(pwd)"
 # Start test harness environment
 ./test-harness/scripts/up.sh
 
+sleep 5
+
 # Launch SDK testing
 docker run -it \
      --network host \
