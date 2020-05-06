@@ -234,10 +234,6 @@ def parse_block(context, pool):
     print(base64.b64encode(context.response["block"]["rwd"]).decode())
     assert base64.b64encode(context.response["block"]["rwd"]).decode() == pool
 
-@when('I use {indexer} to lookup asset balances for {assetid} with {currencygt}, {currencylt}, {limit} and token "{token}"')
-def icl_asset_balance(context, indexer, assetid, currencygt, currencylt, limit, token):
-    context.response = context.icls[indexer].asset_balances(int(assetid), min_balance=int(currencygt), max_balance=int(currencylt), limit=int(limit), next_page=token)
-
 @when('I get the next page using {indexer} to lookup asset balances for {assetid} with {currencygt}, {currencylt}, {limit}')
 def next_asset_balance(context, indexer, assetid, currencygt, currencylt, limit):
     context.response = context.icls[indexer].asset_balances(int(assetid), min_balance=int(currencygt), max_balance=int(currencylt), limit=int(limit), next_page=context.response["next-token"])
@@ -381,11 +377,12 @@ def lookup_account_check_created(context, num, index, name, total, unit):
 @then('The account has {μalgos} μalgos and {num} assets, {assetid} has {assetamount}')
 def lookup_account_check_holdings(context, μalgos, num, assetid, assetamount):
     assert context.response["account"]["amount"] == int(μalgos)
-    assert len(context.response["account"]["assets"]) == int(num)
-    assets = context.response["account"]["assets"]
-    for a in assets:
-        if a["asset-id"] == int(assetid):
-            assert a["amount"] == int(assetamount)
+    assert len(context.response["account"].get("assets", [])) == int(num)
+    if int(num) > 0:
+        assets = context.response["account"]["assets"]
+        for a in assets:
+            if a["asset-id"] == int(assetid):
+                assert a["amount"] == int(assetamount)
 
 @when('I use {indexer} to lookup account "{account}" at round {round}')
 def icl_lookup_account_at_round(context, indexer, account, round):
@@ -406,6 +403,14 @@ def parse_account(context, address):
 @when('I use {indexer} to lookup asset {assetid}')
 def icl_lookup_asset(context, indexer, assetid):
     context.response = context.icls[indexer].asset_info(int(assetid))
+
+@when('I use {indexer} to lookup asset balances for {assetid} with {currencygt}, {currencylt}, {limit} and token "{token}"')
+def icl_asset_balance(context, indexer, assetid, currencygt, currencylt, limit, token):
+    print(assetid)
+    print(currencygt)
+    print(currencylt)
+    print(limit)
+    context.response = context.icls[indexer].asset_balances(int(assetid), min_balance=int(currencygt), max_balance=int(currencylt), limit=int(limit), next_page=token)
 
 @then('The asset found has: "{name}", "{units}", "{creator}", {decimals}, "{defaultfrozen}", {total}, "{clawback}"')
 def check_lookup_asset(context, name, units, creator, decimals, defaultfrozen, total, clawback):
@@ -442,29 +447,32 @@ def icl_search_accounts(context, indexer, assetid, limit, currencygt, currencylt
 @then('I get the next page using {indexer} to search for an account with {assetid}, {limit}, {currencygt} and {currencylt}')
 def search_accounts_nex(context, indexer, assetid, limit, currencygt, currencylt):
     context.response = context.icls[indexer].accounts(asset_id=int(assetid), limit=int(limit), min_balance=int(currencygt),
-        max_balance=int(currencylt), next_page=context.reponse["next-token"])
+        max_balance=int(currencylt), next_page=context.response["next-token"])
 
 @then('There are {num}, the first has {pendingrewards}, {rewardsbase}, {rewards}, {withoutrewards}, "{address}", {amount}, "{status}", "{sigtype:EmptyString}"')
 def check_search_accounts(context, num, pendingrewards, rewardsbase, rewards, withoutrewards, address, amount, status, sigtype):
+    print(context.response["accounts"][0])
     assert len(context.response["accounts"]) == int(num)
     assert context.response["accounts"][0]["pending-rewards"] == int(pendingrewards)
-    assert context.response["accounts"][0]["rewards-base"] == int(rewardsbase)
+    assert context.response["accounts"][0].get("rewards-base", 0) == int(rewardsbase)
     assert context.response["accounts"][0]["rewards"] == int(rewards)
     assert context.response["accounts"][0]["amount-without-pending-rewards"] == int(withoutrewards)
-    assert context.response["accounts"][0]["address"] == int(address)
+    assert context.response["accounts"][0]["address"] == address
     assert context.response["accounts"][0]["amount"] == int(amount)
-    assert context.response["accounts"][0]["status"] == int(status)
-    assert context.response["accounts"][0]["sig-type"] == int(sigtype)
+    assert context.response["accounts"][0]["status"] == status
+    assert context.response["accounts"][0].get("sig-type", "") == sigtype
 
 @then('The first account is online and has "{address}", {keydilution}, {firstvalid}, {lastvalid}, "{votekey}", "{selectionkey}"')
 def check_search_accounts_online(context, address, keydilution, firstvalid, lastvalid, votekey, selectionkey):
+    print(context.response["accounts"][0])
+    print(keydilution)
     assert context.response["accounts"][0]["status"] == "Online"
     assert context.response["accounts"][0]["address"] == address
-    assert context.response["accounts"][0]["keydilution"] == int(keydilution)
-    assert context.response["accounts"][0]["firstvalid"] == int(firstvalid)
-    assert context.response["accounts"][0]["lastvalid"] == int(lastvalid)
-    assert context.response["accounts"][0]["votekey"] == votekey
-    assert context.response["accounts"][0]["selectionkey"] == selectionkey
+    assert context.response["accounts"][0]["participation"]["vote-key-dilution"] == int(keydilution)
+    assert context.response["accounts"][0]["participation"]["vote-first-valid"] == int(firstvalid)
+    assert context.response["accounts"][0]["participation"]["vote-last-valid"] == int(lastvalid)
+    assert context.response["accounts"][0]["participation"]["vote-participation-key"] == votekey
+    assert context.response["accounts"][0]["participation"]["selection-participation-key"] == selectionkey
 
 @when('we make any SearchAccounts call')
 def search_accounts_any(context):
@@ -479,7 +487,7 @@ def parse_accounts(context, roundNum, length, index, address):
 
 @when('I get the next page using {indexer} to search for transactions with {limit} and {maxround}')
 def search_txns_next(context, indexer, limit, maxround):
-    context.response = context.icls[indexer].search_transactions(limit=int(limit), max_round=int(maxround), token=context.response["next-token"])
+    context.response = context.icls[indexer].search_transactions(limit=int(limit), max_round=int(maxround), next_page=context.response["next-token"])
 
 @when('I use {indexer} to search for transactions with {limit}, "{noteprefix:EmptyString}", "{txtype:EmptyString}", "{sigtype:EmptyString}", "{txid:EmptyString}", {block}, {minround}, {maxround}, {assetid}, "{beforetime:EmptyString}", "{aftertime:EmptyString}", {currencygt}, {currencylt}, "{address:EmptyString}", "{addressrole:EmptyString}", "{excludecloseto:EmptyString}" and token "{token:EmptyString}"')
 def icl_search_txns(context, indexer, limit, noteprefix, txtype, sigtype, txid, block, minround, maxround, assetid, beforetime, aftertime, currencygt, currencylt, address, addressrole, excludecloseto, token):
@@ -504,45 +512,73 @@ def check_transaction_types(context, txtype):
 @then('Every transaction has sig-type "{sigtype}"')
 def check_sig_types(context, sigtype):
     for txn in context.response["transactions"]:
-        assert txn["sig-type"] == sigtype
+        if sigtype == "lsig":
+            assert list(txn["signature"].keys())[0] == "logicsig"
+        if sigtype == "msig":
+            assert list(txn["signature"].keys())[0] == "multisig"
+        if sigtype == "sig":
+            assert list(txn["signature"].keys())[0] == sigtype
 
 @then('Every transaction has round >= {minround}')
 def check_minround(context, minround):
     for txn in context.response["transactions"]:
-        assert txn["round"] >= int(minround)
+        assert txn["confirmed-round"] >= int(minround)
 
 @then('Every transaction has round <= {maxround}')
 def check_maxround(context, maxround):
     for txn in context.response["transactions"]:
-        assert txn["round"] >= int(maxround)
+        assert txn["confirmed-round"] <= int(maxround)
 
-@then('Every transaction has round {round}')
-def check_round(context, sigtype):
+@then('Every transaction has round {block}')
+def check_round(context, block):
     for txn in context.response["transactions"]:
-        assert txn["round"] == int(round)
+        assert txn["confirmed-round"] == int(block)
 
 @then('Every transaction works with asset-id {assetid}')
 def check_assetid(context, assetid):
     for txn in context.response["transactions"]:
-        assert txn["asset-id"] >= int(assetid)
+        if "asset-config-transaction" in txn:
+            subtxn = txn["asset-config-transaction"]
+        else:
+            subtxn = txn["asset-transfer-transaction"]
+        assert subtxn["asset-id"] == int(assetid) or txn["created-asset-index"] == int(assetid)
 
 @then('Every transaction is older than "{before}"')
 def check_before(context, before):
     for txn in context.response["transactions"]:
-        t = datetime.datetime.strptime(before, "%Y-%m-%dT%H:%M:%SZ")
-        assert datetime.fromtimestamp(txn["round-time"]) >= t
+        t = datetime.strptime(before, "%Y-%m-%dT%H:%M:%SZ")
+        assert datetime.fromtimestamp(txn["round-time"])<= t
 
 @then('Every transaction is newer than "{after}"')
 def check_after(context, after):
     for txn in context.response["transactions"]:
-        t = datetime.datetime.strptime(after, "%Y-%m-%dT%H:%M:%SZ")
-        assert datetime.fromtimestamp(txn["round-time"]) <= t
+        t = datetime.strptime(after, "%Y-%m-%dT%H:%M:%SZ")
+        print(after)
+        print(t)
+        print(datetime.timestamp(t))
+        print(txn["round-time"])
+        assert txn["round-time"] >= datetime.timestamp(t)
 
 @then('Every transaction moves between {currencygt} and {currencylt} currency')
-def check_curreny(context, currencygt, currencylt):
+def check_currency(context, currencygt, currencylt):
     for txn in context.response["transactions"]:
-        assert currencygt <= txn["amount"] <= currencylt
-
+        print(txn)
+        print(currencygt, currencylt)
+        amt = 0
+        if "asset-transfer-transaction" in txn:
+            amt = txn["asset-transfer-transaction"]["amount"]
+        else:
+            amt = txn["payment-transaction"]["amount"]
+        if int(currencygt) == 0:
+            if int(currencylt) > 0:
+                assert amt <= int(currencylt)
+        else:
+            if int(currencylt) > 0:
+                assert int(currencygt) <= amt <= int(currencylt)
+            else:
+                assert int(currencygt) <= amt
+                
+        
 @when('we make a Search For Transactions call with account "{account:EmptyString}" NotePrefix "{notePrefixB64:EmptyString}" TxType "{txType:EmptyString}" SigType "{sigType:EmptyString}" txid "{txid:EmptyString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:EmptyString}" afterTime "{afterTime:EmptyString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index} addressRole "{addressRole:EmptyString}" ExcluseCloseTo "{excludeCloseTo}"')
 def search_txns(context, account, notePrefixB64, txType, sigType, txid, block, minRound, maxRound, limit, beforeTime, afterTime, currencyGreaterThan, currencyLessThan, index, addressRole, excludeCloseTo):
     if notePrefixB64 == "none":
@@ -587,7 +623,8 @@ def icl_search_assets(context, indexer, limit, assetidin, creator, name, unit, t
 @then('there are {num} assets in the response, the first is {assetidout}.')
 def check_assets(context, num, assetidout):
     assert len(context.response["assets"]) == int(num)
-    assert context.response["assets"][0]["id"] == int(assetidout)
+    if int(num) > 0:
+        assert context.response["assets"][0]["index"] == int(assetidout)
 
 @when('we make a SearchForAssets call with limit {limit} creator "{creator:EmptyString}" name "{name:EmptyString}" unit "{unit:EmptyString}" index {index}')
 def search_assets(context, limit, creator, name, unit, index):

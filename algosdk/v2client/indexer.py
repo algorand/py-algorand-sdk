@@ -10,7 +10,7 @@ from .. import constants
 
 class IndexerClient:
     """
-    Client class for kmd. Handles all indexer requests.
+    Client class for indexer. Handles all indexer requests.
 
     Args:
         indexer_token (str): indexer API token
