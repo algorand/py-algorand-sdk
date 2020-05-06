@@ -102,7 +102,7 @@ class AlgodClient:
         Args:
             address (str): account public key
             limit (int, optional): maximum number of transactions to return
-            response_format (str): the format in which the response is returne: either
+            response_format (str): the format in which the response is returned: either
                 "json" or "msgpack"
         """
         query = {"format": response_format}
@@ -120,7 +120,7 @@ class AlgodClient:
 
         Args:
             block (int): block number
-            response_format (str): the format in which the response is returne: either
+            response_format (str): the format in which the response is returned: either
                 "json" or "msgpack"
         """
         query = {"format": response_format}
@@ -184,7 +184,7 @@ class AlgodClient:
         Args:
             max_txns (int): maximum number of transactions to return;
                 if max_txns is 0, return all pending transactions
-            response_format (str): the format in which the response is returne: either
+            response_format (str): the format in which the response is returned: either
                 "json" or "msgpack"
         """
         query = {"format": response_format}
@@ -200,7 +200,7 @@ class AlgodClient:
 
         Args:
             transaction_id (str): transaction ID
-            response_format (str): the format in which the response is returne: either
+            response_format (str): the format in which the response is returned: either
                 "json" or "msgpack"
         """
         req = "/transactions/pending/" + transaction_id
