@@ -9,6 +9,10 @@ rm -rf temp
 rm -rf test/cucumber/features
 git clone --single-branch --branch develop https://github.com/algorand/algorand-sdk-testing.git temp
 
+# Disable unimplemented tests
+rm temp/features/integration/indexer.feature
+rm temp/features/unit/v2*feature
+
 # Copy feature files into project
 mv temp/features test/cucumber/features
 

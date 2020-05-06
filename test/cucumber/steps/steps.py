@@ -15,6 +15,9 @@ import os
 from datetime import datetime
 import hashlib
 
+TOKEN = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ALGOD_PORT = 60000
+KMD_PORT = 60001
 
 @when("I create a wallet")
 def create_wallet(context):
@@ -252,21 +255,15 @@ def sk_eq_export(context):
 
 @given("a kmd client")
 def kmd_client(context):
-    data_dir_path = os.environ["NODE_DIR"] + "/"
-    kmd_folder_name = os.environ["KMD_DIR"] + "/"
-    kmd_token = open(data_dir_path + kmd_folder_name + "kmd.token",
-                     "r").read().strip("\n")
-    kmd_address = "http://" + open(data_dir_path + kmd_folder_name + "kmd.net",
-                                   "r").read().strip("\n")
+    kmd_token = TOKEN
+    kmd_address = "http://localhost:%d" % KMD_PORT
     context.kcl = kmd.KMDClient(kmd_token, kmd_address)
 
 
 @given("an algod client")
 def algod_client(context):
-    data_dir_path = os.environ["NODE_DIR"] + "/"
-    algod_token = open(data_dir_path + "algod.token", "r").read().strip("\n")
-    algod_address = "http://" + open(data_dir_path + "algod.net",
-                                     "r").read().strip("\n")
+    algod_token = TOKEN
+    algod_address = "http://localhost:%d" % ALGOD_PORT
     context.acl = algod.AlgodClient(algod_token, algod_address)
     if context.acl.status()["lastRound"] < 2:
         context.acl.status_after_block(2)
