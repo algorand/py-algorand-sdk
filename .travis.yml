@@ -6,4 +6,4 @@ python:
 script:
   - set -e
   - python3 test_unit.py
-  - ./run_integration.sh
+  - ./run_tests.sh

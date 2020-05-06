@@ -49,7 +49,7 @@ class PathsHandler(http.server.SimpleHTTPRequestHandler):
         m = bytes(m, "ascii")
         self.wfile.write(m)
 
-class JsonHandler(http.server.SimpleHTTPRequestHandler):
+class FileHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         if "mock" in self.path:
             f = open("test/features/unit/mock_response_path", "w")
@@ -69,8 +69,13 @@ class JsonHandler(http.server.SimpleHTTPRequestHandler):
             f = open("test/features/unit/" + mock_response_path, "r")
             s = f.read()
             f.close()
-            s = bytes(s, "ascii")
-            self.wfile.write(s)
+            if "base64" in mock_response_path:
+                s = encode_bytes(msgpack.unpackb(base64.b64decode(s), raw=False))
+                print(s)
+                self.wfile.write(bytes(json.dumps(s), "ascii"))
+            else:
+                s = bytes(s, "ascii")
+                self.wfile.write(s)
 
     def do_POST(self):
         self.send_response(200)
@@ -84,6 +89,27 @@ class JsonHandler(http.server.SimpleHTTPRequestHandler):
         f.close()
         s = bytes(s, "ascii")
         self.wfile.write(s)
+
+def encode_bytes(d):
+    if isinstance(d, dict):
+        for k, v in d.items():
+            if isinstance(v, dict):
+                encode_bytes(v)
+            elif isinstance(v, list):
+                encode_bytes(v)
+            else:
+                if isinstance(v, bytes):
+                    d[k] = base64.b64encode(v).decode()
+    elif isinstance(d, list):
+        for i in range(len(d)):
+            if isinstance(d[i], dict):
+                encode_bytes(d[i])
+            elif isinstance(d[i], list):
+                encode_bytes(d[i])
+            else:
+                if isinstance(d[i], bytes):
+                    d[i] = base64.b64encode(v).decode()
+    return d
 
 @given("mock server recording request paths")
 def setup_mockserver(context):
@@ -104,30 +130,12 @@ def mock_response(context, jsonfiles, directory):
     context.acl = algod.AlgodClient("algod_token", context.url)
     context.icl = indexer.IndexerClient("indexer_token", context.url)
     socketserver.TCPServer.allow_reuse_address = True
-    context.server = socketserver.TCPServer(("", port), JsonHandler)
+    context.server = socketserver.TCPServer(("", port), FileHandler)
     context.thread = threading.Thread(target=context.server.serve_forever)
     context.thread.start()
     time.sleep(1)
     req = Request(context.url+"/mock/"+directory + "/" +jsonfiles, method="GET")
     urlopen(req)
-
-@when("we make a Shutdown call with timeout {timeout}")
-def shutdown(context, timeout):
-    context.response = context.acl.shutdown(int(timeout))
-
-@when('we make any Shutdown call')
-def shutdown_any(context):
-    context.response = context.acl.shutdown(3)
-
-@when('we make any Register Participation Keys call')
-def reg_key_any(context):
-    context.response = context.acl.register_participation_keys()
-
-
-@when('we make a Register Participation Keys call against account "{account}" fee {fee} dilution {dilution} lastvalidround {lastvalid} and nowait "{nowait}"')
-def reg_part_key(context, account, fee, dilution, lastvalid, nowait):
-    context.response = context.acl.register_participation_keys(address=account, fee=int(fee), key_dilution=int(dilution),
-        last_valid_round=int(lastvalid), no_wait=nowait=="true")
 
 @when('we make a Pending Transaction Information against txid "{txid}" with format "{response_format}"')
 def pending_txn_info(context, txid, response_format):
@@ -135,7 +143,7 @@ def pending_txn_info(context, txid, response_format):
 
 @when('we make a Pending Transaction Information with max {max} and format "{response_format}"')
 def pending_txn_with_max(context, max, response_format):
-    context.response = context.acl.pending_transaction_info(int(max), response_format=response_format)
+    context.response = context.acl.pending_transactions(int(max), response_format=response_format)
 
 @when('we make any Pending Transactions Information call')
 def pending_txn_any(context):
@@ -147,12 +155,12 @@ def pending_txn_any2(context):
 
 @then('the parsed Pending Transaction Information response should have sender "{sender}"')
 def parse_pending_txn(context, sender):
-    assert context.response["txn"].transaction.sender == sender
+    assert encoding.encode_address(base64.b64decode(context.response["txn"]["txn"]["snd"])) == sender
 
 @then('the parsed Pending Transactions Information response should contain an array of len {length} and element number {idx} should have sender "{sender}"')
 def parse_pending_txns(context, length, idx, sender):
     assert len(context.response["top-transactions"]) == int(length)
-    assert context.response["top-transactions"][int(idx)].transaction.sender == sender
+    assert encoding.encode_address(base64.b64decode(context.response["top-transactions"][int(idx)]["txn"]["snd"])) == sender
 
 @when('we make a Pending Transactions By Address call against account "{account}" and max {max} and format "{response_format}"')
 def pending_txns_by_addr(context, account, max, response_format):
@@ -165,7 +173,7 @@ def pending_txns_by_addr_any(context):
 @then('the parsed Pending Transactions By Address response should contain an array of len {length} and element number {idx} should have sender "{sender}"')
 def parse_pend_by_addr(context, length, idx, sender):
     assert len(context.response["top-transactions"]) == int(length)
-    assert context.response["top-transactions"][int(idx)].transaction.sender == sender
+    assert encoding.encode_address(base64.b64decode(context.response["top-transactions"][int(idx)]["txn"]["snd"])) == sender
 
 @when('we make any Send Raw Transaction call')
 def send_any(context):
@@ -227,7 +235,7 @@ def block_any(context):
 
 @then('the parsed Get Block response should have rewards pool "{pool}"')
 def parse_block(context, pool):
-    assert base64.b64encode(context.response["block"]["rwd"]).decode() == pool
+    assert context.response["block"]["rwd"] == pool
 
 @when('I get the next page using {indexer} to lookup asset balances for {assetid} with {currencygt}, {currencylt}, {limit}')
 def next_asset_balance(context, indexer, assetid, currencygt, currencylt, limit):
@@ -235,7 +243,6 @@ def next_asset_balance(context, indexer, assetid, currencygt, currencylt, limit)
 
 @then('There are {numaccounts} with the asset, the first is "{account}" has "{isfrozen}" and {amount}')
 def check_asset_balance(context, numaccounts, account, isfrozen, amount):
-    print(context.response["balances"])
     assert len(context.response["balances"]) == int(numaccounts)
     assert context.response["balances"][0]["address"] == account
     assert context.response["balances"][0]["amount"] == int(amount)
@@ -401,7 +408,6 @@ def icl_asset_balance(context, indexer, assetid, currencygt, currencylt, limit, 
     context.response = context.icls[indexer].asset_balances(int(assetid), min_balance=int(currencygt), max_balance=int(currencylt), limit=int(limit), next_page=token)
 
 def parse_args(assetid):
-    print(assetid)
     t = assetid.split(" ")
     l = {
         "assetid": t[2],
@@ -550,18 +556,20 @@ def check_assetid(context, assetid):
 @then('Every transaction is older than "{before}"')
 def check_before(context, before):
     for txn in context.response["transactions"]:
-        t = datetime.strptime(before, "%Y-%m-%dT%H:%M:%SZ")
-        assert datetime.fromtimestamp(txn["round-time"])<= t
+        t = datetime.fromisoformat(before.replace("Z", "+00:00"))
+        assert txn["round-time"] <= datetime.timestamp(t)
 
 @then('Every transaction is newer than "{after}"')
 def check_after(context, after):
+    print(context.response["transactions"])
+    t = True
     for txn in context.response["transactions"]:
-        t = datetime.strptime(after, "%Y-%m-%dT%H:%M:%SZ")
-        print(after)
-        print(t)
-        print(datetime.timestamp(t))
-        print(txn["round-time"])
-        assert txn["round-time"] >= datetime.timestamp(t)
+        t = datetime.fromisoformat(after.replace("Z", "+00:00"))
+        if not txn["round-time"] >= datetime.timestamp(t):
+            print(datetime.timestamp(t), txn["round-time"])
+            t = False
+    assert t
+
 
 @then('Every transaction moves between {currencygt} and {currencylt} currency')
 def check_currency(context, currencygt, currencylt):
@@ -662,6 +670,8 @@ def parse_suggested(context, roundNum):
 
 @then('expect the path used to be "{path}"')
 def expect_path(context, path):
+    print(path)
+    print(context.response)
     context.server.shutdown()
     exp_path, exp_query = urllib.parse.splitquery(path)
     exp_query = urllib.parse.parse_qs(exp_query)

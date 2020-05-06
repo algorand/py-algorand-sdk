@@ -9,5 +9,5 @@ RUN pip3 install git+https://github.com/algorand/py-algorand-sdk/ -q \
     && pip3 install behave -q
 
 # Run integration tests
-CMD ["/bin/bash", "-c", "behave test -f progress2 --tags=@indexer"]
+CMD ["/bin/bash", "-c", "behave test -f progress2"]
 

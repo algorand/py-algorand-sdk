@@ -77,10 +77,7 @@ class AlgodClient:
             except:
                 raise error.AlgodHTTPError(e)
         res = resp.read().decode("utf-8")
-        if response_format == "json":
-            return json.loads(res) if res else None
-        else:
-            return base64.b64decode(res)
+        return json.loads(res) if res else None
 
     def account_info(self, address, **kwargs):
         """
@@ -112,12 +109,6 @@ class AlgodClient:
         res = self.algod_request(
             "GET", req, params=query, response_format=response_format, 
             **kwargs)
-        if response_format == "msgpack":
-            res = msgpack.unpackb(res, raw=False)
-            for i in range(len(res["top-transactions"])):
-                res["top-transactions"][i] = encoding.msgpack_decode(
-                    res["top-transactions"][i])
-        print(res)
         return res
 
     def block_info(self, block, response_format="json", **kwargs):
@@ -132,10 +123,7 @@ class AlgodClient:
         query = {"format": response_format}
         req = "/blocks/" + str(block)
         res = self.algod_request("GET", req, query, response_format=response_format, **kwargs)
-        if response_format == "msgpack":
-            res = msgpack.unpackb(res, raw=False)
         return res
-
 
     def ledger_supply(self, **kwargs):
         """Return supply details for node's ledger."""
@@ -201,12 +189,6 @@ class AlgodClient:
             query["max"] = max_txns
         req = "/transactions/pending"
         res = self.algod_request("GET", req, params=query, response_format=response_format, **kwargs)
-        if response_format == "msgpack":
-            res = msgpack.unpackb(res, raw=False)
-            for i in range(len(res["top-transactions"])):
-                res["top-transactions"][i] = encoding.msgpack_decode(
-                    res["top-transactions"][i])
-        print(res)
         return res
 
     def pending_transaction_info(self, transaction_id, response_format="json", **kwargs):
@@ -221,10 +203,6 @@ class AlgodClient:
         req = "/transactions/pending/" + transaction_id
         query = {"format": response_format}
         res = self.algod_request("GET", req, params=query, response_format=response_format, **kwargs)
-        if response_format == "msgpack":
-            res = msgpack.unpackb(res, raw=False)
-            res["txn"] = encoding.msgpack_decode(res["txn"])
-        print(res)
         return res
 
     def health(self, **kwargs):
