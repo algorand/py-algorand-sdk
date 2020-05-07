@@ -3,11 +3,14 @@ from urllib import parse
 import urllib.error
 import json
 import base64
+import msgpack
 from . import error
 from . import encoding
 from . import constants
 from . import transaction
 from . import future
+
+api_version_path_prefix = "/v1"
 
 
 class AlgodClient:
@@ -60,7 +63,7 @@ class AlgodClient:
             })
 
         if requrl not in constants.unversioned_paths:
-            requrl = constants.api_version_path_prefix + requrl
+            requrl = api_version_path_prefix + requrl
         if params:
             requrl = requrl + "?" + parse.urlencode(params)
 
@@ -313,10 +316,12 @@ class AlgodClient:
         Args:
             round (int): block number
         """
-        req = "/block/" + str(round) + '?raw=1'
+        req = "/block/" + str(round)
+        query = {"raw": 1}
         kwargs['raw_response'] = True
-        response = self.algod_request("GET", req, **kwargs)
+        response = self.algod_request("GET", req, query, **kwargs)
         block_type = 'application/x-algorand-block-v1'
-        if contentType != block_type:
-            raise Exception('expected "Content-Type: {}" but got {!r}'.format(block_type, contentType))
+        content_type = response.info().get_content_type()
+        if content_type != block_type:
+            raise Exception('expected "Content-Type: {}" but got {!r}'.format(block_type, content_type))
         return msgpack.loads(response.read())

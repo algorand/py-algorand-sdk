@@ -26,6 +26,7 @@ class Split(Template):
 
     Split also has an expiry round, after which the owner can transfer back
     the funds.
+
     Arguments:
         owner (str): an address that can receive the funds after the expiry
             round
@@ -141,10 +142,13 @@ class HTLC(Template):
     Hash Time Locked Contract allows a user to recieve the Algo prior to a
     deadline (in terms of a round) by proving knowledge of a special value
     or to forfeit the ability to claim, returning it to the payer.
+
     This contract is usually used to perform cross-chained atomic swaps.
+
     More formally, algos can be transfered under only two circumstances:
         1. To receiver if hash_function(arg_0) = hash_value
         2. To owner if txn.FirstValid > expiry_round
+
     Args:
         owner (str): an address that can receive the asset after the expiry
             round
@@ -220,8 +224,6 @@ class HTLC(Template):
         elif hash_function == 2:
             hash_image = keccak.new(digest_bits=256)
             hash_image.update(base64.b64decode(preimage))
-            print(hash_image.digest())
-            print(expected_hash_image)
             if hash_image.digest() != expected_hash_image:
                 raise error.TemplateInputError(
                     "the hash of the preimage does not match the expected "
@@ -251,6 +253,7 @@ class DynamicFee(Template):
     DynamicFee contract allows you to create a transaction without
     specifying the fee. The fee will be determined at the moment of
     transfer.
+
     Args:
         receiver (str): address to receive the assets
         amount (int): amount of assets to transfer
@@ -260,7 +263,6 @@ class DynamicFee(Template):
         close_remainder_address (str, optional): the address that recieves the
             remainder
     """
-
     def __init__(self, receiver: str, amount: int, first_valid: int,
                  last_valid: int = None, close_remainder_address: str = None):
         self.lease_value = bytes([random.randint(0, 255) for x in range(

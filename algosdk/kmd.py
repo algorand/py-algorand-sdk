@@ -8,6 +8,8 @@ from . import error
 from . import transaction
 from . import constants
 
+api_version_path_prefix = "/v1"
+
 
 class KMDClient:
     """
@@ -45,8 +47,9 @@ class KMDClient:
             header = {
                 constants.kmd_auth_header: self.kmd_token
             }
+        
         if requrl not in constants.unversioned_paths:
-            requrl = constants.api_version_path_prefix + requrl
+            requrl = api_version_path_prefix + requrl
         if params:
             requrl = requrl + "?" + parse.urlencode(params)
         if data:
