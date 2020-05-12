@@ -1,3 +1,4 @@
+import base64
 import http.server
 import json
 import msgpack
