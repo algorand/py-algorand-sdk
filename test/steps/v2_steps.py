@@ -19,7 +19,6 @@ import random
 import time
 import urllib
 from urllib.request import Request, urlopen
-import msgpack
 import parse
 
 @parse.with_pattern(r".*")
