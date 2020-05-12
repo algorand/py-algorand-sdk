@@ -1,4 +1,3 @@
-import threading
 from behave import given, when, then, register_type
 import base64
 from algosdk import kmd
@@ -16,9 +15,6 @@ import os
 from datetime import datetime
 import hashlib
 import json
-import http.server
-import socketserver
-import json
 import random
 import time
 import urllib
@@ -28,66 +24,9 @@ import parse
 
 @parse.with_pattern(r".*")
 def parse_string(text):
-     return text
+    return text
 
-register_type(EmptyString=parse_string)
-
-class PathsHandler(http.server.SimpleHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-type", "application/json")
-        self.end_headers()
-        m = json.dumps({"path": self.path})
-        m = bytes(m, "ascii")
-        self.wfile.write(m)
-
-    def do_POST(self):
-        self.send_response(200)
-        self.send_header("Content-type", "application/json")
-        self.end_headers()
-        m = json.dumps({"path": self.path})
-        m = bytes(m, "ascii")
-        self.wfile.write(m)
-
-class FileHandler(http.server.SimpleHTTPRequestHandler):
-    def do_GET(self):
-        if "mock" in self.path:
-            f = open("test/features/unit/mock_response_path", "w")
-            f.write(self.path[6:])
-            f.close()
-            self.send_response(200)
-            self.send_header("Content-type", "application/json")
-            self.end_headers()
-            self.wfile.write(bytes("done", "ascii"))
-        else:
-            self.send_response(200)
-            self.send_header("Content-type", "application/json")
-            self.end_headers()
-            f = open("test/features/unit/mock_response_path", "r")
-            mock_response_path = f.read()
-            f.close()
-            f = open("test/features/unit/" + mock_response_path, "r")
-            s = f.read()
-            f.close()
-            if "base64" in mock_response_path:
-                s = encode_bytes(msgpack.unpackb(base64.b64decode(s), raw=False))
-                self.wfile.write(bytes(json.dumps(s), "ascii"))
-            else:
-                s = bytes(s, "ascii")
-                self.wfile.write(s)
-
-    def do_POST(self):
-        self.send_response(200)
-        self.send_header("Content-type", "application/json")
-        self.end_headers()
-        f = open("test/features/unit/mock_response_path", "r")
-        mock_response_path = f.read()
-        f.close()
-        f = open("test/features/unit/" + mock_response_path, "r")
-        s = f.read()
-        f.close()
-        s = bytes(s, "ascii")
-        self.wfile.write(s)
+register_type(MaybeString=parse_string)
 
 def encode_bytes(d):
     if isinstance(d, dict):
@@ -112,27 +51,23 @@ def encode_bytes(d):
 
 @given("mock server recording request paths")
 def setup_mockserver(context):
-    port = 19999
-    context.url = "http://127.0.0.1:" + str(port)
+    context.url = "http://127.0.0.1:" + str(context.path_server_port)
     context.acl = algod.AlgodClient("algod_token", context.url)
     context.icl = indexer.IndexerClient("indexer_token", context.url)
-    socketserver.TCPServer.allow_reuse_address = True
-    context.server = socketserver.TCPServer(("", port), PathsHandler)
-    context.thread = threading.Thread(target=context.server.serve_forever)
-    context.thread.start()
-    time.sleep(1)
 
 @given('mock http responses in "{jsonfiles}" loaded from "{directory}"')
 def mock_response(context, jsonfiles, directory):
-    port = 19998
-    context.url = "http://127.0.0.1:" + str(port)
+    context.url = "http://127.0.0.1:" + str(context.response_server_port)
     context.acl = algod.AlgodClient("algod_token", context.url)
     context.icl = indexer.IndexerClient("indexer_token", context.url)
-    socketserver.TCPServer.allow_reuse_address = True
-    context.server = socketserver.TCPServer(("", port), FileHandler)
-    context.thread = threading.Thread(target=context.server.serve_forever)
-    context.thread.start()
-    time.sleep(1)
+
+    # The mock server writes this response to a file, on a regular request
+    # that file is read.
+    # It's an interesting approach, but currently doesn't support setting
+    # the content type, or different return codes. This will require a bit
+    # of extra work when/if we support the different error cases.
+    #
+    # Take a look at 'environment.py' to see the mock servers.
     req = Request(context.url+"/mock/"+directory + "/" +jsonfiles, method="GET")
     urlopen(req)
 
@@ -251,7 +186,7 @@ def check_asset_balance(context, numaccounts, account, isfrozen, amount):
     assert context.response["balances"][0]["amount"] == int(amount)
     assert context.response["balances"][0]["is-frozen"] == (isfrozen == "true")
 
-@when('we make a Lookup Asset Balances call against asset index {index} with limit {limit} afterAddress "{afterAddress:EmptyString}" round {block} currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan}')
+@when('we make a Lookup Asset Balances call against asset index {index} with limit {limit} afterAddress "{afterAddress:MaybeString}" round {block} currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan}')
 def asset_balance(context, index, limit, afterAddress, block, currencyGreaterThan, currencyLessThan):
     context.response = context.icl.asset_balances(int(index), int(limit), next_page=None, min_balance=int(currencyGreaterThan),
         max_balance=int(currencyLessThan), block=int(block))
@@ -272,7 +207,7 @@ def parse_asset_balance(context, roundNum, length, idx, address, amount, frozenS
 def icl_asset_txns(context, indexer, assetid):
     context.response = context.icls[indexer].search_asset_transactions(int(assetid))
 
-@when('we make a Lookup Asset Transactions call against asset index {index} with NotePrefix "{notePrefixB64:EmptyString}" TxType "{txType:EmptyString}" SigType "{sigType:EmptyString}" txid "{txid:EmptyString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:EmptyString}" afterTime "{afterTime:EmptyString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} address "{address:EmptyString}" addressRole "{addressRole:EmptyString}" ExcluseCloseTo "{excludeCloseTo}"')
+@when('we make a Lookup Asset Transactions call against asset index {index} with NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} address "{address:MaybeString}" addressRole "{addressRole:MaybeString}" ExcluseCloseTo "{excludeCloseTo:MaybeString}"')
 def asset_txns(context, index, notePrefixB64, txType, sigType, txid, block, minRound, maxRound, limit, beforeTime, afterTime, currencyGreaterThan, currencyLessThan, address, addressRole, excludeCloseTo):
     if notePrefixB64 == "none":
         notePrefixB64 = ""
@@ -290,11 +225,13 @@ def asset_txns(context, index, notePrefixB64, txType, sigType, txid, block, minR
         address = None
     if addressRole == "none":
         addressRole = None
+    if excludeCloseTo == "none":
+        excludeCloseTo = None
     context.response = context.icl.search_asset_transactions(int(index), limit=int(limit), next_page=None, note_prefix=base64.b64decode(notePrefixB64), txn_type=txType,
         sig_type=sigType, txid=txid, block=int(block), min_round=int(minRound), max_round=int(maxRound),
         start_time=afterTime, end_time=beforeTime, min_amount=int(currencyGreaterThan),
         max_amount=int(currencyLessThan), address=address, address_role=addressRole,
-        exclude_close_to=excludeCloseTo=="true")
+        exclude_close_to=excludeCloseTo)
 
 @when('we make any LookupAssetTransactions call')
 def asset_txns_any(context):
@@ -310,8 +247,8 @@ def parse_asset_tns(context, roundNum, length, idx, sender):
 def icl_txns_by_addr(context, indexer, accountid):
     context.response = context.icls[indexer].search_transactions_by_address(accountid)
 
-@when('we make a Lookup Account Transactions call against account "{account}" with NotePrefix "{notePrefixB64:EmptyString}" TxType "{txType:EmptyString}" SigType "{sigType:EmptyString}" txid "{txid:EmptyString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:EmptyString}" afterTime "{afterTime:EmptyString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index} addressRole "{addressRole:EmptyString}" ExcluseCloseTo "{excludeCloseTo}"')
-def txns_by_addr(context, account, notePrefixB64, txType, sigType, txid, block, minRound, maxRound, limit, beforeTime, afterTime, currencyGreaterThan, currencyLessThan, index, addressRole, excludeCloseTo):
+@when('we make a Lookup Account Transactions call against account "{account:MaybeString}" with NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index}')
+def txns_by_addr(context, account, notePrefixB64, txType, sigType, txid, block, minRound, maxRound, limit, beforeTime, afterTime, currencyGreaterThan, currencyLessThan, index):
     if notePrefixB64 == "none":
         notePrefixB64 = ""
     if txType == "none":
@@ -324,13 +261,10 @@ def txns_by_addr(context, account, notePrefixB64, txType, sigType, txid, block, 
         beforeTime = None
     if afterTime == "none":
         afterTime = None
-    if addressRole == "none":
-        addressRole = None
     context.response = context.icl.search_transactions_by_address(asset_id=int(index), limit=int(limit), next_page=None, note_prefix=base64.b64decode(notePrefixB64), txn_type=txType,
         sig_type=sigType, txid=txid, block=int(block), min_round=int(minRound), max_round=int(maxRound),
         start_time=afterTime, end_time=beforeTime, min_amount=int(currencyGreaterThan),
-        max_amount=int(currencyLessThan), address=account, address_role=addressRole,
-        exclude_close_to=excludeCloseTo=="true")
+        max_amount=int(currencyLessThan), address=account)
 
 @when('we make any LookupAccountTransactions call')
 def txns_by_addr_any(context):
@@ -455,7 +389,7 @@ def search_accounts(context, index, limit, currencyGreaterThan, currencyLessThan
     context.response = context.icl.accounts(asset_id=int(index), limit=int(limit), next_page=None, min_balance=int(currencyGreaterThan),
         max_balance=int(currencyLessThan), block=int(block))
 
-@when('I use {indexer} to search for an account with {assetid}, {limit}, {currencygt}, {currencylt} and token "{token:EmptyString}"')
+@when('I use {indexer} to search for an account with {assetid}, {limit}, {currencygt}, {currencylt} and token "{token:MaybeString}"')
 def icl_search_accounts(context, indexer, assetid, limit, currencygt, currencylt, token):
     context.response = context.icls[indexer].accounts(asset_id=int(assetid), limit=int(limit), next_page=token, min_balance=int(currencygt),
         max_balance=int(currencylt))
@@ -465,7 +399,7 @@ def search_accounts_nex(context, indexer, assetid, limit, currencygt, currencylt
     context.response = context.icls[indexer].accounts(asset_id=int(assetid), limit=int(limit), min_balance=int(currencygt),
         max_balance=int(currencylt), next_page=context.response["next-token"])
 
-@then('There are {num}, the first has {pendingrewards}, {rewardsbase}, {rewards}, {withoutrewards}, "{address}", {amount}, "{status}", "{sigtype:EmptyString}"')
+@then('There are {num}, the first has {pendingrewards}, {rewardsbase}, {rewards}, {withoutrewards}, "{address}", {amount}, "{status}", "{sigtype:MaybeString}"')
 def check_search_accounts(context, num, pendingrewards, rewardsbase, rewards, withoutrewards, address, amount, status, sigtype):
     assert len(context.response["accounts"]) == int(num)
     assert context.response["accounts"][0]["pending-rewards"] == int(pendingrewards)
@@ -502,7 +436,7 @@ def parse_accounts(context, roundNum, length, index, address):
 def search_txns_next(context, indexer, limit, maxround):
     context.response = context.icls[indexer].search_transactions(limit=int(limit), max_round=int(maxround), next_page=context.response["next-token"])
 
-@when('I use {indexer} to search for transactions with {limit}, "{noteprefix:EmptyString}", "{txtype:EmptyString}", "{sigtype:EmptyString}", "{txid:EmptyString}", {block}, {minround}, {maxround}, {assetid}, "{beforetime:EmptyString}", "{aftertime:EmptyString}", {currencygt}, {currencylt}, "{address:EmptyString}", "{addressrole:EmptyString}", "{excludecloseto:EmptyString}" and token "{token:EmptyString}"')
+@when('I use {indexer} to search for transactions with {limit}, "{noteprefix:MaybeString}", "{txtype:MaybeString}", "{sigtype:MaybeString}", "{txid:MaybeString}", {block}, {minround}, {maxround}, {assetid}, "{beforetime:MaybeString}", "{aftertime:MaybeString}", {currencygt}, {currencylt}, "{address:MaybeString}", "{addressrole:MaybeString}", "{excludecloseto:MaybeString}" and token "{token:MaybeString}"')
 def icl_search_txns(context, indexer, limit, noteprefix, txtype, sigtype, txid, block, minround, maxround, assetid, beforetime, aftertime, currencygt, currencylt, address, addressrole, excludecloseto, token):
     context.response = context.icls[indexer].search_transactions(asset_id=int(assetid), limit=int(limit), next_page=token, 
         note_prefix=base64.b64decode(noteprefix), txn_type=txtype,
@@ -511,7 +445,7 @@ def icl_search_txns(context, indexer, limit, noteprefix, txtype, sigtype, txid, 
         max_amount=int(currencylt), address=address, address_role=addressrole,
         exclude_close_to=excludecloseto=="true")
 
-@then('there are {num} transactions in the response, the first is "{txid:EmptyString}".')
+@then('there are {num} transactions in the response, the first is "{txid:MaybeString}".')
 def check_transactions(context, num, txid):
     assert len(context.response["transactions"]) == int(num)
     if int(num) > 0:
@@ -590,7 +524,7 @@ def check_currency(context, currencygt, currencylt):
                 assert int(currencygt) <= amt
                 
         
-@when('we make a Search For Transactions call with account "{account:EmptyString}" NotePrefix "{notePrefixB64:EmptyString}" TxType "{txType:EmptyString}" SigType "{sigType:EmptyString}" txid "{txid:EmptyString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:EmptyString}" afterTime "{afterTime:EmptyString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index} addressRole "{addressRole:EmptyString}" ExcluseCloseTo "{excludeCloseTo}"')
+@when('we make a Search For Transactions call with account "{account:MaybeString}" NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index} addressRole "{addressRole:MaybeString}" ExcluseCloseTo "{excludeCloseTo:MaybeString}"')
 def search_txns(context, account, notePrefixB64, txType, sigType, txid, block, minRound, maxRound, limit, beforeTime, afterTime, currencyGreaterThan, currencyLessThan, index, addressRole, excludeCloseTo):
     if notePrefixB64 == "none":
         notePrefixB64 = ""
@@ -608,11 +542,13 @@ def search_txns(context, account, notePrefixB64, txType, sigType, txid, block, m
         account = None
     if addressRole == "none":
         addressRole = None
+    if excludeCloseTo == "none":
+        excludeCloseTo = None
     context.response = context.icl.search_transactions(asset_id=int(index), limit=int(limit), next_page=None, note_prefix=base64.b64decode(notePrefixB64), txn_type=txType,
         sig_type=sigType, txid=txid, block=int(block), min_round=int(minRound), max_round=int(maxRound),
         start_time=afterTime, end_time=beforeTime, min_amount=int(currencyGreaterThan),
         max_amount=int(currencyLessThan), address=account, address_role=addressRole,
-        exclude_close_to=excludeCloseTo=="true")
+        exclude_close_to=excludeCloseTo)
 
 @when('we make any SearchForTransactions call')
 def search_txns_any(context):
@@ -625,7 +561,7 @@ def parse_search_txns(context, roundNum, length, index, sender):
     if int(length) > 0:
         assert context.response["transactions"][int(index)]["sender"] == sender
 
-@when('I use {indexer} to search for assets with {limit}, {assetidin}, "{creator:EmptyString}", "{name:EmptyString}", "{unit:EmptyString}", and token "{token:EmptyString}"')
+@when('I use {indexer} to search for assets with {limit}, {assetidin}, "{creator:MaybeString}", "{name:MaybeString}", "{unit:MaybeString}", and token "{token:MaybeString}"')
 def icl_search_assets(context, indexer, limit, assetidin, creator, name, unit, token):
     context.response = context.icls[indexer].search_assets(
         limit=int(limit), next_page=token, creator=creator, name=name, unit=unit,
@@ -637,7 +573,7 @@ def check_assets(context, num, assetidout):
     if int(num) > 0:
         assert context.response["assets"][0]["index"] == int(assetidout)
 
-@when('we make a SearchForAssets call with limit {limit} creator "{creator:EmptyString}" name "{name:EmptyString}" unit "{unit:EmptyString}" index {index}')
+@when('we make a SearchForAssets call with limit {limit} creator "{creator:MaybeString}" name "{name:MaybeString}" unit "{unit:MaybeString}" index {index}')
 def search_assets(context, limit, creator, name, unit, index):
     if creator == "none":
         creator = None
@@ -671,7 +607,6 @@ def parse_suggested(context, roundNum):
 
 @then('expect the path used to be "{path}"')
 def expect_path(context, path):
-    context.server.shutdown()
     if isinstance(context.response, str):
         context.response = json.loads(context.response)
     exp_path, exp_query = urllib.parse.splitquery(path)
@@ -682,9 +617,9 @@ def expect_path(context, path):
     assert exp_path == actual_path.replace("%3A", ":")
     assert exp_query == actual_query
 
-@then('expect error string to contain "{err}"')
+@then('expect error string to contain "{err:MaybeString}"')
 def expect_error(context, err):
-    context.server.shutdown()
+    pass
 
 @given('indexer client {index} at "{address}" port {port} with token "{token}"')
 def indexer_client(context, index, address, port, token):
