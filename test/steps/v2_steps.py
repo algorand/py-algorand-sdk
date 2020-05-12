@@ -28,27 +28,6 @@ def parse_string(text):
 
 register_type(MaybeString=parse_string)
 
-def encode_bytes(d):
-    if isinstance(d, dict):
-        for k, v in d.items():
-            if isinstance(v, dict):
-                encode_bytes(v)
-            elif isinstance(v, list):
-                encode_bytes(v)
-            else:
-                if isinstance(v, bytes):
-                    d[k] = base64.b64encode(v).decode()
-    elif isinstance(d, list):
-        for i in range(len(d)):
-            if isinstance(d[i], dict):
-                encode_bytes(d[i])
-            elif isinstance(d[i], list):
-                encode_bytes(d[i])
-            else:
-                if isinstance(d[i], bytes):
-                    d[i] = base64.b64encode(v).decode()
-    return d
-
 @given("mock server recording request paths")
 def setup_mockserver(context):
     context.url = "http://127.0.0.1:" + str(context.path_server_port)

@@ -11,6 +11,28 @@ a file named 'environment.py in this directory. Otherwise all of this would
 be in the v2_steps.py file.
 """
 
+def encode_bytes(d):
+    if isinstance(d, dict):
+        for k, v in d.items():
+            if isinstance(v, dict):
+                encode_bytes(v)
+            elif isinstance(v, list):
+                encode_bytes(v)
+            else:
+                if isinstance(v, bytes):
+                    d[k] = base64.b64encode(v).decode()
+    elif isinstance(d, list):
+        for i in range(len(d)):
+            if isinstance(d[i], dict):
+                encode_bytes(d[i])
+            elif isinstance(d[i], list):
+                encode_bytes(d[i])
+            else:
+                if isinstance(d[i], bytes):
+                    d[i] = base64.b64encode(v).decode()
+    return d
+
+
 class PathsHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -27,6 +49,7 @@ class PathsHandler(http.server.SimpleHTTPRequestHandler):
         m = json.dumps({"path": self.path})
         m = bytes(m, "ascii")
         self.wfile.write(m)
+
 
 class FileHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
@@ -54,6 +77,7 @@ class FileHandler(http.server.SimpleHTTPRequestHandler):
             else:
                 s = bytes(s, "ascii")
                 self.wfile.write(s)
+
 
     def do_POST(self):
         self.send_response(200)
@@ -83,6 +107,7 @@ def before_all(context):
     _, context.response_server_port = context.response_server.server_address
     context.response_thread = threading.Thread(target=context.response_server.serve_forever)
     context.response_thread.start()
+
 
 def after_all(context):
     # Shutdown path server
