@@ -23,12 +23,30 @@ class TestTransaction(unittest.TestCase):
                                      1000, note=b'\x00')
         self.assertEqual(constants.min_txn_fee, txn.fee)
 
+    def test_note_wrong_type(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(0, 1, 100, gh)
+        f = lambda: transaction.PaymentTxn(address, sp, address, 
+                                           1000, note="hello")
+        self.assertRaises(error.WrongNoteType, f)
+
     def test_serialize(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         sp = transaction.SuggestedParams(3, 1, 100, gh)
         txn = transaction.PaymentTxn(address, sp, address,
                                      1000, note=bytes([1, 32, 200]))
+        enc = encoding.msgpack_encode(txn)
+        re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
+        self.assertEqual(enc, re_enc)
+
+    def test_serialize_with_note_string_encode(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(3, 1, 100, gh)
+        txn = transaction.PaymentTxn(address, sp, address,
+                                     1000, note="hello".encode())
         enc = encoding.msgpack_encode(txn)
         re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
         self.assertEqual(enc, re_enc)

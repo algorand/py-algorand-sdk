@@ -60,6 +60,11 @@ class WrongLeaseLengthError(Exception):
         Exception.__init__(self, "lease length must be 32 bytes")
 
 
+class WrongNoteType(Exception):
+    def __init(self):
+        Exception.__init__(self, "note must be of type \"bytes\"")
+
+
 class InvalidProgram(Exception):
     def __init__(self, message="invalid program for logic sig"):
         Exception.__init__(self, message)
