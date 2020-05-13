@@ -7,7 +7,7 @@ from .. import error
 from .. import encoding
 from .. import constants
 
-api_version_path_prefix = "/v1"
+api_version_path_prefix = "/v2"
 
 
 class IndexerClient:
