@@ -65,6 +65,11 @@ class WrongNoteType(Exception):
         Exception.__init__(self, "note must be of type \"bytes\"")
 
 
+class WrongNoteLength(Exception):
+    def __init(self):
+        Exception.__init__(self, "note length must be at most 1024")
+
+
 class InvalidProgram(Exception):
     def __init__(self, message="invalid program for logic sig"):
         Exception.__init__(self, message)

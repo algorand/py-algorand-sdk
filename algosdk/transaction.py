@@ -25,6 +25,8 @@ class Transaction:
         if self.note is not None:
             if not isinstance(self.note, bytes):
                 raise error.WrongNoteType
+            if len(self.note) > constants.note_max_length:
+                raise error.WrongNoteLength
         self.genesis_id = gen
         self.genesis_hash = gh
         self.group = None
