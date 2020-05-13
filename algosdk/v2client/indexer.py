@@ -256,8 +256,7 @@ class IndexerClient:
         self, address, limit=None, next_page=None, note_prefix=None,
         txn_type=None, sig_type=None, txid=None, block=None, min_round=None,
         max_round=None, asset_id=None, start_time=None, end_time=None,
-        min_amount=None, max_amount=None, address_role=None,
-        exclude_close_to=False, **kwargs):
+        min_amount=None, max_amount=None, **kwargs):
         """
         Return a list of transactions satisfying the conditions for the address.
 
@@ -291,14 +290,6 @@ class IndexerClient:
             max_amount (int, optional): results should have an amount less
                 than this value, microalgos are the default currency unless an
                 asset-id is provided, in which case the asset will be used
-            address_role (str, optional): one of "sender" or "receiver";
-                combine with the address parameter to define what type of
-                address to search for
-            exclude_close_to (bool, optional): combine with address and
-                address_role parameters to define what type of address to
-                search for; the close to fields are normally treated as a
-                receiver, if you would like to exclude them set this parameter
-                to true
         """
         req = "/accounts/" + address + "/transactions"
         query = dict()
@@ -313,7 +304,7 @@ class IndexerClient:
         if sig_type:
             query["sig-type"] = sig_type
         if txid:
-            query["tx-id"] = txid
+            query["txid"] = txid
         if block:
             query["round"] = block
         if min_round:
@@ -330,10 +321,6 @@ class IndexerClient:
             query["currency-greater-than"] = min_amount
         if max_amount:
             query["currency-less-than"] = max_amount
-        if address_role:
-            query["address-role"] = address_role
-        if exclude_close_to:
-            query["exclude-close-to"] = "true"
 
         return self.indexer_request("GET", req, query, **kwargs)
 
@@ -398,7 +385,7 @@ class IndexerClient:
         if sig_type:
             query["sig-type"] = sig_type
         if txid:
-            query["tx-id"] = txid
+            query["txid"] = txid
         if block:
             query["round"] = block
         if min_round:
