@@ -7,6 +7,8 @@ from .. import error
 from .. import encoding
 from .. import constants
 
+api_version_path_prefix = "/v1"
+
 
 class IndexerClient:
     """
@@ -55,6 +57,8 @@ class IndexerClient:
             header.update({
                 constants.indexer_auth_header: self.indexer_token
             })
+
+        requrl = api_version_path_prefix + requrl
 
         if params:
             requrl = requrl + "?" + parse.urlencode(params)
