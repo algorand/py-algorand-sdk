@@ -76,6 +76,11 @@ class IndexerClient:
                 raise error.IndexerHTTPError(e)
         return json.loads(resp.read().decode("utf-8"))
 
+    def health(self, **kwargs):
+        """Return 200 and a simple status message if the node is running."""
+        req = "/health"
+        return self.indexer_request("GET", req, **kwargs)
+
     def accounts(
         self, asset_id=None, limit=None, next_page=None, min_balance=None,
         max_balance=None, block=None, **kwargs):
