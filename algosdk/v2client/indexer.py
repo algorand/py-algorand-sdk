@@ -58,8 +58,8 @@ class IndexerClient:
                 constants.indexer_auth_header: self.indexer_token
             })
 
-        requrl = api_version_path_prefix + requrl
-
+        if requrl not in constants.unversioned_paths:
+            requrl = api_version_path_prefix + requrl
         if params:
             requrl = requrl + "?" + parse.urlencode(params)
         
