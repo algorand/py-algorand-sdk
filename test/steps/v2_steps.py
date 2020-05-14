@@ -262,7 +262,7 @@ def icl_health(context, indexer):
 @then('I receive status code {code}')
 def icl_health_check(context, code):
     # An exception is thrown when the code is not 200
-    assert code == 200
+    assert int(code) == 200
 
 @when('I use {indexer} to lookup block {number}')
 def icl_lookup_block(context, indexer, number):
