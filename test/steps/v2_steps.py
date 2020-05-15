@@ -255,6 +255,15 @@ def parse_txns_by_addr(context, roundNum, length, idx, sender):
     if int(length) > 0:
         assert context.response["transactions"][int(idx)]["sender"] == sender
 
+@when('I use {indexer} to check the services health')
+def icl_health(context, indexer):
+    context.response = context.icls[indexer].health()
+
+@then('I receive status code {code}')
+def icl_health_check(context, code):
+    # An exception is thrown when the code is not 200
+    assert int(code) == 200
+
 @when('I use {indexer} to lookup block {number}')
 def icl_lookup_block(context, indexer, number):
     context.response = context.icls[indexer].block_info(int(number))

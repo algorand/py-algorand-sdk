@@ -58,8 +58,8 @@ class IndexerClient:
                 constants.indexer_auth_header: self.indexer_token
             })
 
-        requrl = api_version_path_prefix + requrl
-
+        if requrl not in constants.unversioned_paths:
+            requrl = api_version_path_prefix + requrl
         if params:
             requrl = requrl + "?" + parse.urlencode(params)
         
@@ -75,6 +75,11 @@ class IndexerClient:
             except:
                 raise error.IndexerHTTPError(e)
         return json.loads(resp.read().decode("utf-8"))
+
+    def health(self, **kwargs):
+        """Return 200 and a simple status message if the node is running."""
+        req = "/health"
+        return self.indexer_request("GET", req, **kwargs)
 
     def accounts(
         self, asset_id=None, limit=None, next_page=None, min_balance=None,
