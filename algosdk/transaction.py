@@ -45,27 +45,23 @@ class Transaction:
         txid = base64.b32encode(txid).decode()
         return encoding._undo_padding(txid)
 
-    # def sign(self, private_key):
-    #     """
-    #     Sign the transaction with a private key.
-    #
-    #     Args:
-    #         private_key (str): the private key of the signing account
-    #
-    #     Returns:
-    #         SignedTransaction: signed transaction with the signature
-    #     """
-    #     sig = self.raw_sign(private_key)
-    #     sig = base64.b64encode(sig).decode()
-    #     authorizing_address = None
-    #     print("signing a txn. sender")
-    #     print(self.sender)
-    #     print("compared against")
-    #     print(account.address_from_private_key(private_key))
-    #     if not (self.sender == account.address_from_private_key(private_key)):
-    #         authorizing_address = account.address_from_private_key(private_key)
-    #     stx = SignedTransaction(self, sig, authorizing_address)
-    #     return stx
+    def sign(self, private_key):
+        """
+        Sign the transaction with a private key.
+
+        Args:
+            private_key (str): the private key of the signing account
+
+        Returns:
+            SignedTransaction: signed transaction with the signature
+        """
+        sig = self.raw_sign(private_key)
+        sig = base64.b64encode(sig).decode()
+        authorizing_address = None
+        if not (self.sender == account.address_from_private_key(private_key)):
+            authorizing_address = account.address_from_private_key(private_key)
+        stx = SignedTransaction(self, sig, authorizing_address)
+        return stx
 
     def raw_sign(self, private_key):
         """
@@ -791,12 +787,12 @@ class SignedTransaction:
     Args:
         transaction (Transaction): transaction that was signed
         signature (str): signature of a single address
-        authorizing_address (str): the address authorizing the signed transaction, if different from sender
+        authorizing_address (str, optional): the address authorizing the signed transaction, if different from sender
 
     Attributes:
         transaction (Transaction)
         signature (str)
-        authorizing_address
+        authorizing_address (str)
     """
     def __init__(self, transaction, signature, authorizing_address=None):
         self.signature = signature
@@ -809,7 +805,6 @@ class SignedTransaction:
             od["sig"] = base64.b64decode(self.signature)
         od["txn"] = self.transaction.dictify()
         if self.authorizing_address:
-            print("sgnr")
             od["sgnr"] = encoding.decode_address(self.authorizing_address)
         return od
 
