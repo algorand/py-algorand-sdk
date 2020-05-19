@@ -5,7 +5,8 @@ RUN mkdir -p $HOME/py-algorand-sdk
 COPY . $HOME/py-algorand-sdk
 WORKDIR $HOME/py-algorand-sdk
 
-RUN pip3 install git+https://github.com/algorand/py-algorand-sdk@evan/rekey \
+RUN wget https://github.com/algorand/py-algorand-sdk/archive/evan/rekey.zip \
+    && pip3 install rekey.zip \
     && pip3 install behave -q
 
 # Run integration tests
