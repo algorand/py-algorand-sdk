@@ -45,27 +45,27 @@ class Transaction:
         txid = base64.b32encode(txid).decode()
         return encoding._undo_padding(txid)
 
-    def sign(self, private_key):
-        """
-        Sign the transaction with a private key.
-
-        Args:
-            private_key (str): the private key of the signing account
-
-        Returns:
-            SignedTransaction: signed transaction with the signature
-        """
-        sig = self.raw_sign(private_key)
-        sig = base64.b64encode(sig).decode()
-        authorizing_address = None
-        print("signing a txn. sender")
-        print(self.sender)
-        print("compared against")
-        print(account.address_from_private_key(private_key))
-        if not (self.sender == account.address_from_private_key(private_key)):
-            authorizing_address = account.address_from_private_key(private_key)
-        stx = SignedTransaction(self, sig, authorizing_address)
-        return stx
+    # def sign(self, private_key):
+    #     """
+    #     Sign the transaction with a private key.
+    #
+    #     Args:
+    #         private_key (str): the private key of the signing account
+    #
+    #     Returns:
+    #         SignedTransaction: signed transaction with the signature
+    #     """
+    #     sig = self.raw_sign(private_key)
+    #     sig = base64.b64encode(sig).decode()
+    #     authorizing_address = None
+    #     print("signing a txn. sender")
+    #     print(self.sender)
+    #     print("compared against")
+    #     print(account.address_from_private_key(private_key))
+    #     if not (self.sender == account.address_from_private_key(private_key)):
+    #         authorizing_address = account.address_from_private_key(private_key)
+    #     stx = SignedTransaction(self, sig, authorizing_address)
+    #     return stx
 
     def raw_sign(self, private_key):
         """
