@@ -58,6 +58,10 @@ class Transaction:
         sig = self.raw_sign(private_key)
         sig = base64.b64encode(sig).decode()
         authorizing_address = None
+        print("signing a txn. sender")
+        print(self.sender)
+        print("compared against")
+        print(account.address_from_private_key(private_key))
         if self.sender != account.address_from_private_key(private_key):
             authorizing_address = account.address_from_private_key(private_key)
         stx = SignedTransaction(self, sig, authorizing_address)
@@ -805,6 +809,7 @@ class SignedTransaction:
             od["sig"] = base64.b64decode(self.signature)
         od["txn"] = self.transaction.dictify()
         if self.authorizing_address:
+            print("sgnr")
             od["sgnr"] = encoding.decode_address(self.authorizing_address)
         return od
 

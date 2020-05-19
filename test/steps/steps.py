@@ -133,11 +133,17 @@ def sign_msig(context):
 
 @when("I sign the transaction with the private key")
 def sign_with_sk(context):
+    print("signing")
     context.stx = context.txn.sign(context.sk)
 
 
 @then('the signed transaction should equal the golden "{golden}"')
 def equal_golden(context, golden):
+    if not (encoding.msgpack_encode(context.stx) == golden):
+        print("golden comparison failed. real txn")
+        print(encoding.msgpack_encode(context.stx))
+        print("golden")
+        print(golden)
     assert encoding.msgpack_encode(context.stx) == golden
 
 
