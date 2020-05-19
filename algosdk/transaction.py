@@ -55,7 +55,7 @@ class Transaction:
         Returns:
             SignedTransaction: signed transaction with the signature
         """
-        return "this is simply wrong and should fail"
+        raise NotImplementedError("this should fail immediately")
         sig = self.raw_sign(private_key)
         sig = base64.b64encode(sig).decode()
         authorizing_address = None
@@ -63,7 +63,7 @@ class Transaction:
         print(self.sender)
         print("compared against")
         print(account.address_from_private_key(private_key))
-        if self.sender != account.address_from_private_key(private_key):
+        if not (self.sender == account.address_from_private_key(private_key)):
             authorizing_address = account.address_from_private_key(private_key)
         stx = SignedTransaction(self, sig, authorizing_address)
         return stx
