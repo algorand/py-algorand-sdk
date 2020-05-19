@@ -91,6 +91,7 @@ class Transaction:
         Returns:
             SignedTransaction: signed transaction with the signature
         """
+        print("IT WAS THIS ONE ALL ALONG")
         sig = self.raw_sign(private_key)
         sig = base64.b64encode(sig).decode()
         stx = SignedTransaction(self, sig)
