@@ -55,7 +55,6 @@ class Transaction:
         Returns:
             SignedTransaction: signed transaction with the signature
         """
-        raise NotImplementedError("this should fail immediately")
         sig = self.raw_sign(private_key)
         sig = base64.b64encode(sig).decode()
         authorizing_address = None
