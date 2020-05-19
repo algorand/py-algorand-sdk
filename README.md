@@ -496,6 +496,16 @@ txn = transaction.AssetTransferTxn(clawback_address, sp,
 signed_txn = txn.sign(clawback_private_key)
 ```
 
+## Rekeying
+To rekey an account to a new address, add the `rekey_to` argument to creation.
+```python
+...
+# After sending rekeying_txn, every transaction needs to be signed by the SK of the following address
+rekey_address = "47YPQTIGQEO7T4Y4RWDYWEKV6RTR2UNBQXBABEEGM72ESWDQNCQ52OPASU"
+rekeying_txn = transaction.PaymentTxn(sender, sp, receiver, amount, rekey_to=rekey_address)
+...
+```
+
 ## Documentation
 Documentation for the Python SDK is available at [py-algorand-sdk.readthedocs.io](https://py-algorand-sdk.readthedocs.io/en/latest/).
 

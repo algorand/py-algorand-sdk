@@ -843,3 +843,39 @@ def dynamic_fee_contract(context, amt):
 @when("I send the dynamic fee transactions")
 def send_dynamic_fee(context):
     context.acl.send_transactions(context.txns)
+
+
+@given('I sign the transaction with the private key')
+def given_sign_with_sk(context):
+    # python cucumber considers "Given foo" and "When foo" to be distinct,
+    # but we don't want them to be. So, call the other function
+    sign_with_sk(context)
+
+
+@given('I send the transaction')
+def given_send_txn(context):
+    # python cucumber considers "Given foo" and "When foo" to be distinct,
+    # but we don't want them to be. So, call the other function
+    send_txn(context)
+
+
+@when('mnemonic for private key "{mn}"')
+def step_impl(context, mn):
+    # python cucumber considers "Given foo" and "When foo" to be distinct,
+    # but we don't want them to be. So, call the other function
+    mn_for_sk(context, mn)
+
+
+@when('I set the from address to "{from_addr}"')
+def step_impl(context, from_addr):
+    context.txn.sender = from_addr
+
+
+@when('I add a rekeyTo field with the private key algorand address')
+def step_impl(context):
+    context.txn.rekey_to = account.address_from_private_key(context.sk)
+
+
+@when('I add a rekeyTo field with address "{rekey}"')
+def step_impl(context, rekey):
+    context.txn.rekey_to = rekey
