@@ -11,5 +11,5 @@ RUN pip3 uninstall py-algorand-sdk \
     && pip3 install behave -q
 
 # Run integration tests
-CMD ["/bin/bash", "-c", "behave test -f progress2"]
+CMD ["/bin/bash", "-c", "behave test -f progress2 --tags=@rekey"]
 
