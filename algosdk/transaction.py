@@ -55,6 +55,7 @@ class Transaction:
         Returns:
             SignedTransaction: signed transaction with the signature
         """
+        return "this is simply wrong and should fail"
         sig = self.raw_sign(private_key)
         sig = base64.b64encode(sig).decode()
         authorizing_address = None
