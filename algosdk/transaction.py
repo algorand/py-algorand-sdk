@@ -55,17 +55,8 @@ class Transaction:
         Returns:
             SignedTransaction: signed transaction with the signature
         """
-        sig = self.raw_sign(private_key)
-        sig = base64.b64encode(sig).decode()
-        authorizing_address = None
-        print("signing a txn. sender")
-        print(self.sender)
-        print("compared against")
-        print(account.address_from_private_key(private_key))
-        if not (self.sender == account.address_from_private_key(private_key)):
-            authorizing_address = account.address_from_private_key(private_key)
-        stx = SignedTransaction(self, sig, authorizing_address)
-        return stx
+        raise NotImplementedError("this should strctly fail")
+        return "this line shouldn't even be reachable."
 
     def raw_sign(self, private_key):
         """
