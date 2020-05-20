@@ -148,6 +148,9 @@ def equal_msigaddr_golden(context, golden):
 
 @then('the multisig transaction should equal the golden "{golden}"')
 def equal_msig_golden(context, golden):
+    if not encoding.msgpack_encode(context.mtx) == golden:
+        print(encoding.msgpack_encode(context.mtx))
+        print(golden)
     assert encoding.msgpack_encode(context.mtx) == golden
 
 

@@ -74,7 +74,7 @@ tx_group_limit = 16
 """int: maximum number of transaction in a transaction group"""
 max_asset_decimals = 19
 """int: maximum value for decimals in assets"""
-num_additional_bytes_after_signing = 75
+num_additional_bytes_after_signing = 2
 """int: number of bytes added by signature"""
 
 # logic sig related
