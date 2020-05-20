@@ -133,17 +133,11 @@ def sign_msig(context):
 
 @when("I sign the transaction with the private key")
 def sign_with_sk(context):
-    print("signing")
     context.stx = context.txn.sign(context.sk)
 
 
 @then('the signed transaction should equal the golden "{golden}"')
 def equal_golden(context, golden):
-    if not (encoding.msgpack_encode(context.stx) == golden):
-        print("golden comparison failed. real txn")
-        print(encoding.msgpack_encode(context.stx))
-        print("golden")
-        print(golden)
     assert encoding.msgpack_encode(context.stx) == golden
 
 
@@ -866,22 +860,22 @@ def given_send_txn(context):
 
 
 @when('mnemonic for private key "{mn}"')
-def step_impl(context, mn):
+def when_mn_for_sk(context, mn):
     # python cucumber considers "Given foo" and "When foo" to be distinct,
     # but we don't want them to be. So, call the other function
     mn_for_sk(context, mn)
 
 
 @when('I set the from address to "{from_addr}"')
-def step_impl(context, from_addr):
+def set_from_to(context, from_addr):
     context.txn.sender = from_addr
 
 
 @when('I add a rekeyTo field with the private key algorand address')
-def step_impl(context):
+def add_rekey_to_sk(context):
     context.txn.rekey_to = account.address_from_private_key(context.sk)
 
 
 @when('I add a rekeyTo field with address "{rekey}"')
-def step_impl(context, rekey):
+def add_rekey_to_address(context, rekey):
     context.txn.rekey_to = rekey
