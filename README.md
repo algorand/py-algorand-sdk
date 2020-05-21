@@ -9,6 +9,10 @@ Run ```$ pip3 install py-algorand-sdk``` to install the package.
 
 Alternatively, choose a [distribution file](https://pypi.org/project/py-algorand-sdk/#files), and run ```$ pip3 install [file name]```.
 
+## SDK Development
+
+Run tests with `make docker-test`
+
 ## Quick start
 
 Here's a simple example you can run without a node.

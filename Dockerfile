@@ -5,9 +5,10 @@ RUN mkdir -p $HOME/py-algorand-sdk
 COPY . $HOME/py-algorand-sdk
 WORKDIR $HOME/py-algorand-sdk
 
+# SDK dependencies, and source version of behave with tag expression support
 RUN pip3 install git+https://github.com/algorand/py-algorand-sdk/ -q \
-    && pip3 install behave -q
+    && pip install git+https://github.com/behave/behave
 
 # Run integration tests
-CMD ["/bin/bash", "-c", "behave test -f progress2"]
+CMD ["/bin/bash", "-c", "make integration"]
 
