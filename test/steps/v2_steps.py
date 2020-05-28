@@ -213,6 +213,32 @@ def asset_txns(context, index, notePrefixB64, txType, sigType, txid, block, minR
         max_amount=int(currencyLessThan), address=address, address_role=addressRole,
         exclude_close_to=excludeCloseTo, rekey_to=rekeyTo)
 
+@when('we make a Lookup Asset Transactions call against asset index {index} with NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} address "{address:MaybeString}" addressRole "{addressRole:MaybeString}" ExcluseCloseTo "{excludeCloseTo:MaybeString}"')
+def step_impl(context, index, notePrefixB64, txType, sigType, txid, block, minRound, maxRound, limit, beforeTime, afterTime, currencyGreaterThan, currencyLessThan, address, addressRole, excludeCloseTo):
+    if notePrefixB64 == "none":
+        notePrefixB64 = ""
+    if txType == "none":
+        txType = None
+    if sigType == "none":
+        sigType = None
+    if txid == "none":
+        txid = None
+    if beforeTime == "none":
+        beforeTime = None
+    if afterTime == "none":
+        afterTime = None
+    if address == "none":
+        address = None
+    if addressRole == "none":
+        addressRole = None
+    if excludeCloseTo == "none":
+        excludeCloseTo = None
+
+    context.response = context.icl.search_asset_transactions(int(index), limit=int(limit), next_page=None, note_prefix=base64.b64decode(notePrefixB64), txn_type=txType,
+                                                             sig_type=sigType, txid=txid, block=int(block), min_round=int(minRound), max_round=int(maxRound),
+                                                             start_time=afterTime, end_time=beforeTime, min_amount=int(currencyGreaterThan),
+                                                             max_amount=int(currencyLessThan), address=address, address_role=addressRole,
+                                                             exclude_close_to=excludeCloseTo, rekey_to=None)
 @when('we make any LookupAssetTransactions call')
 def asset_txns_any(context):
     context.response = context.icl.search_asset_transactions(32)
@@ -247,6 +273,25 @@ def txns_by_addr(context, account, notePrefixB64, txType, sigType, txid, block, 
         sig_type=sigType, txid=txid, block=int(block), min_round=int(minRound), max_round=int(maxRound),
         start_time=afterTime, end_time=beforeTime, min_amount=int(currencyGreaterThan),
         max_amount=int(currencyLessThan), address=account, rekey_to=rekeyTo)
+
+@when('we make a Lookup Account Transactions call against account "{account:MaybeString}" with NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index}')
+def txns_by_addr(context, account, notePrefixB64, txType, sigType, txid, block, minRound, maxRound, limit, beforeTime, afterTime, currencyGreaterThan, currencyLessThan, index):
+    if notePrefixB64 == "none":
+        notePrefixB64 = ""
+    if txType == "none":
+        txType = None
+    if sigType == "none":
+        sigType = None
+    if txid == "none":
+        txid = None
+    if beforeTime == "none":
+        beforeTime = None
+    if afterTime == "none":
+        afterTime = None
+    context.response = context.icl.search_transactions_by_address(asset_id=int(index), limit=int(limit), next_page=None, note_prefix=base64.b64decode(notePrefixB64), txn_type=txType,
+                                                                  sig_type=sigType, txid=txid, block=int(block), min_round=int(minRound), max_round=int(maxRound),
+                                                                  start_time=afterTime, end_time=beforeTime, min_amount=int(currencyGreaterThan),
+                                                                  max_amount=int(currencyLessThan), address=account, rekey_to=None)
 
 @when('we make any LookupAccountTransactions call')
 def txns_by_addr_any(context):
@@ -432,7 +477,7 @@ def parse_accounts(context, roundNum, length, index, address):
     if int(length) > 0:
         assert context.response["accounts"][int(index)]["address"] == address
 
-@then('the parsed SearchAccounts response should be valid on round {roundNum} and the array should be of len {length} and the element at index {index} should have authorizing address "{authAddr}"')
+@when('the parsed SearchAccounts response should be valid on round {roundNum} and the array should be of len {length} and the element at index {index} should have authorizing address "{authAddr:MaybeString}"')
 def parse_accounts_auth(context, roundNum, length, index, authAddr):
     assert context.response["current-round"] == int(roundNum)
     assert len(context.response["accounts"]) == int(length)
@@ -559,6 +604,32 @@ def search_txns(context, account, notePrefixB64, txType, sigType, txid, block, m
         max_amount=int(currencyLessThan), address=account, address_role=addressRole,
         exclude_close_to=excludeCloseTo, rekey_to=rekeyTo)
 
+@when('we make a Search For Transactions call with account "{account:MaybeString}" NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index} addressRole "{addressRole:MaybeString}" ExcluseCloseTo "{excludeCloseTo:MaybeString}"')
+def search_txns(context, account, notePrefixB64, txType, sigType, txid, block, minRound, maxRound, limit, beforeTime, afterTime, currencyGreaterThan, currencyLessThan, index, addressRole, excludeCloseTo):
+    if notePrefixB64 == "none":
+        notePrefixB64 = ""
+    if txType == "none":
+        txType = None
+    if sigType == "none":
+        sigType = None
+    if txid == "none":
+        txid = None
+    if beforeTime == "none":
+        beforeTime = None
+    if afterTime == "none":
+        afterTime = None
+    if account == "none":
+        account = None
+    if addressRole == "none":
+        addressRole = None
+    if excludeCloseTo == "none":
+        excludeCloseTo = None
+    context.response = context.icl.search_transactions(asset_id=int(index), limit=int(limit), next_page=None, note_prefix=base64.b64decode(notePrefixB64), txn_type=txType,
+                                                       sig_type=sigType, txid=txid, block=int(block), min_round=int(minRound), max_round=int(maxRound),
+                                                       start_time=afterTime, end_time=beforeTime, min_amount=int(currencyGreaterThan),
+                                                       max_amount=int(currencyLessThan), address=account, address_role=addressRole,
+                                                       exclude_close_to=excludeCloseTo, rekey_to=None)
+
 @when('we make any SearchForTransactions call')
 def search_txns_any(context):
     context.response = context.icl.search_transactions(asset_id=2)
@@ -570,7 +641,7 @@ def parse_search_txns(context, roundNum, length, index, sender):
     if int(length) > 0:
         assert context.response["transactions"][int(index)]["sender"] == sender
 
-@then('the parsed SearchForTransactions response should be valid on round {roundNum} and the array should be of len {length} and the element at index {index} should have rekey-to "{rekeyTo}"')
+@when('the parsed SearchForTransactions response should be valid on round {roundNum} and the array should be of len {length} and the element at index {index} should have rekey-to "{rekeyTo:MaybeString}"')
 def step_impl(context, roundNum, length, index, rekeyTo):
     assert context.response["current-round"] == int(roundNum)
     assert len(context.response["transactions"]) == int(length)
