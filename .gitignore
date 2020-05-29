@@ -113,3 +113,4 @@ venv.bak/
 *.feature
 test/features
 test-harness
+docker-compose*
