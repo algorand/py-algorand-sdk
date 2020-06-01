@@ -41,11 +41,8 @@ jobs:
   # Linux amd64 jobs
   test-linux-amd64-unit:
     tasks:
-      - shell.Shell.install-harness
-      - shell.Shell.start-harness
       - shell.docker.Ensure.builder
       - docker.Make.unit
-      - shell.Shell.stop-harness
   test-linux-amd64-integration:
     tasks:
       - shell.Shell.install-harness
