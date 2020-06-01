@@ -28,15 +28,15 @@ tasks:
 # Harness tasks
 - task: shell.Shell
   name: install-harness
-  command: cicd/scripts/install_harness.sh
+  command: cicd/scripts/install-harness.sh
 - task: shell.Shell
   name: start-harness
-  command: docker-compose up -d
+  command: cicd/scripts/start-harness.sh
 - task: shell.Shell
   name: stop-harness
-  command: docker-compose down -v
+  command: cicd/scripts/stop-harness.sh
 
-  
+
 jobs:
   # Linux amd64 jobs
   test-linux-amd64-unit:
