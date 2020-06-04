@@ -15,6 +15,10 @@ import os
 from datetime import datetime
 import hashlib
 
+token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+algod_port = 60000
+kmd_port = 60001
+
 
 @when("I create a wallet")
 def create_wallet(context):
@@ -134,7 +138,6 @@ def sign_with_sk(context):
 
 @then('the signed transaction should equal the golden "{golden}"')
 def equal_golden(context, golden):
-    print(encoding.msgpack_encode(context.stx))
     assert encoding.msgpack_encode(context.stx) == golden
 
 
@@ -252,22 +255,14 @@ def sk_eq_export(context):
 
 @given("a kmd client")
 def kmd_client(context):
-    data_dir_path = os.environ["NODE_DIR"] + "/"
-    kmd_folder_name = os.environ["KMD_DIR"] + "/"
-    kmd_token = open(data_dir_path + kmd_folder_name + "kmd.token",
-                     "r").read().strip("\n")
-    kmd_address = "http://" + open(data_dir_path + kmd_folder_name + "kmd.net",
-                                   "r").read().strip("\n")
-    context.kcl = kmd.KMDClient(kmd_token, kmd_address)
+    kmd_address = "http://localhost:" + str(kmd_port)
+    context.kcl = kmd.KMDClient(token, kmd_address)
 
 
 @given("an algod client")
 def algod_client(context):
-    data_dir_path = os.environ["NODE_DIR"] + "/"
-    algod_token = open(data_dir_path + "algod.token", "r").read().strip("\n")
-    algod_address = "http://" + open(data_dir_path + "algod.net",
-                                     "r").read().strip("\n")
-    context.acl = algod.AlgodClient(algod_token, algod_address)
+    algod_address = "http://localhost:" + str(algod_port)
+    context.acl = algod.AlgodClient(token, algod_address)
     if context.acl.status()["lastRound"] < 2:
         context.acl.status_after_block(2)
 

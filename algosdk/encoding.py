@@ -47,10 +47,8 @@ def _sort_dict(d):
     for k, v in sorted(d.items()):
         if isinstance(v, dict):
             od[k] = _sort_dict(v)
-        else:
+        elif v:
             od[k] = v
-        if not od[k]:
-            del od[k]
     return od
 
 
@@ -65,7 +63,9 @@ def msgpack_decode(enc):
         Transaction, SignedTransaction, Multisig, Bid, or SignedBid:\
             decoded object
     """
-    decoded = msgpack.unpackb(base64.b64decode(enc), raw=False)
+    decoded = enc
+    if not isinstance(enc, dict):
+        decoded = msgpack.unpackb(base64.b64decode(enc), raw=False)
     if "type" in decoded:
         return transaction.Transaction.undictify(decoded)
     if "l" in decoded:
@@ -74,8 +74,10 @@ def msgpack_decode(enc):
         return transaction.MultisigTransaction.undictify(decoded)
     if "lsig" in decoded:
         return transaction.LogicSigTransaction.undictify(decoded)
-    if "txn" in decoded:
+    if "sig" in decoded:
         return transaction.SignedTransaction.undictify(decoded)
+    if "txn" in decoded:
+        return transaction.Transaction.undictify(decoded["txn"])
     if "subsig" in decoded:
         return transaction.Multisig.undictify(decoded)
     if "txlist" in decoded:

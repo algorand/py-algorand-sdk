@@ -3,21 +3,9 @@
 Modules
 =======
 .. toctree::
-   :glob:
+   :maxdepth: 10
 
-   account
-   algod
-   auction
-   constants
-   encoding
-   error
-   future/index*
-   kmd
-   logic
-   mnemonic
-   template
-   transaction
-   util
-   wallet
-   wordlist
+   algosdk/index
+
+
 

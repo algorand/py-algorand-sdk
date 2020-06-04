@@ -1,5 +1,7 @@
+algosdk
+=======
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 10
 
    account
    algod
@@ -7,14 +9,13 @@
    constants
    encoding
    error
-   future/transaction
-   future/template
+   future/index
    kmd
    logic
    mnemonic
    template
    transaction
    util
+   v2client/index
    wallet
    wordlist
-
