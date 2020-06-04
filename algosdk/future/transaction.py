@@ -232,6 +232,8 @@ class PaymentTxn(Transaction):
                              lease, constants.payment_txn)
         self.receiver = receiver
         self.amt = amt
+        if (not isinstance(self.amt, int)) or self.amt < 0:
+            raise error.WrongAmountType
         self.close_remainder_to = close_remainder_to
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
@@ -722,6 +724,8 @@ class AssetTransferTxn(Transaction):
                              lease, constants.assettransfer_txn)
         self.receiver = receiver
         self.amount = amt
+        if (not isinstance(self.amount, int)) or self.amount < 0:
+            raise error.WrongAmountType
         self.index = index
         self.close_assets_to = close_assets_to
         self.revocation_target = revocation_target

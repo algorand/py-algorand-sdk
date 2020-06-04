@@ -25,6 +25,11 @@ class DuplicateSigMismatchError(Exception):
         Exception.__init__(self, "mismatched duplicate signatures in multisig")
 
 
+class WrongAmountType(Exception):
+    def __init(self):
+        Exception.__init__(self, "amount (amt) must be a non-negative integer")
+
+
 class WrongChecksumError(Exception):
     def __init__(self):
         Exception.__init__(self, "checksum failed to validate")

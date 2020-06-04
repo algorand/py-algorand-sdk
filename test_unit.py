@@ -450,6 +450,52 @@ class TestTransaction(unittest.TestCase):
             "nXXUOB+jFx2mGR9tuH9pHR5cGWlYXhmZXKkeGFpZAE=")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
+    def test_pay_float_amt(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(3, 1, 100, gh)
+        f = lambda: transaction.PaymentTxn(address, sp, address,
+                                           10., note=bytes([1, 32, 200]))
+        self.assertRaises(error.WrongAmountType, f)
+
+    def test_pay_negative_amt(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(3, 1, 100, gh)
+        f = lambda: transaction.PaymentTxn(address, sp, address,
+                                           -5, note=bytes([1, 32, 200]))
+        self.assertRaises(error.WrongAmountType, f)
+
+    def test_asset_transfer_float_amt(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        fee = 10
+        first_round = 322575
+        last_round = 323576
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        index = 1
+        amount = 1.
+        to = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        close = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        sp = transaction.SuggestedParams(fee, first_round, last_round, gh)
+        f = lambda: transaction.AssetTransferTxn(
+            address, sp, to, amount, index, close)
+        self.assertRaises(error.WrongAmountType, f)
+
+    def test_asset_transfer_negative_amt(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        fee = 10
+        first_round = 322575
+        last_round = 323576
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        index = 1
+        amount = -1
+        to = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        close = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        sp = transaction.SuggestedParams(fee, first_round, last_round, gh)
+        f = lambda: transaction.AssetTransferTxn(
+            address, sp, to, amount, index, close)
+        self.assertRaises(error.WrongAmountType, f)
+
     def test_group_id(self):
         address = "UPYAFLHSIPMJOHVXU2MPLQ46GXJKSDCEMZ6RLCQ7GWB5PRDKJUWKKXECXI"
         fromAddress, toAddress = address, address
