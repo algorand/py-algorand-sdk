@@ -83,7 +83,7 @@ class IndexerClient:
 
     def accounts(
         self, asset_id=None, limit=None, next_page=None, min_balance=None,
-        max_balance=None, block=None, **kwargs):
+        max_balance=None, block=None, auth_addr=None, **kwargs):
         """
         Return accounts that hold the asset; microalgos are the default
         currency unless asset_id is specified, in which case the asset will
@@ -100,6 +100,9 @@ class IndexerClient:
             block (int, optional): include results for the specified round;
                 for performance reasons, this parameter may be disabled on
                 some configurations
+            auth_addr (str, optional): Include accounts configured to use
+                this spending key.
+
         """
         req = "/accounts"
         query = dict()
@@ -115,6 +118,8 @@ class IndexerClient:
             query["currency-less-than"] = max_balance
         if block:
             query["round"] = block
+        if auth_addr:
+            query["auth-addr"] = auth_addr
         return self.indexer_request("GET", req, query, **kwargs)
     
     def asset_balances(self, asset_id, limit=None, next_page=None, min_balance=None,
@@ -179,7 +184,7 @@ class IndexerClient:
         sig_type=None, txid=None, block=None, min_round=None, max_round=None,
         asset_id=None, start_time=None, end_time=None, min_amount=None,
         max_amount=None, address=None, address_role=None,
-        exclude_close_to=False, **kwargs):
+        exclude_close_to=False, rekey_to=False, **kwargs):
         """
         Return a list of transactions satisfying the conditions.
 
@@ -221,6 +226,8 @@ class IndexerClient:
                 search for; the close to fields are normally treated as a
                 receiver, if you would like to exclude them set this parameter
                 to true
+            rekey_to (bool, optional) Include results which include the
+                rekey-to field.
         """
         req = "/transactions"
         query = dict()
@@ -258,6 +265,8 @@ class IndexerClient:
             query["address-role"] = address_role
         if exclude_close_to:
             query["exclude-close-to"] = "true"
+        if rekey_to:
+            query["rekey-to"] = "true"
 
         return self.indexer_request("GET", req, query, **kwargs)
 
@@ -265,7 +274,7 @@ class IndexerClient:
         self, address, limit=None, next_page=None, note_prefix=None,
         txn_type=None, sig_type=None, txid=None, block=None, min_round=None,
         max_round=None, asset_id=None, start_time=None, end_time=None,
-        min_amount=None, max_amount=None, **kwargs):
+        min_amount=None, max_amount=None, rekey_to=False, **kwargs):
         """
         Return a list of transactions satisfying the conditions for the address.
 
@@ -299,6 +308,8 @@ class IndexerClient:
             max_amount (int, optional): results should have an amount less
                 than this value, microalgos are the default currency unless an
                 asset-id is provided, in which case the asset will be used
+            rekey_to (bool, optional) Include results which include the
+                rekey-to field.
         """
         req = "/accounts/" + address + "/transactions"
         query = dict()
@@ -330,6 +341,8 @@ class IndexerClient:
             query["currency-greater-than"] = min_amount
         if max_amount:
             query["currency-less-than"] = max_amount
+        if rekey_to:
+            query["rekey-to"] = "true"
 
         return self.indexer_request("GET", req, query, **kwargs)
 
@@ -337,7 +350,7 @@ class IndexerClient:
         txn_type=None, sig_type=None, txid=None, block=None, min_round=None,
         max_round=None, address=None, start_time=None, end_time=None,
         min_amount=None, max_amount=None, address_role=None,
-        exclude_close_to=False, **kwargs):
+        exclude_close_to=False, rekey_to=False, **kwargs):
         """
         Return a list of transactions satisfying the conditions for the address.
 
@@ -380,6 +393,8 @@ class IndexerClient:
                 search for; the close to fields are normally treated as a
                 receiver, if you would like to exclude them set this parameter
                 to true
+            rekey_to (bool, optional) Include results which include the
+                rekey-to field.
         """
         req = "/assets/" + str(asset_id) + "/transactions"
         query = dict()
@@ -415,6 +430,8 @@ class IndexerClient:
             query["address-role"] = address_role
         if exclude_close_to:
             query["exclude-close-to"] = "true"
+        if rekey_to:
+            query["rekey-to"] = "true"
 
         return self.indexer_request("GET", req, query, **kwargs)
     

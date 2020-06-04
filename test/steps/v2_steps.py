@@ -185,8 +185,8 @@ def parse_asset_balance(context, roundNum, length, idx, address, amount, frozenS
 def icl_asset_txns(context, indexer, assetid):
     context.response = context.icls[indexer].search_asset_transactions(int(assetid))
 
-@when('we make a Lookup Asset Transactions call against asset index {index} with NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} address "{address:MaybeString}" addressRole "{addressRole:MaybeString}" ExcluseCloseTo "{excludeCloseTo:MaybeString}"')
-def asset_txns(context, index, notePrefixB64, txType, sigType, txid, block, minRound, maxRound, limit, beforeTime, afterTime, currencyGreaterThan, currencyLessThan, address, addressRole, excludeCloseTo):
+@when('we make a Lookup Asset Transactions call against asset index {index} with NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} address "{address:MaybeString}" addressRole "{addressRole:MaybeString}" ExcluseCloseTo "{excludeCloseTo:MaybeString}" RekeyTo "{rekeyTo:MaybeString}"')
+def asset_txns(context, index, notePrefixB64, txType, sigType, txid, block, minRound, maxRound, limit, beforeTime, afterTime, currencyGreaterThan, currencyLessThan, address, addressRole, excludeCloseTo, rekeyTo):
     if notePrefixB64 == "none":
         notePrefixB64 = ""
     if txType == "none":
@@ -205,12 +205,40 @@ def asset_txns(context, index, notePrefixB64, txType, sigType, txid, block, minR
         addressRole = None
     if excludeCloseTo == "none":
         excludeCloseTo = None
+    if rekeyTo == "none":
+        rekeyTo = None
     context.response = context.icl.search_asset_transactions(int(index), limit=int(limit), next_page=None, note_prefix=base64.b64decode(notePrefixB64), txn_type=txType,
         sig_type=sigType, txid=txid, block=int(block), min_round=int(minRound), max_round=int(maxRound),
         start_time=afterTime, end_time=beforeTime, min_amount=int(currencyGreaterThan),
         max_amount=int(currencyLessThan), address=address, address_role=addressRole,
-        exclude_close_to=excludeCloseTo)
+        exclude_close_to=excludeCloseTo, rekey_to=rekeyTo)
 
+@when('we make a Lookup Asset Transactions call against asset index {index} with NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} address "{address:MaybeString}" addressRole "{addressRole:MaybeString}" ExcluseCloseTo "{excludeCloseTo:MaybeString}"')
+def step_impl(context, index, notePrefixB64, txType, sigType, txid, block, minRound, maxRound, limit, beforeTime, afterTime, currencyGreaterThan, currencyLessThan, address, addressRole, excludeCloseTo):
+    if notePrefixB64 == "none":
+        notePrefixB64 = ""
+    if txType == "none":
+        txType = None
+    if sigType == "none":
+        sigType = None
+    if txid == "none":
+        txid = None
+    if beforeTime == "none":
+        beforeTime = None
+    if afterTime == "none":
+        afterTime = None
+    if address == "none":
+        address = None
+    if addressRole == "none":
+        addressRole = None
+    if excludeCloseTo == "none":
+        excludeCloseTo = None
+
+    context.response = context.icl.search_asset_transactions(int(index), limit=int(limit), next_page=None, note_prefix=base64.b64decode(notePrefixB64), txn_type=txType,
+                                                             sig_type=sigType, txid=txid, block=int(block), min_round=int(minRound), max_round=int(maxRound),
+                                                             start_time=afterTime, end_time=beforeTime, min_amount=int(currencyGreaterThan),
+                                                             max_amount=int(currencyLessThan), address=address, address_role=addressRole,
+                                                             exclude_close_to=excludeCloseTo, rekey_to=None)
 @when('we make any LookupAssetTransactions call')
 def asset_txns_any(context):
     context.response = context.icl.search_asset_transactions(32)
@@ -224,6 +252,27 @@ def parse_asset_tns(context, roundNum, length, idx, sender):
 @when('I use {indexer} to search for all "{accountid}" transactions')
 def icl_txns_by_addr(context, indexer, accountid):
     context.response = context.icls[indexer].search_transactions_by_address(accountid)
+
+@when('we make a Lookup Account Transactions call against account "{account:MaybeString}" with NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index} rekeyTo "{rekeyTo:MaybeString}"')
+def txns_by_addr(context, account, notePrefixB64, txType, sigType, txid, block, minRound, maxRound, limit, beforeTime, afterTime, currencyGreaterThan, currencyLessThan, index, rekeyTo):
+    if notePrefixB64 == "none":
+        notePrefixB64 = ""
+    if txType == "none":
+        txType = None
+    if sigType == "none":
+        sigType = None
+    if txid == "none":
+        txid = None
+    if beforeTime == "none":
+        beforeTime = None
+    if afterTime == "none":
+        afterTime = None
+    if rekeyTo == "none":
+        rekeyTo = None
+    context.response = context.icl.search_transactions_by_address(asset_id=int(index), limit=int(limit), next_page=None, note_prefix=base64.b64decode(notePrefixB64), txn_type=txType,
+        sig_type=sigType, txid=txid, block=int(block), min_round=int(minRound), max_round=int(maxRound),
+        start_time=afterTime, end_time=beforeTime, min_amount=int(currencyGreaterThan),
+        max_amount=int(currencyLessThan), address=account, rekey_to=rekeyTo)
 
 @when('we make a Lookup Account Transactions call against account "{account:MaybeString}" with NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index}')
 def txns_by_addr(context, account, notePrefixB64, txType, sigType, txid, block, minRound, maxRound, limit, beforeTime, afterTime, currencyGreaterThan, currencyLessThan, index):
@@ -240,9 +289,9 @@ def txns_by_addr(context, account, notePrefixB64, txType, sigType, txid, block, 
     if afterTime == "none":
         afterTime = None
     context.response = context.icl.search_transactions_by_address(asset_id=int(index), limit=int(limit), next_page=None, note_prefix=base64.b64decode(notePrefixB64), txn_type=txType,
-        sig_type=sigType, txid=txid, block=int(block), min_round=int(minRound), max_round=int(maxRound),
-        start_time=afterTime, end_time=beforeTime, min_amount=int(currencyGreaterThan),
-        max_amount=int(currencyLessThan), address=account)
+                                                                  sig_type=sigType, txid=txid, block=int(block), min_round=int(minRound), max_round=int(maxRound),
+                                                                  start_time=afterTime, end_time=beforeTime, min_amount=int(currencyGreaterThan),
+                                                                  max_amount=int(currencyLessThan), address=account, rekey_to=None)
 
 @when('we make any LookupAccountTransactions call')
 def txns_by_addr_any(context):
@@ -376,6 +425,15 @@ def search_accounts(context, index, limit, currencyGreaterThan, currencyLessThan
     context.response = context.icl.accounts(asset_id=int(index), limit=int(limit), next_page=None, min_balance=int(currencyGreaterThan),
         max_balance=int(currencyLessThan), block=int(block))
 
+
+@when('we make a Search Accounts call with assetID {index} limit {limit} currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} round {block} and authenticating address "{authAddr:MaybeString}"')
+def search_accounts(context, index, limit, currencyGreaterThan, currencyLessThan, block, authAddr):
+    if authAddr == "none":
+        authAddr = None
+    context.response = context.icl.accounts(asset_id=int(index), limit=int(limit), next_page=None, min_balance=int(currencyGreaterThan),
+                                            max_balance=int(currencyLessThan), block=int(block), auth_addr=authAddr)
+
+
 @when('I use {indexer} to search for an account with {assetid}, {limit}, {currencygt}, {currencylt} and token "{token:MaybeString}"')
 def icl_search_accounts(context, indexer, assetid, limit, currencygt, currencylt, token):
     context.response = context.icls[indexer].accounts(asset_id=int(assetid), limit=int(limit), next_page=token, min_balance=int(currencygt),
@@ -418,6 +476,13 @@ def parse_accounts(context, roundNum, length, index, address):
     assert len(context.response["accounts"]) == int(length)
     if int(length) > 0:
         assert context.response["accounts"][int(index)]["address"] == address
+
+@when('the parsed SearchAccounts response should be valid on round {roundNum} and the array should be of len {length} and the element at index {index} should have authorizing address "{authAddr:MaybeString}"')
+def parse_accounts_auth(context, roundNum, length, index, authAddr):
+    assert context.response["current-round"] == int(roundNum)
+    assert len(context.response["accounts"]) == int(length)
+    if int(length) > 0:
+        assert context.response["accounts"][int(index)]["auth-addr"] == authAddr
 
 @when('I get the next page using {indexer} to search for transactions with {limit} and {maxround}')
 def search_txns_next(context, indexer, limit, maxround):
@@ -511,6 +576,34 @@ def check_currency(context, currencygt, currencylt):
                 assert int(currencygt) <= amt
                 
         
+@when('we make a Search For Transactions call with account "{account:MaybeString}" NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index} addressRole "{addressRole:MaybeString}" ExcluseCloseTo "{excludeCloseTo:MaybeString}" rekeyTo "{rekeyTo:MaybeString}"')
+def search_txns(context, account, notePrefixB64, txType, sigType, txid, block, minRound, maxRound, limit, beforeTime, afterTime, currencyGreaterThan, currencyLessThan, index, addressRole, excludeCloseTo, rekeyTo):
+    if notePrefixB64 == "none":
+        notePrefixB64 = ""
+    if txType == "none":
+        txType = None
+    if sigType == "none":
+        sigType = None
+    if txid == "none":
+        txid = None
+    if beforeTime == "none":
+        beforeTime = None
+    if afterTime == "none":
+        afterTime = None
+    if account == "none":
+        account = None
+    if addressRole == "none":
+        addressRole = None
+    if excludeCloseTo == "none":
+        excludeCloseTo = None
+    if rekeyTo == "none":
+        rekeyTo = None
+    context.response = context.icl.search_transactions(asset_id=int(index), limit=int(limit), next_page=None, note_prefix=base64.b64decode(notePrefixB64), txn_type=txType,
+        sig_type=sigType, txid=txid, block=int(block), min_round=int(minRound), max_round=int(maxRound),
+        start_time=afterTime, end_time=beforeTime, min_amount=int(currencyGreaterThan),
+        max_amount=int(currencyLessThan), address=account, address_role=addressRole,
+        exclude_close_to=excludeCloseTo, rekey_to=rekeyTo)
+
 @when('we make a Search For Transactions call with account "{account:MaybeString}" NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index} addressRole "{addressRole:MaybeString}" ExcluseCloseTo "{excludeCloseTo:MaybeString}"')
 def search_txns(context, account, notePrefixB64, txType, sigType, txid, block, minRound, maxRound, limit, beforeTime, afterTime, currencyGreaterThan, currencyLessThan, index, addressRole, excludeCloseTo):
     if notePrefixB64 == "none":
@@ -532,10 +625,10 @@ def search_txns(context, account, notePrefixB64, txType, sigType, txid, block, m
     if excludeCloseTo == "none":
         excludeCloseTo = None
     context.response = context.icl.search_transactions(asset_id=int(index), limit=int(limit), next_page=None, note_prefix=base64.b64decode(notePrefixB64), txn_type=txType,
-        sig_type=sigType, txid=txid, block=int(block), min_round=int(minRound), max_round=int(maxRound),
-        start_time=afterTime, end_time=beforeTime, min_amount=int(currencyGreaterThan),
-        max_amount=int(currencyLessThan), address=account, address_role=addressRole,
-        exclude_close_to=excludeCloseTo)
+                                                       sig_type=sigType, txid=txid, block=int(block), min_round=int(minRound), max_round=int(maxRound),
+                                                       start_time=afterTime, end_time=beforeTime, min_amount=int(currencyGreaterThan),
+                                                       max_amount=int(currencyLessThan), address=account, address_role=addressRole,
+                                                       exclude_close_to=excludeCloseTo, rekey_to=None)
 
 @when('we make any SearchForTransactions call')
 def search_txns_any(context):
@@ -547,6 +640,13 @@ def parse_search_txns(context, roundNum, length, index, sender):
     assert len(context.response["transactions"]) == int(length)
     if int(length) > 0:
         assert context.response["transactions"][int(index)]["sender"] == sender
+
+@when('the parsed SearchForTransactions response should be valid on round {roundNum} and the array should be of len {length} and the element at index {index} should have rekey-to "{rekeyTo:MaybeString}"')
+def step_impl(context, roundNum, length, index, rekeyTo):
+    assert context.response["current-round"] == int(roundNum)
+    assert len(context.response["transactions"]) == int(length)
+    if int(length) > 0:
+        assert context.response["transactions"][int(index)]["rekey-to"] == rekeyTo
 
 @when('I use {indexer} to search for assets with {limit}, {assetidin}, "{creator:MaybeString}", "{name:MaybeString}", "{unit:MaybeString}", and token "{token:MaybeString}"')
 def icl_search_assets(context, indexer, limit, assetidin, creator, name, unit, token):
@@ -602,6 +702,13 @@ def expect_path(context, path):
     actual_path, actual_query = urllib.parse.splitquery(context.response["path"])
     actual_query = urllib.parse.parse_qs(actual_query)
     assert exp_path == actual_path.replace("%3A", ":")
+    if not (exp_query == actual_query):
+        print("***")
+        print("exp_query")
+        print(exp_query)
+        print("actual_query")
+        print(actual_query)
+        print("***")
     assert exp_query == actual_query
 
 @then('expect error string to contain "{err:MaybeString}"')
