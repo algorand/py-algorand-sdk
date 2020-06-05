@@ -175,7 +175,8 @@ class AlgodClient:
         """
         txn = base64.b64decode(txn)
         req = "/transactions"
-        return self.algod_request("POST", req, data=txn, **kwargs)["txId"]
+        headers = { 'Content-Type': 'application/x-binary' }
+        return self.algod_request("POST", req, data=txn, headers=headers, **kwargs)["txId"]
 
     def pending_transactions(self, max_txns=0, response_format="json", **kwargs):
         """
