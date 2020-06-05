@@ -251,9 +251,10 @@ class AlgodClient:
             res["genesisID"],
             False)
 
-    def send_raw_transaction(self, txn, **kwargs):
+    def send_raw_transaction(self, txn, headers=None, **kwargs):
         """
         Broadcast a signed transaction to the network.
+        Sets the default Content-Type header, if not previously set.
 
         Args:
             txn (str): transaction to send, encoded in base64
@@ -262,9 +263,12 @@ class AlgodClient:
         Returns:
             str: transaction ID
         """
+        tx_headers = dict(headers) if headers is not None else {}
+        if all(map(lambda x: x.lower() != "content-type", [*tx_headers])):
+            tx_headers['Content-Type'] = 'application/x-binary'
         txn = base64.b64decode(txn)
         req = "/transactions"
-        return self.algod_request("POST", req, data=txn, **kwargs)["txId"]
+        return self.algod_request("POST", req, data=txn, headers=tx_headers, **kwargs)["txId"]
 
     def send_transaction(self, txn, **kwargs):
         """
