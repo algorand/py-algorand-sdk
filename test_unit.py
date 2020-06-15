@@ -1024,6 +1024,23 @@ class TestLogic(unittest.TestCase):
         with self.assertRaises(error.InvalidProgram):
             logic.check_program(program, [])
 
+        # check TEAL v2 opcodes
+        self.assertIsNotNone(logic.spec, "Must be called after any of logic.check_program")
+        self.assertTrue(logic.spec['EvalMaxVersion'] >= 2)
+        self.assertTrue(logic.spec['LogicSigVersion'] >= 2)
+
+        # balance
+        program = b"\x02\x20\x01\x00\x22\x60"  # int 0; balance
+        self.assertTrue(logic.check_program(program, None))
+
+        # app_opted_in
+        program = b"\x02\x20\x01\x00\x22\x22\x61"  # int 0; int 0; app_opted_in
+        self.assertTrue(logic.check_program(program, None))
+
+        # asset_holding_get
+        program = b"\x02\x20\x01\x00\x22\x22\x70\x00"  # int 0; int 0; asset_holding_get Balance
+        self.assertTrue(logic.check_program(program, None))
+
 
 class TestLogicSig(unittest.TestCase):
     def test_basic(self):
@@ -1043,8 +1060,8 @@ class TestLogicSig(unittest.TestCase):
         self.assertEqual(lsig.args, None)
         self.assertEqual(lsig.sig, None)
         self.assertEqual(lsig.msig, None)
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
         self.assertEqual(lsig.address(), program_hash)
 
         args = [
@@ -1056,29 +1073,29 @@ class TestLogicSig(unittest.TestCase):
         self.assertEqual(lsig.args, args)
         self.assertEqual(lsig.sig, None)
         self.assertEqual(lsig.msig, None)
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
 
         # check serialization
         encoded = encoding.msgpack_encode(lsig)
         decoded = encoding.msgpack_decode(encoded)
         self.assertEqual(decoded, lsig)
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
 
         # check signature verification on modified program
         program = b"\x01\x20\x01\x03\x22"
         lsig = transaction.LogicSig(program)
         self.assertEqual(lsig.logic, program)
-        verifed = lsig.verify(public_key)
-        self.assertFalse(verifed)
+        verified = lsig.verify(public_key)
+        self.assertFalse(verified)
         self.assertNotEqual(lsig.address(), program_hash)
 
         # check invalid program fails
         program = b"\x00\x20\x01\x03\x22"
         lsig = transaction.LogicSig(program)
-        verifed = lsig.verify(public_key)
-        self.assertFalse(verifed)
+        verified = lsig.verify(public_key)
+        self.assertFalse(verified)
 
     def test_signature(self):
         private_key, address = account.generate_account()
@@ -1091,15 +1108,15 @@ class TestLogicSig(unittest.TestCase):
         self.assertEqual(lsig.msig, None)
         self.assertNotEqual(lsig.sig, None)
 
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
 
         # check serialization
         encoded = encoding.msgpack_encode(lsig)
         decoded = encoding.msgpack_decode(encoded)
         self.assertEqual(decoded, lsig)
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
 
     def test_multisig(self):
         private_key, _ = account.generate_account()
@@ -1118,34 +1135,34 @@ class TestLogicSig(unittest.TestCase):
 
         sender_addr = msig.address()
         public_key = encoding.decode_address(sender_addr)
-        verifed = lsig.verify(public_key)
-        self.assertFalse(verifed)       # not enough signatures
+        verified = lsig.verify(public_key)
+        self.assertFalse(verified)       # not enough signatures
 
         with self.assertRaises(error.InvalidSecretKeyError):
             lsig.append_to_multisig(private_key)
 
         lsig.append_to_multisig(private_key_2)
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
 
         # combine sig and multisig, ensure it fails
         lsigf = transaction.LogicSig(program)
         lsigf.sign(private_key)
         lsig.sig = lsigf.sig
-        verifed = lsig.verify(public_key)
-        self.assertFalse(verifed)
+        verified = lsig.verify(public_key)
+        self.assertFalse(verified)
 
         # remove, ensure it still works
         lsig.sig = None
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
 
         # check serialization
         encoded = encoding.msgpack_encode(lsig)
         decoded = encoding.msgpack_decode(encoded)
         self.assertEqual(decoded, lsig)
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
 
     def test_transaction(self):
         fromAddress = (
@@ -1190,8 +1207,8 @@ class TestLogicSig(unittest.TestCase):
         lsig = transaction.LogicSig(program, args)
         lsig.sign(sk)
         lstx = transaction.LogicSigTransaction(tx, lsig)
-        verifed = lstx.verify()
-        self.assertTrue(verifed)
+        verified = lstx.verify()
+        self.assertTrue(verified)
 
         golden_decoded = encoding.msgpack_decode(golden)
         self.assertEqual(lstx, golden_decoded)
