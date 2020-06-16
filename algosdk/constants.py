@@ -25,6 +25,8 @@ assetfreeze_txn = "afrz"
 """str: indicates an asset freeze transaction"""
 assettransfer_txn = "axfer"
 """str: indicates an asset transfer transaction"""
+appcall_txn = "appl"
+"""str: indicates an app call transaction, allows creating, deleting, and interacting with an application"""
 
 # note field types
 note_field_type_deposit = "d"
@@ -35,7 +37,6 @@ note_field_type_settlement = "s"
 """str: indicates a signed settlement in NoteField"""
 note_field_type_params = "p"
 """str: indicates signed params in NoteField"""
-
 
 # prefixes
 txid_prefix = b"TX"

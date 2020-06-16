@@ -604,6 +604,7 @@ def search_txns(context, account, notePrefixB64, txType, sigType, txid, block, m
         max_amount=int(currencyLessThan), address=account, address_role=addressRole,
         exclude_close_to=excludeCloseTo, rekey_to=rekeyTo)
 
+
 @when('we make a Search For Transactions call with account "{account:MaybeString}" NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index} addressRole "{addressRole:MaybeString}" ExcluseCloseTo "{excludeCloseTo:MaybeString}"')
 def search_txns(context, account, notePrefixB64, txType, sigType, txid, block, minRound, maxRound, limit, beforeTime, afterTime, currencyGreaterThan, currencyLessThan, index, addressRole, excludeCloseTo):
     if notePrefixB64 == "none":
@@ -630,9 +631,11 @@ def search_txns(context, account, notePrefixB64, txType, sigType, txid, block, m
                                                        max_amount=int(currencyLessThan), address=account, address_role=addressRole,
                                                        exclude_close_to=excludeCloseTo, rekey_to=None)
 
+
 @when('we make any SearchForTransactions call')
 def search_txns_any(context):
     context.response = context.icl.search_transactions(asset_id=2)
+
 
 @then('the parsed SearchForTransactions response should be valid on round {roundNum} and the array should be of len {length} and the element at index {index} should have sender "{sender}"')
 def parse_search_txns(context, roundNum, length, index, sender):
@@ -641,6 +644,7 @@ def parse_search_txns(context, roundNum, length, index, sender):
     if int(length) > 0:
         assert context.response["transactions"][int(index)]["sender"] == sender
 
+
 @when('the parsed SearchForTransactions response should be valid on round {roundNum} and the array should be of len {length} and the element at index {index} should have rekey-to "{rekeyTo:MaybeString}"')
 def step_impl(context, roundNum, length, index, rekeyTo):
     assert context.response["current-round"] == int(roundNum)
@@ -648,17 +652,20 @@ def step_impl(context, roundNum, length, index, rekeyTo):
     if int(length) > 0:
         assert context.response["transactions"][int(index)]["rekey-to"] == rekeyTo
 
+
 @when('I use {indexer} to search for assets with {limit}, {assetidin}, "{creator:MaybeString}", "{name:MaybeString}", "{unit:MaybeString}", and token "{token:MaybeString}"')
 def icl_search_assets(context, indexer, limit, assetidin, creator, name, unit, token):
     context.response = context.icls[indexer].search_assets(
         limit=int(limit), next_page=token, creator=creator, name=name, unit=unit,
         asset_id=int(assetidin))
 
+
 @then('there are {num} assets in the response, the first is {assetidout}.')
 def check_assets(context, num, assetidout):
     assert len(context.response["assets"]) == int(num)
     if int(num) > 0:
         assert context.response["assets"][0]["index"] == int(assetidout)
+
 
 @when('we make a SearchForAssets call with limit {limit} creator "{creator:MaybeString}" name "{name:MaybeString}" unit "{unit:MaybeString}" index {index}')
 def search_assets(context, limit, creator, name, unit, index):
@@ -673,9 +680,11 @@ def search_assets(context, limit, creator, name, unit, index):
         next_page=None, creator=creator, name=name, unit=unit,
         asset_id=int(index))
 
+
 @when('we make any SearchForAssets call')
 def search_assets_any(context):
     context.response = context.icl.search_assets(asset_id=2)
+
 
 @then('the parsed SearchForAssets response should be valid on round {roundNum} and the array should be of len {length} and the element at index {index} should have asset index {assetIndex}')
 def parse_search_assets(context, roundNum, length, index, assetIndex):
@@ -684,13 +693,16 @@ def parse_search_assets(context, roundNum, length, index, assetIndex):
     if int(length) > 0:
         assert context.response["assets"][int(index)]["index"] == int(assetIndex)
 
+
 @when('we make any Suggested Transaction Parameters call')
 def suggested_any(context):
     context.response = context.acl.suggested_params()
 
+
 @then('the parsed Suggested Transaction Parameters response should have first round valid of {roundNum}')
 def parse_suggested(context, roundNum):
     assert context.response.first == int(roundNum)
+
 
 @then('expect the path used to be "{path}"')
 def expect_path(context, path):
@@ -711,12 +723,120 @@ def expect_path(context, path):
         print("***")
     assert exp_query == actual_query
 
+
+@then('we expect the path used to be "{path}"')
+def we_expect_path(context, path):
+    expect_path(context, path)
+
+
 @then('expect error string to contain "{err:MaybeString}"')
 def expect_error(context, err):
     pass
 
+
 @given('indexer client {index} at "{address}" port {port} with token "{token}"')
 def indexer_client(context, index, address, port, token):
     context.icls = {index: indexer.IndexerClient(token, "http://" + address + ":" + str(port))}
-    
-    
+
+
+@when('we make a SearchForApplications call with {application_id} and {round}')
+def search_applications(context, application_id, round):
+    context.response = context.icl.search_applications(application_id=int(application_id), round=int(round))
+
+
+@when('we make a LookupApplications call with {application_id} and {round}')
+def lookup_applications(context, application_id, round):
+    context.response = context.icl.applications(application_id=int(application_id), round=int(round))
+
+
+@given('a signing account with address "{address}" and mnemonic "{mnemonic}"')
+def signing_account(context, address, mnemonic):
+    context.signing_mnemonic = mnemonic
+
+def operation_string_to_enum(operation):
+    if operation == "call":
+        return transaction.OnComplete.NoOpOC
+    elif operation == "create":
+        return transaction.OnComplete.NoOpOC
+    elif operation == "update":
+        return transaction.OnComplete.UpdateApplicationOC
+    elif operation == "optin":
+        return transaction.OnComplete.NoOpOC
+    elif operation == "delete":
+        return transaction.OnComplete.DeleteApplicationOC
+    elif operation == "clear":
+        return transaction.OnComplete.ClearStateOC
+    elif operation == "closeout":
+        return transaction.OnComplete.CloseOutOC
+    else:
+        raise NotImplementedError("no oncomplete enum for operation " + operation)
+
+
+@when(u'I build an application transaction with operation "{operation:MaybeString}", application-id {application_id},'
+      u'sender "{sender:MaybeString}", approval-program "{approval_program:MaybeString}", clear-program'
+      u'"{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints},'
+      u'local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}",'
+      u'foreign-apps "{foreign_apps:MaybeString}", app-accounts "{app_accounts:MaybeString}",'
+      u'fee {fee}, first-valid {first_valid}, last-valid {last_valid}, genesis-hash "{genesis_hash:MaybeString}"')
+def build_app_transaction(context, operation, application_id, sender, approval_program, clear_program, global_bytes,
+                          global_ints, local_bytes, local_ints, app_args, foreign_apps, app_accounts, fee,
+                          first_valid, last_valid, genesis_hash):
+    if operation == "none":
+        operation = None
+    else:
+        operation = operation_string_to_enum(operation)
+    if sender == "none":
+        sender = None
+    if approval_program == "none":
+        approval_program = None
+    if clear_program == "none":
+        clear_program = None
+    if app_args == "none":
+        app_arts = None
+    if foreign_apps == "none":
+        foreign_apps = None
+    if app_accounts == "none":
+        app_accounts = None
+    if genesis_hash == "none":
+        genesis_hash = None
+    local_schema = transaction.StateSchema(num_uints=int(local_ints), num_byte_slices=int(local_bytes))
+    global_schema = transaction.StateSchema(num_uints=int(global_ints), num_byte_slices=int(global_bytes))
+    # TODO load in and processing if not none
+    if approval_program:
+        #convert approval program: load in .tok file, test format to txn format
+        pass
+    if clear_program:
+        #convert clear program: load in .tok file, test format to txn format
+        pass
+    if app_args:
+        #convert app args to txn format
+        pass
+    if foreign_apps:
+        #convert foreign apps to txn format
+        pass
+    # TODO build transaction
+    sp = transaction.SuggestedParams(fee, first_valid, last_valid, genesis_hash)
+    context.transaction = transaction.ApplicationCallTxn(sender=sender, sp=sp, index=application_id,
+                                       on_complete=operation, local_schema=local_schema, global_schema=global_schema,
+                                       approval_program=approval_program, clear_program=clear_program, app_args=app_args,
+                                       accounts=app_accounts, foreign_apps=foreign_apps,
+                                       note=None, lease=None, rekey_to=None)
+
+
+@when('sign the transaction')
+def sign_transaction_with_signing_account(context):
+    private_key = mnemonic.to_private_key(context.signing_mnemonic)
+    context.signed_transaction = context.transaction.sign(private_key)
+
+
+@then(u'the base64 encoded signed transaction should equal "{golden}"')
+def compare_to_base64_golden(context, golden):
+    # actualbase64 = somehow_encode(context.signed_transaction)
+    # assert(golden == actualbase64)
+    raise NotImplementedError(u'STEP: Then the base64 encoded signed transaction should equal'
+                              u'"gqNzaWfEQPLVQDq4zk6OlNsvUYlC7AzS5lq0UvE+dm1H447rR3HYoWbXGF/EnBAc79OgyFu9eYOjo6hy7ITQ4m'
+                              u'F/zPqInwejdHhujKRhcGFhkcQEdGVzdKRhcGFwxFsCIAIAASYFBWhlbGxvBXdyaXRlBWNoZWNrA2ZvbwNiYXI2G'
+                              u'gAoEkAAKDYaACkSQAAXNhoAKhIiIitjIhJAABc2GgESECNAABMiKycEZiNAAAAjI0AABSIjQAAApGFwZmGSzRWz'
+                              u'zRoKpGFwZ3OBo25icwGkYXBsc4GjbmJzAaRhcHN1xAUCIAEBIqNmZWXNBNKiZnbNIyiiZ2jEID6xBktsTXlNSZY'
+                              u'GkfNiefwMrYHO2oq22hNDBt/kbQ3xomx2zSMyo3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f'
+                              u'2kdHlwZaRhcHBs"')

@@ -477,3 +477,37 @@ class IndexerClient:
         """
         req = "/assets/" + str(asset_id)
         return self.indexer_request("GET", req, **kwargs)
+
+    def applications(
+            self, application_id, round=None, **kwargs):
+        """
+        Return applications that satisfy the conditions.
+
+        Args:
+            application_id (int): application index
+            round (int, optional): restrict search to passed round
+        """
+        req = "/applications/" + str(application_id)
+        query = dict()
+        if round:
+            query["round"] = round
+
+        return self.indexer_request("GET", req, query, **kwargs)
+
+    def search_applications(
+            self, application_id=None, round=None, **kwargs):
+        """
+        Return applications that satisfy the conditions.
+
+        Args:
+            application_id (int, optional): restrict search to application index
+            round (int, optional): restrict search to passed round
+        """
+        req = "/applications"
+        query = dict()
+        if application_id:
+            query["application-id"] = application_id
+        if round:
+            query["round"] = round
+
+        return self.indexer_request("GET", req, query, **kwargs)
