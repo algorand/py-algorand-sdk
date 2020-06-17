@@ -884,9 +884,9 @@ class ApplicationCallTxn(Transaction):
             must be omitted if not creating or updating an application
         clear_program (bytes, optional): the program to run when state is being cleared;
             must be omitted if not creating or updating an application
-        app_args ([]bytes, optional): list of arguments to the application, each argument itself a buf
-        accounts ([]string, optional): list of additional accounts involved in call
-        foreign_apps ([]int, optional): list of other applications (identified by index) involved in call
+        app_args (list[bytes], optional): list of arguments to the application, each argument itself a buf
+        accounts (list[string], optional): list of additional accounts involved in call
+        foreign_apps (list[int], optional): list of other applications (identified by index) involved in call
 
     Attributes:
         sender (str)
@@ -900,9 +900,9 @@ class ApplicationCallTxn(Transaction):
         global_schema (StateSchema)
         approval_program (bytes)
         clear_program (bytes)
-        app_args ([]bytes)
-        accounts ([]str)
-        foreign_apps ([]int)
+        app_args (list[bytes])
+        accounts (list[str])
+        foreign_apps (list[int])
     """
 
     def __init__(self, sender, sp, index,
@@ -933,9 +933,9 @@ class ApplicationCallTxn(Transaction):
             d["apid"] = self.index
         d["apan"] = self.on_complete
         if self.local_schema:
-            d["apls"] = self.local_schema
+            d["apls"] = self.local_schema.dictify()
         if self.global_schema:
-            d["apgs"] = self.global_schema
+            d["apgs"] = self.global_schema.dictyify()
         if self.approval_program:
             d["apap"] = self.approval_program
         if self.clear_program:
@@ -943,8 +943,7 @@ class ApplicationCallTxn(Transaction):
         if self.app_args:
             d["apaa"] = self.app_args
         if self.accounts:
-            # TODO all these dictify elts need checking but this especially
-            d["apat"] = self.accounts
+            d["apat"] = [encoding.decode_address(account_pubkey) for account_pubkey in self.accounts]
         if self.foreign_apps:
             d["apfa"] = self.foreign_apps
 
@@ -963,7 +962,7 @@ class ApplicationCallTxn(Transaction):
             "approval_program": d["apap"] if "apap" in d else None,
             "clear_program": d["apsu"] if "apsu" in d else None,
             "app_args": d["apaa"] if "apaa" in d else None,
-            "accounts": d["apat"] if "apat" in d else None,
+            "accounts": [encoding.encode_address(account_bytes) for account_bytes in d["apat"] if "apat" in d],
             "foreign_apps": d["apfa"] if "apfa" in d else None
         }
 
