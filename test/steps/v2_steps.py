@@ -943,32 +943,40 @@ def build_app_transaction(context, operation, application_id, sender, approval_p
         operation = operation_string_to_enum(operation)
     if sender == "none":
         sender = None
-    if approval_program == "none":
-        approval_program = None
-    if clear_program == "none":
-        clear_program = None
-    if app_args == "none":
-        app_args = None
-    if foreign_apps == "none":
-        foreign_apps = None
-    if app_accounts == "none":
-        app_accounts = None
-    if genesis_hash == "none":
-        genesis_hash = None
-    local_schema = transaction.StateSchema(num_uints=int(local_ints), num_byte_slices=int(local_bytes))
-    global_schema = transaction.StateSchema(num_uints=int(global_ints), num_byte_slices=int(global_bytes))
     dir_path = os.path.dirname(os.path.realpath(__file__))
     dir_path = os.path.dirname(os.path.dirname(dir_path))
-    if approval_program:
+    if approval_program == "none":
+        approval_program = None
+    elif approval_program:
         with open(dir_path + "/test-harness/features/resources/" + approval_program, "rb") as f:
             approval_program = bytearray(f.read())
-    if clear_program:
+    if clear_program == "none":
+        clear_program = None
+    elif clear_program:
         with open(dir_path + "/test-harness/features/resources/" + clear_program, "rb") as f:
-            approval_program = bytearray(f.read())
-    if app_args:
+            clear_program = bytearray(f.read())
+    if app_args == "none":
+        app_args = None
+    elif app_args:
         app_args = [bytes(arg, 'ascii') for arg in app_args.split(",")]
-    if foreign_apps:
+    if foreign_apps == "none":
+        foreign_apps = None
+    elif foreign_apps:
         foreign_apps = [int(app) for app in foreign_apps.split(",")]
+    if app_accounts == "none":
+        app_accounts = None
+    elif app_accounts:
+        app_accounts = [account_pubkey for account_pubkey in app_accounts.split(",")]
+    if genesis_hash == "none":
+        genesis_hash = None
+    if local_ints == 0 and local_bytes == 0:
+        local_schema = None
+    else:
+        local_schema = transaction.StateSchema(num_uints=int(local_ints), num_byte_slices=int(local_bytes))
+    if global_ints == 0 and global_bytes == 0:
+        global_schema = None
+    else:
+        global_schema = transaction.StateSchema(num_uints=int(global_ints), num_byte_slices=int(global_bytes))
     sp = transaction.SuggestedParams(int(fee), int(first_valid), int(last_valid), genesis_hash)
     context.transaction = transaction.ApplicationCallTxn(sender=sender, sp=sp, index=application_id,
                                                          on_complete=operation, local_schema=local_schema,
@@ -987,5 +995,13 @@ def sign_transaction_with_signing_account(context):
 
 @then('the base64 encoded signed transaction should equal "{golden}"')
 def compare_to_base64_golden(context, golden):
-    actual_base64 = base64.b64_encode(context.signed_transaction.dictify())
+    actual_base64 = encoding.msgpack_encode(context.signed_transaction)
+    if not (golden == actual_base64):
+        print("**********")
+        print("golden:")
+        print(golden)
+        print("**********")
+        print("actual:")
+        print(actual_base64)
+        print("**********")
     assert(golden == actual_base64)

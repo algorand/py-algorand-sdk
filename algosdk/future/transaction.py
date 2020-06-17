@@ -1,5 +1,5 @@
 import base64
-from enum import Enum
+from enum import IntEnum
 import msgpack
 from collections import OrderedDict
 from .. import account
@@ -840,7 +840,7 @@ class StateSchema:
                 self.num_byte_slices == other.num_byte_slices)
 
 
-class OnComplete(Enum):
+class OnComplete(IntEnum):
     # NoOpOC indicates that an application transaction will simply call its
     # ApprovalProgram
     NoOpOC = 0
@@ -936,7 +936,7 @@ class ApplicationCallTxn(Transaction):
         if self.local_schema:
             d["apls"] = self.local_schema.dictify()
         if self.global_schema:
-            d["apgs"] = self.global_schema.dictyify()
+            d["apgs"] = self.global_schema.dictify()
         if self.approval_program:
             d["apap"] = self.approval_program
         if self.clear_program:
