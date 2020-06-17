@@ -960,10 +960,10 @@ def build_app_transaction(context, operation, application_id, sender, approval_p
     dir_path = os.path.dirname(os.path.realpath(__file__))
     dir_path = os.path.dirname(os.path.dirname(dir_path))
     if approval_program:
-        with open(dir_path + "/resources/" + approval_program, "rb") as f:
+        with open(dir_path + "/test-harness/features/resources/" + approval_program, "rb") as f:
             approval_program = bytearray(f.read())
     if clear_program:
-        with open(dir_path + "/resources/" + clear_program, "rb") as f:
+        with open(dir_path + "/test-harness/features/resources/" + clear_program, "rb") as f:
             approval_program = bytearray(f.read())
     if app_args:
         app_args = [bytes(arg, 'ascii') for arg in app_args.split(",")]
