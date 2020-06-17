@@ -248,7 +248,7 @@ class PaymentTxn(Transaction):
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
-            self.fee = max(self.estimate_size()*self.fee,
+            self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
 
     def dictify(self):
@@ -337,7 +337,7 @@ class KeyregTxn(Transaction):
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
-            self.fee = max(self.estimate_size()*self.fee,
+            self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
 
     def dictify(self):
@@ -486,7 +486,7 @@ class AssetConfigTxn(Transaction):
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
-            self.fee = max(self.estimate_size()*self.fee,
+            self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
 
     def dictify(self):
@@ -652,7 +652,7 @@ class AssetFreezeTxn(Transaction):
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
-            self.fee = max(self.estimate_size()*self.fee,
+            self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
 
     def dictify(self):
@@ -748,7 +748,7 @@ class AssetTransferTxn(Transaction):
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
-            self.fee = max(self.estimate_size()*self.fee,
+            self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
 
     def dictify(self):
@@ -811,6 +811,7 @@ class StateSchema:
         num_uints (int)
         num_byte_slices (int)
     """
+
     def __init__(self, num_uints=None, num_byte_slices=None):
         self.num_uints = num_uints
         self.num_byte_slices = num_byte_slices
@@ -924,7 +925,7 @@ class ApplicationCallTxn(Transaction):
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
-            self.fee = max(self.estimate_size()*self.fee,
+            self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
 
     def dictify(self):
@@ -981,6 +982,166 @@ class ApplicationCallTxn(Transaction):
                 self.app_args == other.app_args and
                 self.accounts == other.accounts and
                 self.foreign_apps == other.foreign_apps)
+
+def make_unsigned_app_create_transaction(sender, sp, on_complete, approval_program, clear_program, global_schema,
+                                         local_schema,
+                                         app_args=None, accounts=None, foreign_apps=None, note=None, lease=None,
+                                         rekey_to=None):
+    """
+    Make a transaction that will create an application.
+
+    Args:
+        sender (str): address of sender
+        sp (SuggestedParams): contains information such as fee and genesis hash
+        on_complete (OnComplete): what application should so once the program is done being run
+        approval_program (bytes): the compiled TEAL that approves a transaction
+        clear_program (bytes): the compiled TEAL that runs when clearing state
+        global_schema (StateSchema): restricts the number of ints and byte slices in the global state
+        local_schema (StateSchema): restructs the number of ints and byte slices in the per-user local state
+        app_args(list[bytes], optional): any additional arguments to the application
+        accounts(list[str], optional): any additional accounts to supply to the application
+        foreign_apps(list[int], optional): any other apps used by the application, identified by app index
+        note(bytes, optional): transaction note field
+        lease(bytes, optional): transaction lease field
+        rekey_to(str, optional): rekey-to field, see Transaction
+    """
+    return future.ApplicationCallTxn(sender=sender, sp=sp, index=0, on_complete=on_complete,
+                                     approval_program=approval_program, clear_program=clear_program,
+                                     global_schema=global_schema,
+                                     local_schema=local_schema, app_args=app_args, accounts=accounts,
+                                     foreign_apps=foreign_apps, note=note, lease=lease, rekey_to=rekey_to)
+
+
+def make_unsigned_app_update_transaction(sender, sp, index, approval_program, clear_program, app_args=None,
+                                         accounts=None, foreign_apps=None,
+                                         note=None, lease=None, rekey_to=None):
+    """
+    Make a transaction that will change an application's approval and clear programs.
+
+    Args:
+        sender (str): address of sender
+        sp (SuggestedParams): contains information such as fee and genesis hash
+        index (int): the application to update
+        approval_program (bytes): the new compiled TEAL that approves a transaction
+        clear_program (bytes): the new compiled TEAL that runs when clearing state
+        app_args(list[bytes], optional): any additional arguments to the application
+        accounts(list[str], optional): any additional accounts to supply to the application
+        foreign_apps(list[int], optional): any other apps used by the application, identified by app index
+        note(bytes, optional): transaction note field
+        lease(bytes, optional): transaction lease field
+        rekey_to(str, optional): rekey-to field, see Transaction
+    """
+    return future.ApplicationCallTxn(sender=sender, sp=sp, index=index, on_complete=OnComplete.UpdateApplicationOC,
+                                     approval_program=approval_program, clear_program=clear_program,
+                                     app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                     lease=lease, rekey_to=rekey_to)
+
+
+def make_unsigned_app_delete_tx(sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
+                                note=None, lease=None, rekey_to=None):
+    """
+    Make a transaction that will delete an application
+
+    Args:
+        sender (str): address of sender
+        sp (SuggestedParams): contains information such as fee and genesis hash
+        index (int): the application to update
+        app_args(list[bytes], optional): any additional arguments to the application
+        accounts(list[str], optional): any additional accounts to supply to the application
+        foreign_apps(list[int], optional): any other apps used by the application, identified by app index
+        note(bytes, optional): transaction note field
+        lease(bytes, optional): transaction lease field
+        rekey_to(str, optional): rekey-to field, see Transaction
+    """
+    return future.ApplicationCallTxn(sender=sender, sp=sp, index=index, on_complete=OnComplete.DeleteApplicationOC,
+                                     app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                     lease=lease, rekey_to=rekey_to)
+
+
+def make_unsigned_app_opt_in_tx(sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
+                                note=None, lease=None, rekey_to=None):
+    """
+    Make a transaction that will opt in to an application
+
+    Args:
+        sender (str): address of sender
+        sp (SuggestedParams): contains information such as fee and genesis hash
+        index (int): the application to update
+        app_args(list[bytes], optional): any additional arguments to the application
+        accounts(list[str], optional): any additional accounts to supply to the application
+        foreign_apps(list[int], optional): any other apps used by the application, identified by app index
+        note(bytes, optional): transaction note field
+        lease(bytes, optional): transaction lease field
+        rekey_to(str, optional): rekey-to field, see Transaction
+    """
+    return future.ApplicationCallTxn(sender=sender, sp=sp, index=index, on_complete=OnComplete.OptInOC,
+                                     app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                     lease=lease, rekey_to=rekey_to)
+
+
+def make_unsigned_app_close_out_tx(sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
+                                   note=None, lease=None, rekey_to=None):
+    """
+    Make a transaction that will close out a user's state in an application
+
+    Args:
+        sender (str): address of sender
+        sp (SuggestedParams): contains information such as fee and genesis hash
+        index (int): the application to update
+        app_args(list[bytes], optional): any additional arguments to the application
+        accounts(list[str], optional): any additional accounts to supply to the application
+        foreign_apps(list[int], optional): any other apps used by the application, identified by app index
+        note(bytes, optional): transaction note field
+        lease(bytes, optional): transaction lease field
+        rekey_to(str, optional): rekey-to field, see Transaction
+    """
+    return future.ApplicationCallTxn(sender=sender, sp=sp, index=index, on_complete=OnComplete.CloseOutOC,
+                                     app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                     lease=lease, rekey_to=rekey_to)
+
+
+def make_unsigned_app_clear_state_tx(sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
+                                     note=None, lease=None, rekey_to=None):
+    """
+    Make a transaction that will clear a user's state an application
+
+    Args:
+        sender (str): address of sender
+        sp (SuggestedParams): contains information such as fee and genesis hash
+        index (int): the application to update
+        app_args(list[bytes], optional): any additional arguments to the application
+        accounts(list[str], optional): any additional accounts to supply to the application
+        foreign_apps(list[int], optional): any other apps used by the application, identified by app index
+        note(bytes, optional): transaction note field
+        lease(bytes, optional): transaction lease field
+        rekey_to(str, optional): rekey-to field, see Transaction
+    """
+    return future.ApplicationCallTxn(sender=sender, sp=sp, index=index, on_complete=OnComplete.ClearStateOC,
+                                     app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                     lease=lease, rekey_to=rekey_to)
+
+
+def make_unsigned_app_no_op_tx(sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
+                               note=None, lease=None, rekey_to=None):
+    """
+    Make a transaction that will do nothing on application completion
+     In other words, just call the application
+
+    Args:
+        sender (str): address of sender
+        sp (SuggestedParams): contains information such as fee and genesis hash
+        index (int): the application to update
+        app_args(list[bytes], optional): any additional arguments to the application
+        accounts(list[str], optional): any additional accounts to supply to the application
+        foreign_apps(list[int], optional): any other apps used by the application, identified by app index
+        note(bytes, optional): transaction note field
+        lease(bytes, optional): transaction lease field
+        rekey_to(str, optional): rekey-to field, see Transaction
+    """
+    return future.ApplicationCallTxn(sender=sender, sp=sp, index=index, on_complete=OnComplete.NoOpOC,
+                                     app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                     lease=lease, rekey_to=rekey_to)
+
 
 class SignedTransaction:
     """
@@ -1148,7 +1309,7 @@ class MultisigTransaction:
                             msigstx.multisig.subsigs[s].signature = \
                                 stx.multisig.subsigs[s].signature
                         elif not msigstx.multisig.subsigs[s].signature == \
-                                stx.multisig.subsigs[s].signature:
+                                 stx.multisig.subsigs[s].signature:
                             raise error.DuplicateSigMismatchError
         return msigstx
 
