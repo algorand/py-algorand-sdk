@@ -922,7 +922,7 @@ def operation_string_to_enum(operation):
     elif operation == "update":
         return transaction.OnComplete.UpdateApplicationOC
     elif operation == "optin":
-        return transaction.OnComplete.NoOpOC
+        return transaction.OnComplete.OptInOC
     elif operation == "delete":
         return transaction.OnComplete.DeleteApplicationOC
     elif operation == "clear":
@@ -958,7 +958,9 @@ def build_app_transaction(context, operation, application_id, sender, approval_p
     if app_args == "none":
         app_args = None
     elif app_args:
-        app_args = [bytes(arg, 'ascii') for arg in app_args.split(",")]
+        split_args = app_args.split(",")
+        sub_args = [sub_arg.split(":") for sub_arg in split_args]
+        app_args = [bytes(sub_arg[1], 'ascii') for sub_arg in sub_args]
     if foreign_apps == "none":
         foreign_apps = None
     elif foreign_apps:
@@ -969,16 +971,16 @@ def build_app_transaction(context, operation, application_id, sender, approval_p
         app_accounts = [account_pubkey for account_pubkey in app_accounts.split(",")]
     if genesis_hash == "none":
         genesis_hash = None
-    if local_ints == 0 and local_bytes == 0:
+    if int(local_ints) == 0 and int(local_bytes) == 0:
         local_schema = None
     else:
         local_schema = transaction.StateSchema(num_uints=int(local_ints), num_byte_slices=int(local_bytes))
-    if global_ints == 0 and global_bytes == 0:
+    if int(global_ints) == 0 and int(global_bytes) == 0:
         global_schema = None
     else:
         global_schema = transaction.StateSchema(num_uints=int(global_ints), num_byte_slices=int(global_bytes))
-    sp = transaction.SuggestedParams(int(fee), int(first_valid), int(last_valid), genesis_hash)
-    context.transaction = transaction.ApplicationCallTxn(sender=sender, sp=sp, index=application_id,
+    sp = transaction.SuggestedParams(int(fee), int(first_valid), int(last_valid), genesis_hash, flat_fee=True)
+    context.transaction = transaction.ApplicationCallTxn(sender=sender, sp=sp, index=int(application_id),
                                                          on_complete=operation, local_schema=local_schema,
                                                          global_schema=global_schema,
                                                          approval_program=approval_program, clear_program=clear_program,
@@ -1004,4 +1006,5 @@ def compare_to_base64_golden(context, golden):
         print("actual:")
         print(actual_base64)
         print("**********")
+
     assert(golden == actual_base64)

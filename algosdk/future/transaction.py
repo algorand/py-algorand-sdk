@@ -963,10 +963,11 @@ class ApplicationCallTxn(Transaction):
             "approval_program": d["apap"] if "apap" in d else None,
             "clear_program": d["apsu"] if "apsu" in d else None,
             "app_args": d["apaa"] if "apaa" in d else None,
-            "accounts": [encoding.encode_address(account_bytes) for account_bytes in d["apat"] if "apat" in d],
+            "accounts": d["apat"] if "apat" in d else None,
             "foreign_apps": d["apfa"] if "apfa" in d else None
         }
-
+        if args["accounts"]:
+            args["accounts"] = [encoding.encode_address(account_bytes) for account_bytes in args["accounts"]]
         return args
 
     def __eq__(self, other):
