@@ -82,12 +82,14 @@ class Transaction:
         txid = base64.b32encode(txid).decode()
         return encoding._undo_padding(txid)
 
-    def sign(self, private_key):
+    def sign(self, private_key, skip_rekey_check=False):
         """
         Sign the transaction with a private key.
 
         Args:
             private_key (str): the private key of the signing account
+            skip_rekey_check (bool, optional): if set to True, do not handle authorizing_address logic
+                (typically used for size estimation)
 
         Returns:
             SignedTransaction: signed transaction with the signature
@@ -95,7 +97,7 @@ class Transaction:
         sig = self.raw_sign(private_key)
         sig = base64.b64encode(sig).decode()
         authorizing_address = None
-        if not (self.sender == account.address_from_private_key(private_key)):
+        if (not (self.sender == account.address_from_private_key(private_key))) and not skip_rekey_check:
             authorizing_address = account.address_from_private_key(private_key)
         stx = SignedTransaction(self, sig, authorizing_address)
         return stx
@@ -119,7 +121,9 @@ class Transaction:
         return sig
 
     def estimate_size(self):
-        return len(encoding.msgpack_encode(self)) + constants.num_additional_bytes_after_signing
+        sk, _ = account.generate_account()
+        stx = self.sign(sk, skip_rekey_check=True)
+        return len(base64.b64decode(encoding.msgpack_encode(stx)))
 
     def dictify(self):
         d = dict()
