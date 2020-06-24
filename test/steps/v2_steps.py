@@ -1,9 +1,9 @@
 from behave import given, when, then, register_type
 import base64
 from algosdk.future import transaction
-from algosdk import encoding
+from algosdk import account, encoding, mnemonic
+from algosdk import algod as legacyclient
 from algosdk.v2client import *
-from algosdk import mnemonic
 import os
 from datetime import datetime
 import json
@@ -933,7 +933,8 @@ def operation_string_to_enum(operation):
         raise NotImplementedError("no oncomplete enum for operation " + operation)
 
 
-@when('I build an application transaction with operation "{operation:MaybeString}", application-id {application_id}, sender "{sender:MaybeString}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", app-accounts "{app_accounts:MaybeString}", fee {fee}, first-valid {first_valid}, last-valid {last_valid}, genesis-hash "{genesis_hash:MaybeString}"')
+@when(
+    'I build an application transaction with operation "{operation:MaybeString}", application-id {application_id}, sender "{sender:MaybeString}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", app-accounts "{app_accounts:MaybeString}", fee {fee}, first-valid {first_valid}, last-valid {last_valid}, genesis-hash "{genesis_hash:MaybeString}"')
 def build_app_transaction(context, operation, application_id, sender, approval_program, clear_program, global_bytes,
                           global_ints, local_bytes, local_ints, app_args, foreign_apps, app_accounts, fee,
                           first_valid, last_valid, genesis_hash):
@@ -998,13 +999,104 @@ def sign_transaction_with_signing_account(context):
 @then('the base64 encoded signed transaction should equal "{golden}"')
 def compare_to_base64_golden(context, golden):
     actual_base64 = encoding.msgpack_encode(context.signed_transaction)
-    if not (golden == actual_base64):
-        print("**********")
-        print("golden:")
-        print(golden)
-        print("**********")
-        print("actual:")
-        print(actual_base64)
-        print("**********")
+    assert (golden == actual_base64)
 
-    assert(golden == actual_base64)
+
+@given('an algod v2 client connected to "{host}" port {port} with token "{token}"')
+def step_impl(context, host, port, token):
+    algod_address = "http://" + str(host) + ":" + str(port)
+    context.app_acl = algod.AlgodClient(token, algod_address)
+    # also need a v1 client for things like transaction_info
+    context.acl = legacyclient.AlgodClient(token, algod_address)
+
+
+@given('I create a new transient account and fund it with {transient_fund_amount} microalgos.')
+def step_impl(context, transient_fund_amount):
+    context.transient_sk, context.transient_pk = account.generate_account()
+    sp = context.app_acl.suggested_params()
+    payment = transaction.PaymentTxn(context.accounts[0], sp, context.transient_pk, int(transient_fund_amount))
+    signed_payment = context.wallet.sign_transaction(payment)
+    context.app_acl.send_transaction(signed_payment)
+    context.app_acl.status_after_block(sp.first + 2)
+
+
+@given('I build an application transaction with the transient account, the current application, suggested params, operation "{operation}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", app-accounts "{app_accounts:MaybeString}"')
+def step_impl(context, operation, approval_program, clear_program, global_bytes, global_ints, local_bytes, local_ints,
+              app_args, foreign_apps, app_accounts):
+    if operation == "none":
+        operation = None
+    else:
+        operation = operation_string_to_enum(operation)
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    dir_path = os.path.dirname(os.path.dirname(dir_path))
+    if approval_program == "none":
+        approval_program = None
+    elif approval_program:
+        with open(dir_path + "/test-harness/features/resources/" + approval_program, "rb") as f:
+            approval_program = bytearray(f.read())
+    if clear_program == "none":
+        clear_program = None
+    elif clear_program:
+        with open(dir_path + "/test-harness/features/resources/" + clear_program, "rb") as f:
+            clear_program = bytearray(f.read())
+    if int(local_ints) == 0 and int(local_bytes) == 0:
+        local_schema = None
+    else:
+        local_schema = transaction.StateSchema(num_uints=int(local_ints), num_byte_slices=int(local_bytes))
+    if int(global_ints) == 0 and int(global_bytes) == 0:
+        global_schema = None
+    else:
+        global_schema = transaction.StateSchema(num_uints=int(global_ints), num_byte_slices=int(global_bytes))
+    if app_args == "none":
+        app_args = None
+    elif app_args:
+        split_args = app_args.split(",")
+        sub_args = [sub_arg.split(":") for sub_arg in split_args]
+        app_args = [bytes(sub_arg[1], 'ascii') for sub_arg in sub_args]
+    if foreign_apps == "none":
+        foreign_apps = None
+    elif foreign_apps:
+        foreign_apps = [int(app) for app in foreign_apps.split(",")]
+    if app_accounts == "none":
+        app_accounts = None
+    elif app_accounts:
+        app_accounts = [account_pubkey for account_pubkey in app_accounts.split(",")]
+    application_id = 0
+    if hasattr(context, "current_application_id") and context.current_application_id:
+        application_id = context.current_application_id
+    sp = context.app_acl.suggested_params()
+    context.app_transaction = transaction.ApplicationCallTxn(sender=context.transient_pk, sp=sp,
+                                                             index=int(application_id),
+                                                             on_complete=operation, local_schema=local_schema,
+                                                             global_schema=global_schema,
+                                                             approval_program=approval_program,
+                                                             clear_program=clear_program,
+                                                             app_args=app_args, accounts=app_accounts,
+                                                             foreign_apps=foreign_apps,
+                                                             note=None, lease=None, rekey_to=None)
+
+
+@given('I sign and submit the transaction, saving the txid. If there is an error it is "{error_string}".')
+def sign_submit_save_txid_with_error(context, error_string):
+    signed_app_transaction = context.app_transaction.sign(context.transient_sk)
+    context.app_txid = context.app_acl.send_transaction(signed_app_transaction)
+
+
+@given('I sign and submit the transaction, saving the txid. If there is an error it is "".')
+def step_impl(context):
+    sign_submit_save_txid_with_error(context, "")
+
+
+@given('I wait for the transaction to be confirmed.')
+def step_impl(context):
+    sp = context.app_acl.suggested_params()
+    context.most_recent_pending_info = context.acl.pending_transaction_info(context.app_txid)
+    last_round = sp.first
+    context.app_acl.status_after_block(last_round+2)
+    assert "type" in context.acl.transaction_info(context.transient_pk, context.app_txid)
+    assert "type" in context.acl.transaction_by_id(context.app_txid)
+
+
+@given('I remember the new application ID.')
+def step_impl(context):
+    context.current_application_id = context.most_recent_pending_info["txresults"]["createdapp"]
