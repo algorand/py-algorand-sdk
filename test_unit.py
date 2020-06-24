@@ -23,12 +23,48 @@ class TestTransaction(unittest.TestCase):
                                      1000, note=b'\x00')
         self.assertEqual(constants.min_txn_fee, txn.fee)
 
+    def test_note_wrong_type(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(0, 1, 100, gh)
+        f = lambda: transaction.PaymentTxn(address, sp, address, 
+                                           1000, note="hello")
+        self.assertRaises(error.WrongNoteType, f)
+
+    def test_note_wrong_length(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(0, 1, 100, gh)
+        f = lambda: transaction.PaymentTxn(address, sp, address, 
+                                           1000, note=("0"*1025).encode())
+        self.assertRaises(error.WrongNoteLength, f)
+
     def test_serialize(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         sp = transaction.SuggestedParams(3, 1, 100, gh)
         txn = transaction.PaymentTxn(address, sp, address,
                                      1000, note=bytes([1, 32, 200]))
+        enc = encoding.msgpack_encode(txn)
+        re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
+        self.assertEqual(enc, re_enc)
+
+    def test_serialize_with_note_string_encode(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(3, 1, 100, gh)
+        txn = transaction.PaymentTxn(address, sp, address,
+                                     1000, note="hello".encode())
+        enc = encoding.msgpack_encode(txn)
+        re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
+        self.assertEqual(enc, re_enc)
+
+    def test_serialize_with_note_max_length(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(3, 1, 100, gh)
+        txn = transaction.PaymentTxn(address, sp, address,
+                                     1000, note=("0"*1024).encode())
         enc = encoding.msgpack_encode(txn)
         re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
         self.assertEqual(enc, re_enc)
@@ -449,6 +485,52 @@ class TestTransaction(unittest.TestCase):
             "yw9x8FmnrCDexi9/cOUJOiKibHbOAATv96NzbmTEIAn70nYsCPhsWua/bdenqQHeZ"
             "nXXUOB+jFx2mGR9tuH9pHR5cGWlYXhmZXKkeGFpZAE=")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
+
+    def test_pay_float_amt(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(3, 1, 100, gh)
+        f = lambda: transaction.PaymentTxn(address, sp, address,
+                                           10., note=bytes([1, 32, 200]))
+        self.assertRaises(error.WrongAmountType, f)
+
+    def test_pay_negative_amt(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(3, 1, 100, gh)
+        f = lambda: transaction.PaymentTxn(address, sp, address,
+                                           -5, note=bytes([1, 32, 200]))
+        self.assertRaises(error.WrongAmountType, f)
+
+    def test_asset_transfer_float_amt(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        fee = 10
+        first_round = 322575
+        last_round = 323576
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        index = 1
+        amount = 1.
+        to = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        close = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        sp = transaction.SuggestedParams(fee, first_round, last_round, gh)
+        f = lambda: transaction.AssetTransferTxn(
+            address, sp, to, amount, index, close)
+        self.assertRaises(error.WrongAmountType, f)
+
+    def test_asset_transfer_negative_amt(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        fee = 10
+        first_round = 322575
+        last_round = 323576
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        index = 1
+        amount = -1
+        to = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        close = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        sp = transaction.SuggestedParams(fee, first_round, last_round, gh)
+        f = lambda: transaction.AssetTransferTxn(
+            address, sp, to, amount, index, close)
+        self.assertRaises(error.WrongAmountType, f)
 
     def test_group_id(self):
         address = "UPYAFLHSIPMJOHVXU2MPLQ46GXJKSDCEMZ6RLCQ7GWB5PRDKJUWKKXECXI"
@@ -1024,6 +1106,23 @@ class TestLogic(unittest.TestCase):
         with self.assertRaises(error.InvalidProgram):
             logic.check_program(program, [])
 
+        # check TEAL v2 opcodes
+        self.assertIsNotNone(logic.spec, "Must be called after any of logic.check_program")
+        self.assertTrue(logic.spec['EvalMaxVersion'] >= 2)
+        self.assertTrue(logic.spec['LogicSigVersion'] >= 2)
+
+        # balance
+        program = b"\x02\x20\x01\x00\x22\x60"  # int 0; balance
+        self.assertTrue(logic.check_program(program, None))
+
+        # app_opted_in
+        program = b"\x02\x20\x01\x00\x22\x22\x61"  # int 0; int 0; app_opted_in
+        self.assertTrue(logic.check_program(program, None))
+
+        # asset_holding_get
+        program = b"\x02\x20\x01\x00\x22\x22\x70\x00"  # int 0; int 0; asset_holding_get Balance
+        self.assertTrue(logic.check_program(program, None))
+
 
 class TestLogicSig(unittest.TestCase):
     def test_basic(self):
@@ -1043,8 +1142,8 @@ class TestLogicSig(unittest.TestCase):
         self.assertEqual(lsig.args, None)
         self.assertEqual(lsig.sig, None)
         self.assertEqual(lsig.msig, None)
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
         self.assertEqual(lsig.address(), program_hash)
 
         args = [
@@ -1056,29 +1155,29 @@ class TestLogicSig(unittest.TestCase):
         self.assertEqual(lsig.args, args)
         self.assertEqual(lsig.sig, None)
         self.assertEqual(lsig.msig, None)
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
 
         # check serialization
         encoded = encoding.msgpack_encode(lsig)
         decoded = encoding.msgpack_decode(encoded)
         self.assertEqual(decoded, lsig)
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
 
         # check signature verification on modified program
         program = b"\x01\x20\x01\x03\x22"
         lsig = transaction.LogicSig(program)
         self.assertEqual(lsig.logic, program)
-        verifed = lsig.verify(public_key)
-        self.assertFalse(verifed)
+        verified = lsig.verify(public_key)
+        self.assertFalse(verified)
         self.assertNotEqual(lsig.address(), program_hash)
 
         # check invalid program fails
         program = b"\x00\x20\x01\x03\x22"
         lsig = transaction.LogicSig(program)
-        verifed = lsig.verify(public_key)
-        self.assertFalse(verifed)
+        verified = lsig.verify(public_key)
+        self.assertFalse(verified)
 
     def test_signature(self):
         private_key, address = account.generate_account()
@@ -1091,15 +1190,15 @@ class TestLogicSig(unittest.TestCase):
         self.assertEqual(lsig.msig, None)
         self.assertNotEqual(lsig.sig, None)
 
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
 
         # check serialization
         encoded = encoding.msgpack_encode(lsig)
         decoded = encoding.msgpack_decode(encoded)
         self.assertEqual(decoded, lsig)
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
 
     def test_multisig(self):
         private_key, _ = account.generate_account()
@@ -1118,34 +1217,34 @@ class TestLogicSig(unittest.TestCase):
 
         sender_addr = msig.address()
         public_key = encoding.decode_address(sender_addr)
-        verifed = lsig.verify(public_key)
-        self.assertFalse(verifed)       # not enough signatures
+        verified = lsig.verify(public_key)
+        self.assertFalse(verified)       # not enough signatures
 
         with self.assertRaises(error.InvalidSecretKeyError):
             lsig.append_to_multisig(private_key)
 
         lsig.append_to_multisig(private_key_2)
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
 
         # combine sig and multisig, ensure it fails
         lsigf = transaction.LogicSig(program)
         lsigf.sign(private_key)
         lsig.sig = lsigf.sig
-        verifed = lsig.verify(public_key)
-        self.assertFalse(verifed)
+        verified = lsig.verify(public_key)
+        self.assertFalse(verified)
 
         # remove, ensure it still works
         lsig.sig = None
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
 
         # check serialization
         encoded = encoding.msgpack_encode(lsig)
         decoded = encoding.msgpack_decode(encoded)
         self.assertEqual(decoded, lsig)
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
 
     def test_transaction(self):
         fromAddress = (
@@ -1190,8 +1289,8 @@ class TestLogicSig(unittest.TestCase):
         lsig = transaction.LogicSig(program, args)
         lsig.sign(sk)
         lstx = transaction.LogicSigTransaction(tx, lsig)
-        verifed = lstx.verify()
-        self.assertTrue(verifed)
+        verified = lstx.verify()
+        self.assertTrue(verified)
 
         golden_decoded = encoding.msgpack_decode(golden)
         self.assertEqual(lstx, golden_decoded)

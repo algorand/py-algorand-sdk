@@ -67,6 +67,8 @@ microalgos_to_algos_ratio = 1000000
 """int: how many microalgos per algo"""
 metadata_length = 32
 """int: length of asset metadata"""
+note_max_length = 1024
+"""int: maximum length of note field"""
 lease_length = 32
 """int: byte length of leases"""
 multisig_account_limit = 255

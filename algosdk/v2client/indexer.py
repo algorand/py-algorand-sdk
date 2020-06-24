@@ -53,7 +53,7 @@ class IndexerClient:
         if headers:
             header.update(headers)
 
-        if requrl not in constants.no_auth:
+        if (requrl not in constants.no_auth) and self.indexer_token:
             header.update({
                 constants.indexer_auth_header: self.indexer_token
             })
