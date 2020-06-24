@@ -932,6 +932,18 @@ def operation_string_to_enum(operation):
     else:
         raise NotImplementedError("no oncomplete enum for operation " + operation)
 
+def split_and_process_app_args(in_args):
+    split_args = in_args.split(",")
+    sub_args = [sub_arg.split(":") for sub_arg in split_args]
+    app_args = []
+    for sub_arg in sub_args:
+        if sub_arg[0] == "str":
+            app_args.append(bytes(sub_arg[1], 'ascii'))
+        elif sub_arg[0] == "int":
+            app_args.append(int(sub_arg[1]))
+        elif sub_arg[0] == "addr":
+            app_args.append(encoding.decode_address(sub_arg[1]))
+    return app_args
 
 @when(
     'I build an application transaction with operation "{operation:MaybeString}", application-id {application_id}, sender "{sender:MaybeString}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", app-accounts "{app_accounts:MaybeString}", fee {fee}, first-valid {first_valid}, last-valid {last_valid}, genesis-hash "{genesis_hash:MaybeString}"')
@@ -959,9 +971,7 @@ def build_app_transaction(context, operation, application_id, sender, approval_p
     if app_args == "none":
         app_args = None
     elif app_args:
-        split_args = app_args.split(",")
-        sub_args = [sub_arg.split(":") for sub_arg in split_args]
-        app_args = [bytes(sub_arg[1], 'ascii') for sub_arg in sub_args]
+        app_args = split_and_process_app_args(app_args)
     if foreign_apps == "none":
         foreign_apps = None
     elif foreign_apps:
@@ -1050,9 +1060,7 @@ def step_impl(context, operation, approval_program, clear_program, global_bytes,
     if app_args == "none":
         app_args = None
     elif app_args:
-        split_args = app_args.split(",")
-        sub_args = [sub_arg.split(":") for sub_arg in split_args]
-        app_args = [bytes(sub_arg[1], 'ascii') for sub_arg in sub_args]
+        app_args = split_and_process_app_args(app_args)
     if foreign_apps == "none":
         foreign_apps = None
     elif foreign_apps:
