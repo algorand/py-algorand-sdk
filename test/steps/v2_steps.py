@@ -1016,8 +1016,6 @@ def compare_to_base64_golden(context, golden):
 def step_impl(context, host, port, token):
     algod_address = "http://" + str(host) + ":" + str(port)
     context.app_acl = algod.AlgodClient(token, algod_address)
-    # also need a v1 client for things like transaction_info
-    context.acl = legacyclient.AlgodClient(token, algod_address)
 
 
 @given('I create a new transient account and fund it with {transient_fund_amount} microalgos.')
@@ -1084,21 +1082,19 @@ def step_impl(context, operation, approval_program, clear_program, global_bytes,
                                                              note=None, lease=None, rekey_to=None)
 
 
-@given('I sign and submit the transaction, saving the txid. If there is an error it is "{error_string}".')
+@given('I sign and submit the transaction, saving the txid. If there is an error it is "{error_string:MaybeString}".')
 def sign_submit_save_txid_with_error(context, error_string):
-    signed_app_transaction = context.app_transaction.sign(context.transient_sk)
-    context.app_txid = context.app_acl.send_transaction(signed_app_transaction)
-
-
-@given('I sign and submit the transaction, saving the txid. If there is an error it is "".')
-def step_impl(context):
-    sign_submit_save_txid_with_error(context, "")
+    try:
+        signed_app_transaction = context.app_transaction.sign(context.transient_sk)
+        context.app_txid = context.app_acl.send_transaction(signed_app_transaction)
+    except Exception as e:
+        if error_string not in str(e):
+            raise RuntimeError("error string " + error_string + " not in actual error " + str(e))
 
 
 @given('I wait for the transaction to be confirmed.')
 def step_impl(context):
     sp = context.app_acl.suggested_params()
-    context.most_recent_pending_info = context.acl.pending_transaction_info(context.app_txid)
     last_round = sp.first
     context.app_acl.status_after_block(last_round+2)
     assert "type" in context.acl.transaction_info(context.transient_pk, context.app_txid)
@@ -1107,4 +1103,4 @@ def step_impl(context):
 
 @given('I remember the new application ID.')
 def step_impl(context):
-    context.current_application_id = context.most_recent_pending_info["txresults"]["createdapp"]
+    context.current_application_id = context.acl.pending_transaction_info(context.app_txid)["txresults"]["createdapp"]
