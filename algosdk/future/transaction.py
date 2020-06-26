@@ -1011,10 +1011,8 @@ class ApplicationCallTxn(Transaction):
                 self.accounts == other.accounts and
                 self.foreign_apps == other.foreign_apps)
 
-def make_unsigned_app_create_transaction(sender, sp, on_complete, approval_program, clear_program, global_schema,
-                                         local_schema,
-                                         app_args=None, accounts=None, foreign_apps=None, note=None, lease=None,
-                                         rekey_to=None):
+
+class ApplicationCreateTxn(ApplicationCallTxn):
     """
     Make a transaction that will create an application.
 
@@ -1032,17 +1030,29 @@ def make_unsigned_app_create_transaction(sender, sp, on_complete, approval_progr
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
+
+    Attributes:
+        See ApplicationCallTxn
     """
-    return future.ApplicationCallTxn(sender=sender, sp=sp, index=0, on_complete=on_complete,
-                                     approval_program=approval_program, clear_program=clear_program,
-                                     global_schema=global_schema,
-                                     local_schema=local_schema, app_args=app_args, accounts=accounts,
-                                     foreign_apps=foreign_apps, note=note, lease=lease, rekey_to=rekey_to)
+
+    def __init__(self, sender, sp, on_complete, approval_program, clear_program, global_schema,
+                 local_schema,
+                 app_args=None, accounts=None, foreign_apps=None, note=None, lease=None,
+                 rekey_to=None):
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=0, on_complete=on_complete,
+                                    approval_program=approval_program, clear_program=clear_program,
+                                    global_schema=global_schema,
+                                    local_schema=local_schema, app_args=app_args, accounts=accounts,
+                                    foreign_apps=foreign_apps, note=note, lease=lease, rekey_to=rekey_to)
+
+    def dictify(self):
+        d = dict()
+        d.update(super(ApplicationCreateTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
+        return od
 
 
-def make_unsigned_app_update_transaction(sender, sp, index, approval_program, clear_program, app_args=None,
-                                         accounts=None, foreign_apps=None,
-                                         note=None, lease=None, rekey_to=None):
+class ApplicationUpdateTxn(ApplicationCallTxn):
     """
     Make a transaction that will change an application's approval and clear programs.
 
@@ -1058,15 +1068,27 @@ def make_unsigned_app_update_transaction(sender, sp, index, approval_program, cl
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
+
+    Attributes:
+        See ApplicationCallTxn
     """
-    return future.ApplicationCallTxn(sender=sender, sp=sp, index=index, on_complete=OnComplete.UpdateApplicationOC,
-                                     approval_program=approval_program, clear_program=clear_program,
-                                     app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
-                                     lease=lease, rekey_to=rekey_to)
+
+    def __init__(self, sender, sp, index, approval_program, clear_program, app_args=None,
+                 accounts=None, foreign_apps=None,
+                 note=None, lease=None, rekey_to=None):
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.UpdateApplicationOC,
+                                    approval_program=approval_program, clear_program=clear_program,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                    lease=lease, rekey_to=rekey_to)
+
+    def dictify(self):
+        d = dict()
+        d.update(super(ApplicationUpdateTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
+        return od
 
 
-def make_unsigned_app_delete_tx(sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
-                                note=None, lease=None, rekey_to=None):
+class ApplicationDeleteTxn(ApplicationCallTxn):
     """
     Make a transaction that will delete an application
 
@@ -1080,14 +1102,25 @@ def make_unsigned_app_delete_tx(sender, sp, index, app_args=None, accounts=None,
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
+
+    Attributes:
+        See ApplicationCallTxn
     """
-    return future.ApplicationCallTxn(sender=sender, sp=sp, index=index, on_complete=OnComplete.DeleteApplicationOC,
-                                     app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
-                                     lease=lease, rekey_to=rekey_to)
+
+    def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
+                 note=None, lease=None, rekey_to=None):
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.DeleteApplicationOC,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                    lease=lease, rekey_to=rekey_to)
+
+    def dictify(self):
+        d = dict()
+        d.update(super(ApplicationDeleteTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
+        return od
 
 
-def make_unsigned_app_opt_in_tx(sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
-                                note=None, lease=None, rekey_to=None):
+class ApplicationOptInTxn(ApplicationCallTxn):
     """
     Make a transaction that will opt in to an application
 
@@ -1101,14 +1134,24 @@ def make_unsigned_app_opt_in_tx(sender, sp, index, app_args=None, accounts=None,
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
+
+    Attributes:
+        See ApplicationCallTxn
     """
-    return future.ApplicationCallTxn(sender=sender, sp=sp, index=index, on_complete=OnComplete.OptInOC,
-                                     app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
-                                     lease=lease, rekey_to=rekey_to)
+    def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
+                 note=None, lease=None, rekey_to=None):
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.OptInOC,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                    lease=lease, rekey_to=rekey_to)
+
+    def dictify(self):
+        d = dict()
+        d.update(super(ApplicationOptInTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
+        return od
 
 
-def make_unsigned_app_close_out_tx(sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
-                                   note=None, lease=None, rekey_to=None):
+class ApplicationCloseOutTxn(ApplicationCallTxn):
     """
     Make a transaction that will close out a user's state in an application
 
@@ -1122,14 +1165,24 @@ def make_unsigned_app_close_out_tx(sender, sp, index, app_args=None, accounts=No
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
+
+    Attributes:
+        See ApplicationCallTxn
     """
-    return future.ApplicationCallTxn(sender=sender, sp=sp, index=index, on_complete=OnComplete.CloseOutOC,
-                                     app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
-                                     lease=lease, rekey_to=rekey_to)
+    def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
+                 note=None, lease=None, rekey_to=None):
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.CloseOutOC,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                    lease=lease, rekey_to=rekey_to)
+
+    def dictify(self):
+        d = dict()
+        d.update(super(ApplicationCloseOutTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
+        return od
 
 
-def make_unsigned_app_clear_state_tx(sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
-                                     note=None, lease=None, rekey_to=None):
+class ApplicationClearStateTxn(ApplicationCallTxn):
     """
     Make a transaction that will clear a user's state an application
 
@@ -1143,14 +1196,24 @@ def make_unsigned_app_clear_state_tx(sender, sp, index, app_args=None, accounts=
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
+
+    Attributes:
+        See ApplicationCallTxn
     """
-    return future.ApplicationCallTxn(sender=sender, sp=sp, index=index, on_complete=OnComplete.ClearStateOC,
-                                     app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
-                                     lease=lease, rekey_to=rekey_to)
+    def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
+                 note=None, lease=None, rekey_to=None):
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.ClearStateOC,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                    lease=lease, rekey_to=rekey_to)
+
+    def dictify(self):
+        d = dict()
+        d.update(super(ApplicationClearStateTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
+        return od
 
 
-def make_unsigned_app_no_op_tx(sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
-                               note=None, lease=None, rekey_to=None):
+class ApplicationNoOpTxn(ApplicationCallTxn):
     """
     Make a transaction that will do nothing on application completion
      In other words, just call the application
@@ -1165,10 +1228,21 @@ def make_unsigned_app_no_op_tx(sender, sp, index, app_args=None, accounts=None, 
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
+
+    Attributes:
+        See ApplicationCallTxn
     """
-    return future.ApplicationCallTxn(sender=sender, sp=sp, index=index, on_complete=OnComplete.NoOpOC,
-                                     app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
-                                     lease=lease, rekey_to=rekey_to)
+    def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
+                 note=None, lease=None, rekey_to=None):
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.NoOpOC,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                    lease=lease, rekey_to=rekey_to)
+
+    def dictify(self):
+        d = dict()
+        d.update(super(ApplicationNoOpTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
+        return od
 
 
 class SignedTransaction:
