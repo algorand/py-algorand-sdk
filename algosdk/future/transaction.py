@@ -1,4 +1,5 @@
 import base64
+from enum import IntEnum
 import msgpack
 from collections import OrderedDict
 from .. import account
@@ -105,6 +106,22 @@ class Transaction:
         stx = SignedTransaction(self, sig, authorizing_address)
         return stx
 
+    def _sign_and_skip_rekey_check(self, private_key):
+        """
+        Sign the transaction with a private key, skipping rekey check.
+        This is only used for size estimation.
+
+        Args:
+            private_key (str): the private key of the signing account
+
+        Returns:
+            SignedTransaction: signed transaction with the signature
+        """
+        sig = self.raw_sign(private_key)
+        sig = base64.b64encode(sig).decode()
+        stx = SignedTransaction(self, sig)
+        return stx
+
     def raw_sign(self, private_key):
         """
         Sign the transaction.
@@ -124,7 +141,9 @@ class Transaction:
         return sig
 
     def estimate_size(self):
-        return len(encoding.msgpack_encode(self)) + constants.num_additional_bytes_after_signing
+        sk, _ = account.generate_account()
+        stx = self._sign_and_skip_rekey_check(sk)
+        return len(base64.b64decode(encoding.msgpack_encode(stx)))
 
     def dictify(self):
         d = dict()
@@ -182,6 +201,9 @@ class Transaction:
         elif txn_type == constants.assettransfer_txn:
             args.update(AssetTransferTxn._undictify(d))
             txn = AssetTransferTxn(**args)
+        elif txn_type == constants.appcall_txn:
+            args.update(ApplicationCallTxn._undictify(d))
+            txn = ApplicationCallTxn(**args)
         if "grp" in d:
             txn.group = d["grp"]
         return txn
@@ -251,7 +273,7 @@ class PaymentTxn(Transaction):
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
-            self.fee = max(self.estimate_size()*self.fee,
+            self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
 
     def dictify(self):
@@ -340,7 +362,7 @@ class KeyregTxn(Transaction):
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
-            self.fee = max(self.estimate_size()*self.fee,
+            self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
 
     def dictify(self):
@@ -489,7 +511,7 @@ class AssetConfigTxn(Transaction):
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
-            self.fee = max(self.estimate_size()*self.fee,
+            self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
 
     def dictify(self):
@@ -655,7 +677,7 @@ class AssetFreezeTxn(Transaction):
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
-            self.fee = max(self.estimate_size()*self.fee,
+            self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
 
     def dictify(self):
@@ -753,7 +775,7 @@ class AssetTransferTxn(Transaction):
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
-            self.fee = max(self.estimate_size()*self.fee,
+            self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
 
     def dictify(self):
@@ -802,6 +824,425 @@ class AssetTransferTxn(Transaction):
                 self.receiver == other.receiver and
                 self.close_assets_to == other.close_assets_to and
                 self.revocation_target == other.revocation_target)
+
+
+class StateSchema:
+    """
+    Restricts state for an application call.
+
+    Args:
+        num_uints(int, optional): number of uints to store
+        num_byte_slices(int, optional): number of byte slices to store
+
+    Attributes:
+        num_uints (int)
+        num_byte_slices (int)
+    """
+
+    def __init__(self, num_uints=None, num_byte_slices=None):
+        self.num_uints = num_uints
+        self.num_byte_slices = num_byte_slices
+
+    def dictify(self):
+        d = dict()
+        if self.num_uints:
+            d["nui"] = self.num_uints
+        if self.num_byte_slices:
+            d["nbs"] = self.num_byte_slices
+        od = OrderedDict(sorted(d.items()))
+        return od
+
+    @staticmethod
+    def undictify(d):
+        args = {
+            "num_uints": d["nui"] if "nui" in d else None,
+            "num_byte_slices": d["nbs"] if "nbs" in d else None
+        }
+        return args
+
+    def __eq__(self, other):
+        if not isinstance(other, StateSchema):
+            return False
+        return (self.num_uints == other.num_uints and
+                self.num_byte_slices == other.num_byte_slices)
+
+
+class OnComplete(IntEnum):
+    # NoOpOC indicates that an application transaction will simply call its
+    # ApprovalProgram
+    NoOpOC = 0
+
+    # OptInOC indicates that an application transaction will allocate some
+    # LocalState for the application in the sender's account
+    OptInOC = 1
+
+    # CloseOutOC indicates that an application transaction will deallocate
+    # some LocalState for the application from the user's account
+    CloseOutOC = 2
+
+    # ClearStateOC is similar to CloseOutOC, but may never fail. This
+    # allows users to reclaim their minimum balance from an application
+    # they no longer wish to opt in to.
+    ClearStateOC = 3
+
+    # UpdateApplicationOC indicates that an application transaction will
+    # update the ApprovalProgram and ClearStateProgram for the application
+    UpdateApplicationOC = 4
+
+    # DeleteApplicationOC indicates that an application transaction will
+    # delete the AppParams for the application from the creator's balance
+    # record
+    DeleteApplicationOC = 5
+
+
+class ApplicationCallTxn(Transaction):
+    """
+    Represents a transaction that interacts with the application system.
+
+    Args:
+        sender (str): address of the sender
+        sp (SuggestedParams): suggested params from algod
+        index (int): index of the application to call; 0 if creating a new application
+        on_complete (OnComplete): intEnum representing what app should do on completion
+        local_schema (StateSchema, optional): restricts what can be stored by created application;
+            must be omitted if not creating an application
+        global_schema (StateSchema, optional): restricts what can be stored by created application;
+            must be omitted if not creating an application
+        approval_program (bytes, optional): the program to run on transaction approval;
+            must be omitted if not creating or updating an application
+        clear_program (bytes, optional): the program to run when state is being cleared;
+            must be omitted if not creating or updating an application
+        app_args (list[bytes], optional): list of arguments to the application, each argument itself a buf
+        accounts (list[string], optional): list of additional accounts involved in call
+        foreign_apps (list[int], optional): list of other applications (identified by index) involved in call
+
+    Attributes:
+        sender (str)
+        fee (int)
+        first_valid_round (int)
+        last_valid_round (int)
+        genesis_hash (str)
+        index (int)
+        on_complete (int)
+        local_schema (StateSchema)
+        global_schema (StateSchema)
+        approval_program (bytes)
+        clear_program (bytes)
+        app_args (list[bytes])
+        accounts (list[str])
+        foreign_apps (list[int])
+    """
+
+    def __init__(self, sender, sp, index,
+                 on_complete, local_schema=None, global_schema=None,
+                 approval_program=None, clear_program=None, app_args=None,
+                 accounts=None, foreign_apps=None,
+                 note=None, lease=None, rekey_to=None):
+        Transaction.__init__(self, sender, sp, note,
+                             lease, constants.appcall_txn, rekey_to)
+        self.index = index
+        self.on_complete = on_complete
+        self.local_schema = local_schema
+        self.global_schema = global_schema
+        self.approval_program = approval_program
+        self.clear_program = clear_program
+        self.app_args = app_args
+        self.accounts = accounts
+        self.foreign_apps = foreign_apps
+        if sp.flat_fee:
+            self.fee = max(constants.min_txn_fee, self.fee)
+        else:
+            self.fee = max(self.estimate_size() * self.fee,
+                           constants.min_txn_fee)
+
+    def dictify(self):
+        d = dict()
+        if self.index:
+            d["apid"] = self.index
+        d["apan"] = self.on_complete
+        if self.local_schema:
+            d["apls"] = self.local_schema.dictify()
+        if self.global_schema:
+            d["apgs"] = self.global_schema.dictify()
+        if self.approval_program:
+            d["apap"] = self.approval_program
+        if self.clear_program:
+            d["apsu"] = self.clear_program
+        if self.app_args:
+            d["apaa"] = self.app_args
+        if self.accounts:
+            d["apat"] = [encoding.decode_address(account_pubkey) for account_pubkey in self.accounts]
+        if self.foreign_apps:
+            d["apfa"] = self.foreign_apps
+
+        d.update(super(ApplicationCallTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
+
+        return od
+
+    @staticmethod
+    def _undictify(d):
+        args = {
+            "index": d["apid"] if "apid" in d else None,
+            "on_complete": d["apan"] if "apan" in d else None,
+            "local_schema": StateSchema.undictify(d["apls"]) if "apls" in d else None,
+            "global_schema": StateSchema.undictify(d["apgs"]) if "apgs" in d else None,
+            "approval_program": d["apap"] if "apap" in d else None,
+            "clear_program": d["apsu"] if "apsu" in d else None,
+            "app_args": d["apaa"] if "apaa" in d else None,
+            "accounts": d["apat"] if "apat" in d else None,
+            "foreign_apps": d["apfa"] if "apfa" in d else None
+        }
+        if args["accounts"]:
+            args["accounts"] = [encoding.encode_address(account_bytes) for account_bytes in args["accounts"]]
+        return args
+
+    def __eq__(self, other):
+        if not isinstance(other, ApplicationCallTxn):
+            return False
+        return (super(ApplicationCallTxn, self).__eq__(other) and
+                self.index == other.index and
+                self.on_complete == other.on_complete and
+                self.local_schema == other.local_schema and
+                self.global_schema == other.global_schema and
+                self.approval_program == other.approval_program and
+                self.clear_program == other.clear_program and
+                self.app_args == other.app_args and
+                self.accounts == other.accounts and
+                self.foreign_apps == other.foreign_apps)
+
+
+class ApplicationCreateTxn(ApplicationCallTxn):
+    """
+    Make a transaction that will create an application.
+
+    Args:
+        sender (str): address of sender
+        sp (SuggestedParams): contains information such as fee and genesis hash
+        on_complete (OnComplete): what application should so once the program is done being run
+        approval_program (bytes): the compiled TEAL that approves a transaction
+        clear_program (bytes): the compiled TEAL that runs when clearing state
+        global_schema (StateSchema): restricts the number of ints and byte slices in the global state
+        local_schema (StateSchema): restructs the number of ints and byte slices in the per-user local state
+        app_args(list[bytes], optional): any additional arguments to the application
+        accounts(list[str], optional): any additional accounts to supply to the application
+        foreign_apps(list[int], optional): any other apps used by the application, identified by app index
+        note(bytes, optional): transaction note field
+        lease(bytes, optional): transaction lease field
+        rekey_to(str, optional): rekey-to field, see Transaction
+
+    Attributes:
+        See ApplicationCallTxn
+    """
+
+    def __init__(self, sender, sp, on_complete, approval_program, clear_program, global_schema,
+                 local_schema,
+                 app_args=None, accounts=None, foreign_apps=None, note=None, lease=None,
+                 rekey_to=None):
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=0, on_complete=on_complete,
+                                    approval_program=approval_program, clear_program=clear_program,
+                                    global_schema=global_schema,
+                                    local_schema=local_schema, app_args=app_args, accounts=accounts,
+                                    foreign_apps=foreign_apps, note=note, lease=lease, rekey_to=rekey_to)
+
+    def dictify(self):
+        d = dict()
+        d.update(super(ApplicationCreateTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
+        return od
+
+
+class ApplicationUpdateTxn(ApplicationCallTxn):
+    """
+    Make a transaction that will change an application's approval and clear programs.
+
+    Args:
+        sender (str): address of sender
+        sp (SuggestedParams): contains information such as fee and genesis hash
+        index (int): the application to update
+        approval_program (bytes): the new compiled TEAL that approves a transaction
+        clear_program (bytes): the new compiled TEAL that runs when clearing state
+        app_args(list[bytes], optional): any additional arguments to the application
+        accounts(list[str], optional): any additional accounts to supply to the application
+        foreign_apps(list[int], optional): any other apps used by the application, identified by app index
+        note(bytes, optional): transaction note field
+        lease(bytes, optional): transaction lease field
+        rekey_to(str, optional): rekey-to field, see Transaction
+
+    Attributes:
+        See ApplicationCallTxn
+    """
+
+    def __init__(self, sender, sp, index, approval_program, clear_program, app_args=None,
+                 accounts=None, foreign_apps=None,
+                 note=None, lease=None, rekey_to=None):
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.UpdateApplicationOC,
+                                    approval_program=approval_program, clear_program=clear_program,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                    lease=lease, rekey_to=rekey_to)
+
+    def dictify(self):
+        d = dict()
+        d.update(super(ApplicationUpdateTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
+        return od
+
+
+class ApplicationDeleteTxn(ApplicationCallTxn):
+    """
+    Make a transaction that will delete an application
+
+    Args:
+        sender (str): address of sender
+        sp (SuggestedParams): contains information such as fee and genesis hash
+        index (int): the application to update
+        app_args(list[bytes], optional): any additional arguments to the application
+        accounts(list[str], optional): any additional accounts to supply to the application
+        foreign_apps(list[int], optional): any other apps used by the application, identified by app index
+        note(bytes, optional): transaction note field
+        lease(bytes, optional): transaction lease field
+        rekey_to(str, optional): rekey-to field, see Transaction
+
+    Attributes:
+        See ApplicationCallTxn
+    """
+
+    def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
+                 note=None, lease=None, rekey_to=None):
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.DeleteApplicationOC,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                    lease=lease, rekey_to=rekey_to)
+
+    def dictify(self):
+        d = dict()
+        d.update(super(ApplicationDeleteTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
+        return od
+
+
+class ApplicationOptInTxn(ApplicationCallTxn):
+    """
+    Make a transaction that will opt in to an application
+
+    Args:
+        sender (str): address of sender
+        sp (SuggestedParams): contains information such as fee and genesis hash
+        index (int): the application to update
+        app_args(list[bytes], optional): any additional arguments to the application
+        accounts(list[str], optional): any additional accounts to supply to the application
+        foreign_apps(list[int], optional): any other apps used by the application, identified by app index
+        note(bytes, optional): transaction note field
+        lease(bytes, optional): transaction lease field
+        rekey_to(str, optional): rekey-to field, see Transaction
+
+    Attributes:
+        See ApplicationCallTxn
+    """
+    def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
+                 note=None, lease=None, rekey_to=None):
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.OptInOC,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                    lease=lease, rekey_to=rekey_to)
+
+    def dictify(self):
+        d = dict()
+        d.update(super(ApplicationOptInTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
+        return od
+
+
+class ApplicationCloseOutTxn(ApplicationCallTxn):
+    """
+    Make a transaction that will close out a user's state in an application
+
+    Args:
+        sender (str): address of sender
+        sp (SuggestedParams): contains information such as fee and genesis hash
+        index (int): the application to update
+        app_args(list[bytes], optional): any additional arguments to the application
+        accounts(list[str], optional): any additional accounts to supply to the application
+        foreign_apps(list[int], optional): any other apps used by the application, identified by app index
+        note(bytes, optional): transaction note field
+        lease(bytes, optional): transaction lease field
+        rekey_to(str, optional): rekey-to field, see Transaction
+
+    Attributes:
+        See ApplicationCallTxn
+    """
+    def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
+                 note=None, lease=None, rekey_to=None):
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.CloseOutOC,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                    lease=lease, rekey_to=rekey_to)
+
+    def dictify(self):
+        d = dict()
+        d.update(super(ApplicationCloseOutTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
+        return od
+
+
+class ApplicationClearStateTxn(ApplicationCallTxn):
+    """
+    Make a transaction that will clear a user's state an application
+
+    Args:
+        sender (str): address of sender
+        sp (SuggestedParams): contains information such as fee and genesis hash
+        index (int): the application to update
+        app_args(list[bytes], optional): any additional arguments to the application
+        accounts(list[str], optional): any additional accounts to supply to the application
+        foreign_apps(list[int], optional): any other apps used by the application, identified by app index
+        note(bytes, optional): transaction note field
+        lease(bytes, optional): transaction lease field
+        rekey_to(str, optional): rekey-to field, see Transaction
+
+    Attributes:
+        See ApplicationCallTxn
+    """
+    def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
+                 note=None, lease=None, rekey_to=None):
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.ClearStateOC,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                    lease=lease, rekey_to=rekey_to)
+
+    def dictify(self):
+        d = dict()
+        d.update(super(ApplicationClearStateTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
+        return od
+
+
+class ApplicationNoOpTxn(ApplicationCallTxn):
+    """
+    Make a transaction that will do nothing on application completion
+     In other words, just call the application
+
+    Args:
+        sender (str): address of sender
+        sp (SuggestedParams): contains information such as fee and genesis hash
+        index (int): the application to update
+        app_args(list[bytes], optional): any additional arguments to the application
+        accounts(list[str], optional): any additional accounts to supply to the application
+        foreign_apps(list[int], optional): any other apps used by the application, identified by app index
+        note(bytes, optional): transaction note field
+        lease(bytes, optional): transaction lease field
+        rekey_to(str, optional): rekey-to field, see Transaction
+
+    Attributes:
+        See ApplicationCallTxn
+    """
+    def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
+                 note=None, lease=None, rekey_to=None):
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.NoOpOC,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                    lease=lease, rekey_to=rekey_to)
+
+    def dictify(self):
+        d = dict()
+        d.update(super(ApplicationNoOpTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
+        return od
 
 
 class SignedTransaction:
@@ -970,7 +1411,7 @@ class MultisigTransaction:
                             msigstx.multisig.subsigs[s].signature = \
                                 stx.multisig.subsigs[s].signature
                         elif not msigstx.multisig.subsigs[s].signature == \
-                                stx.multisig.subsigs[s].signature:
+                                 stx.multisig.subsigs[s].signature:
                             raise error.DuplicateSigMismatchError
         return msigstx
 

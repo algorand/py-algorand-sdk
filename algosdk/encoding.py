@@ -2,7 +2,7 @@ import base64
 import msgpack
 from collections import OrderedDict
 from Cryptodome.Hash import SHA512
-from . import transaction, error, auction, constants
+from . import transaction, error, auction, constants, future
 
 
 def msgpack_encode(obj):
@@ -51,6 +51,43 @@ def _sort_dict(d):
             od[k] = v
     return od
 
+
+def future_msgpack_decode(enc):
+    """
+    Decode a msgpack encoded object from a string.
+
+    Args:
+        enc (str): string to be decoded
+
+    Returns:
+        Transaction, SignedTransaction, Multisig, Bid, or SignedBid:\
+            decoded object
+    """
+    decoded = enc
+    if not isinstance(enc, dict):
+        decoded = msgpack.unpackb(base64.b64decode(enc), raw=False)
+    if "type" in decoded:
+        return future.transaction.Transaction.undictify(decoded)
+    if "l" in decoded:
+        return future.transaction.LogicSig.undictify(decoded)
+    if "msig" in decoded:
+        return future.transaction.MultisigTransaction.undictify(decoded)
+    if "lsig" in decoded:
+        return future.transaction.LogicSigTransaction.undictify(decoded)
+    if "sig" in decoded:
+        return future.transaction.SignedTransaction.undictify(decoded)
+    if "txn" in decoded:
+        return future.transaction.Transaction.undictify(decoded["txn"])
+    if "subsig" in decoded:
+        return future.transaction.Multisig.undictify(decoded)
+    if "txlist" in decoded:
+        return future.transaction.TxGroup.undictify(decoded)
+    if "t" in decoded:
+        return auction.NoteField.undictify(decoded)
+    if "bid" in decoded:
+        return auction.SignedBid.undictify(decoded)
+    if "auc" in decoded:
+        return auction.Bid.undictify(decoded)
 
 def msgpack_decode(enc):
     """

@@ -16,7 +16,7 @@ def microalgos_to_algos(microalgos):
     Returns:
         int or decimal: how many algos
     """
-    return decimal.Decimal(microalgos)/constants.microalgos_to_algos_ratio
+    return decimal.Decimal(microalgos) / constants.microalgos_to_algos_ratio
 
 
 def algos_to_microalgos(algos):
@@ -29,7 +29,7 @@ def algos_to_microalgos(algos):
     Returns:
         int: how many microalgos
     """
-    return round(algos*constants.microalgos_to_algos_ratio)
+    return round(algos * constants.microalgos_to_algos_ratio)
 
 
 def sign_bytes(to_sign, private_key):

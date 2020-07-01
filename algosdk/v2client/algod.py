@@ -14,7 +14,7 @@ api_version_path_prefix = "/v2"
 
 class AlgodClient:
     """
-    Client class for kmd. Handles all algod requests.
+    Client class for algod. Handles all algod requests.
 
     Args:
         algod_token (str): algod API token

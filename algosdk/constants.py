@@ -25,6 +25,8 @@ assetfreeze_txn = "afrz"
 """str: indicates an asset freeze transaction"""
 assettransfer_txn = "axfer"
 """str: indicates an asset transfer transaction"""
+appcall_txn = "appl"
+"""str: indicates an app call transaction, allows creating, deleting, and interacting with an application"""
 
 # note field types
 note_field_type_deposit = "d"
@@ -35,7 +37,6 @@ note_field_type_settlement = "s"
 """str: indicates a signed settlement in NoteField"""
 note_field_type_params = "p"
 """str: indicates signed params in NoteField"""
-
 
 # prefixes
 txid_prefix = b"TX"
@@ -76,8 +77,6 @@ tx_group_limit = 16
 """int: maximum number of transaction in a transaction group"""
 max_asset_decimals = 19
 """int: maximum value for decimals in assets"""
-num_additional_bytes_after_signing = 2
-"""int: number of bytes added by signature"""
 
 # logic sig related
 logic_sig_max_cost = 20000
