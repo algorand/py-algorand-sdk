@@ -1860,6 +1860,8 @@ def retrieve_from_file(path):
             txns.append(LogicSigTransaction.undictify(txn))
         elif "type" in txn:
             txns.append(Transaction.undictify(txn))
+        elif "txn" in txn:
+            txns.append(Transaction.undictify(txn['txn']))
     f.close()
     return txns
 
