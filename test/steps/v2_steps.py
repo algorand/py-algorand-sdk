@@ -1,16 +1,17 @@
-from behave import given, when, then, register_type
 import base64
+import json
+import os
+import urllib
+from datetime import datetime
+from urllib.request import Request, urlopen
+
+import parse
+from behave import given, when, then, register_type  # pylint: disable=no-name-in-module
+
 from algosdk.future import transaction
 from algosdk import account, encoding, mnemonic
 from algosdk import algod as legacyclient
 from algosdk.v2client import *
-import os
-from datetime import datetime
-import json
-import urllib
-from urllib.request import Request, urlopen
-import parse
-
 
 @parse.with_pattern(r".*")
 def parse_string(text):
@@ -866,8 +867,11 @@ def parse_suggested(context, roundNum):
 
 @then('expect the path used to be "{path}"')
 def expect_path(context, path):
-    if isinstance(context.response, str):
-        context.response = json.loads(context.response)
+    if not isinstance(context.response, dict):
+        try:
+            context.response = json.loads(context.response)
+        except json.JSONDecodeError:
+            pass
     exp_path, exp_query = urllib.parse.splitquery(path)
     exp_query = urllib.parse.parse_qs(exp_query)
 

@@ -124,7 +124,9 @@ class KMDHTTPError(Exception):
 
 
 class AlgodHTTPError(Exception):
-    pass
+    def __init__(self, msg, code=None):
+        super().__init__(msg)
+        self.code = code
 
 class IndexerHTTPError(Exception):
     pass

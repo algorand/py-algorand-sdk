@@ -71,16 +71,19 @@ class AlgodClient:
         try:
             resp = urlopen(req)
         except urllib.error.HTTPError as e:
+            code = e.code
             e = e.read().decode("utf-8")
             try:
-                raise error.AlgodHTTPError(json.loads(e)["message"])
+                raise error.AlgodHTTPError(json.loads(e)["message"], code)
             except:
-                raise error.AlgodHTTPError(e)
-        res = resp.read().decode("utf-8")
+                raise error.AlgodHTTPError(e, code)
         if response_format == "json":
-            return json.loads(res) if res else None
+            try:
+                return json.load(resp)
+            except json.JSONDecodeError:
+                return None
         else:
-            return res
+            return resp.read()
 
     def account_info(self, address, **kwargs):
         """
@@ -110,7 +113,7 @@ class AlgodClient:
             query["max"] = limit
         req = "/accounts/" + address + "/transactions/pending"
         res = self.algod_request(
-            "GET", req, params=query, response_format=response_format, 
+            "GET", req, params=query, response_format=response_format,
             **kwargs)
         return res
 
@@ -213,7 +216,7 @@ class AlgodClient:
         """Return null if the node is running."""
         req = "/health"
         return self.algod_request("GET", req, **kwargs)
-    
+
     def versions(self, **kwargs):
         """Return algod versions."""
         req = "/versions"
