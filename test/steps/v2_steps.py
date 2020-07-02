@@ -12,6 +12,11 @@ from algosdk.future import transaction
 from algosdk import account, encoding, mnemonic
 from algosdk import algod as legacyclient
 from algosdk.v2client import *
+from algosdk.error import AlgodHTTPError
+
+from test.steps.steps import token as daemon_token
+from test.steps.steps import algod_port
+from test.steps.steps import kmd_port
 
 @parse.with_pattern(r".*")
 def parse_string(text):
@@ -1021,6 +1026,10 @@ def step_impl(context, host, port, token):
     algod_address = "http://" + str(host) + ":" + str(port)
     context.app_acl = algod.AlgodClient(token, algod_address)
 
+@given(u'an algod v2 client')
+def step_impl(context):
+    algod_address = "http://localhost" + ":" + str(algod_port)
+    context.app_acl = algod.AlgodClient(daemon_token, algod_address)
 
 @given('I create a new transient account and fund it with {transient_fund_amount} microalgos.')
 def step_impl(context, transient_fund_amount):
@@ -1108,3 +1117,32 @@ def step_impl(context):
 @given('I remember the new application ID.')
 def step_impl(context):
     context.current_application_id = context.acl.pending_transaction_info(context.app_txid)["txresults"]["createdapp"]
+
+
+def load_resource(res):
+    """load data from features/resources"""
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    path = os.path.join(dir_path, "..", "features", "resources", res)
+    with open(path, "rb") as fin:
+        data = fin.read()
+    return data
+
+
+@when(u'I compile a teal program "{program}"')
+def compile_step(context, program):
+    data = load_resource(program)
+    source = data.decode('utf-8')
+
+    try:
+        context.response = context.app_acl.compile(source)
+        context.status = 200
+    except AlgodHTTPError as ex:
+        context.status = ex.code
+        context.response = dict(result="", hash="")
+
+
+@then(u'it is compiled with {status} and "{result:MaybeString}" and "{hash:MaybeString}"')
+def compile_check_step(context, status, result, hash):
+    assert context.status == int(status)
+    assert context.response["result"] == result
+    assert context.response["hash"] == hash

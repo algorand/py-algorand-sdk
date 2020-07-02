@@ -256,3 +256,35 @@ class AlgodClient:
             res["consensus-version"],
             res["min-fee"]
             )
+
+    def compile(self, source, **kwargs):
+        """
+        Compile TEAL source with remote algod.
+
+        Args:
+            source (str): source to be compiled
+            request_header (dict, optional): additional header for request
+
+        Returns:
+            bytes: compilation result
+        """
+        req = "/teal/compile"
+        headers = { 'Content-Type': 'application/x-binary' }
+        return self.algod_request("POST", req, data=source.encode('utf-8'), headers=headers, **kwargs)
+
+    def dryrun(self, drr, **kwargs):
+        """
+        Dryrun with remote algod.
+
+        Args:
+            drr (obj): dryrun request object
+            request_header (dict, optional): additional header for request
+
+        Returns:
+            bytes: compilation result
+        """
+        req = "/teal/dryrun"
+        headers = { 'Content-Type': 'application/msgpack' }
+        data = encoding.msgpack_encode(drr)
+        data = base64.b64decode(data)
+        return self.algod_request("POST", req, data=data, headers=headers, **kwargs)
