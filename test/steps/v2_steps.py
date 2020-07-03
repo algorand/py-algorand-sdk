@@ -12,6 +12,7 @@ from algosdk.future import transaction
 from algosdk import account, encoding, mnemonic
 from algosdk import algod as legacyclient
 from algosdk.v2client import *
+from algosdk.v2client.models import DryrunRequest, DryrunSource
 from algosdk.error import AlgodHTTPError
 
 from test.steps.steps import token as daemon_token
@@ -1146,3 +1147,54 @@ def compile_check_step(context, status, result, hash):
     assert context.status == int(status)
     assert context.response["result"] == result
     assert context.response["hash"] == hash
+
+
+@when(u'I dryrun a "{kind}" program "{program}"')
+def dryrun_step(context, kind, program):
+    data = load_resource(program)
+    sp = transaction.SuggestedParams(int(1000), int(1), int(100), "", flat_fee=True)
+    txn = transaction.Transaction("UAPJE355K7BG7RQVMTZOW7QW4ICZJEIC3RZGYG5LSHZ65K6LCNFPJDSR7M", sp, None, None, "pay", None)
+    sources = []
+
+    if  kind == "compiled":
+        lsig = transaction.LogicSig(data)
+        txns = [transaction.LogicSigTransaction(txn, lsig)]
+    elif kind == "source":
+        txns = [transaction.SignedTransaction(txn, None)]
+        sources = [DryrunSource(field_name="lsig", source=data, txn_index=0)]
+    else:
+        assert False, f"kind {kind} not in (source, compiled)"
+
+    drr = DryrunRequest(txns=txns, sources=sources)
+    context.response = context.app_acl.dryrun(drr)
+
+
+@then(u'I get execution result "{result}"')
+def dryrun_check_step(context, result):
+    ddr = context.response
+    assert len(ddr["txns"]) > 0
+
+    res = ddr["txns"][0]
+    if res["logic-sig-messages"] is not None and len(res["logic-sig-messages"]) > 0:
+        msgs = res["logic-sig-messages"]
+    elif res["app-call-messages"] is not None and len(res["app-call-messages"]) > 0:
+        msgs = res["app-call-messages"]
+
+    assert len(msgs) > 0
+    assert msgs[-1] == result
+
+
+@when(u'we make any Dryrun call')
+def dryrun_any_call_step(context):
+    context.response = context.acl.dryrun(DryrunRequest())
+
+
+@then(u'the parsed Dryrun Response should have global delta "{creator}" with {action}')
+def dryrun_parsed_response(context, creator, action):
+    ddr = context.response
+    assert len(ddr["txns"]) > 0
+
+    delta = ddr["txns"][0]["global-delta"]
+    assert len(delta) > 0
+    assert delta[0]["key"] == creator
+    assert delta[0]["value"]["action"] == int(action)
