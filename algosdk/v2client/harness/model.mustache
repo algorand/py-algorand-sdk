@@ -1,0 +1,160 @@
+# coding: utf-8
+
+{{! Customized version of the standard template
+https://github.com/OpenAPITools/openapi-generator/blob/master/modules/openapi-generator/src/main/resources/python/model.mustache
+1. Removed validations except enum
+2. to_dict -> dictify
+%}}
+
+import pprint
+
+{{#models}}
+{{#model}}
+class {{classname}}(object):
+    """
+    Attributes:
+      openapi_types (dict): The key is attribute name
+                            and the value is attribute type.
+      attribute_map (dict): The key is attribute name
+                            and the value is json key in definition.
+    """
+    openapi_types = {
+{{#vars}}
+        '{{name}}': '{{{dataType}}}'{{#hasMore}},{{/hasMore}}
+{{/vars}}
+    }
+
+    attribute_map = {
+{{#vars}}
+        '{{name}}': '{{baseName}}'{{#hasMore}},{{/hasMore}}
+{{/vars}}
+    }
+
+    def __init__(self{{#vars}}, {{name}}={{#defaultValue}}{{{defaultValue}}}{{/defaultValue}}{{^defaultValue}}None{{/defaultValue}}{{/vars}}):  # noqa: E501
+        """{{classname}} - a model defined in OpenAPI"""  # noqa: E501
+{{#vars}}{{#-first}}
+{{/-first}}
+        self._{{name}} = None
+{{/vars}}
+{{#vars}}{{#-first}}
+{{/-first}}
+{{#required}}
+        self.{{name}} = {{name}}
+{{/required}}
+{{^required}}
+{{#isNullable}}
+        self.{{name}} = {{name}}
+{{/isNullable}}
+{{^isNullable}}
+        if {{name}} is not None:
+            self.{{name}} = {{name}}
+{{/isNullable}}
+{{/required}}
+{{/vars}}
+
+{{#vars}}
+    @property
+    def {{name}}(self):
+        """Gets the {{name}} of this {{classname}}.  # noqa: E501
+
+{{#description}}
+        {{{description}}}  # noqa: E501
+{{/description}}
+
+        :return: The {{name}} of this {{classname}}.  # noqa: E501
+        :rtype: {{dataType}}
+        """
+        return self._{{name}}
+
+    @{{name}}.setter
+    def {{name}}(self, {{name}}):
+        """Sets the {{name}} of this {{classname}}.
+
+{{#description}}
+        {{{description}}}  # noqa: E501
+{{/description}}
+
+        :param {{name}}: The {{name}} of this {{classname}}.  # noqa: E501
+        :type {{name}}: {{dataType}}
+        """
+{{#isEnum}}
+{{#isContainer}}
+        allowed_values = [{{#isNullable}}None,{{/isNullable}}{{#allowableValues}}{{#values}}{{#items.isString}}"{{/items.isString}}{{{this}}}{{#items.isString}}"{{/items.isString}}{{^-last}}, {{/-last}}{{/values}}{{/allowableValues}}]  # noqa: E501
+{{#isListContainer}}
+        if not set({{{name}}}).issubset(set(allowed_values)):  # noqa: E501
+            raise ValueError(
+                "Invalid values for `{{{name}}}` [{0}], must be a subset of [{1}]"  # noqa: E501
+                .format(", ".join(map(str, set({{{name}}}) - set(allowed_values))),  # noqa: E501
+                        ", ".join(map(str, allowed_values)))
+            )
+{{/isListContainer}}
+{{#isMapContainer}}
+        if not set({{{name}}}.keys()).issubset(set(allowed_values)):  # noqa: E501
+            raise ValueError(
+                "Invalid keys in `{{{name}}}` [{0}], must be a subset of [{1}]"  # noqa: E501
+                .format(", ".join(map(str, set({{{name}}}.keys()) - set(allowed_values))),  # noqa: E501
+                        ", ".join(map(str, allowed_values)))
+            )
+{{/isMapContainer}}
+{{/isContainer}}
+{{^isContainer}}
+        allowed_values = [{{#isNullable}}None,{{/isNullable}}{{#allowableValues}}{{#values}}{{#isString}}"{{/isString}}{{{this}}}{{#isString}}"{{/isString}}{{^-last}}, {{/-last}}{{/values}}{{/allowableValues}}]  # noqa: E501
+        if {{{name}}} not in allowed_values:  # noqa: E501
+            raise ValueError(
+                "Invalid value for `{{{name}}}` ({0}), must be one of {1}"  # noqa: E501
+                .format({{{name}}}, allowed_values)
+            )
+{{/isContainer}}
+{{/isEnum}}
+
+        self._{{name}} = {{name}}
+
+{{/vars}}
+    def dictify(self):
+        """Returns the model properties as a dict"""
+        result = {}
+
+        for attr, oas_attr in self.attribute_map.items():
+            value = getattr(self, attr)
+            if isinstance(value, list):
+                result[oas_attr] = list(map(
+                    lambda x: x.dictify() \
+                    if hasattr(x, "dictify") else x,
+                    value
+                ))
+            elif hasattr(value, "dictify"):
+                result[oas_attr] = value.dictify()
+            elif isinstance(value, dict):
+                result[oas_attr] = dict(map(
+                    lambda item: (item[0], item[1].dictify())
+                    if hasattr(item[1], "dictify") else item,
+                    value.items()
+                ))
+            else:
+                result[oas_attr] = value
+
+        return result
+
+    def to_str(self):
+        """Returns the string representation of the model"""
+        return pprint.pformat(self.dictify())
+
+    def __repr__(self):
+        """For `print` and `pprint`"""
+        return self.to_str()
+
+    def __eq__(self, other):
+        """Returns true if both objects are equal"""
+        if not isinstance(other, {{classname}}):
+            return False
+
+        return self.dictify() == other.dictify()
+
+    def __ne__(self, other):
+        """Returns true if both objects are not equal"""
+        if not isinstance(other, {{classname}}):
+            return True
+
+        return self.dictify() != other.dictify()
+{{/model}}
+{{/models}}
