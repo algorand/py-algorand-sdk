@@ -51,6 +51,8 @@ msig_addr_prefix = "MultisigAddr"
 """str: prefix for multisig addresses"""
 logic_prefix = b"Program"
 """bytes: program (logic) prefix when signing"""
+logic_data_prefix = b"ProgData"
+"""bytes: program (logic) data prefix when signing"""
 
 
 check_sum_len_bytes = 4
