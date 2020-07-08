@@ -10,10 +10,13 @@ from algosdk import wallet
 from algosdk import auction
 from algosdk import util
 from algosdk import constants
+from algosdk import logic
 from algosdk.future import template
 import os
 from datetime import datetime
 import hashlib
+
+from nacl.signing import SigningKey
 
 token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 algod_port = 60000
@@ -792,7 +795,7 @@ def claim_algos(context):
     context.ltxn = template.HTLC.get_transaction(context.template.get_program(), base64.b64encode(context.preimage), context.params)
     context.txn = context.ltxn.transaction
     context.acl.send_transaction(context.ltxn)
-    
+
 
 @given("a periodic payment contract with withdrawing window {wd_window} and period {period}")
 def periodic_pay_contract(context, wd_window, period):
@@ -882,3 +885,38 @@ def add_rekey_to_sk(context):
 @when('I add a rekeyTo field with address "{rekey}"')
 def add_rekey_to_address(context, rekey):
     context.txn.rekey_to = rekey
+
+
+@given(u'base64 encoded data to sign "{data_enc}"')
+def set_base64_encoded_data(context, data_enc):
+    context.data = base64.b64decode(data_enc)
+
+
+@given(u'program hash "{contract_addr}"')
+def set_program_hash(context, contract_addr):
+    context.address = contract_addr
+
+
+@when(u'I perform tealsign')
+def perform_tealsign(context):
+    context.sig = logic.teal_sign(context.sk, context.data, context.address)
+
+
+@then(u'the signature should be equal to "{sig_enc}"')
+def check_tealsign(context, sig_enc):
+    expected = base64.b64decode(sig_enc)
+    assert expected == context.sig
+
+
+@given(u'base64 encoded program "{program_enc}"')
+def set_program_hash_from_program(context, program_enc):
+    program = base64.b64decode(program_enc)
+    context.address = logic.address(program)
+
+
+@given(u'base64 encoded private key "{sk_enc}"')
+def set_sk_from_encoded_seed(context, sk_enc):
+    seed = base64.b64decode(sk_enc)
+    key = SigningKey(seed)
+    private_key = base64.b64encode(key.encode() + key.verify_key.encode()).decode()
+    context.sk = private_key

@@ -13,6 +13,7 @@ from algosdk import util
 from algosdk import logic
 from algosdk.future import template
 
+from nacl.signing import SigningKey
 
 class TestTransaction(unittest.TestCase):
     def test_min_txn_fee(self):
@@ -27,7 +28,7 @@ class TestTransaction(unittest.TestCase):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         sp = transaction.SuggestedParams(0, 1, 100, gh)
-        f = lambda: transaction.PaymentTxn(address, sp, address, 
+        f = lambda: transaction.PaymentTxn(address, sp, address,
                                            1000, note="hello")
         self.assertRaises(error.WrongNoteType, f)
 
@@ -1123,6 +1124,23 @@ class TestLogic(unittest.TestCase):
         program = b"\x02\x20\x01\x00\x22\x22\x70\x00"  # int 0; int 0; asset_holding_get Balance
         self.assertTrue(logic.check_program(program, None))
 
+    def test_teal_sign(self):
+        """test tealsign"""
+        data = base64.b64decode("Ux8jntyBJQarjKGF8A==")
+        seed = base64.b64decode("5Pf7eGMA52qfMT4R4/vYCt7con/7U3yejkdXkrcb26Q=")
+        program = base64.b64decode("ASABASI=")
+        addr = "6Z3C3LDVWGMX23BMSYMANACQOSINPFIRF77H7N3AWJZYV6OH6GWTJKVMXY"
+
+        key = SigningKey(seed)
+        verify_key = key.verify_key
+        private_key = base64.b64encode(key.encode() + verify_key.encode()).decode()
+        sig1 = logic.teal_sign(private_key, data, addr)
+        sig2 = logic.teal_sign_from_program(private_key, data, program)
+        self.assertEqual(sig1, sig2)
+
+        msg = constants.logic_data_prefix + encoding.decode_address(addr) + data
+        res = verify_key.verify(msg, sig1)
+        self.assertIsNotNone(res)
 
 class TestLogicSig(unittest.TestCase):
     def test_basic(self):
