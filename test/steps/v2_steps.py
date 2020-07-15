@@ -2,6 +2,7 @@ import base64
 import json
 import os
 import urllib
+import unittest
 from datetime import datetime
 from urllib.request import Request, urlopen
 
@@ -12,8 +13,10 @@ from algosdk.future import transaction
 from algosdk import account, encoding, mnemonic
 from algosdk import algod as legacyclient
 from algosdk.v2client import *
-from algosdk.v2client.models import DryrunRequest, DryrunSource
+from algosdk.v2client.models import DryrunRequest, DryrunSource, \
+    Account, Application, ApplicationLocalState
 from algosdk.error import AlgodHTTPError
+from algosdk.testing.dryrun import DryrunTestCaseMixin
 
 from test.steps.steps import token as daemon_token
 from test.steps.steps import algod_port
@@ -1153,7 +1156,8 @@ def compile_check_step(context, status, result, hash):
 def dryrun_step(context, kind, program):
     data = load_resource(program)
     sp = transaction.SuggestedParams(int(1000), int(1), int(100), "", flat_fee=True)
-    txn = transaction.Transaction("UAPJE355K7BG7RQVMTZOW7QW4ICZJEIC3RZGYG5LSHZ65K6LCNFPJDSR7M", sp, None, None, "pay", None)
+    zero_addr = encoding.encode_address(bytes(32))
+    txn = transaction.Transaction(zero_addr, sp, None, None, "pay", None)
     sources = []
 
     if  kind == "compiled":
@@ -1198,3 +1202,129 @@ def dryrun_parsed_response(context, creator, action):
     assert len(delta) > 0
     assert delta[0]["key"] == creator
     assert delta[0]["value"]["action"] == int(action)
+
+
+@given(u'dryrun test case with "{program}" of type "{kind}"')
+def dryrun_test_case_step(context, program, kind):
+    if kind not in set(["lsig", "approv", "clearp"]):
+        assert False, f"kind {kind} not in (lsig, approv, clearp)"
+
+    prog = load_resource(program)
+    # check if source
+    if prog[0] > 0x20:
+        prog = prog.decode("utf-8")
+
+    context.dryrun_case_program = prog
+    context.dryrun_case_kind = kind
+
+
+@then(u'status assert of "{status}" is succeed')
+def dryrun_test_case_status_assert_step(context, status):
+    class TestCase(DryrunTestCaseMixin, unittest.TestCase):
+        """Mock TestCase to test"""
+    ts = TestCase()
+    ts.algo_client = context.app_acl
+
+    lsig = None
+    app = None
+    if context.dryrun_case_kind == "lsig":
+        lsig = dict()
+    if context.dryrun_case_kind == "approv":
+        app = dict()
+    elif context.dryrun_case_kind == "clearp":
+        app = dict(on_complete=transaction.OnComplete.ClearStateOC)
+
+    if status == "PASS":
+        ts.assertPass(context.dryrun_case_program, lsig=lsig, app=app)
+    else:
+        ts.assertReject(context.dryrun_case_program, lsig=lsig, app=app)
+
+
+def dryrun_test_case_global_state_assert_impl(context, key, value, action, raises):
+    class TestCase(DryrunTestCaseMixin, unittest.TestCase):
+        """Mock TestCase to test"""
+
+    ts = TestCase()
+    ts.algo_client = context.app_acl
+
+    action = int(action)
+
+    val = dict(action=action)
+    if action == 1:
+        val["bytes"] = value
+    elif action == 2:
+        val["uint"] = int(value)
+
+    on_complete = transaction.OnComplete.NoOpOC
+    if context.dryrun_case_kind == "clearp":
+        on_complete = transaction.OnComplete.ClearStateOC
+
+    raised = False
+    try:
+        ts.assertGlobalStateContains(
+            context.dryrun_case_program, dict(key=key, value=val),
+            app=dict(on_complete=on_complete)
+        )
+    except AssertionError:
+        raised = True
+
+    if raises:
+        ts.assertTrue(raised, "assertGlobalStateContains expected to raise")
+
+
+@then(u'global delta assert with "{key}", "{value}" and {action} is succeed')
+def dryrun_test_case_global_state_assert_step(context, key, value, action):
+    dryrun_test_case_global_state_assert_impl(context, key, value, action, False)
+
+
+@then(u'global delta assert with "{key}", "{value}" and {action} is failed')
+def dryrun_test_case_global_state_assert_fail_step(context, key, value, action):
+    dryrun_test_case_global_state_assert_impl(context, key, value, action, True)
+
+@then(u'local delta assert for "{account}" of accounts {index} with "{key}", "{value}" and {action} is succeed')
+def dryrun_test_case_local_state_assert_fail_step(context, account, index, key, value, action):
+    class TestCase(DryrunTestCaseMixin, unittest.TestCase):
+        """Mock TestCase to test"""
+
+    ts = TestCase()
+    ts.algo_client = context.app_acl
+
+    action = int(action)
+
+    val = dict(action=action)
+    if action == 1:
+        val["bytes"] = value
+    elif action == 2:
+        val["uint"] = int(value)
+
+    on_complete = transaction.OnComplete.NoOpOC
+    if context.dryrun_case_kind == "clearp":
+        on_complete = transaction.OnComplete.ClearStateOC
+
+    app_idx = 1
+    accounts = [
+        Account(
+            address=ts.default_address(),
+            status="Offline",
+            apps_local_state=[
+                ApplicationLocalState(
+                    id=app_idx
+                )
+            ]
+        )
+    ] * 2
+    accounts[int(index)].address = account
+
+    drr = ts.dryrun_request(
+        context.dryrun_case_program,
+        sender=accounts[0].address,
+        app=dict(
+            app_idx=app_idx,
+            on_complete=on_complete,
+            accounts=accounts
+        )
+    )
+
+    ts.assertNoError(drr)
+    ts.assertLocalStateContains(drr, account, dict(key=key, value=val))
+
