@@ -12,23 +12,50 @@ class ApplicationLocalState(object):
                             and the value is json key in definition.
     """
     openapi_types = {
+        'id': 'int',
         'schema': 'ApplicationStateSchema',
         'key_value': 'list[TealKeyValue]'
     }
 
     attribute_map = {
+        'id': 'id',
         'schema': 'schema',
         'key_value': 'key-value'
     }
 
-    def __init__(self, schema=None, key_value=None):  # noqa: E501
+    def __init__(self, id=None, schema=None, key_value=None):  # noqa: E501
         """ApplicationLocalState - a model defined in OpenAPI"""  # noqa: E501
 
+        self._id = None
         self._schema = None
         self._key_value = None
 
+        self.id = id
         self.schema = schema
         self.key_value = key_value
+
+    @property
+    def id(self):
+        """Gets the id of this ApplicationLocalState.  # noqa: E501
+
+        The application which this local state is for.  # noqa: E501
+
+        :return: The id of this ApplicationLocalState.  # noqa: E501
+        :rtype: int
+        """
+        return self._id
+
+    @id.setter
+    def id(self, id):
+        """Sets the id of this ApplicationLocalState.
+
+        The application which this local state is for.  # noqa: E501
+
+        :param id: The id of this ApplicationLocalState.  # noqa: E501
+        :type id: int
+        """
+
+        self._id = id
 
     @property
     def schema(self):

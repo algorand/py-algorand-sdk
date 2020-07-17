@@ -18,7 +18,6 @@ from algosdk.v2client.models.account import Account
 from algosdk.v2client.models.account_participation import AccountParticipation
 from algosdk.v2client.models.application import Application
 from algosdk.v2client.models.application_local_state import ApplicationLocalState
-from algosdk.v2client.models.application_local_states import ApplicationLocalStates
 from algosdk.v2client.models.application_params import ApplicationParams
 from algosdk.v2client.models.application_state_schema import ApplicationStateSchema
 from algosdk.v2client.models.asset import Asset
