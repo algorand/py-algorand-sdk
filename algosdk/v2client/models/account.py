@@ -15,7 +15,7 @@ class Account(object):
         'address': 'str',
         'amount': 'int',
         'amount_without_pending_rewards': 'int',
-        'apps_local_state': 'list[ApplicationLocalStates]',
+        'apps_local_state': 'list[ApplicationLocalState]',
         'apps_total_schema': 'ApplicationStateSchema',
         'assets': 'list[AssetHolding]',
         'created_apps': 'list[Application]',
@@ -171,7 +171,7 @@ class Account(object):
         \\[appl\\] applications local data stored in this account.  Note the raw object uses `map[int] -> AppLocalState` for this type.  # noqa: E501
 
         :return: The apps_local_state of this Account.  # noqa: E501
-        :rtype: list[ApplicationLocalStates]
+        :rtype: list[ApplicationLocalState]
         """
         return self._apps_local_state
 
@@ -182,7 +182,7 @@ class Account(object):
         \\[appl\\] applications local data stored in this account.  Note the raw object uses `map[int] -> AppLocalState` for this type.  # noqa: E501
 
         :param apps_local_state: The apps_local_state of this Account.  # noqa: E501
-        :type apps_local_state: list[ApplicationLocalStates]
+        :type apps_local_state: list[ApplicationLocalState]
         """
 
         self._apps_local_state = apps_local_state
