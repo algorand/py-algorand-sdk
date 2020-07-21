@@ -51,6 +51,36 @@ def mock_response(context, jsonfiles, directory):
     urlopen(req)
 
 
+@given('mock http responses in "{filename}" loaded from "{directory}" with status {status}.')
+def step_impl(context, filename, directory, status):
+    context.expected_status_code = status
+    mock_response(context, filename, directory)
+
+
+@when('we make any "{client}" call to "{endpoint}".')
+def step_impl(context, client, endpoint):
+    # with the current implementation of mock responses, there is no need to do an 'endpoint' lookup
+    if client == "indexer":
+        context.response = context.icl.health()
+    elif client == "algod":
+        context.response = context.acl.status()
+    else:
+        raise NotImplementedError('did not recognize client "' + client + '"')
+
+
+@then('the parsed response should equal the mock response.')
+def step_impl(context):
+    f = open("test/features/resources/mock_response_path", "r")
+    mock_response_path = f.read()
+    f.close()
+    f = open("test/features/resources/" + mock_response_path, "r")
+    expected_mock_response = f.read()
+    f.close()
+    expected_mock_response = bytes(expected_mock_response, "ascii")
+    expected_mock_response = json.loads(expected_mock_response)
+    assert expected_mock_response == context.response
+
+
 @when('we make a Pending Transaction Information against txid "{txid}" with format "{response_format}"')
 def pending_txn_info(context, txid, response_format):
     context.response = context.acl.pending_transaction_info(txid, response_format=response_format)
