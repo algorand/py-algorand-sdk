@@ -10,8 +10,7 @@ import parse
 from behave import given, when, then, register_type  # pylint: disable=no-name-in-module
 
 from algosdk.future import transaction
-from algosdk import account, encoding, mnemonic
-from algosdk import algod as legacyclient
+from algosdk import account, encoding, error, mnemonic
 from algosdk.v2client import *
 from algosdk.v2client.models import DryrunRequest, DryrunSource, \
     Account, Application, ApplicationLocalState
@@ -20,7 +19,6 @@ from algosdk.testing.dryrun import DryrunTestCaseMixin
 
 from test.steps.steps import token as daemon_token
 from test.steps.steps import algod_port
-from test.steps.steps import kmd_port
 
 @parse.with_pattern(r".*")
 def parse_string(text):
@@ -52,6 +50,54 @@ def mock_response(context, jsonfiles, directory):
     # Take a look at 'environment.py' to see the mock servers.
     req = Request(context.url + "/mock/" + directory + "/" + jsonfiles, method="GET")
     urlopen(req)
+
+
+@given('mock http responses in "{filename}" loaded from "{directory}" with status {status}.')
+def step_impl(context, filename, directory, status):
+    context.expected_status_code = int(status)
+    with open("test/features/resources/mock_response_status", "w") as f:
+        f.write(status)
+    mock_response(context, filename, directory)
+    f = open("test/features/resources/mock_response_path", "r")
+    mock_response_path = f.read()
+    f.close()
+    f = open("test/features/resources/" + mock_response_path, "r")
+    expected_mock_response = f.read()
+    f.close()
+    expected_mock_response = bytes(expected_mock_response, "ascii")
+    context.expected_mock_response = json.loads(expected_mock_response)
+
+def validate_error(context, err):
+    if context.expected_status_code != 200:
+        if context.expected_status_code == 500:
+            assert context.expected_mock_response == json.loads(err.args[0])
+        else:
+            raise NotImplementedError("test does not know how to validate status code " + context.expected_status_code)
+    else:
+        raise err
+
+
+@when('we make any "{client}" call to "{endpoint}".')
+def step_impl(context, client, endpoint):
+    # with the current implementation of mock responses, there is no need to do an 'endpoint' lookup
+    if client == "indexer":
+        try:
+            context.response = context.icl.health()
+        except error.IndexerHTTPError as err:
+            validate_error(context, err)
+    elif client == "algod":
+        try:
+            context.response = context.acl.status()
+        except error.AlgodHTTPError as err:
+            validate_error(context, err)
+    else:
+        raise NotImplementedError('did not recognize client "' + client + '"')
+
+
+@then('the parsed response should equal the mock response.')
+def step_impl(context):
+    if context.expected_status_code == 200:
+        assert context.expected_mock_response == context.response
 
 
 @when('we make a Pending Transaction Information against txid "{txid}" with format "{response_format}"')
@@ -887,13 +933,6 @@ def expect_path(context, path):
     actual_path, actual_query = urllib.parse.splitquery(context.response["path"])
     actual_query = urllib.parse.parse_qs(actual_query)
     assert exp_path == actual_path.replace("%3A", ":")
-    if not (exp_query == actual_query):
-        print("***")
-        print("exp_query")
-        print(exp_query)
-        print("actual_query")
-        print(actual_query)
-        print("***")
     assert exp_query == actual_query
 
 
@@ -909,7 +948,9 @@ def expect_error(context, err):
 
 @given('indexer client {index} at "{address}" port {port} with token "{token}"')
 def indexer_client(context, index, address, port, token):
-    context.icls = {index: indexer.IndexerClient(token, "http://" + address + ":" + str(port))}
+    if not hasattr(context, "icls"):
+        context.icls = dict()
+    context.icls[index] = indexer.IndexerClient(token, "http://" + address + ":" + str(port))
 
 
 @when('we make a SearchForApplications call with {application_id} and {round}')
