@@ -65,7 +65,6 @@ def step_impl(context, filename, directory, status):
     context.expected_mock_response = json.loads(expected_mock_response)
 
 def validate_error(context, err):
-    print("error is being validated.")
     if context.expected_status_code != 200:
         if context.expected_status_code == 500:
             assert context.expected_mock_response == json.loads(err.args[0])
@@ -78,18 +77,15 @@ def validate_error(context, err):
 @when('we make any "{client}" call to "{endpoint}".')
 def step_impl(context, client, endpoint):
     # with the current implementation of mock responses, there is no need to do an 'endpoint' lookup
-    print("potentially throwing error.")
     if client == "indexer":
         try:
             context.response = context.icl.health()
         except error.IndexerHTTPError as err:
-            print("caught an error.")
             validate_error(context, err)
     elif client == "algod":
         try:
             context.response = context.acl.status()
         except error.AlgodHTTPError as err:
-            print("caught an error.")
             validate_error(context, err)
     else:
         raise NotImplementedError('did not recognize client "' + client + '"')
@@ -934,13 +930,6 @@ def expect_path(context, path):
     actual_path, actual_query = urllib.parse.splitquery(context.response["path"])
     actual_query = urllib.parse.parse_qs(actual_query)
     assert exp_path == actual_path.replace("%3A", ":")
-    if not (exp_query == actual_query):
-        print("***")
-        print("exp_query")
-        print(exp_query)
-        print("actual_query")
-        print(actual_query)
-        print("***")
     assert exp_query == actual_query
 
 
@@ -956,7 +945,9 @@ def expect_error(context, err):
 
 @given('indexer client {index} at "{address}" port {port} with token "{token}"')
 def indexer_client(context, index, address, port, token):
-    context.icls = {index: indexer.IndexerClient(token, "http://" + address + ":" + str(port))}
+    if not hasattr(context, "icls"):
+        context.icls = dict()
+    context.icls[index] = indexer.IndexerClient(token, "http://" + address + ":" + str(port))
 
 
 @when('we make a SearchForApplications call with {application_id} and {round}')
