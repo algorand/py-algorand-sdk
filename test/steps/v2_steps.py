@@ -925,6 +925,10 @@ def step_impl(context, jsonfile):
     dir_path = os.path.dirname(os.path.dirname(dir_path))
     with open(dir_path + "/test-harness/features/resources/" + jsonfile, "rb") as f:
         loaded_response = bytearray(f.read())
+    print("loaded response looks like:")
+    print(json.loads(loaded_response))
+    print("context.response looks like:")
+    print(context.response)
     assert context.response == json.loads(loaded_response)
 
 
