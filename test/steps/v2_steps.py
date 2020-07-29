@@ -597,15 +597,6 @@ def search_accounts(context, index, limit, currencyGreaterThan, currencyLessThan
                                             min_balance=int(currencyGreaterThan),
                                             max_balance=int(currencyLessThan), block=int(block), auth_addr=authAddr)
 
-
-@when(
-    'I use {indexer} to search for an account with {assetid}, {limit}, {currencygt}, {currencylt} and token "{token:MaybeString}"')
-def icl_search_accounts(context, indexer, assetid, limit, currencygt, currencylt, token):
-    context.response = context.icls[indexer].accounts(asset_id=int(assetid), limit=int(limit), next_page=token,
-                                                      min_balance=int(currencygt),
-                                                      max_balance=int(currencylt))
-
-
 @when(
     'I use {indexer} to search for an account with {assetid}, {limit}, {currencygt}, {currencylt}, "{auth_addr:MaybeString}", {application_id} and token "{token:MaybeString}"')
 def icl_search_accounts(context, indexer, assetid, limit, currencygt, currencylt, auth_addr, application_id, token):
@@ -924,13 +915,8 @@ def step_impl(context, jsonfile):
     loaded_response = None
     dir_path = os.path.dirname(os.path.realpath(__file__))
     dir_path = os.path.dirname(os.path.dirname(dir_path))
-    print("trying to find " + dir_path + "/test-harness/features/resources/" + jsonfile)
     with open(dir_path + "/test-harness/features/resources/" + jsonfile, "rb") as f:
         loaded_response = bytearray(f.read())
-    print("now asserting that loaded response looks right. context.response was: ")
-    print(context.response)
-    print("and loaded response is: ")
-    print(json.loads(loaded_response))
     assert context.response == json.loads(loaded_response)
 
 
