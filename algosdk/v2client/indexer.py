@@ -83,9 +83,9 @@ class IndexerClient:
 
     def accounts(
         self, asset_id=None, limit=None, next_page=None, min_balance=None,
-        max_balance=None, block=None, auth_addr=None, **kwargs):
+        max_balance=None, block=None, auth_addr=None, application_id=None, **kwargs):
         """
-        Return accounts that hold the asset; microalgos are the default
+        Return accounts that match the search; microalgos are the default
         currency unless asset_id is specified, in which case the asset will
         be used.
 
@@ -102,6 +102,7 @@ class IndexerClient:
                 some configurations
             auth_addr (str, optional): Include accounts configured to use
                 this spending key.
+            application_id (int, optional): results should filter on this application
 
         """
         req = "/accounts"
@@ -120,6 +121,8 @@ class IndexerClient:
             query["round"] = block
         if auth_addr:
             query["auth-addr"] = auth_addr
+        if application_id:
+            query["application-id"] = application_id
         return self.indexer_request("GET", req, query, **kwargs)
     
     def asset_balances(self, asset_id, limit=None, next_page=None, min_balance=None,
