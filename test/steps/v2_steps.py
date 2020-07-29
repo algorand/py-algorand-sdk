@@ -599,12 +599,20 @@ def search_accounts(context, index, limit, currencyGreaterThan, currencyLessThan
 
 @when(
     'I use {indexer} to search for an account with {assetid}, {limit}, {currencygt}, {currencylt}, "{auth_addr:MaybeString}", {application_id} and token "{token:MaybeString}"')
-def icl_search_accounts(context, indexer, assetid, limit, currencygt, currencylt, auth_addr, application_id, token):
+def icl_search_accounts_with_auth_addr_and_app_id(context, indexer, assetid, limit, currencygt, currencylt, auth_addr, application_id, token):
     context.response = context.icls[indexer].accounts(asset_id=int(assetid), limit=int(limit), next_page=token,
                                                       min_balance=int(currencygt),
                                                       max_balance=int(currencylt),
                                                       auth_addr=auth_addr,
                                                       application_id=int(application_id))
+
+
+@when(
+    'I use {indexer} to search for an account with {assetid}, {limit}, {currencygt}, {currencylt} and token "{token:MaybeString}"')
+def icl_search_accounts_legacy(context, indexer, assetid, limit, currencygt, currencylt, token):
+    context.response = context.icls[indexer].accounts(asset_id=int(assetid), limit=int(limit), next_page=token,
+                                                     min_balance=int(currencygt),
+                                                     max_balance=int(currencylt))
 
 
 @then(
