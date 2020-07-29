@@ -606,6 +606,16 @@ def icl_search_accounts(context, indexer, assetid, limit, currencygt, currencylt
                                                       max_balance=int(currencylt))
 
 
+@when(
+    'I use {indexer} to search for an account with {assetid}, {limit}, {currencygt}, {currencylt}, "{auth_addr:MaybeString}", {application_id} and token "{token:MaybeString}"')
+def icl_search_accounts(context, indexer, assetid, limit, currencygt, currencylt, auth_addr, application_id, token):
+    context.response = context.icls[indexer].accounts(asset_id=int(assetid), limit=int(limit), next_page=token,
+                                                      min_balance=int(currencygt),
+                                                      max_balance=int(currencylt),
+                                                      auth_addr=auth_addr,
+                                                      application_id=int(application_id))
+
+
 @then(
     'I get the next page using {indexer} to search for an account with {assetid}, {limit}, {currencygt} and {currencylt}')
 def search_accounts_nex(context, indexer, assetid, limit, currencygt, currencylt):
@@ -613,14 +623,6 @@ def search_accounts_nex(context, indexer, assetid, limit, currencygt, currencylt
                                                       min_balance=int(currencygt),
                                                       max_balance=int(currencylt),
                                                       next_page=context.response["next-token"])
-
-@when(
-    'I use {indexer} to search for an account with {assetid}, {limit}, {currencygt}, {currencylt}, {application_id} and token "{token:MaybeString}"')
-def icl_search_accounts(context, indexer, assetid, limit, currencygt, currencylt, application_id, token):
-    context.response = context.icls[indexer].accounts(asset_id=int(assetid), limit=int(limit), next_page=token,
-                                                      min_balance=int(currencygt),
-                                                      max_balance=int(currencylt),
-                                                      application_id=int(application_id))
 
 
 @then(
