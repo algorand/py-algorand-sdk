@@ -184,7 +184,7 @@ class IndexerClient:
         sig_type=None, txid=None, block=None, min_round=None, max_round=None,
         asset_id=None, start_time=None, end_time=None, min_amount=None,
         max_amount=None, address=None, address_role=None,
-        exclude_close_to=False, rekey_to=False, **kwargs):
+        exclude_close_to=False, application_id=None, rekey_to=False, **kwargs):
         """
         Return a list of transactions satisfying the conditions.
 
@@ -226,6 +226,8 @@ class IndexerClient:
                 search for; the close to fields are normally treated as a
                 receiver, if you would like to exclude them set this parameter
                 to true
+            application_id (int, optional): filter for transactions pertaining
+                to an application
             rekey_to (bool, optional) Include results which include the
                 rekey-to field.
         """
@@ -265,8 +267,11 @@ class IndexerClient:
             query["address-role"] = address_role
         if exclude_close_to:
             query["exclude-close-to"] = "true"
+        if application_id:
+            query["application-id"] = application_id
         if rekey_to:
             query["rekey-to"] = "true"
+
 
         return self.indexer_request("GET", req, query, **kwargs)
 
@@ -495,13 +500,15 @@ class IndexerClient:
         return self.indexer_request("GET", req, query, **kwargs)
 
     def search_applications(
-            self, application_id=None, round=None, **kwargs):
+            self, application_id=None, round=None, limit=None, next_token=None, **kwargs):
         """
         Return applications that satisfy the conditions.
 
         Args:
             application_id (int, optional): restrict search to application index
             round (int, optional): restrict search to passed round
+            limit (int, optional): restrict number of results to limit
+            next_token (string, optional): used for pagination
         """
         req = "/applications"
         query = dict()
@@ -509,5 +516,9 @@ class IndexerClient:
             query["application-id"] = application_id
         if round:
             query["round"] = round
+        if limit:
+            query["limit"] = limit
+        if next_token:
+            query["next"] = next_token
 
         return self.indexer_request("GET", req, query, **kwargs)

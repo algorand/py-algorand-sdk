@@ -688,6 +688,23 @@ def icl_search_txns(context, indexer, limit, noteprefix, txtype, sigtype, txid, 
                                                                  exclude_close_to=excludecloseto == "true")
 
 
+@when(
+    'I use {indexer} to search for transactions with {limit}, "{noteprefix:MaybeString}", "{txtype:MaybeString}", "{sigtype:MaybeString}", "{txid:MaybeString}", {block}, {minround}, {maxround}, {assetid}, "{beforetime:MaybeString}", "{aftertime:MaybeString}", {currencygt}, {currencylt}, "{address:MaybeString}", "{addressrole:MaybeString}", "{excludecloseto:MaybeString}", {application_id} and token "{token:MaybeString}"')
+def icl_search_txns_with_app(context, indexer, limit, noteprefix, txtype, sigtype, txid, block, minround, maxround, assetid,
+                    beforetime, aftertime, currencygt, currencylt, address, addressrole, excludecloseto, application_id, token):
+    context.response = context.icls[indexer].search_transactions(asset_id=int(assetid), limit=int(limit),
+                                                                 next_page=token,
+                                                                 note_prefix=base64.b64decode(noteprefix),
+                                                                 txn_type=txtype,
+                                                                 sig_type=sigtype, txid=txid, block=int(block),
+                                                                 min_round=int(minround), max_round=int(maxround),
+                                                                 start_time=aftertime, end_time=beforetime,
+                                                                 min_amount=int(currencygt),
+                                                                 max_amount=int(currencylt), address=address,
+                                                                 address_role=addressrole,
+                                                                 application_id=int(application_id),
+                                                                 exclude_close_to=excludecloseto == "true")
+
 @then('there are {num} transactions in the response, the first is "{txid:MaybeString}".')
 def check_transactions(context, num, txid):
     assert len(context.response["transactions"]) == int(num)
@@ -879,6 +896,32 @@ def check_assets(context, num, assetidout):
     assert len(context.response["assets"]) == int(num)
     if int(num) > 0:
         assert context.response["assets"][0]["index"] == int(assetidout)
+
+
+@when('I use {indexer} to search for applications with {limit}, {application_id}, and token "{token:MaybeString}"')
+def step_impl(context, indexer, limit, application_id, token):
+    context.response = context.icls[indexer].search_applications(application_id=int(application_id),limit=int(limit),
+                                                                 next_token=token)
+
+
+@when('I use {indexer} to lookup application with {application_id}')
+def step_impl(context, application_id):
+    context.response = context.icls[indexer].applications(application_id=int(application_id))
+
+
+@then(u'the parsed response should equal "{jsonfile}".')
+def step_impl(context, jsonfile):
+    loaded_response = None
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    dir_path = os.path.dirname(os.path.dirname(dir_path))
+    print("trying to find " + dir_path + "/test-harness/features/resources/" + jsonfile)
+    with open(dir_path + "/test-harness/features/resources/" + jsonfile, "rb") as f:
+        loaded_response = bytearray(f.read())
+    print("now asserting that loaded response looks right. context.response was: ")
+    print(context.response)
+    print("and loaded response is: ")
+    print(json.loads(loaded_response))
+    assert context.response == json.loads(loaded_response)
 
 
 @when(
