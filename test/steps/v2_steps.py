@@ -1243,15 +1243,16 @@ def verify_app_txn(context, app_created_bool_as_string, byte_slices, uints, appl
     if application_state == "local":
         counter = 0
         for local_state in account_info['apps-local-state']:
-            key_values = local_state['key-value']
-            counter = counter + 1
+            if local_state['id'] == context.current_application_id:
+                key_values = local_state['key-value']
+                counter = counter + 1
         assert counter == 1
     elif application_state == "global":
         counter = 0
         for created_app in account_info['created-apps']:
             if created_app['id'] == context.current_application_id:
                 key_values = created_app['params']['global-state']
-            counter = counter + 1
+                counter = counter + 1
         assert counter == 1
     else:
         raise NotImplementedError("test does not understand application state \"" + application_state + "\"")
