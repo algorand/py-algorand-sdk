@@ -1234,10 +1234,6 @@ def verify_app_txn(context, app_created_bool_as_string, byte_slices, uints, appl
     if state_key is None or state_key == "":
         return
 
-    # convert state_key and state_value to the format the returned message uses
-    state_key = base64.b64encode(state_key.encode('utf-8')).decode('utf-8')
-    state_value = base64.b64encode(state_value.encode('utf-8')).decode('utf-8')
-
     found_value_for_key = False
     key_values = list()
     if application_state == "local":
