@@ -7,7 +7,7 @@ from datetime import datetime
 from urllib.request import Request, urlopen
 
 import parse
-from behave import given, when, then, register_type  # pylint: disable=no-name-in-module
+from behave import given, when, then, register_type, step  # pylint: disable=no-name-in-module
 
 from algosdk.future import transaction
 from algosdk import account, encoding, error, mnemonic
@@ -597,13 +597,22 @@ def search_accounts(context, index, limit, currencyGreaterThan, currencyLessThan
                                             min_balance=int(currencyGreaterThan),
                                             max_balance=int(currencyLessThan), block=int(block), auth_addr=authAddr)
 
+@when(
+    'I use {indexer} to search for an account with {assetid}, {limit}, {currencygt}, {currencylt}, "{auth_addr:MaybeString}", {application_id} and token "{token:MaybeString}"')
+def icl_search_accounts_with_auth_addr_and_app_id(context, indexer, assetid, limit, currencygt, currencylt, auth_addr, application_id, token):
+    context.response = context.icls[indexer].accounts(asset_id=int(assetid), limit=int(limit), next_page=token,
+                                                      min_balance=int(currencygt),
+                                                      max_balance=int(currencylt),
+                                                      auth_addr=auth_addr,
+                                                      application_id=int(application_id))
+
 
 @when(
     'I use {indexer} to search for an account with {assetid}, {limit}, {currencygt}, {currencylt} and token "{token:MaybeString}"')
-def icl_search_accounts(context, indexer, assetid, limit, currencygt, currencylt, token):
+def icl_search_accounts_legacy(context, indexer, assetid, limit, currencygt, currencylt, token):
     context.response = context.icls[indexer].accounts(asset_id=int(assetid), limit=int(limit), next_page=token,
-                                                      min_balance=int(currencygt),
-                                                      max_balance=int(currencylt))
+                                                     min_balance=int(currencygt),
+                                                     max_balance=int(currencylt))
 
 
 @then(
@@ -687,6 +696,23 @@ def icl_search_txns(context, indexer, limit, noteprefix, txtype, sigtype, txid, 
                                                                  address_role=addressrole,
                                                                  exclude_close_to=excludecloseto == "true")
 
+
+@when(
+    'I use {indexer} to search for transactions with {limit}, "{noteprefix:MaybeString}", "{txtype:MaybeString}", "{sigtype:MaybeString}", "{txid:MaybeString}", {block}, {minround}, {maxround}, {assetid}, "{beforetime:MaybeString}", "{aftertime:MaybeString}", {currencygt}, {currencylt}, "{address:MaybeString}", "{addressrole:MaybeString}", "{excludecloseto:MaybeString}", {application_id} and token "{token:MaybeString}"')
+def icl_search_txns_with_app(context, indexer, limit, noteprefix, txtype, sigtype, txid, block, minround, maxround, assetid,
+                    beforetime, aftertime, currencygt, currencylt, address, addressrole, excludecloseto, application_id, token):
+    context.response = context.icls[indexer].search_transactions(asset_id=int(assetid), limit=int(limit),
+                                                                 next_page=token,
+                                                                 note_prefix=base64.b64decode(noteprefix),
+                                                                 txn_type=txtype,
+                                                                 sig_type=sigtype, txid=txid, block=int(block),
+                                                                 min_round=int(minround), max_round=int(maxround),
+                                                                 start_time=aftertime, end_time=beforetime,
+                                                                 min_amount=int(currencygt),
+                                                                 max_amount=int(currencylt), address=address,
+                                                                 address_role=addressrole,
+                                                                 application_id=int(application_id),
+                                                                 exclude_close_to=excludecloseto == "true")
 
 @then('there are {num} transactions in the response, the first is "{txid:MaybeString}".')
 def check_transactions(context, num, txid):
@@ -881,6 +907,27 @@ def check_assets(context, num, assetidout):
         assert context.response["assets"][0]["index"] == int(assetidout)
 
 
+@when('I use {indexer} to search for applications with {limit}, {application_id}, and token "{token:MaybeString}"')
+def step_impl(context, indexer, limit, application_id, token):
+    context.response = context.icls[indexer].search_applications(application_id=int(application_id),limit=int(limit),
+                                                                 next_page=token)
+
+
+@when('I use {indexer} to lookup application with {application_id}')
+def step_impl(context, indexer, application_id):
+    context.response = context.icls[indexer].applications(application_id=int(application_id))
+
+
+@then(u'the parsed response should equal "{jsonfile}".')
+def step_impl(context, jsonfile):
+    loaded_response = None
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    dir_path = os.path.dirname(os.path.dirname(dir_path))
+    with open(dir_path + "/test-harness/features/resources/" + jsonfile, "rb") as f:
+        loaded_response = bytearray(f.read())
+    assert context.response == json.loads(loaded_response)
+
+
 @when(
     'we make a SearchForAssets call with limit {limit} creator "{creator:MaybeString}" name "{name:MaybeString}" unit "{unit:MaybeString}" index {index}')
 def search_assets(context, limit, creator, name, unit, index):
@@ -1067,17 +1114,17 @@ def compare_to_base64_golden(context, golden):
 
 
 @given('an algod v2 client connected to "{host}" port {port} with token "{token}"')
-def step_impl(context, host, port, token):
+def algod_v2_client_at_host_port_and_token(context, host, port, token):
     algod_address = "http://" + str(host) + ":" + str(port)
     context.app_acl = algod.AlgodClient(token, algod_address)
 
 @given(u'an algod v2 client')
-def step_impl(context):
+def algod_v2_client(context):
     algod_address = "http://localhost" + ":" + str(algod_port)
     context.app_acl = algod.AlgodClient(daemon_token, algod_address)
 
 @given('I create a new transient account and fund it with {transient_fund_amount} microalgos.')
-def step_impl(context, transient_fund_amount):
+def create_transient_and_fund(context, transient_fund_amount):
     context.transient_sk, context.transient_pk = account.generate_account()
     sp = context.app_acl.suggested_params()
     payment = transaction.PaymentTxn(context.accounts[0], sp, context.transient_pk, int(transient_fund_amount))
@@ -1085,9 +1132,8 @@ def step_impl(context, transient_fund_amount):
     context.app_acl.send_transaction(signed_payment)
     context.app_acl.status_after_block(sp.first + 2)
 
-
-@given('I build an application transaction with the transient account, the current application, suggested params, operation "{operation}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", app-accounts "{app_accounts:MaybeString}"')
-def step_impl(context, operation, approval_program, clear_program, global_bytes, global_ints, local_bytes, local_ints,
+@step('I build an application transaction with the transient account, the current application, suggested params, operation "{operation}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", app-accounts "{app_accounts:MaybeString}"')
+def build_app_txn_with_transient(context, operation, approval_program, clear_program, global_bytes, global_ints, local_bytes, local_ints,
               app_args, foreign_apps, app_accounts):
     if operation == "none":
         operation = None
@@ -1140,7 +1186,7 @@ def step_impl(context, operation, approval_program, clear_program, global_bytes,
                                                              note=None, lease=None, rekey_to=None)
 
 
-@given('I sign and submit the transaction, saving the txid. If there is an error it is "{error_string:MaybeString}".')
+@step('I sign and submit the transaction, saving the txid. If there is an error it is "{error_string:MaybeString}".')
 def sign_submit_save_txid_with_error(context, error_string):
     try:
         signed_app_transaction = context.app_transaction.sign(context.transient_sk)
@@ -1150,8 +1196,8 @@ def sign_submit_save_txid_with_error(context, error_string):
             raise RuntimeError("error string " + error_string + " not in actual error " + str(e))
 
 
-@given('I wait for the transaction to be confirmed.')
-def step_impl(context):
+@step('I wait for the transaction to be confirmed.')
+def wait_for_app_txn_confirm(context):
     sp = context.app_acl.suggested_params()
     last_round = sp.first
     context.app_acl.status_after_block(last_round+2)
@@ -1160,8 +1206,65 @@ def step_impl(context):
 
 
 @given('I remember the new application ID.')
-def step_impl(context):
+def remember_app_id(context):
     context.current_application_id = context.acl.pending_transaction_info(context.app_txid)["txresults"]["createdapp"]
+
+
+@step('The transient account should have the created app "{app_created_bool_as_string:MaybeString}" and total schema byte-slices {byte_slices} and uints {uints}, the application "{application_state:MaybeString}" state contains key "{state_key:MaybeString}" with value "{state_value:MaybeString}"')
+def verify_app_txn(context, app_created_bool_as_string, byte_slices, uints, application_state, state_key, state_value):
+    account_info = context.app_acl.account_info(context.transient_pk)
+    app_total_schema = account_info['apps-total-schema']
+    assert app_total_schema['num-byte-slice'] == int(byte_slices)
+    assert app_total_schema['num-uint'] == int(uints)
+
+    app_created = app_created_bool_as_string == "true"
+    created_apps = account_info['created-apps']
+    # If we don't expect the app to exist, verify that it isn't there and exit.
+    if not app_created:
+        for app in created_apps:
+            assert app['id'] != context.current_application_id
+        return
+
+    found_app = False
+    for app in created_apps:
+        found_app = found_app or app['id'] == context.current_application_id
+    assert found_app
+
+    # If there is no key to check, we're done.
+    if state_key is None or state_key == "":
+        return
+
+    found_value_for_key = False
+    key_values = list()
+    if application_state == "local":
+        counter = 0
+        for local_state in account_info['apps-local-state']:
+            if local_state['id'] == context.current_application_id:
+                key_values = local_state['key-value']
+                counter = counter + 1
+        assert counter == 1
+    elif application_state == "global":
+        counter = 0
+        for created_app in account_info['created-apps']:
+            if created_app['id'] == context.current_application_id:
+                key_values = created_app['params']['global-state']
+                counter = counter + 1
+        assert counter == 1
+    else:
+        raise NotImplementedError("test does not understand application state \"" + application_state + "\"")
+
+    assert len(key_values) > 0
+
+    for key_value in key_values:
+        found_key = key_value['key']
+        if found_key == state_key:
+            found_value_for_key = True
+            found_value = key_value['value']
+            if found_value['type'] == 1:
+                assert found_value['bytes'] == state_value
+            elif found_value['type'] == 0:
+                assert found_value['uint'] == int(state_value)
+    assert found_value_for_key
 
 
 def load_resource(res):
