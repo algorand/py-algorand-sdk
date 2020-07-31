@@ -910,7 +910,7 @@ def check_assets(context, num, assetidout):
 @when('I use {indexer} to search for applications with {limit}, {application_id}, and token "{token:MaybeString}"')
 def step_impl(context, indexer, limit, application_id, token):
     context.response = context.icls[indexer].search_applications(application_id=int(application_id),limit=int(limit),
-                                                                 next_token=token)
+                                                                 next_page=token)
 
 
 @when('I use {indexer} to lookup application with {application_id}')
