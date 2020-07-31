@@ -7,12 +7,13 @@ pushd $rootdir
 
 # Reset test harness
 rm -rf test-harness
-git clone --single-branch --branch will/dryrun-fix https://github.com/algorand/algorand-sdk-testing.git test-harness
+git clone --single-branch --branch master https://github.com/algorand/algorand-sdk-testing.git test-harness
 
 ## Copy feature files into the project resources
 mkdir -p test/features
 cp -r test-harness/features/* test/features
 
+exit
 # Build SDK testing environment
 docker build -t py-sdk-testing -f Dockerfile "$(pwd)"
 
