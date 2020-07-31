@@ -13,6 +13,7 @@ git clone --single-branch --branch master https://github.com/algorand/algorand-s
 mkdir -p test/features
 cp -r test-harness/features/* test/features
 
+exit
 # Build SDK testing environment
 docker build -t py-sdk-testing -f Dockerfile "$(pwd)"
 
