@@ -503,7 +503,7 @@ class IndexerClient:
         return self.indexer_request("GET", req, query, **kwargs)
 
     def search_applications(
-            self, application_id=None, round=None, limit=None, next_token=None, **kwargs):
+            self, application_id=None, round=None, limit=None, next_page=None, **kwargs):
         """
         Return applications that satisfy the conditions.
 
@@ -511,7 +511,7 @@ class IndexerClient:
             application_id (int, optional): restrict search to application index
             round (int, optional): restrict search to passed round
             limit (int, optional): restrict number of results to limit
-            next_token (string, optional): used for pagination
+            next_page (string, optional): used for pagination
         """
         req = "/applications"
         query = dict()
@@ -521,7 +521,7 @@ class IndexerClient:
             query["round"] = round
         if limit:
             query["limit"] = limit
-        if next_token:
-            query["next"] = next_token
+        if next_page:
+            query["next"] = next_page
 
         return self.indexer_request("GET", req, query, **kwargs)
