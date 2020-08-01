@@ -1045,13 +1045,14 @@ class ApplicationCreateTxn(ApplicationCallTxn):
 
     def __init__(self, sender, sp, on_complete, approval_program, clear_program, global_schema,
                  local_schema,
-                 app_args=None, accounts=None, foreign_apps=None, foreign_assets=None, note=None, lease=None,
-                 rekey_to=None):
+                 app_args=None, accounts=None, foreign_apps=None, foreign_assets=None, note=None,
+                 lease=None, rekey_to=None):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=0, on_complete=on_complete,
                                     approval_program=approval_program, clear_program=clear_program,
                                     global_schema=global_schema,
                                     local_schema=local_schema, app_args=app_args, accounts=accounts,
-                                    foreign_apps=foreign_apps, foreign_assets=foreign_assets, note=note, lease=lease, rekey_to=rekey_to)
+                                    foreign_apps=foreign_apps, foreign_assets=foreign_assets,
+                                    note=note, lease=lease, rekey_to=rekey_to)
 
     def dictify(self):
         d = dict()
@@ -1087,8 +1088,8 @@ class ApplicationUpdateTxn(ApplicationCallTxn):
                  note=None, lease=None, rekey_to=None):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.UpdateApplicationOC,
                                     approval_program=approval_program, clear_program=clear_program,
-                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, foreign_assets=foreign_assets, note=note,
-                                    lease=lease, rekey_to=rekey_to)
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps,
+                                    foreign_assets=foreign_assets, note=note, lease=lease, rekey_to=rekey_to)
 
     def dictify(self):
         d = dict()
@@ -1120,8 +1121,8 @@ class ApplicationDeleteTxn(ApplicationCallTxn):
     def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
                 foreign_assets=None, note=None, lease=None, rekey_to=None):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.DeleteApplicationOC,
-                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, foreign_assets=foreign_assets, note=note,
-                                    lease=lease, rekey_to=rekey_to)
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps,
+                                    foreign_assets=foreign_assets, note=note, lease=lease, rekey_to=rekey_to)
 
     def dictify(self):
         d = dict()
@@ -1152,8 +1153,8 @@ class ApplicationOptInTxn(ApplicationCallTxn):
     def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
                  foreign_assets=None, note=None, lease=None, rekey_to=None):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.OptInOC,
-                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, foreign_assets=foreign_assets, note=note,
-                                    lease=lease, rekey_to=rekey_to)
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps,
+                                    foreign_assets=foreign_assets, note=note, lease=lease, rekey_to=rekey_to)
 
     def dictify(self):
         d = dict()
@@ -1184,8 +1185,8 @@ class ApplicationCloseOutTxn(ApplicationCallTxn):
     def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
                 foreign_assets=None, note=None, lease=None, rekey_to=None):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.CloseOutOC,
-                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, foreign_assets=foreign_assets, note=note,
-                                    lease=lease, rekey_to=rekey_to)
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps,
+                                    foreign_assets=foreign_assets, note=note, lease=lease, rekey_to=rekey_to)
 
     def dictify(self):
         d = dict()
@@ -1216,8 +1217,8 @@ class ApplicationClearStateTxn(ApplicationCallTxn):
     def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
                  foreign_assets=None, note=None, lease=None, rekey_to=None):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.ClearStateOC,
-                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, foreign_assets=foreign_assets, note=note,
-                                    lease=lease, rekey_to=rekey_to)
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps,
+                                    foreign_assets=foreign_assets, note=note, lease=lease, rekey_to=rekey_to)
 
     def dictify(self):
         d = dict()
@@ -1249,8 +1250,8 @@ class ApplicationNoOpTxn(ApplicationCallTxn):
     def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None, foreign_assets=None,
                  note=None, lease=None, rekey_to=None):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.NoOpOC,
-                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, foreign_assets=foreign_assets, note=note,
-                                    lease=lease, rekey_to=rekey_to)
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps,
+                                    foreign_assets=foreign_assets, note=note, lease=lease, rekey_to=rekey_to)
 
     def dictify(self):
         d = dict()
