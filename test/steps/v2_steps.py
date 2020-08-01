@@ -1188,6 +1188,7 @@ def build_app_txn_with_transient(context, operation, approval_program, clear_pro
                                                              clear_program=clear_program,
                                                              app_args=app_args, accounts=app_accounts,
                                                              foreign_apps=foreign_apps,
+                                                             foreign_assets=None,
                                                              note=None, lease=None, rekey_to=None)
 
 
