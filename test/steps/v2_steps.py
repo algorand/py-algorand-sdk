@@ -926,8 +926,8 @@ def step_impl(context, jsonfile):
     with open(dir_path + "/test-harness/features/resources/" + jsonfile, "rb") as f:
         loaded_response = bytearray(f.read())
     if context.response != json.loads(loaded_response):
-        print("EXPECTED: " + loaded_response)
-        print("ACTUAL: " + context.response)
+        print("EXPECTED: " + str(loaded_response))
+        print("ACTUAL: " + str(context.response))
 
     assert context.response == json.loads(loaded_response)
 
