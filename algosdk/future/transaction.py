@@ -915,6 +915,7 @@ class ApplicationCallTxn(Transaction):
         app_args (list[bytes], optional): list of arguments to the application, each argument itself a buf
         accounts (list[string], optional): list of additional accounts involved in call
         foreign_apps (list[int], optional): list of other applications (identified by index) involved in call
+        foreign_assets (list[int], optional): list of assets involved in call
 
     Attributes:
         sender (str)
@@ -931,12 +932,13 @@ class ApplicationCallTxn(Transaction):
         app_args (list[bytes])
         accounts (list[str])
         foreign_apps (list[int])
+        foreign_assets (list[int])
     """
 
     def __init__(self, sender, sp, index,
                  on_complete, local_schema=None, global_schema=None,
                  approval_program=None, clear_program=None, app_args=None,
-                 accounts=None, foreign_apps=None,
+                 accounts=None, foreign_apps=None, foreign_assets=None,
                  note=None, lease=None, rekey_to=None):
         Transaction.__init__(self, sender, sp, note,
                              lease, constants.appcall_txn, rekey_to)
@@ -949,6 +951,7 @@ class ApplicationCallTxn(Transaction):
         self.app_args = app_args
         self.accounts = accounts
         self.foreign_apps = foreign_apps
+        self.foreign_assets = foreign_assets
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
@@ -974,6 +977,8 @@ class ApplicationCallTxn(Transaction):
             d["apat"] = [encoding.decode_address(account_pubkey) for account_pubkey in self.accounts]
         if self.foreign_apps:
             d["apfa"] = self.foreign_apps
+        if self.foreign_assets:
+            d["apas"] = self.foreign_assets
 
         d.update(super(ApplicationCallTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
@@ -991,7 +996,8 @@ class ApplicationCallTxn(Transaction):
             "clear_program": d["apsu"] if "apsu" in d else None,
             "app_args": d["apaa"] if "apaa" in d else None,
             "accounts": d["apat"] if "apat" in d else None,
-            "foreign_apps": d["apfa"] if "apfa" in d else None
+            "foreign_apps": d["apfa"] if "apfa" in d else None,
+            "foreign_assets": d["apas"] if "apas" in d else None
         }
         if args["accounts"]:
             args["accounts"] = [encoding.encode_address(account_bytes) for account_bytes in args["accounts"]]
@@ -1009,7 +1015,8 @@ class ApplicationCallTxn(Transaction):
                 self.clear_program == other.clear_program and
                 self.app_args == other.app_args and
                 self.accounts == other.accounts and
-                self.foreign_apps == other.foreign_apps)
+                self.foreign_apps == other.foreign_apps and
+                self.foreign_assets == other.foreign_assets)
 
 
 class ApplicationCreateTxn(ApplicationCallTxn):
@@ -1027,6 +1034,7 @@ class ApplicationCreateTxn(ApplicationCallTxn):
         app_args(list[bytes], optional): any additional arguments to the application
         accounts(list[str], optional): any additional accounts to supply to the application
         foreign_apps(list[int], optional): any other apps used by the application, identified by app index
+        foreign_assets(list[int], optional): list of assets involved in call
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
@@ -1037,13 +1045,13 @@ class ApplicationCreateTxn(ApplicationCallTxn):
 
     def __init__(self, sender, sp, on_complete, approval_program, clear_program, global_schema,
                  local_schema,
-                 app_args=None, accounts=None, foreign_apps=None, note=None, lease=None,
+                 app_args=None, accounts=None, foreign_apps=None, foreign_assets=None, note=None, lease=None,
                  rekey_to=None):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=0, on_complete=on_complete,
                                     approval_program=approval_program, clear_program=clear_program,
                                     global_schema=global_schema,
                                     local_schema=local_schema, app_args=app_args, accounts=accounts,
-                                    foreign_apps=foreign_apps, note=note, lease=lease, rekey_to=rekey_to)
+                                    foreign_apps=foreign_apps, foreign_assets=foreign_assets, note=note, lease=lease, rekey_to=rekey_to)
 
     def dictify(self):
         d = dict()
@@ -1065,6 +1073,7 @@ class ApplicationUpdateTxn(ApplicationCallTxn):
         app_args(list[bytes], optional): any additional arguments to the application
         accounts(list[str], optional): any additional accounts to supply to the application
         foreign_apps(list[int], optional): any other apps used by the application, identified by app index
+        foreign_assets(list[int], optional): list of assets involved in call
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
@@ -1074,11 +1083,11 @@ class ApplicationUpdateTxn(ApplicationCallTxn):
     """
 
     def __init__(self, sender, sp, index, approval_program, clear_program, app_args=None,
-                 accounts=None, foreign_apps=None,
+                 accounts=None, foreign_apps=None, foreign_assets=None,
                  note=None, lease=None, rekey_to=None):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.UpdateApplicationOC,
                                     approval_program=approval_program, clear_program=clear_program,
-                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, foreign_assets=foreign_assets, note=note,
                                     lease=lease, rekey_to=rekey_to)
 
     def dictify(self):
@@ -1099,6 +1108,7 @@ class ApplicationDeleteTxn(ApplicationCallTxn):
         app_args(list[bytes], optional): any additional arguments to the application
         accounts(list[str], optional): any additional accounts to supply to the application
         foreign_apps(list[int], optional): any other apps used by the application, identified by app index
+        foreign_assets(list[int], optional): list of assets involved in call
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
@@ -1108,9 +1118,9 @@ class ApplicationDeleteTxn(ApplicationCallTxn):
     """
 
     def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
-                 note=None, lease=None, rekey_to=None):
+                foreign_assets=None, note=None, lease=None, rekey_to=None):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.DeleteApplicationOC,
-                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, foreign_assets=foreign_assets, note=note,
                                     lease=lease, rekey_to=rekey_to)
 
     def dictify(self):
@@ -1131,6 +1141,7 @@ class ApplicationOptInTxn(ApplicationCallTxn):
         app_args(list[bytes], optional): any additional arguments to the application
         accounts(list[str], optional): any additional accounts to supply to the application
         foreign_apps(list[int], optional): any other apps used by the application, identified by app index
+        foreign_assets(list[int], optional): list of assets involved in call
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
@@ -1139,9 +1150,9 @@ class ApplicationOptInTxn(ApplicationCallTxn):
         See ApplicationCallTxn
     """
     def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
-                 note=None, lease=None, rekey_to=None):
+                 foreign_assets=None, note=None, lease=None, rekey_to=None):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.OptInOC,
-                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, foreign_assets=foreign_assets, note=note,
                                     lease=lease, rekey_to=rekey_to)
 
     def dictify(self):
@@ -1162,6 +1173,7 @@ class ApplicationCloseOutTxn(ApplicationCallTxn):
         app_args(list[bytes], optional): any additional arguments to the application
         accounts(list[str], optional): any additional accounts to supply to the application
         foreign_apps(list[int], optional): any other apps used by the application, identified by app index
+        foreign_assets(list[int], optional): list of assets involved in call
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
@@ -1170,9 +1182,9 @@ class ApplicationCloseOutTxn(ApplicationCallTxn):
         See ApplicationCallTxn
     """
     def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
-                 note=None, lease=None, rekey_to=None):
+                foreign_assets=None, note=None, lease=None, rekey_to=None):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.CloseOutOC,
-                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, foreign_assets=foreign_assets, note=note,
                                     lease=lease, rekey_to=rekey_to)
 
     def dictify(self):
@@ -1193,6 +1205,7 @@ class ApplicationClearStateTxn(ApplicationCallTxn):
         app_args(list[bytes], optional): any additional arguments to the application
         accounts(list[str], optional): any additional accounts to supply to the application
         foreign_apps(list[int], optional): any other apps used by the application, identified by app index
+        foreign_assets(list[int], optional): list of assets involved in call
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
@@ -1201,9 +1214,9 @@ class ApplicationClearStateTxn(ApplicationCallTxn):
         See ApplicationCallTxn
     """
     def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
-                 note=None, lease=None, rekey_to=None):
+                 foreign_assets=None, note=None, lease=None, rekey_to=None):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.ClearStateOC,
-                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, foreign_assets=foreign_assets, note=note,
                                     lease=lease, rekey_to=rekey_to)
 
     def dictify(self):
@@ -1225,6 +1238,7 @@ class ApplicationNoOpTxn(ApplicationCallTxn):
         app_args(list[bytes], optional): any additional arguments to the application
         accounts(list[str], optional): any additional accounts to supply to the application
         foreign_apps(list[int], optional): any other apps used by the application, identified by app index
+        foreign_assets(list[int], optional): list of assets involved in call
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
@@ -1232,10 +1246,10 @@ class ApplicationNoOpTxn(ApplicationCallTxn):
     Attributes:
         See ApplicationCallTxn
     """
-    def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
+    def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None, foreign_assets=None,
                  note=None, lease=None, rekey_to=None):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.NoOpOC,
-                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, note=note,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps, foreign_assets=foreign_assets, note=note,
                                     lease=lease, rekey_to=rekey_to)
 
     def dictify(self):
