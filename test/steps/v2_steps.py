@@ -1141,9 +1141,9 @@ def create_transient_and_fund(context, transient_fund_amount):
     context.app_acl.send_transaction(signed_payment)
     context.app_acl.status_after_block(sp.first + 2)
 
-@step('I build an application transaction with the transient account, the current application, suggested params, operation "{operation}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", app-accounts "{app_accounts:MaybeString}"')
+@step('I build an application transaction with the transient account, the current application, suggested params, operation "{operation}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}"')
 def build_app_txn_with_transient(context, operation, approval_program, clear_program, global_bytes, global_ints, local_bytes, local_ints,
-              app_args, foreign_apps, app_accounts):
+              app_args, foreign_apps, foreign_assets, app_accounts):
     if operation == "none":
         operation = None
     else:
@@ -1176,6 +1176,10 @@ def build_app_txn_with_transient(context, operation, approval_program, clear_pro
         foreign_apps = None
     elif foreign_apps:
         foreign_apps = [int(app) for app in foreign_apps.split(",")]
+    if foreign_assets == "none":
+        foreign_assets = None
+    elif foreign_assets:
+        foreign_assets = [int(asset) for asset in foreign_assets.split(",")]
     if app_accounts == "none":
         app_accounts = None
     elif app_accounts:
@@ -1192,6 +1196,7 @@ def build_app_txn_with_transient(context, operation, approval_program, clear_pro
                                                              clear_program=clear_program,
                                                              app_args=app_args, accounts=app_accounts,
                                                              foreign_apps=foreign_apps,
+                                                             foreign_assets=foreign_assets,
                                                              note=None, lease=None, rekey_to=None)
 
 
