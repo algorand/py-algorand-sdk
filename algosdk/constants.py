@@ -25,6 +25,8 @@ assetfreeze_txn = "afrz"
 """str: indicates an asset freeze transaction"""
 assettransfer_txn = "axfer"
 """str: indicates an asset transfer transaction"""
+appcall_txn = "appl"
+"""str: indicates an app call transaction, allows creating, deleting, and interacting with an application"""
 
 # note field types
 note_field_type_deposit = "d"
@@ -35,7 +37,6 @@ note_field_type_settlement = "s"
 """str: indicates a signed settlement in NoteField"""
 note_field_type_params = "p"
 """str: indicates signed params in NoteField"""
-
 
 # prefixes
 txid_prefix = b"TX"
@@ -50,6 +51,8 @@ msig_addr_prefix = "MultisigAddr"
 """str: prefix for multisig addresses"""
 logic_prefix = b"Program"
 """bytes: program (logic) prefix when signing"""
+logic_data_prefix = b"ProgData"
+"""bytes: program (logic) data prefix when signing"""
 
 
 check_sum_len_bytes = 4
@@ -66,6 +69,8 @@ microalgos_to_algos_ratio = 1000000
 """int: how many microalgos per algo"""
 metadata_length = 32
 """int: length of asset metadata"""
+note_max_length = 1024
+"""int: maximum length of note field"""
 lease_length = 32
 """int: byte length of leases"""
 multisig_account_limit = 255

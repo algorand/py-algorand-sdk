@@ -16,12 +16,17 @@ class Transaction:
     Superclass for various transaction types.
     """
     def __init__(self, sender, fee, first, last, note, gen, gh, lease,
-                 txn_type):
+                 txn_type, rekey_to):
         self.sender = sender
         self.fee = fee
         self.first_valid_round = first
         self.last_valid_round = last
         self.note = note
+        if self.note is not None:
+            if not isinstance(self.note, bytes):
+                raise error.WrongNoteType
+            if len(self.note) > constants.note_max_length:
+                raise error.WrongNoteLength
         self.genesis_id = gen
         self.genesis_hash = gh
         self.group = None
@@ -30,6 +35,7 @@ class Transaction:
             if len(self.lease) != constants.lease_length:
                 raise error.WrongLeaseLengthError
         self.type = txn_type
+        self.rekey_to = rekey_to
 
     def get_txid(self):
         """
@@ -56,7 +62,10 @@ class Transaction:
         """
         sig = self.raw_sign(private_key)
         sig = base64.b64encode(sig).decode()
-        stx = SignedTransaction(self, sig)
+        authorizing_address = None
+        if not (self.sender == account.address_from_private_key(private_key)):
+            authorizing_address = account.address_from_private_key(private_key)
+        stx = SignedTransaction(self, sig, authorizing_address)
         return stx
 
     def raw_sign(self, private_key):
@@ -78,9 +87,7 @@ class Transaction:
         return sig
 
     def estimate_size(self):
-        sk, _ = account.generate_account()
-        stx = self.sign(sk)
-        return len(base64.b64decode(encoding.msgpack_encode(stx)))
+        return len(encoding.msgpack_encode(self)) + constants.num_additional_bytes_after_signing
 
     def dictify(self):
         d = dict()
@@ -99,6 +106,8 @@ class Transaction:
             d["note"] = self.note
         d["snd"] = encoding.decode_address(self.sender)
         d["type"] = self.type
+        if self.rekey_to:
+            d["rekey"] = encoding.decode_address(self.rekey_to)
 
         return d
 
@@ -114,6 +123,7 @@ class Transaction:
             "gen": d["gen"] if "gen" in d else None,
             "flat_fee": True,
             "lease": d["lx"] if "lx" in d else None,
+            "rekey_to": encoding.encode_address(d["rekey"]) if "rekey" in d else None,
         }
         txn_type = d["type"]
         if not isinstance(d["type"], str):
@@ -151,7 +161,8 @@ class Transaction:
                 self.note == other.note and
                 self.group == other.group and
                 self.lease == other.lease and
-                self.type == other.type)
+                self.type == other.type and
+                self.rekey_to == other.rekey_to)
 
 
 class PaymentTxn(Transaction):
@@ -174,6 +185,7 @@ class PaymentTxn(Transaction):
         lease (byte[32], optional): specifies a lease, and no other transaction
             with the same sender and lease can be confirmed in this
             transaction's valid rounds
+        rekey_to (str, optional): additionally rekey the sender to this address
 
     Attributes:
         sender (str)
@@ -189,15 +201,18 @@ class PaymentTxn(Transaction):
         close_remainder_to (str)
         type (str)
         lease (byte[32])
+        rekey_to (str)
     """
 
     def __init__(self, sender, fee, first, last, gh, receiver, amt,
                  close_remainder_to=None, note=None, gen=None, flat_fee=False,
-                 lease=None):
+                 lease=None, rekey_to=None):
         Transaction.__init__(self,  sender, fee, first, last, note, gen, gh,
-                             lease, constants.payment_txn)
+                             lease, constants.payment_txn, rekey_to)
         self.receiver = receiver
         self.amt = amt
+        if (not isinstance(self.amt, int)) or self.amt < 0:
+            raise error.WrongAmountType
         self.close_remainder_to = close_remainder_to
         if flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
@@ -262,6 +277,7 @@ class KeyregTxn(Transaction):
         lease (byte[32], optional): specifies a lease, and no other transaction
             with the same sender and lease can be confirmed in this
             transaction's valid rounds
+        rekey_to (str, optional): additionally rekey the sender to this address
 
     Attributes:
         sender (str)
@@ -279,13 +295,14 @@ class KeyregTxn(Transaction):
         votekd (int)
         type (str)
         lease (byte[32])
+        rekey_to (str)
     """
 
     def __init__(self, sender, fee, first, last, gh, votekey, selkey, votefst,
                  votelst, votekd, note=None, gen=None, flat_fee=False,
-                 lease=None):
+                 lease=None, rekey_to=None):
         Transaction.__init__(self, sender, fee, first, last, note, gen, gh,
-                             lease, constants.keyreg_txn)
+                             lease, constants.keyreg_txn, rekey_to)
         self.votepk = votekey
         self.selkey = selkey
         self.votefst = votefst
@@ -390,6 +407,7 @@ class AssetConfigTxn(Transaction):
             decimal. If set to 0, the asset is not divisible. If set to 1, the
             base unit of the asset is in tenths. Must be between 0 and 19,
             inclusive. Defaults to 0.
+        rekey_to (str, optional): additionally rekey the sender to this address
 
     Attributes:
         sender (str)
@@ -413,6 +431,7 @@ class AssetConfigTxn(Transaction):
         type (str)
         lease (byte[32])
         decimals (int)
+        rekey_to (str)
     """
 
     def __init__(self, sender, fee, first, last, gh, index=None,
@@ -420,9 +439,9 @@ class AssetConfigTxn(Transaction):
                  asset_name=None, manager=None, reserve=None,
                  freeze=None, clawback=None, url=None, metadata_hash=None,
                  note=None, gen=None, flat_fee=False, lease=None,
-                 strict_empty_address_check=True, decimals=0):
+                 strict_empty_address_check=True, decimals=0, rekey_to=None):
         Transaction.__init__(self,  sender, fee, first, last, note, gen, gh,
-                             lease, constants.assetconfig_txn)
+                             lease, constants.assetconfig_txn, rekey_to)
         if strict_empty_address_check:
             if not (manager and reserve and freeze and clawback):
                 raise error.EmptyAddressError
@@ -589,6 +608,7 @@ class AssetFreezeTxn(Transaction):
         lease (byte[32], optional): specifies a lease, and no other transaction
             with the same sender and lease can be confirmed in this
             transaction's valid rounds
+        rekey_to (str, optional): additionally rekey the sender to this address
 
     Attributes:
         sender (str)
@@ -603,13 +623,14 @@ class AssetFreezeTxn(Transaction):
         genesis_id (str)
         type (str)
         lease (byte[32])
+        rekey_to (str)
     """
 
     def __init__(self, sender, fee, first, last, gh, index, target,
                  new_freeze_state, note=None, gen=None, flat_fee=False,
-                 lease=None):
+                 lease=None, rekey_to=None):
         Transaction.__init__(self, sender, fee, first, last, note, gen, gh,
-                             lease, constants.assetfreeze_txn)
+                             lease, constants.assetfreeze_txn, rekey_to)
         self.index = index
         self.target = target
         self.new_freeze_state = new_freeze_state
@@ -682,6 +703,7 @@ class AssetTransferTxn(Transaction):
         lease (byte[32], optional): specifies a lease, and no other transaction
             with the same sender and lease can be confirmed in this
             transaction's valid rounds
+        rekey_to (str, optional): additionally rekey the sender to this address
 
     Attributes:
         sender (str)
@@ -698,15 +720,18 @@ class AssetTransferTxn(Transaction):
         genesis_id (str)
         type (str)
         lease (byte[32])
+        rekey_to (str)
     """
 
     def __init__(self, sender, fee, first, last, gh, receiver, amt, index,
                  close_assets_to=None, revocation_target=None, note=None,
-                 gen=None, flat_fee=False, lease=None):
+                 gen=None, flat_fee=False, lease=None, rekey_to=None):
         Transaction.__init__(self,  sender, fee, first, last, note, gen, gh,
-                             lease, constants.assettransfer_txn)
+                             lease, constants.assettransfer_txn, rekey_to)
         self.receiver = receiver
         self.amount = amt
+        if (not isinstance(self.amount, int)) or self.amount < 0:
+            raise error.WrongAmountType
         self.index = index
         self.close_assets_to = close_assets_to
         self.revocation_target = revocation_target
@@ -771,20 +796,25 @@ class SignedTransaction:
     Args:
         transaction (Transaction): transaction that was signed
         signature (str): signature of a single address
+        authorizing_address (str, optional): the address authorizing the signed transaction, if different from sender
 
     Attributes:
         transaction (Transaction)
         signature (str)
+        authorizing_address (str)
     """
-    def __init__(self, transaction, signature):
+    def __init__(self, transaction, signature, authorizing_address=None):
         self.signature = signature
         self.transaction = transaction
+        self.authorizing_address = authorizing_address
 
     def dictify(self):
         od = OrderedDict()
         if self.signature:
             od["sig"] = base64.b64decode(self.signature)
         od["txn"] = self.transaction.dictify()
+        if self.authorizing_address:
+            od["sgnr"] = encoding.decode_address(self.authorizing_address)
         return od
 
     @staticmethod
@@ -792,8 +822,11 @@ class SignedTransaction:
         sig = None
         if "sig" in d:
             sig = base64.b64encode(d["sig"]).decode()
+        auth = None
+        if "sgnr" in d:
+            auth = encoding.encode_address(d["sgnr"])
         txn = Transaction.undictify(d["txn"])
-        stx = SignedTransaction(txn, sig)
+        stx = SignedTransaction(txn, sig, auth)
         return stx
 
     def __eq__(self, other):
@@ -802,7 +835,8 @@ class SignedTransaction:
                 future.transaction.SignedTransaction)):
             return False
         return (self.transaction == other.transaction and
-                self.signature == other.signature)
+                self.signature == other.signature and
+                self.authorizing_address == other.authorizing_address)
 
 
 class MultisigTransaction:

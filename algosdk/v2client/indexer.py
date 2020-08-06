@@ -53,7 +53,7 @@ class IndexerClient:
         if headers:
             header.update(headers)
 
-        if requrl not in constants.no_auth:
+        if (requrl not in constants.no_auth) and self.indexer_token:
             header.update({
                 constants.indexer_auth_header: self.indexer_token
             })
@@ -83,9 +83,9 @@ class IndexerClient:
 
     def accounts(
         self, asset_id=None, limit=None, next_page=None, min_balance=None,
-        max_balance=None, block=None, **kwargs):
+        max_balance=None, block=None, auth_addr=None, application_id=None, **kwargs):
         """
-        Return accounts that hold the asset; microalgos are the default
+        Return accounts that match the search; microalgos are the default
         currency unless asset_id is specified, in which case the asset will
         be used.
 
@@ -100,6 +100,10 @@ class IndexerClient:
             block (int, optional): include results for the specified round;
                 for performance reasons, this parameter may be disabled on
                 some configurations
+            auth_addr (str, optional): Include accounts configured to use
+                this spending key.
+            application_id (int, optional): results should filter on this application
+
         """
         req = "/accounts"
         query = dict()
@@ -115,6 +119,10 @@ class IndexerClient:
             query["currency-less-than"] = max_balance
         if block:
             query["round"] = block
+        if auth_addr:
+            query["auth-addr"] = auth_addr
+        if application_id:
+            query["application-id"] = application_id
         return self.indexer_request("GET", req, query, **kwargs)
     
     def asset_balances(self, asset_id, limit=None, next_page=None, min_balance=None,
@@ -179,7 +187,7 @@ class IndexerClient:
         sig_type=None, txid=None, block=None, min_round=None, max_round=None,
         asset_id=None, start_time=None, end_time=None, min_amount=None,
         max_amount=None, address=None, address_role=None,
-        exclude_close_to=False, **kwargs):
+        exclude_close_to=False, application_id=None, rekey_to=False, **kwargs):
         """
         Return a list of transactions satisfying the conditions.
 
@@ -221,6 +229,10 @@ class IndexerClient:
                 search for; the close to fields are normally treated as a
                 receiver, if you would like to exclude them set this parameter
                 to true
+            application_id (int, optional): filter for transactions pertaining
+                to an application
+            rekey_to (bool, optional) Include results which include the
+                rekey-to field.
         """
         req = "/transactions"
         query = dict()
@@ -258,6 +270,11 @@ class IndexerClient:
             query["address-role"] = address_role
         if exclude_close_to:
             query["exclude-close-to"] = "true"
+        if application_id:
+            query["application-id"] = application_id
+        if rekey_to:
+            query["rekey-to"] = "true"
+
 
         return self.indexer_request("GET", req, query, **kwargs)
 
@@ -265,7 +282,7 @@ class IndexerClient:
         self, address, limit=None, next_page=None, note_prefix=None,
         txn_type=None, sig_type=None, txid=None, block=None, min_round=None,
         max_round=None, asset_id=None, start_time=None, end_time=None,
-        min_amount=None, max_amount=None, **kwargs):
+        min_amount=None, max_amount=None, rekey_to=False, **kwargs):
         """
         Return a list of transactions satisfying the conditions for the address.
 
@@ -299,6 +316,8 @@ class IndexerClient:
             max_amount (int, optional): results should have an amount less
                 than this value, microalgos are the default currency unless an
                 asset-id is provided, in which case the asset will be used
+            rekey_to (bool, optional) Include results which include the
+                rekey-to field.
         """
         req = "/accounts/" + address + "/transactions"
         query = dict()
@@ -330,6 +349,8 @@ class IndexerClient:
             query["currency-greater-than"] = min_amount
         if max_amount:
             query["currency-less-than"] = max_amount
+        if rekey_to:
+            query["rekey-to"] = "true"
 
         return self.indexer_request("GET", req, query, **kwargs)
 
@@ -337,7 +358,7 @@ class IndexerClient:
         txn_type=None, sig_type=None, txid=None, block=None, min_round=None,
         max_round=None, address=None, start_time=None, end_time=None,
         min_amount=None, max_amount=None, address_role=None,
-        exclude_close_to=False, **kwargs):
+        exclude_close_to=False, rekey_to=False, **kwargs):
         """
         Return a list of transactions satisfying the conditions for the address.
 
@@ -380,6 +401,8 @@ class IndexerClient:
                 search for; the close to fields are normally treated as a
                 receiver, if you would like to exclude them set this parameter
                 to true
+            rekey_to (bool, optional) Include results which include the
+                rekey-to field.
         """
         req = "/assets/" + str(asset_id) + "/transactions"
         query = dict()
@@ -415,6 +438,8 @@ class IndexerClient:
             query["address-role"] = address_role
         if exclude_close_to:
             query["exclude-close-to"] = "true"
+        if rekey_to:
+            query["rekey-to"] = "true"
 
         return self.indexer_request("GET", req, query, **kwargs)
     
@@ -460,3 +485,43 @@ class IndexerClient:
         """
         req = "/assets/" + str(asset_id)
         return self.indexer_request("GET", req, **kwargs)
+
+    def applications(
+            self, application_id, round=None, **kwargs):
+        """
+        Return applications that satisfy the conditions.
+
+        Args:
+            application_id (int): application index
+            round (int, optional): restrict search to passed round
+        """
+        req = "/applications/" + str(application_id)
+        query = dict()
+        if round:
+            query["round"] = round
+
+        return self.indexer_request("GET", req, query, **kwargs)
+
+    def search_applications(
+            self, application_id=None, round=None, limit=None, next_page=None, **kwargs):
+        """
+        Return applications that satisfy the conditions.
+
+        Args:
+            application_id (int, optional): restrict search to application index
+            round (int, optional): restrict search to passed round
+            limit (int, optional): restrict number of results to limit
+            next_page (string, optional): used for pagination
+        """
+        req = "/applications"
+        query = dict()
+        if application_id:
+            query["application-id"] = application_id
+        if round:
+            query["round"] = round
+        if limit:
+            query["limit"] = limit
+        if next_page:
+            query["next"] = next_page
+
+        return self.indexer_request("GET", req, query, **kwargs)

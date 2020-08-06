@@ -3,7 +3,7 @@ import unittest
 import params
 import os
 from algosdk import kmd
-from algosdk import transaction
+from algosdk.future import transaction
 from algosdk import encoding
 from algosdk import algod
 from algosdk import account
@@ -47,9 +47,6 @@ class TestIntegration(unittest.TestCase):
         # generate account with kmd
         account_1 = self.kcl.generate_key(handle, False)
 
-        # get suggested parameters and fee
-        sp = self.acl.suggested_params()
-
         # get self.account_0 private key
         private_key_0 = self.kcl.export_key(handle, wallet_pswd,
                                             self.account_0)
@@ -59,6 +56,11 @@ class TestIntegration(unittest.TestCase):
                           "bid_id", account_1, "auc_id")
         sb = bid.sign(private_key_0)
         nf = auction.NoteField(sb, constants.note_field_type_bid)
+
+        # get suggested parameters and fee
+        gh = self.acl.versions()['genesis_hash_b64']
+        rnd = int(self.acl.status()['lastRound'])
+        sp = transaction.SuggestedParams(0, rnd, rnd + 100, gh)
 
         # create transaction
         txn = transaction.PaymentTxn(self.account_0, sp,
@@ -136,7 +138,9 @@ class TestIntegration(unittest.TestCase):
         account_2 = self.kcl.generate_key(handle, False)
 
         # get suggested parameters and fee
-        sp = self.acl.suggested_params()
+        gh = self.acl.versions()['genesis_hash_b64']
+        rnd = int(self.acl.status()['lastRound'])
+        sp = transaction.SuggestedParams(0, rnd, rnd + 100, gh)
 
         # create transaction
         txn = transaction.PaymentTxn(self.account_0, sp,
@@ -199,7 +203,9 @@ class TestIntegration(unittest.TestCase):
         private_key_2 = self.kcl.export_key(handle, wallet_pswd, account_2)
 
         # get suggested parameters and fee
-        sp = self.acl.suggested_params()
+        gh = self.acl.versions()['genesis_hash_b64']
+        rnd = int(self.acl.status()['lastRound'])
+        sp = transaction.SuggestedParams(0, rnd, rnd + 100, gh)
 
         # create multisig account and transaction
         msig = transaction.Multisig(1, 2, [account_1, account_2])
@@ -297,7 +303,9 @@ class TestIntegration(unittest.TestCase):
         private_key_2 = w.export_key(account_2)
 
         # get suggested parameters and fee
-        sp = self.acl.suggested_params()
+        gh = self.acl.versions()['genesis_hash_b64']
+        rnd = int(self.acl.status()['lastRound'])
+        sp = transaction.SuggestedParams(0, rnd, rnd + 100, gh)
 
         # create transaction
         txn = transaction.PaymentTxn(self.account_0, sp,
@@ -373,7 +381,9 @@ class TestIntegration(unittest.TestCase):
 
     def test_file_read_write(self):
         # get suggested parameters and fee
-        sp = self.acl.suggested_params()
+        gh = self.acl.versions()['genesis_hash_b64']
+        rnd = int(self.acl.status()['lastRound'])
+        sp = transaction.SuggestedParams(0, rnd, rnd + 100, gh)
 
         # create transaction
         txn = transaction.PaymentTxn(self.account_0, sp,
@@ -452,7 +462,9 @@ class TestIntegration(unittest.TestCase):
                                             self.account_0)
 
         # get suggested parameters and fee
-        sp = self.acl.suggested_params()
+        gh = self.acl.versions()['genesis_hash_b64']
+        rnd = int(self.acl.status()['lastRound'])
+        sp = transaction.SuggestedParams(0, rnd, rnd + 100, gh)
 
         # create transaction
         txn = transaction.PaymentTxn(self.account_0, sp,

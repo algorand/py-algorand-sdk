@@ -1,5 +1,11 @@
 # Changelog
-## 1.3.0
+## 1.4.0
+## Added
+- Support for Applications 
+## Bugfix
+- Now content-type is set when sending transactions
+- indexer client now allows no token for local development environment
+
 ### Added
 - Support for indexer and algod 2.0
 

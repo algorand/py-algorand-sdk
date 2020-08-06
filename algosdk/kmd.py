@@ -312,7 +312,7 @@ class KMDClient:
             return result["addresses"]
         return []
 
-    def sign_transaction(self, handle, password, txn):
+    def sign_transaction(self, handle, password, txn, signing_address=None):
         """
         Sign a transaction.
 
@@ -320,6 +320,8 @@ class KMDClient:
             handle (str): wallet handle token
             password (str): wallet password
             txn (Transaction): transaction to be signed
+            signing_address (str, optional): sign the transaction with SK corresponding to base32
+                signing_address, if provided, rather than SK corresponding to sender
 
         Returns:
             SignedTransaction: signed transaction with signature of sender
@@ -331,6 +333,8 @@ class KMDClient:
             "wallet_password": password,
             "transaction": txn
         }
+        if signing_address:
+            query["public_key"] = signing_address
         result = self.kmd_request("POST", req, data=query)
         result = result["signed_transaction"]
         return encoding.msgpack_decode(result)

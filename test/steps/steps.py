@@ -10,10 +10,13 @@ from algosdk import wallet
 from algosdk import auction
 from algosdk import util
 from algosdk import constants
+from algosdk import logic
 from algosdk.future import template
 import os
 from datetime import datetime
 import hashlib
+
+from nacl.signing import SigningKey
 
 token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 algod_port = 60000
@@ -148,6 +151,9 @@ def equal_msigaddr_golden(context, golden):
 
 @then('the multisig transaction should equal the golden "{golden}"')
 def equal_msig_golden(context, golden):
+    if not encoding.msgpack_encode(context.mtx) == golden:
+        print(encoding.msgpack_encode(context.mtx))
+        print(golden)
     assert encoding.msgpack_encode(context.mtx) == golden
 
 
@@ -789,7 +795,7 @@ def claim_algos(context):
     context.ltxn = template.HTLC.get_transaction(context.template.get_program(), base64.b64encode(context.preimage), context.params)
     context.txn = context.ltxn.transaction
     context.acl.send_transaction(context.ltxn)
-    
+
 
 @given("a periodic payment contract with withdrawing window {wd_window} and period {period}")
 def periodic_pay_contract(context, wd_window, period):
@@ -843,3 +849,74 @@ def dynamic_fee_contract(context, amt):
 @when("I send the dynamic fee transactions")
 def send_dynamic_fee(context):
     context.acl.send_transactions(context.txns)
+
+
+@given('I sign the transaction with the private key')
+def given_sign_with_sk(context):
+    # python cucumber considers "Given foo" and "When foo" to be distinct,
+    # but we don't want them to be. So, call the other function
+    sign_with_sk(context)
+
+
+@given('I send the transaction')
+def given_send_txn(context):
+    # python cucumber considers "Given foo" and "When foo" to be distinct,
+    # but we don't want them to be. So, call the other function
+    send_txn(context)
+
+
+@when('mnemonic for private key "{mn}"')
+def when_mn_for_sk(context, mn):
+    # python cucumber considers "Given foo" and "When foo" to be distinct,
+    # but we don't want them to be. So, call the other function
+    mn_for_sk(context, mn)
+
+
+@when('I set the from address to "{from_addr}"')
+def set_from_to(context, from_addr):
+    context.txn.sender = from_addr
+
+
+@when('I add a rekeyTo field with the private key algorand address')
+def add_rekey_to_sk(context):
+    context.txn.rekey_to = account.address_from_private_key(context.sk)
+
+
+@when('I add a rekeyTo field with address "{rekey}"')
+def add_rekey_to_address(context, rekey):
+    context.txn.rekey_to = rekey
+
+
+@given(u'base64 encoded data to sign "{data_enc}"')
+def set_base64_encoded_data(context, data_enc):
+    context.data = base64.b64decode(data_enc)
+
+
+@given(u'program hash "{contract_addr}"')
+def set_program_hash(context, contract_addr):
+    context.address = contract_addr
+
+
+@when(u'I perform tealsign')
+def perform_tealsign(context):
+    context.sig = logic.teal_sign(context.sk, context.data, context.address)
+
+
+@then(u'the signature should be equal to "{sig_enc}"')
+def check_tealsign(context, sig_enc):
+    expected = base64.b64decode(sig_enc)
+    assert expected == context.sig
+
+
+@given(u'base64 encoded program "{program_enc}"')
+def set_program_hash_from_program(context, program_enc):
+    program = base64.b64decode(program_enc)
+    context.address = logic.address(program)
+
+
+@given(u'base64 encoded private key "{sk_enc}"')
+def set_sk_from_encoded_seed(context, sk_enc):
+    seed = base64.b64decode(sk_enc)
+    key = SigningKey(seed)
+    private_key = base64.b64encode(key.encode() + key.verify_key.encode()).decode()
+    context.sk = private_key
