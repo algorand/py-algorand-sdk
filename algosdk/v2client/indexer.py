@@ -74,6 +74,12 @@ class IndexerClient:
                 raise error.IndexerHTTPError(json.loads(e)["message"])
             except:
                 raise error.IndexerHTTPError(e)
+        response_dict = json.loads(resp.read().decode("utf-8"))
+
+        def recursively_sort_dict(dictionary):
+            return {k: recursively_sort_dict(v) if isinstance(v, dict) else v
+                    for k, v in sorted(dictionary.items())}
+        response_dict = recursively_sort_dict(response_dict)
         return json.loads(resp.read().decode("utf-8"))
 
     def health(self, **kwargs):
