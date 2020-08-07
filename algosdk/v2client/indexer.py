@@ -62,7 +62,7 @@ class IndexerClient:
             requrl = api_version_path_prefix + requrl
         if params:
             requrl = requrl + "?" + parse.urlencode(params)
-        
+
         req = Request(self.indexer_address+requrl, headers=header, method=method,
                       data=data)
 
@@ -78,8 +78,15 @@ class IndexerClient:
 
         def recursively_sort_dict(dictionary):
             return {k: recursively_sort_dict(v) if isinstance(v, dict) else v
-                    for k, v in sorted(dictionary.keys())}
+                    for k, v in sorted(dictionary.items())}
         response_dict = recursively_sort_dict(response_dict)
+        # additionally, if there are any lists-of-dicts in the response, sort that list based on
+        # the value corresponding to key['key']
+        # this sorts things like application apps global-state
+        for k, v in response_dict.items():
+            if isinstance(v, list) and all(isinstance(item, dict) and hasattr(item, 'key') for item in v):
+                from operator import itemgetter
+                response_dict[k] = sorted(v, key=itemgetter('key'))
         return response_dict
 
     def health(self, **kwargs):
@@ -130,7 +137,7 @@ class IndexerClient:
         if application_id:
             query["application-id"] = application_id
         return self.indexer_request("GET", req, query, **kwargs)
-    
+
     def asset_balances(self, asset_id, limit=None, next_page=None, min_balance=None,
         max_balance=None, block=None, **kwargs):
         """
@@ -448,7 +455,7 @@ class IndexerClient:
             query["rekey-to"] = "true"
 
         return self.indexer_request("GET", req, query, **kwargs)
-    
+
     def search_assets(
         self, limit=None, next_page=None, creator=None, name=None, unit=None,
         asset_id=None, **kwargs):
@@ -479,7 +486,7 @@ class IndexerClient:
             query["unit"] = unit
         if asset_id:
             query["asset-id"] = asset_id
-        
+
         return self.indexer_request("GET", req, query, **kwargs)
 
     def asset_info(self, asset_id, **kwargs):
