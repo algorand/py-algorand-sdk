@@ -80,13 +80,29 @@ class IndexerClient:
             return {k: recursively_sort_dict(v) if isinstance(v, dict) else v
                     for k, v in sorted(dictionary.items())}
         response_dict = recursively_sort_dict(response_dict)
+
         # additionally, if there are any lists-of-dicts in the response, sort that list based on
         # the value corresponding to key['key']
         # this sorts things like application apps global-state
-        for k, v in response_dict.items():
-            if isinstance(v, list) and all(isinstance(item, dict) and hasattr(item, 'key') for item in v):
-                from operator import itemgetter
-                response_dict[k] = sorted(v, key=itemgetter('key'))
+
+        def recursively_sort_on_key(dictionary):
+            for k, v in sorted(dictionary.items()):
+                if isinstance(v, list) and all(isinstance(item, dict) for item in v):
+                    if all(hasattr(item, 'key') for item in v):
+                        from operator import itemgetter
+                        dictionary[k] = sorted(v, key=itemgetter('key')) # need to turn this into a return
+                    else:
+                        for item in v:
+                            recursively_sort_on_key(item)
+        recursively_sort_on_key(response_dict)
+        # for k, v in response_dict.items():
+        #     if isinstance(v, list):
+        #         if all(isinstance(item, dict) and hasattr(item, 'key') for item in v):
+        #             from operator import itemgetter
+        #             response_dict[k] = sorted(v, key=itemgetter('key'))
+        #         else:
+        #             #sort_on_key(dict)
+        #             pass
         return response_dict
 
     def health(self, **kwargs):
