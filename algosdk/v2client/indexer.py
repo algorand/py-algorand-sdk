@@ -78,7 +78,7 @@ class IndexerClient:
 
         def recursively_sort_dict(dictionary):
             return {k: recursively_sort_dict(v) if isinstance(v, dict) else v
-                    for k, v in sorted(dictionary.items())}
+                    for k, v in sorted(dictionary.keys())}
         response_dict = recursively_sort_dict(response_dict)
         return response_dict
 
