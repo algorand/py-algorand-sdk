@@ -80,7 +80,7 @@ class IndexerClient:
             return {k: recursively_sort_dict(v) if isinstance(v, dict) else v
                     for k, v in sorted(dictionary.items())}
         response_dict = recursively_sort_dict(response_dict)
-        return json.loads(resp.read().decode("utf-8"))
+        return response_dict
 
     def health(self, **kwargs):
         """Return 200 and a simple status message if the node is running."""
