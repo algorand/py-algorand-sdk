@@ -86,15 +86,21 @@ class IndexerClient:
         # this sorts things like application apps global-state
 
         def recursively_sort_on_key(dictionary):
+            returned_dict = dict()
             for k, v in sorted(dictionary.items()):
                 if isinstance(v, list) and all(isinstance(item, dict) for item in v):
                     if all(hasattr(item, 'key') for item in v):
                         from operator import itemgetter
-                        dictionary[k] = sorted(v, key=itemgetter('key')) # need to turn this into a return
+                        returned_dict[k] = sorted(v, key=itemgetter('key')) # need to turn this into a return
                     else:
+                        sorted_list = list()
                         for item in v:
-                            recursively_sort_on_key(item)
-        recursively_sort_on_key(response_dict)
+                            sorted_list.append(recursively_sort_on_key(item))
+                        returned_dict[k] = sorted_list
+                else:
+                    returned_dict[k] = v
+            return returned_dict
+        response_dict = recursively_sort_on_key(response_dict)
         # for k, v in response_dict.items():
         #     if isinstance(v, list):
         #         if all(isinstance(item, dict) and hasattr(item, 'key') for item in v):
