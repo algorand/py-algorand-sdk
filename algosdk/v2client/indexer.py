@@ -79,37 +79,7 @@ class IndexerClient:
         def recursively_sort_dict(dictionary):
             return {k: recursively_sort_dict(v) if isinstance(v, dict) else v
                     for k, v in sorted(dictionary.items())}
-        response_dict = recursively_sort_dict(response_dict)
-
-        # additionally, if there are any lists-of-dicts in the response, sort that list based on
-        # the value corresponding to key['key']
-        # this sorts things like application apps global-state
-
-        def recursively_sort_on_key(dictionary):
-            returned_dict = dict()
-            for k, v in sorted(dictionary.items()):
-                if isinstance(v, list) and all(isinstance(item, dict) for item in v):
-                    if all(hasattr(item, 'key') for item in v):
-                        from operator import itemgetter
-                        returned_dict[k] = sorted(v, key=itemgetter('key')) # need to turn this into a return
-                    else:
-                        sorted_list = list()
-                        for item in v:
-                            sorted_list.append(recursively_sort_on_key(item))
-                        returned_dict[k] = sorted_list
-                else:
-                    returned_dict[k] = v
-            return returned_dict
-        response_dict = recursively_sort_on_key(response_dict)
-        # for k, v in response_dict.items():
-        #     if isinstance(v, list):
-        #         if all(isinstance(item, dict) and hasattr(item, 'key') for item in v):
-        #             from operator import itemgetter
-        #             response_dict[k] = sorted(v, key=itemgetter('key'))
-        #         else:
-        #             #sort_on_key(dict)
-        #             pass
-        return response_dict
+        return recursively_sort_dict(response_dict)
 
     def health(self, **kwargs):
         """Return 200 and a simple status message if the node is running."""
