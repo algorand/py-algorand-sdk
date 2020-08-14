@@ -930,23 +930,14 @@ def step_impl(context, jsonfile):
         returned_dict = dict()
         for k, v in sorted(dictionary.items()):
             if isinstance(v, dict):
-                print("recursing into a dict that looks like:")
-                print(v)
                 returned_dict[k] = recursively_sort_on_key(v)
             elif isinstance(v, list) and all(isinstance(item, dict) for item in v):
-                print("found a list of dicts that looks like:")
-                print(v)
                 if all('key' in item.keys() for item in v):
-                    print("each item has attribute key, sorting.")
                     from operator import itemgetter
                     returned_dict[k] = sorted(v, key=itemgetter('key'))
-                    print("Sorted for key " + k + " :")
-                    print(returned_dict[k])
                 else:
                     sorted_list = list()
                     for item in v:
-                        print("recursing into dict that looks like:")
-                        print(item)
                         sorted_list.append(recursively_sort_on_key(item))
                     returned_dict[k] = sorted_list
             else:
