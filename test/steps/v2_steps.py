@@ -925,11 +925,30 @@ def step_impl(context, jsonfile):
     dir_path = os.path.dirname(os.path.dirname(dir_path))
     with open(dir_path + "/test-harness/features/resources/" + jsonfile, "rb") as f:
         loaded_response = bytearray(f.read())
-    if context.response != json.loads(loaded_response):
+    # sort context.response
+    def recursively_sort_on_key(dictionary):
+        returned_dict = dict()
+        for k, v in sorted(dictionary.items()):
+            if isinstance(v, dict):
+                returned_dict[k] = recursively_sort_on_key(v)
+            elif isinstance(v, list) and all(isinstance(item, dict) for item in v):
+                if all('key' in item.keys() for item in v):
+                    from operator import itemgetter
+                    returned_dict[k] = sorted(v, key=itemgetter('key'))
+                else:
+                    sorted_list = list()
+                    for item in v:
+                        sorted_list.append(recursively_sort_on_key(item))
+                    returned_dict[k] = sorted_list
+            else:
+                returned_dict[k] = v
+        return returned_dict
+    context.response = recursively_sort_on_key(context.response)
+    loaded_response = recursively_sort_on_key(json.loads(loaded_response))
+    if context.response != loaded_response:
         print("EXPECTED: " + str(loaded_response))
         print("ACTUAL: " + str(context.response))
-
-    assert context.response == json.loads(loaded_response)
+    assert context.response == loaded_response
 
 
 @when(
