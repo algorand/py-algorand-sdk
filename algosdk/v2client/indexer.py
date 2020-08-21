@@ -62,7 +62,7 @@ class IndexerClient:
             requrl = api_version_path_prefix + requrl
         if params:
             requrl = requrl + "?" + parse.urlencode(params)
-        
+
         req = Request(self.indexer_address+requrl, headers=header, method=method,
                       data=data)
 
@@ -74,7 +74,12 @@ class IndexerClient:
                 raise error.IndexerHTTPError(json.loads(e)["message"])
             except:
                 raise error.IndexerHTTPError(e)
-        return json.loads(resp.read().decode("utf-8"))
+        response_dict = json.loads(resp.read().decode("utf-8"))
+
+        def recursively_sort_dict(dictionary):
+            return {k: recursively_sort_dict(v) if isinstance(v, dict) else v
+                    for k, v in sorted(dictionary.items())}
+        return recursively_sort_dict(response_dict)
 
     def health(self, **kwargs):
         """Return 200 and a simple status message if the node is running."""
@@ -124,7 +129,7 @@ class IndexerClient:
         if application_id:
             query["application-id"] = application_id
         return self.indexer_request("GET", req, query, **kwargs)
-    
+
     def asset_balances(self, asset_id, limit=None, next_page=None, min_balance=None,
         max_balance=None, block=None, **kwargs):
         """
@@ -442,7 +447,7 @@ class IndexerClient:
             query["rekey-to"] = "true"
 
         return self.indexer_request("GET", req, query, **kwargs)
-    
+
     def search_assets(
         self, limit=None, next_page=None, creator=None, name=None, unit=None,
         asset_id=None, **kwargs):
@@ -473,7 +478,7 @@ class IndexerClient:
             query["unit"] = unit
         if asset_id:
             query["asset-id"] = asset_id
-        
+
         return self.indexer_request("GET", req, query, **kwargs)
 
     def asset_info(self, asset_id, **kwargs):
