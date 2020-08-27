@@ -266,7 +266,8 @@ class AlgodClient:
             request_header (dict, optional): additional header for request
 
         Returns:
-            bytes: compilation result
+            dict: loaded from json response body. "result" property contains compiled bytes, "hash" - program hash (escrow address)
+
         """
         req = "/teal/compile"
         headers = { 'Content-Type': 'application/x-binary' }
@@ -281,7 +282,7 @@ class AlgodClient:
             request_header (dict, optional): additional header for request
 
         Returns:
-            bytes: compilation result
+            dict: loaded from json response body
         """
         req = "/teal/dryrun"
         headers = { 'Content-Type': 'application/msgpack' }
