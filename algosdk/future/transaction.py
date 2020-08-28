@@ -990,8 +990,8 @@ class ApplicationCallTxn(Transaction):
         args = {
             "index": d["apid"] if "apid" in d else None,
             "on_complete": d["apan"] if "apan" in d else None,
-            "local_schema": StateSchema.undictify(d["apls"]) if "apls" in d else None,
-            "global_schema": StateSchema.undictify(d["apgs"]) if "apgs" in d else None,
+            "local_schema": StateSchema(**StateSchema.undictify(d["apls"])) if "apls" in d else None,
+            "global_schema": StateSchema(**StateSchema.undictify(d["apgs"])) if "apgs" in d else None,
             "approval_program": d["apap"] if "apap" in d else None,
             "clear_program": d["apsu"] if "apsu" in d else None,
             "app_args": d["apaa"] if "apaa" in d else None,
