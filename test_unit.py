@@ -2,6 +2,8 @@ import base64
 import copy
 import unittest
 import random
+from unittest.mock import Mock
+
 from algosdk.future import transaction
 from algosdk import encoding
 from algosdk import account
@@ -12,7 +14,9 @@ from algosdk import constants
 from algosdk import util
 from algosdk import logic
 from algosdk.future import template
+from algosdk.testing import dryrun
 
+from nacl.signing import SigningKey
 
 class TestTransaction(unittest.TestCase):
     def test_min_txn_fee(self):
@@ -23,12 +27,48 @@ class TestTransaction(unittest.TestCase):
                                      1000, note=b'\x00')
         self.assertEqual(constants.min_txn_fee, txn.fee)
 
+    def test_note_wrong_type(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(0, 1, 100, gh)
+        f = lambda: transaction.PaymentTxn(address, sp, address,
+                                           1000, note="hello")
+        self.assertRaises(error.WrongNoteType, f)
+
+    def test_note_wrong_length(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(0, 1, 100, gh)
+        f = lambda: transaction.PaymentTxn(address, sp, address, 
+                                           1000, note=("0"*1025).encode())
+        self.assertRaises(error.WrongNoteLength, f)
+
     def test_serialize(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         sp = transaction.SuggestedParams(3, 1, 100, gh)
         txn = transaction.PaymentTxn(address, sp, address,
                                      1000, note=bytes([1, 32, 200]))
+        enc = encoding.msgpack_encode(txn)
+        re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
+        self.assertEqual(enc, re_enc)
+
+    def test_serialize_with_note_string_encode(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(3, 1, 100, gh)
+        txn = transaction.PaymentTxn(address, sp, address,
+                                     1000, note="hello".encode())
+        enc = encoding.msgpack_encode(txn)
+        re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
+        self.assertEqual(enc, re_enc)
+
+    def test_serialize_with_note_max_length(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(3, 1, 100, gh)
+        txn = transaction.PaymentTxn(address, sp, address,
+                                     1000, note=("0"*1024).encode())
         enc = encoding.msgpack_encode(txn)
         re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
         self.assertEqual(enc, re_enc)
@@ -449,6 +489,52 @@ class TestTransaction(unittest.TestCase):
             "yw9x8FmnrCDexi9/cOUJOiKibHbOAATv96NzbmTEIAn70nYsCPhsWua/bdenqQHeZ"
             "nXXUOB+jFx2mGR9tuH9pHR5cGWlYXhmZXKkeGFpZAE=")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
+
+    def test_pay_float_amt(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(3, 1, 100, gh)
+        f = lambda: transaction.PaymentTxn(address, sp, address,
+                                           10., note=bytes([1, 32, 200]))
+        self.assertRaises(error.WrongAmountType, f)
+
+    def test_pay_negative_amt(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(3, 1, 100, gh)
+        f = lambda: transaction.PaymentTxn(address, sp, address,
+                                           -5, note=bytes([1, 32, 200]))
+        self.assertRaises(error.WrongAmountType, f)
+
+    def test_asset_transfer_float_amt(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        fee = 10
+        first_round = 322575
+        last_round = 323576
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        index = 1
+        amount = 1.
+        to = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        close = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        sp = transaction.SuggestedParams(fee, first_round, last_round, gh)
+        f = lambda: transaction.AssetTransferTxn(
+            address, sp, to, amount, index, close)
+        self.assertRaises(error.WrongAmountType, f)
+
+    def test_asset_transfer_negative_amt(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        fee = 10
+        first_round = 322575
+        last_round = 323576
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        index = 1
+        amount = -1
+        to = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        close = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        sp = transaction.SuggestedParams(fee, first_round, last_round, gh)
+        f = lambda: transaction.AssetTransferTxn(
+            address, sp, to, amount, index, close)
+        self.assertRaises(error.WrongAmountType, f)
 
     def test_group_id(self):
         address = "UPYAFLHSIPMJOHVXU2MPLQ46GXJKSDCEMZ6RLCQ7GWB5PRDKJUWKKXECXI"
@@ -1024,6 +1110,40 @@ class TestLogic(unittest.TestCase):
         with self.assertRaises(error.InvalidProgram):
             logic.check_program(program, [])
 
+        # check TEAL v2 opcodes
+        self.assertIsNotNone(logic.spec, "Must be called after any of logic.check_program")
+        self.assertTrue(logic.spec['EvalMaxVersion'] >= 2)
+        self.assertTrue(logic.spec['LogicSigVersion'] >= 2)
+
+        # balance
+        program = b"\x02\x20\x01\x00\x22\x60"  # int 0; balance
+        self.assertTrue(logic.check_program(program, None))
+
+        # app_opted_in
+        program = b"\x02\x20\x01\x00\x22\x22\x61"  # int 0; int 0; app_opted_in
+        self.assertTrue(logic.check_program(program, None))
+
+        # asset_holding_get
+        program = b"\x02\x20\x01\x00\x22\x22\x70\x00"  # int 0; int 0; asset_holding_get Balance
+        self.assertTrue(logic.check_program(program, None))
+
+    def test_teal_sign(self):
+        """test tealsign"""
+        data = base64.b64decode("Ux8jntyBJQarjKGF8A==")
+        seed = base64.b64decode("5Pf7eGMA52qfMT4R4/vYCt7con/7U3yejkdXkrcb26Q=")
+        program = base64.b64decode("ASABASI=")
+        addr = "6Z3C3LDVWGMX23BMSYMANACQOSINPFIRF77H7N3AWJZYV6OH6GWTJKVMXY"
+
+        key = SigningKey(seed)
+        verify_key = key.verify_key
+        private_key = base64.b64encode(key.encode() + verify_key.encode()).decode()
+        sig1 = logic.teal_sign(private_key, data, addr)
+        sig2 = logic.teal_sign_from_program(private_key, data, program)
+        self.assertEqual(sig1, sig2)
+
+        msg = constants.logic_data_prefix + encoding.decode_address(addr) + data
+        res = verify_key.verify(msg, sig1)
+        self.assertIsNotNone(res)
 
 class TestLogicSig(unittest.TestCase):
     def test_basic(self):
@@ -1043,8 +1163,8 @@ class TestLogicSig(unittest.TestCase):
         self.assertEqual(lsig.args, None)
         self.assertEqual(lsig.sig, None)
         self.assertEqual(lsig.msig, None)
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
         self.assertEqual(lsig.address(), program_hash)
 
         args = [
@@ -1056,29 +1176,29 @@ class TestLogicSig(unittest.TestCase):
         self.assertEqual(lsig.args, args)
         self.assertEqual(lsig.sig, None)
         self.assertEqual(lsig.msig, None)
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
 
         # check serialization
         encoded = encoding.msgpack_encode(lsig)
         decoded = encoding.msgpack_decode(encoded)
         self.assertEqual(decoded, lsig)
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
 
         # check signature verification on modified program
         program = b"\x01\x20\x01\x03\x22"
         lsig = transaction.LogicSig(program)
         self.assertEqual(lsig.logic, program)
-        verifed = lsig.verify(public_key)
-        self.assertFalse(verifed)
+        verified = lsig.verify(public_key)
+        self.assertFalse(verified)
         self.assertNotEqual(lsig.address(), program_hash)
 
         # check invalid program fails
         program = b"\x00\x20\x01\x03\x22"
         lsig = transaction.LogicSig(program)
-        verifed = lsig.verify(public_key)
-        self.assertFalse(verifed)
+        verified = lsig.verify(public_key)
+        self.assertFalse(verified)
 
     def test_signature(self):
         private_key, address = account.generate_account()
@@ -1091,15 +1211,15 @@ class TestLogicSig(unittest.TestCase):
         self.assertEqual(lsig.msig, None)
         self.assertNotEqual(lsig.sig, None)
 
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
 
         # check serialization
         encoded = encoding.msgpack_encode(lsig)
         decoded = encoding.msgpack_decode(encoded)
         self.assertEqual(decoded, lsig)
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
 
     def test_multisig(self):
         private_key, _ = account.generate_account()
@@ -1118,34 +1238,34 @@ class TestLogicSig(unittest.TestCase):
 
         sender_addr = msig.address()
         public_key = encoding.decode_address(sender_addr)
-        verifed = lsig.verify(public_key)
-        self.assertFalse(verifed)       # not enough signatures
+        verified = lsig.verify(public_key)
+        self.assertFalse(verified)       # not enough signatures
 
         with self.assertRaises(error.InvalidSecretKeyError):
             lsig.append_to_multisig(private_key)
 
         lsig.append_to_multisig(private_key_2)
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
 
         # combine sig and multisig, ensure it fails
         lsigf = transaction.LogicSig(program)
         lsigf.sign(private_key)
         lsig.sig = lsigf.sig
-        verifed = lsig.verify(public_key)
-        self.assertFalse(verifed)
+        verified = lsig.verify(public_key)
+        self.assertFalse(verified)
 
         # remove, ensure it still works
         lsig.sig = None
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
 
         # check serialization
         encoded = encoding.msgpack_encode(lsig)
         decoded = encoding.msgpack_decode(encoded)
         self.assertEqual(decoded, lsig)
-        verifed = lsig.verify(public_key)
-        self.assertTrue(verifed)
+        verified = lsig.verify(public_key)
+        self.assertTrue(verified)
 
     def test_transaction(self):
         fromAddress = (
@@ -1190,8 +1310,8 @@ class TestLogicSig(unittest.TestCase):
         lsig = transaction.LogicSig(program, args)
         lsig.sign(sk)
         lstx = transaction.LogicSigTransaction(tx, lsig)
-        verifed = lstx.verify()
-        self.assertTrue(verifed)
+        verified = lstx.verify()
+        self.assertTrue(verified)
 
         golden_decoded = encoding.msgpack_decode(golden)
         self.assertEqual(lstx, golden_decoded)
@@ -1419,6 +1539,420 @@ class TestTemplate(unittest.TestCase):
         self.assertEqual(encoding.msgpack_encode(stx_2), golden_txn_2)
 
 
+class TestDryrun(dryrun.DryrunTestCaseMixin, unittest.TestCase):
+    def setUp(self):
+        self.mock_response = dict(error=None, txns=[])
+
+        self.algo_client = Mock()
+        self.algo_client.dryrun = Mock()
+        def response(dr):
+            return self.mock_response
+        self.algo_client.dryrun.side_effect = response
+
+    def test_create_request(self):
+        helper = dryrun.Helper
+        with self.assertRaises(TypeError):
+            helper.build_dryrun_request(10)
+
+        drr = helper.build_dryrun_request("int 1")
+        self.assertEqual(len(drr.txns), 1)
+        self.assertEqual(len(drr.sources), 1)
+        self.assertEqual(drr.sources[0].txn_index, 0)
+        self.assertEqual(drr.sources[0].field_name, "lsig")
+        self.assertIsInstance(drr.txns[0], transaction.LogicSigTransaction)
+        self.assertIsInstance(drr.txns[0].transaction, transaction.Transaction)
+
+        drr = helper.build_dryrun_request("int 1", lsig=dict(args=[b"123", b"456"]))
+        self.assertEqual(len(drr.txns), 1)
+        self.assertEqual(len(drr.sources), 1)
+        self.assertEqual(drr.sources[0].txn_index, 0)
+        self.assertEqual(drr.sources[0].field_name, "lsig")
+        self.assertIsInstance(drr.txns[0], transaction.LogicSigTransaction)
+        self.assertIsInstance(drr.txns[0].transaction, transaction.Transaction)
+        self.assertEqual(drr.txns[0].lsig.args, [b"123", b"456"])
+
+        drr = helper.build_dryrun_request(b"\x02")
+        self.assertEqual(len(drr.txns), 1)
+        self.assertEqual(len(drr.sources), 0)
+        self.assertIsInstance(drr.txns[0], transaction.LogicSigTransaction)
+        self.assertIsInstance(drr.txns[0].transaction, transaction.Transaction)
+        self.assertEqual(drr.txns[0].lsig.logic, b"\x02")
+
+        drr = helper.build_dryrun_request(b"\x02", lsig=dict(args=[b"123", b"456"]))
+        self.assertEqual(len(drr.txns), 1)
+        self.assertEqual(len(drr.sources), 0)
+        self.assertIsInstance(drr.txns[0], transaction.LogicSigTransaction)
+        self.assertIsInstance(drr.txns[0].transaction, transaction.Transaction)
+        self.assertEqual(drr.txns[0].lsig.logic, b"\x02")
+        self.assertEqual(drr.txns[0].lsig.args, [b"123", b"456"])
+
+        with self.assertRaises(TypeError):
+            drr = helper.build_dryrun_request(b"\x02", lsig=dict(testkey=1))
+
+        drr = helper.build_dryrun_request("int 1", app=dict())
+        self.assertEqual(len(drr.txns), 1)
+        self.assertEqual(len(drr.sources), 1)
+        self.assertEqual(len(drr.apps), 1)
+        self.assertEqual(drr.apps[0].id, drr.sources[0].app_index)
+        self.assertNotEqual(drr.sources[0].app_index, 0)
+        self.assertEqual(drr.sources[0].txn_index, 0)
+        self.assertEqual(drr.sources[0].field_name, "approv")
+        self.assertIsInstance(drr.txns[0], transaction.SignedTransaction)
+        self.assertIsInstance(drr.txns[0].transaction, transaction.ApplicationCallTxn)
+        self.assertEqual(drr.txns[0].transaction.index, 0)
+
+        drr = helper.build_dryrun_request("int 1", app=dict(app_idx=None))
+        self.assertEqual(len(drr.txns), 1)
+        self.assertEqual(len(drr.sources), 1)
+        self.assertEqual(len(drr.apps), 1)
+        self.assertEqual(drr.apps[0].id, drr.sources[0].app_index)
+        self.assertNotEqual(drr.sources[0].app_index, 0)
+        self.assertEqual(drr.sources[0].txn_index, 0)
+        self.assertEqual(drr.sources[0].field_name, "approv")
+        self.assertIsInstance(drr.txns[0], transaction.SignedTransaction)
+        self.assertIsInstance(drr.txns[0].transaction, transaction.ApplicationCallTxn)
+        self.assertEqual(drr.txns[0].transaction.index, 0)
+
+        drr = helper.build_dryrun_request("int 1", app=dict(app_idx=0))
+        self.assertEqual(len(drr.txns), 1)
+        self.assertEqual(len(drr.sources), 1)
+        self.assertEqual(len(drr.apps), 1)
+        self.assertEqual(drr.apps[0].id, drr.sources[0].app_index)
+        self.assertNotEqual(drr.sources[0].app_index, 0)
+        self.assertEqual(drr.sources[0].txn_index, 0)
+        self.assertEqual(drr.sources[0].field_name, "approv")
+        self.assertIsInstance(drr.txns[0], transaction.SignedTransaction)
+        self.assertIsInstance(drr.txns[0].transaction, transaction.ApplicationCallTxn)
+        self.assertEqual(drr.txns[0].transaction.index, 0)
+
+        drr = helper.build_dryrun_request("int 1", app=dict(app_idx=1))
+        self.assertEqual(len(drr.txns), 1)
+        self.assertEqual(len(drr.sources), 1)
+        self.assertEqual(len(drr.apps), 1)
+        self.assertEqual(drr.apps[0].id, drr.sources[0].app_index)
+        self.assertEqual(drr.sources[0].app_index, 1)
+        self.assertEqual(drr.sources[0].txn_index, 0)
+        self.assertEqual(drr.sources[0].field_name, "approv")
+        self.assertIsInstance(drr.txns[0], transaction.SignedTransaction)
+        self.assertIsInstance(drr.txns[0].transaction, transaction.ApplicationCallTxn)
+        self.assertEqual(drr.txns[0].transaction.index, 1)
+
+        drr = helper.build_dryrun_request("int 1", app=dict(app_idx=1, on_complete=0))
+        self.assertEqual(drr.sources[0].field_name, "approv")
+
+        drr = helper.build_dryrun_request("int 1", app=dict(on_complete=transaction.OnComplete.ClearStateOC))
+        self.assertEqual(len(drr.txns), 1)
+        self.assertEqual(len(drr.sources), 1)
+        self.assertEqual(len(drr.apps), 1)
+        self.assertEqual(drr.sources[0].txn_index, 0)
+        self.assertEqual(drr.sources[0].field_name, "clearp")
+        self.assertIsInstance(drr.txns[0], transaction.SignedTransaction)
+        self.assertIsInstance(drr.txns[0].transaction, transaction.ApplicationCallTxn)
+
+        drr = helper.build_dryrun_request(b"\x02", app=dict())
+        self.assertEqual(len(drr.txns), 1)
+        self.assertEqual(len(drr.sources), 0)
+        self.assertEqual(len(drr.apps), 1)
+        self.assertEqual(drr.apps[0].params.approval_program, b"\x02")
+        self.assertIsInstance(drr.txns[0], transaction.SignedTransaction)
+        self.assertIsInstance(drr.txns[0].transaction, transaction.ApplicationCallTxn)
+
+        drr = helper.build_dryrun_request(b"\x02", app=dict(on_complete=0))
+        self.assertEqual(len(drr.txns), 1)
+        self.assertEqual(len(drr.sources), 0)
+        self.assertEqual(len(drr.apps), 1)
+        self.assertEqual(drr.apps[0].params.approval_program, b"\x02")
+        self.assertIsNone(drr.apps[0].params.clear_state_program)
+        self.assertIsInstance(drr.txns[0], transaction.SignedTransaction)
+        self.assertIsInstance(drr.txns[0].transaction, transaction.ApplicationCallTxn)
+
+        drr = helper.build_dryrun_request(b"\x02", app=dict(on_complete=transaction.OnComplete.ClearStateOC))
+        self.assertEqual(len(drr.txns), 1)
+        self.assertEqual(len(drr.sources), 0)
+        self.assertEqual(len(drr.apps), 1)
+        self.assertIsNone(drr.apps[0].params.approval_program)
+        self.assertEqual(drr.apps[0].params.clear_state_program, b"\x02")
+        self.assertIsInstance(drr.txns[0], transaction.SignedTransaction)
+        self.assertIsInstance(drr.txns[0].transaction, transaction.ApplicationCallTxn)
+
+        with self.assertRaises(TypeError):
+            drr = helper.build_dryrun_request(b"\x02", app=dict(testkey=1))
+
+
+    def test_pass_reject(self):
+        self.mock_response = dict(error=None, txns=[{"logic-sig-messages": ["PASS"]}])
+        self.assertPass("int 1")
+        with self.assertRaises(AssertionError):
+            self.assertReject("int 1")
+
+        self.mock_response = dict(error=None, txns=[{"app-call-messages": ["PASS"]}])
+        self.assertPass("int 1", app=dict(on_complete=0))
+        with self.assertRaises(AssertionError):
+            self.assertReject("int 1")
+
+        self.assertPass(self.mock_response)
+        with self.assertRaises(AssertionError):
+            self.assertReject(self.mock_response)
+
+        self.mock_response = dict(error=None, txns=[{"logic-sig-messages": ["REJECT"]}])
+        self.assertReject("int 1")
+        with self.assertRaises(AssertionError):
+            self.assertPass("int 1")
+
+        self.assertReject(self.mock_response)
+        with self.assertRaises(AssertionError):
+            self.assertPass(self.mock_response)
+
+        self.mock_response = dict(error=None, txns=[{"app-call-messages": ["PASS"]}])
+        self.assertPass(self.mock_response, txn_index=0)
+        with self.assertRaises(AssertionError):
+            self.assertReject(self.mock_response, txn_index=0)
+
+        with self.assertRaisesRegex(AssertionError, r"out of range \[0, 1\)"):
+            self.assertPass(self.mock_response, txn_index=1)
+
+        with self.assertRaisesRegex(AssertionError, r"out of range \[0, 1\)"):
+            self.assertReject(self.mock_response, txn_index=1)
+
+        self.mock_response = dict(
+            error=None,
+            txns=[{"app-call-messages": ["PASS"]}, {"app-call-messages": ["PASS"]}]
+        )
+        self.assertPass(self.mock_response, txn_index=0)
+        self.assertPass(self.mock_response, txn_index=1)
+        self.assertPass(self.mock_response)
+
+        self.mock_response = dict(
+            error=None,
+            txns=[{"app-call-messages": ["PASS"]}, {"app-call-messages": ["REJECT"]}]
+        )
+        self.assertPass(self.mock_response, txn_index=0)
+        with self.assertRaises(AssertionError):
+            self.assertPass(self.mock_response, txn_index=1)
+        with self.assertRaises(AssertionError):
+            self.assertPass(self.mock_response)
+
+        with self.assertRaises(AssertionError):
+            self.assertReject(self.mock_response, txn_index=0)
+        self.assertReject(self.mock_response, txn_index=1)
+        self.assertReject(self.mock_response)
+
+        self.mock_response = dict(
+            error=None,
+            txns=[{"app-call-messages": ["REJECT"]}, {"app-call-messages": ["REJECT"]}]
+        )
+        with self.assertRaises(AssertionError):
+            self.assertPass(self.mock_response)
+        with self.assertRaises(AssertionError):
+            self.assertPass(self.mock_response, txn_index=0)
+        with self.assertRaises(AssertionError):
+            self.assertPass(self.mock_response, txn_index=1)
+
+        self.assertReject(self.mock_response)
+        self.assertReject(self.mock_response, txn_index=0)
+        self.assertReject(self.mock_response, txn_index=1)
+
+    def test_no_error(self):
+        self.mock_response = dict(error=None, txns=None)
+        self.assertNoError("int 1")
+
+        self.mock_response = dict(error="", txns=None)
+        self.assertNoError("int 1")
+
+        self.mock_response = dict(error="Dryrun Source[0]: :3 + arg 0 wanted type uint64", txns=None)
+        with self.assertRaises(AssertionError):
+            self.assertNoError("byte 0x10\nint 1\n+")
+
+        self.mock_response = dict(error="", txns=[{"logic-sig-trace": [{"line":1}]}])
+        self.assertNoError("int 1")
+        with self.assertRaises(AssertionError):
+            self.assertError("int 1")
+
+        self.mock_response = dict(error="", txns=[{"app-call-trace": [{"line":1}]}])
+        self.assertNoError("int 1")
+        with self.assertRaises(AssertionError):
+            self.assertError("int 1")
+
+        self.mock_response = dict(error="", txns=[
+            {"logic-sig-trace": [{"line":1}, {"error": "test", "line":2}]}
+        ])
+        self.assertError("int 1", "logic 0 failed")
+        with self.assertRaises(AssertionError):
+            self.assertNoError("int 1")
+
+        self.mock_response = dict(error="", txns=[
+            {"app-call-trace": [{"line":1}, {"error": "test", "line":2}]}
+        ])
+
+        self.assertError("int 1", "app 0 failed")
+        with self.assertRaises(AssertionError):
+            self.assertNoError("int 1")
+
+        self.assertError("int 1", txn_index=0)
+
+        self.mock_response = dict(error="", txns=[
+            {"app-call-trace": [{"line":1}, {"error": "test1", "line":2}]},
+            {"logic-sig-trace": [{"line":1}, {"error": "test2", "line":2}]}
+        ])
+        self.assertError("int 1", txn_index=0)
+        self.assertError("int 1", txn_index=1)
+        self.assertError("int 1")
+
+        with self.assertRaises(AssertionError):
+            self.assertNoError("int 1")
+        with self.assertRaises(AssertionError):
+            self.assertNoError("int 1", txn_index=0)
+        with self.assertRaises(AssertionError):
+            self.assertNoError("int 1", txn_index=1)
+
+        self.mock_response = dict(error="", txns=[
+            {"app-call-trace": [{"line":1}, {"line":2}]},
+            {"logic-sig-trace": [{"line":1}, {"error": "test2", "line":2}]}
+        ])
+        self.assertNoError("int 1", txn_index=0)
+        self.assertError("int 1", txn_index=1)
+        self.assertError("int 1")
+
+        with self.assertRaises(AssertionError):
+            self.assertNoError("int 1")
+        with self.assertRaises(AssertionError):
+            self.assertNoError("int 1", txn_index=1)
+
+    def test_global_state(self):
+        txn_res1 = {
+            "global-delta": [dict(
+                key="test",
+                value=dict(action=1, uint=2),
+            )],
+        }
+        txn_res2 = {
+            "global-delta": [dict(
+                key="key",
+                value=dict(action=1, uint=2),
+            )],
+        }
+        self.mock_response = dict(
+            error=None,
+            txns=[txn_res1]
+        )
+        value = dict(key="test", value=dict(action=1, uint=2))
+        self.assertGlobalStateContains("int 1", value, app=dict(on_complete=0))
+        self.assertGlobalStateContains(self.mock_response, value, app=dict(on_complete=0))
+
+        self.mock_response = dict(
+            error=None,
+            txns=[{
+                "global-delta": [dict(
+                    key="test",
+                    value=dict(action=2, bytes="test"),
+                )],
+            }]
+        )
+        with self.assertRaises(AssertionError):
+            self.assertGlobalStateContains("int 1", value)
+        with self.assertRaises(AssertionError):
+            self.assertGlobalStateContains(self.mock_response, value)
+
+        self.mock_response = dict(
+            error=None,
+            txns=[txn_res2]
+        )
+        with self.assertRaises(AssertionError):
+            self.assertGlobalStateContains("int 1", value)
+        with self.assertRaises(AssertionError):
+            self.assertGlobalStateContains(self.mock_response, value)
+
+        self.mock_response = dict(
+            error=None,
+            txns=[txn_res1, txn_res1]
+        )
+        self.assertGlobalStateContains(self.mock_response, value)
+        self.assertGlobalStateContains(self.mock_response, value, txn_index=0)
+        self.assertGlobalStateContains(self.mock_response, value, txn_index=1)
+
+        self.mock_response = dict(
+            error=None,
+            txns=[txn_res1, txn_res2]
+        )
+        self.assertGlobalStateContains(self.mock_response, value)
+        self.assertGlobalStateContains(self.mock_response, value, txn_index=0)
+        with self.assertRaises(AssertionError):
+            self.assertGlobalStateContains(self.mock_response, value, txn_index=1)
+
+        self.mock_response = dict(
+            error=None,
+            txns=[txn_res2, txn_res2]
+        )
+        with self.assertRaisesRegex(AssertionError, "not found in any of"):
+            self.assertGlobalStateContains(self.mock_response, value)
+        with self.assertRaises(AssertionError):
+            self.assertGlobalStateContains(self.mock_response, value, txn_index=0)
+        with self.assertRaises(AssertionError):
+            self.assertGlobalStateContains(self.mock_response, value, txn_index=1)
+
+    def test_local_state(self):
+        txn_res1 = {
+            "local-deltas": [dict(
+                address="some_addr",
+                delta=[dict(
+                key="test",
+                    value=dict(action=1, uint=2),
+                )],
+            )]
+        }
+        txn_res2 = {
+            "local-deltas": [dict(
+                address="some_addr",
+                delta=[dict(
+                key="key",
+                    value=dict(action=1, uint=2),
+                )],
+            )]
+        }
+        self.mock_response = dict(
+            error=None,
+            txns=[txn_res1]
+        )
+        value = dict(key="test", value=dict(action=1, uint=2))
+        self.assertLocalStateContains("int 1", "some_addr", value, app=dict(on_complete=0))
+
+        with self.assertRaises(AssertionError):
+            self.assertLocalStateContains("int 1", "other_addr", value, app=dict(on_complete=0))
+
+        value = dict(key="test", value=dict(action=1, uint=3))
+        with self.assertRaises(AssertionError):
+            self.assertLocalStateContains("int 1", "other_addr", value, app=dict(on_complete=0))
+
+        self.mock_response = dict(
+            error=None,
+            txns=[txn_res1, txn_res1]
+        )
+        value = dict(key="test", value=dict(action=1, uint=2))
+        self.assertLocalStateContains(self.mock_response, "some_addr", value)
+        self.assertLocalStateContains(self.mock_response, "some_addr", value, txn_index=0)
+        self.assertLocalStateContains(self.mock_response, "some_addr", value, txn_index=1)
+
+        self.mock_response = dict(
+            error=None,
+            txns=[txn_res2, txn_res1]
+        )
+        self.assertLocalStateContains(self.mock_response, "some_addr", value)
+        with self.assertRaises(AssertionError):
+            self.assertLocalStateContains(self.mock_response, "some_addr", value, txn_index=0)
+        self.assertLocalStateContains(self.mock_response, "some_addr", value, txn_index=1)
+
+        self.mock_response = dict(
+            error=None,
+            txns=[txn_res2, txn_res2]
+        )
+        with self.assertRaises(AssertionError):
+            self.assertLocalStateContains(self.mock_response, "some_addr", value)
+        with self.assertRaises(AssertionError):
+            self.assertLocalStateContains(self.mock_response, "some_addr", value, txn_index=0)
+        with self.assertRaises(AssertionError):
+            self.assertLocalStateContains(self.mock_response, "some_addr", value, txn_index=1)
+
+
 if __name__ == "__main__":
     to_run = [
         TestTransaction,
@@ -1429,7 +1963,8 @@ if __name__ == "__main__":
         TestSignBytes,
         TestLogic,
         TestLogicSig,
-        TestTemplate
+        TestTemplate,
+        TestDryrun,
     ]
     loader = unittest.TestLoader()
     suites = [loader.loadTestsFromTestCase(test_class)

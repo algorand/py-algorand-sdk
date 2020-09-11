@@ -25,6 +25,11 @@ class DuplicateSigMismatchError(Exception):
         Exception.__init__(self, "mismatched duplicate signatures in multisig")
 
 
+class WrongAmountType(Exception):
+    def __init(self):
+        Exception.__init__(self, "amount (amt) must be a non-negative integer")
+
+
 class WrongChecksumError(Exception):
     def __init__(self):
         Exception.__init__(self, "checksum failed to validate")
@@ -58,6 +63,16 @@ class WrongMetadataLengthError(Exception):
 class WrongLeaseLengthError(Exception):
     def __init(self):
         Exception.__init__(self, "lease length must be 32 bytes")
+
+
+class WrongNoteType(Exception):
+    def __init(self):
+        Exception.__init__(self, "note must be of type \"bytes\"")
+
+
+class WrongNoteLength(Exception):
+    def __init(self):
+        Exception.__init__(self, "note length must be at most 1024")
 
 
 class InvalidProgram(Exception):
@@ -109,4 +124,9 @@ class KMDHTTPError(Exception):
 
 
 class AlgodHTTPError(Exception):
+    def __init__(self, msg, code=None):
+        super().__init__(msg)
+        self.code = code
+
+class IndexerHTTPError(Exception):
     pass

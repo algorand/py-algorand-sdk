@@ -16,12 +16,17 @@ class Transaction:
     Superclass for various transaction types.
     """
     def __init__(self, sender, fee, first, last, note, gen, gh, lease,
-                 txn_type):
+                 txn_type, rekey_to):
         self.sender = sender
         self.fee = fee
         self.first_valid_round = first
         self.last_valid_round = last
         self.note = note
+        if self.note is not None:
+            if not isinstance(self.note, bytes):
+                raise error.WrongNoteType
+            if len(self.note) > constants.note_max_length:
+                raise error.WrongNoteLength
         self.genesis_id = gen
         self.genesis_hash = gh
         self.group = None
@@ -30,10 +35,12 @@ class Transaction:
             if len(self.lease) != constants.lease_length:
                 raise error.WrongLeaseLengthError
         self.type = txn_type
+        self.rekey_to = rekey_to
 
     def get_txid(self):
         """
         Get the transaction's ID.
+
         Returns:
             str: transaction ID
         """
@@ -46,21 +53,28 @@ class Transaction:
     def sign(self, private_key):
         """
         Sign the transaction with a private key.
+
         Args:
             private_key (str): the private key of the signing account
+
         Returns:
             SignedTransaction: signed transaction with the signature
         """
         sig = self.raw_sign(private_key)
         sig = base64.b64encode(sig).decode()
-        stx = SignedTransaction(self, sig)
+        authorizing_address = None
+        if not (self.sender == account.address_from_private_key(private_key)):
+            authorizing_address = account.address_from_private_key(private_key)
+        stx = SignedTransaction(self, sig, authorizing_address)
         return stx
 
     def raw_sign(self, private_key):
         """
         Sign the transaction.
+
         Args:
             private_key (str): the private key of the signing account
+
         Returns:
             bytes: signature
         """
@@ -73,9 +87,7 @@ class Transaction:
         return sig
 
     def estimate_size(self):
-        sk, _ = account.generate_account()
-        stx = self.sign(sk)
-        return len(base64.b64decode(encoding.msgpack_encode(stx)))
+        return len(encoding.msgpack_encode(self)) + constants.num_additional_bytes_after_signing
 
     def dictify(self):
         d = dict()
@@ -94,6 +106,8 @@ class Transaction:
             d["note"] = self.note
         d["snd"] = encoding.decode_address(self.sender)
         d["type"] = self.type
+        if self.rekey_to:
+            d["rekey"] = encoding.decode_address(self.rekey_to)
 
         return d
 
@@ -109,20 +123,24 @@ class Transaction:
             "gen": d["gen"] if "gen" in d else None,
             "flat_fee": True,
             "lease": d["lx"] if "lx" in d else None,
+            "rekey_to": encoding.encode_address(d["rekey"]) if "rekey" in d else None,
         }
-        if d["type"] == constants.payment_txn:
+        txn_type = d["type"]
+        if not isinstance(d["type"], str):
+            txn_type = txn_type.decode()
+        if txn_type == constants.payment_txn:
             args.update(PaymentTxn._undictify(d))
             txn = PaymentTxn(**args)
-        elif d["type"] == constants.keyreg_txn:
+        elif txn_type == constants.keyreg_txn:
             args.update(KeyregTxn._undictify(d))
             txn = KeyregTxn(**args)
-        elif d["type"] == constants.assetconfig_txn:
+        elif txn_type == constants.assetconfig_txn:
             args.update(AssetConfigTxn._undictify(d))
             txn = AssetConfigTxn(**args)
-        elif d["type"] == constants.assetfreeze_txn:
+        elif txn_type == constants.assetfreeze_txn:
             args.update(AssetFreezeTxn._undictify(d))
             txn = AssetFreezeTxn(**args)
-        elif d["type"] == constants.assettransfer_txn:
+        elif txn_type == constants.assettransfer_txn:
             args.update(AssetTransferTxn._undictify(d))
             txn = AssetTransferTxn(**args)
         if "grp" in d:
@@ -143,12 +161,14 @@ class Transaction:
                 self.note == other.note and
                 self.group == other.group and
                 self.lease == other.lease and
-                self.type == other.type)
+                self.type == other.type and
+                self.rekey_to == other.rekey_to)
 
 
 class PaymentTxn(Transaction):
     """
     Represents a payment transaction.
+
     Args:
         sender (str): address of the sender
         fee (int): transaction fee (per byte if flat_fee is false)
@@ -165,6 +185,8 @@ class PaymentTxn(Transaction):
         lease (byte[32], optional): specifies a lease, and no other transaction
             with the same sender and lease can be confirmed in this
             transaction's valid rounds
+        rekey_to (str, optional): additionally rekey the sender to this address
+
     Attributes:
         sender (str)
         fee (int)
@@ -179,15 +201,18 @@ class PaymentTxn(Transaction):
         close_remainder_to (str)
         type (str)
         lease (byte[32])
+        rekey_to (str)
     """
 
     def __init__(self, sender, fee, first, last, gh, receiver, amt,
                  close_remainder_to=None, note=None, gen=None, flat_fee=False,
-                 lease=None):
+                 lease=None, rekey_to=None):
         Transaction.__init__(self,  sender, fee, first, last, note, gen, gh,
-                             lease, constants.payment_txn)
+                             lease, constants.payment_txn, rekey_to)
         self.receiver = receiver
         self.amt = amt
+        if (not isinstance(self.amt, int)) or self.amt < 0:
+            raise error.WrongAmountType
         self.close_remainder_to = close_remainder_to
         if flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
@@ -234,6 +259,7 @@ class PaymentTxn(Transaction):
 class KeyregTxn(Transaction):
     """
     Represents a key registration transaction.
+
     Args:
         sender (str): address of sender
         fee (int): transaction fee (per byte if flat_fee is false)
@@ -251,6 +277,8 @@ class KeyregTxn(Transaction):
         lease (byte[32], optional): specifies a lease, and no other transaction
             with the same sender and lease can be confirmed in this
             transaction's valid rounds
+        rekey_to (str, optional): additionally rekey the sender to this address
+
     Attributes:
         sender (str)
         fee (int)
@@ -267,13 +295,14 @@ class KeyregTxn(Transaction):
         votekd (int)
         type (str)
         lease (byte[32])
+        rekey_to (str)
     """
 
     def __init__(self, sender, fee, first, last, gh, votekey, selkey, votefst,
                  votelst, votekd, note=None, gen=None, flat_fee=False,
-                 lease=None):
+                 lease=None, rekey_to=None):
         Transaction.__init__(self, sender, fee, first, last, note, gen, gh,
-                             lease, constants.keyreg_txn)
+                             lease, constants.keyreg_txn, rekey_to)
         self.votepk = votekey
         self.selkey = selkey
         self.votefst = votefst
@@ -326,15 +355,19 @@ class AssetConfigTxn(Transaction):
     """
     Represents a transaction for asset creation, reconfiguration, or
     destruction.
+
     To create an asset, include the following:
         total, default_frozen, unit_name, asset_name,
         manager, reserve, freeze, clawback, url, metadata,
         decimals
+
     To destroy an asset, include the following:
         index, strict_empty_address_check (set to False)
+
     To update asset configuration, include the following:
         index, manager, reserve, freeze, clawback,
         strict_empty_address_check (optional)
+
     Args:
         sender (str): address of the sender
         fee (int): transaction fee (per byte if flat_fee is false)
@@ -374,6 +407,8 @@ class AssetConfigTxn(Transaction):
             decimal. If set to 0, the asset is not divisible. If set to 1, the
             base unit of the asset is in tenths. Must be between 0 and 19,
             inclusive. Defaults to 0.
+        rekey_to (str, optional): additionally rekey the sender to this address
+
     Attributes:
         sender (str)
         fee (int)
@@ -396,6 +431,7 @@ class AssetConfigTxn(Transaction):
         type (str)
         lease (byte[32])
         decimals (int)
+        rekey_to (str)
     """
 
     def __init__(self, sender, fee, first, last, gh, index=None,
@@ -403,9 +439,9 @@ class AssetConfigTxn(Transaction):
                  asset_name=None, manager=None, reserve=None,
                  freeze=None, clawback=None, url=None, metadata_hash=None,
                  note=None, gen=None, flat_fee=False, lease=None,
-                 strict_empty_address_check=True, decimals=0):
+                 strict_empty_address_check=True, decimals=0, rekey_to=None):
         Transaction.__init__(self,  sender, fee, first, last, note, gen, gh,
-                             lease, constants.assetconfig_txn)
+                             lease, constants.assetconfig_txn, rekey_to)
         if strict_empty_address_check:
             if not (manager and reserve and freeze and clawback):
                 raise error.EmptyAddressError
@@ -554,6 +590,7 @@ class AssetFreezeTxn(Transaction):
     """
     Represents a transaction for freezing or unfreezing an account's asset
     holdings. Must be issued by the asset's freeze manager.
+
     Args:
         sender (str): address of the sender, who must be the asset's freeze
             manager
@@ -571,6 +608,8 @@ class AssetFreezeTxn(Transaction):
         lease (byte[32], optional): specifies a lease, and no other transaction
             with the same sender and lease can be confirmed in this
             transaction's valid rounds
+        rekey_to (str, optional): additionally rekey the sender to this address
+
     Attributes:
         sender (str)
         fee (int)
@@ -584,13 +623,14 @@ class AssetFreezeTxn(Transaction):
         genesis_id (str)
         type (str)
         lease (byte[32])
+        rekey_to (str)
     """
 
     def __init__(self, sender, fee, first, last, gh, index, target,
                  new_freeze_state, note=None, gen=None, flat_fee=False,
-                 lease=None):
+                 lease=None, rekey_to=None):
         Transaction.__init__(self, sender, fee, first, last, note, gen, gh,
-                             lease, constants.assetfreeze_txn)
+                             lease, constants.assetfreeze_txn, rekey_to)
         self.index = index
         self.target = target
         self.new_freeze_state = new_freeze_state
@@ -642,6 +682,7 @@ class AssetTransferTxn(Transaction):
     receiver, and set amount to 0.
     To revoke an asset, set revocation_target, and issue the transaction from
     the asset's revocation manager account.
+
     Args:
         sender (str): address of the sender
         fee (int): transaction fee (per byte if flat_fee is false)
@@ -662,6 +703,8 @@ class AssetTransferTxn(Transaction):
         lease (byte[32], optional): specifies a lease, and no other transaction
             with the same sender and lease can be confirmed in this
             transaction's valid rounds
+        rekey_to (str, optional): additionally rekey the sender to this address
+
     Attributes:
         sender (str)
         fee (int)
@@ -677,15 +720,18 @@ class AssetTransferTxn(Transaction):
         genesis_id (str)
         type (str)
         lease (byte[32])
+        rekey_to (str)
     """
 
     def __init__(self, sender, fee, first, last, gh, receiver, amt, index,
                  close_assets_to=None, revocation_target=None, note=None,
-                 gen=None, flat_fee=False, lease=None):
+                 gen=None, flat_fee=False, lease=None, rekey_to=None):
         Transaction.__init__(self,  sender, fee, first, last, note, gen, gh,
-                             lease, constants.assettransfer_txn)
+                             lease, constants.assettransfer_txn, rekey_to)
         self.receiver = receiver
         self.amount = amt
+        if (not isinstance(self.amount, int)) or self.amount < 0:
+            raise error.WrongAmountType
         self.index = index
         self.close_assets_to = close_assets_to
         self.revocation_target = revocation_target
@@ -746,22 +792,29 @@ class AssetTransferTxn(Transaction):
 class SignedTransaction:
     """
     Represents a signed transaction.
+
     Args:
         transaction (Transaction): transaction that was signed
         signature (str): signature of a single address
+        authorizing_address (str, optional): the address authorizing the signed transaction, if different from sender
+
     Attributes:
         transaction (Transaction)
         signature (str)
+        authorizing_address (str)
     """
-    def __init__(self, transaction, signature):
+    def __init__(self, transaction, signature, authorizing_address=None):
         self.signature = signature
         self.transaction = transaction
+        self.authorizing_address = authorizing_address
 
     def dictify(self):
         od = OrderedDict()
         if self.signature:
             od["sig"] = base64.b64decode(self.signature)
         od["txn"] = self.transaction.dictify()
+        if self.authorizing_address:
+            od["sgnr"] = encoding.decode_address(self.authorizing_address)
         return od
 
     @staticmethod
@@ -769,8 +822,11 @@ class SignedTransaction:
         sig = None
         if "sig" in d:
             sig = base64.b64encode(d["sig"]).decode()
+        auth = None
+        if "sgnr" in d:
+            auth = encoding.encode_address(d["sgnr"])
         txn = Transaction.undictify(d["txn"])
-        stx = SignedTransaction(txn, sig)
+        stx = SignedTransaction(txn, sig, auth)
         return stx
 
     def __eq__(self, other):
@@ -779,15 +835,18 @@ class SignedTransaction:
                 future.transaction.SignedTransaction)):
             return False
         return (self.transaction == other.transaction and
-                self.signature == other.signature)
+                self.signature == other.signature and
+                self.authorizing_address == other.authorizing_address)
 
 
 class MultisigTransaction:
     """
     Represents a signed transaction.
+
     Args:
         transaction (Transaction): transaction that was signed
         multisig (Multisig): multisig account and signatures
+
     Attributes:
         transaction (Transaction)
         multisig (Multisig)
@@ -799,8 +858,10 @@ class MultisigTransaction:
     def sign(self, private_key):
         """
         Sign the multisig transaction.
+
         Args:
             private_key (str): private key of signing account
+
         Note:
             A new signature will replace the old if there is already a
             signature for the address. To sign another transaction, you can
@@ -844,11 +905,14 @@ class MultisigTransaction:
     def merge(part_stxs):
         """
         Merge partially signed multisig transactions.
+
         Args:
             part_stxs (MultisigTransaction[]): list of partially signed
                 multisig transactions
+
         Returns:
             MultisigTransaction: multisig transaction containing signatures
+
         Note:
             Only use this if you are given two partially signed multisig
             transactions. To append a signature to a multisig transaction, just
@@ -887,10 +951,12 @@ class MultisigTransaction:
 class Multisig:
     """
     Represents a multisig account and signatures.
+
     Args:
         version (int): currently, the version is 1
         threshold (int): how many signatures are necessary
         addresses (str[]): addresses in the multisig account
+
     Attributes:
         version (int)
         threshold (int)
@@ -1036,10 +1102,12 @@ class MultisigSubsig:
 
 class LogicSig:
     """
-    Represents a logic signature
+    Represents a logic signature.
+
     Arguments:
         logic (bytes): compiled program
         args (list[bytes]): args are not signed, but are checked by logic
+
     Attributes:
         logic (bytes)
         sig (bytes)
@@ -1078,8 +1146,10 @@ class LogicSig:
     def verify(self, public_key):
         """
         Verifies LogicSig against the transaction's sender address
+
         Args:
             public_key (bytes): sender address
+
         Returns:
             bool: true if the signature is valid (the sender address matches\
                 the logic hash or the signature is valid against the sender\
@@ -1113,6 +1183,7 @@ class LogicSig:
         """
         Compute hash of the logic sig program (that is the same as escrow
         account address) as string address
+
         Returns:
             str: program address
         """
@@ -1144,10 +1215,12 @@ class LogicSig:
     def sign(self, private_key, multisig=None):
         """
         Creates signature (if no pk provided) or multi signature
+
         Args:
             private_key (str): private key of signing account
             multisig (Multisig): optional multisig account without signatures
                 to sign with
+
         Raises:
             InvalidSecretKeyError: if no matching private key in multisig\
                 object
@@ -1164,8 +1237,10 @@ class LogicSig:
     def append_to_multisig(self, private_key):
         """
         Appends a signature to multi signature
+
         Args:
             private_key (str): private key of signing account
+
         Raises:
             InvalidSecretKeyError: if no matching private key in multisig\
                 object
@@ -1190,10 +1265,12 @@ class LogicSig:
 
 class LogicSigTransaction:
     """
-    Represents a logic signed transaction
+    Represents a logic signed transaction.
+
     Arguments:
         transaction (Transaction)
         lsig (LogicSig)
+
     Attributes:
         transaction (Transaction)
         lsig (LogicSig)
@@ -1206,6 +1283,7 @@ class LogicSigTransaction:
     def verify(self):
         """
         Verify LogicSig against the transaction
+
         Returns:
             bool: true if the signature is valid (the sender address matches\
                 the logic hash or the signature is valid against the sender\
@@ -1239,12 +1317,25 @@ class LogicSigTransaction:
                 self.transaction == other.transaction)
 
 
-def write_to_file(txns, path, overwrite=True):
+def write_to_file(objs, path, overwrite=True):
     """
     Write signed or unsigned transactions to a file.
+
     Args:
-        txns (Transaction[], SignedTransaction[], or MultisigTransaction[]):\
+        txns (Transaction[], SignedTransaction[], or MultisigTransaction[]):
             can be a mix of the three
+        path (str): file to write to
+        overwrite (bool): whether or not to overwrite what's already in the
+            file; if False, transactions will be appended to the file
+
+    Returns:
+        bool: true if the transactions have been written to the file
+    """
+
+    """
+    Write objects to a file.
+    Args:
+        objs (Object[]): list of encodable objects
         path (str): file to write to
         overwrite (bool): whether or not to overwrite what's already in the
             file; if False, transactions will be appended to the file
@@ -1258,41 +1349,34 @@ def write_to_file(txns, path, overwrite=True):
     else:
         f = open(path, "ab")
 
-    for txn in txns:
-        if isinstance(txn, Transaction):
-            enc = msgpack.packb({"txn": txn.dictify()}, use_bin_type=True)
-            f.write(enc)
+    for obj in objs:
+        if isinstance(obj, Transaction):
+            f.write(base64.b64decode(encoding.msgpack_encode({"txn": obj.dictify()})))
         else:
-            enc = msgpack.packb(txn.dictify(), use_bin_type=True)
-            f.write(enc)
+            f.write(base64.b64decode(encoding.msgpack_encode(obj)))
+
     f.close()
     return True
 
 
 def retrieve_from_file(path):
     """
-    Retrieve signed or unsigned transactions from a file.
+    Retrieve encoded objects from a file.
+
     Args:
         path (str): file to read from
+
     Returns:
-        Transaction[], SignedTransaction[], or MultisigTransaction[]:\
-            can be a mix of the three
+        Object[]: list of objects
     """
 
     f = open(path, "rb")
-    txns = []
+    objs = []
     unp = msgpack.Unpacker(f, raw=False)
-    for txn in unp:
-        if "msig" in txn:
-            txns.append(MultisigTransaction.undictify(txn))
-        elif "sig" in txn:
-            txns.append(SignedTransaction.undictify(txn))
-        elif "lsig" in txn:
-            txns.append(LogicSigTransaction.undictify(txn))
-        elif "type" in txn:
-            txns.append(Transaction.undictify(txn))
+    for obj in unp:
+        objs.append(encoding.msgpack_decode(obj))
     f.close()
-    return txns
+    return objs
 
 
 class TxGroup:
@@ -1322,8 +1406,10 @@ class TxGroup:
 def calculate_group_id(txns):
     """
     Calculate group id for a given list of unsigned transactions
+
     Args:
         txns (list): list of unsigned transactions
+
     Returns:
         bytes: checksum value representing the group id
     """
@@ -1345,11 +1431,13 @@ def calculate_group_id(txns):
 
 def assign_group_id(txns, address=None):
     """
-    Assign group id to a given list of unsigned transactions
+    Assign group id to a given list of unsigned transactions.
+
     Args:
         txns (list): list of unsigned transactions
         address (str): optional sender address specifying which transaction
-            return
+            to return
+
     Returns:
         txns (list): list of unsigned transactions with group property set
     """
