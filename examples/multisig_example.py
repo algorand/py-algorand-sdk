@@ -1,7 +1,6 @@
-
 # Example: manipulating multisig transactions
 
-import params
+import node_access
 from algosdk import account, algod, encoding
 from algosdk.future import transaction
 
@@ -16,13 +15,13 @@ threshold = 2  # how many signatures are necessary
 msig = transaction.Multisig(version, threshold, [account_1, account_2])
 
 # get suggested parameters
-acl = algod.AlgodClient(params.algod_token, params.algod_address)
-sp = acl.suggested_params_as_object()
+acl = algod.AlgodClient(node_access.algod_token, node_access.algod_address)
+suggested_params = acl.suggested_params_as_object()
 
 # create a transaction
 sender = msig.address()
 amount = 10000
-txn = transaction.PaymentTxn(sender, sp, account_3, amount)
+txn = transaction.PaymentTxn(sender, suggested_params, account_3, amount)
 
 # create a SignedTransaction object
 mtx = transaction.MultisigTransaction(txn, msig)
@@ -32,4 +31,4 @@ mtx.sign(private_key_1)
 mtx.sign(private_key_2)
 
 # print encoded transaction
-print(encoding.msgpack_encode(mtx))
+print("Encoded transaction:", encoding.msgpack_encode(mtx))

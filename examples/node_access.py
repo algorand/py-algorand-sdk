@@ -1,26 +1,32 @@
-from os import environ
+# examples helper file
+
+from os import listdir
 from os.path import expanduser
+
 home = expanduser("~")
 
 # change these after starting the node and kmd
 # algod info is in the algod.net and algod.token files in the data directory
 # kmd info is in the kmd.net and kmd.token files in the kmd directory in data
-# change these after starting the node and kmd
 
 kmd_token = ""
-kmd_address = "http://localhost:7833"
+kmd_address = ""
 
 algod_token = ""
-algod_address = "http://localhost:8080"
+algod_address = ""
+
+# you can also get tokens and addresses automatically
+get_automatically = True
 
 # path to the data directory
-data_dir_path = environ.get("ALGORAND_DATA", home + "/node/network/Node")
-kmd_folder_name = "kmd-v0.5"  # name of the kmd folder in the data directory
+data_dir_path = home + "/node/network/Node"
 
-# get tokens and addresses automatically, if data_dir_path is not empty
-if data_dir_path and kmd_folder_name:
+if get_automatically:
     if not data_dir_path[-1] == "/":
         data_dir_path += "/"
+    for directory in listdir(data_dir_path):
+        if "kmd" in directory:
+            kmd_folder_name = directory
     if not kmd_folder_name[-1] == "/":
         kmd_folder_name += "/"
     algod_token = open(data_dir_path + "algod.token", "r").read().strip("\n")

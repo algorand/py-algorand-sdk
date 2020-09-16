@@ -1,16 +1,16 @@
+# Example: working with transaction groups
 
-# Example: working with transaction group
-
-import params
+import node_access
 from algosdk import algod, kmd, account
 from algosdk.future import transaction
 
+# generate accounts
 private_key_sender, sender = account.generate_account()
 private_key_receiver, receiver = account.generate_account()
 
 # create an algod and kmd client
-acl = algod.AlgodClient(params.algod_token, params.algod_address)
-kcl = kmd.KMDClient(params.kmd_token, params.kmd_address)
+acl = algod.AlgodClient(node_access.algod_token, node_access.algod_address)
+kcl = kmd.KMDClient(node_access.kmd_token, node_access.kmd_address)
 
 # get suggested parameters
 sp = acl.suggested_params_as_object()
@@ -29,5 +29,5 @@ txn2.group = gid
 stxn1 = txn1.sign(private_key_sender)
 stxn2 = txn2.sign(private_key_receiver)
 
-# send them over network
+# send them over network (note that the accounts need to be funded for this to work)
 acl.send_transactions([stxn1, stxn2])

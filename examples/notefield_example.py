@@ -4,12 +4,12 @@
 # with an auction bid. Note that you can put any bytes you want in the "note"
 # field; you don't have to use the NoteField object.
 
-import params
+import node_access
 from algosdk import algod, mnemonic, account, auction, constants, encoding
 from algosdk.future import transaction
 import base64
 
-acl = algod.AlgodClient(params.algod_token, params.algod_address)
+acl = algod.AlgodClient(node_access.algod_token, node_access.algod_address)
 
 # generate an account
 private_key, public_key = account.generate_account()
@@ -39,10 +39,10 @@ txn = transaction.PaymentTxn(public_key, sp, receiver, amount, note=base64.b64de
 
 # encode the transaction
 encoded_txn = encoding.msgpack_encode(txn)
-print(encoded_txn)
+print("Encoded transaction:", encoded_txn, "\n")
 
 # if someone else were to want to access the notefield from an encoded
 # transaction, they could just decode the transaction
 decoded_txn = encoding.msgpack_decode(encoded_txn)
 decoded_notefield = encoding.msgpack_decode(base64.b64encode(decoded_txn.note))
-print(decoded_notefield.dictify())
+print("Decoded notefield from encoded transaction:", decoded_notefield.dictify())
