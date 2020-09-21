@@ -87,7 +87,9 @@ class Transaction:
         return sig
 
     def estimate_size(self):
-        return len(encoding.msgpack_encode(self)) + constants.num_additional_bytes_after_signing
+        sk, _ = account.generate_account()
+        stx = self.sign(sk)
+        return len(base64.b64decode(encoding.msgpack_encode(stx)))
 
     def dictify(self):
         d = dict()
