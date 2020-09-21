@@ -4,7 +4,7 @@
 # default "X-Algo-API-Token". This is done by using a dict with our custom
 # key, instead of a string, as the token.
 
-import node_access
+import tokens
 from algosdk import algod
 
 headers = {
@@ -12,7 +12,7 @@ headers = {
 }
 
 def main():
-    algod_client = algod.AlgodClient(node_access.algod_token, node_access.algod_address, headers)
+    algod_client = algod.AlgodClient(tokens.algod_token, tokens.algod_address, headers)
 
     try:
         status = algod_client.status()

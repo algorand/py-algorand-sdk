@@ -1,6 +1,6 @@
 # Example: working with transaction groups
 
-import node_access
+import tokens
 from algosdk import algod, kmd, account
 from algosdk.future import transaction
 
@@ -9,8 +9,8 @@ private_key_sender, sender = account.generate_account()
 private_key_receiver, receiver = account.generate_account()
 
 # create an algod and kmd client
-acl = algod.AlgodClient(node_access.algod_token, node_access.algod_address)
-kcl = kmd.KMDClient(node_access.kmd_token, node_access.kmd_address)
+acl = algod.AlgodClient(tokens.algod_token, tokens.algod_address)
+kcl = kmd.KMDClient(tokens.kmd_token, tokens.kmd_address)
 
 # get suggested parameters
 sp = acl.suggested_params_as_object()

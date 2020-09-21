@@ -1,6 +1,6 @@
 # Example: manipulating multisig transactions
 
-import node_access
+import tokens
 from algosdk import account, algod, encoding
 from algosdk.future import transaction
 
@@ -15,7 +15,7 @@ threshold = 2  # how many signatures are necessary
 msig = transaction.Multisig(version, threshold, [account_1, account_2])
 
 # get suggested parameters
-acl = algod.AlgodClient(node_access.algod_token, node_access.algod_address)
+acl = algod.AlgodClient(tokens.algod_token, tokens.algod_address)
 suggested_params = acl.suggested_params_as_object()
 
 # create a transaction

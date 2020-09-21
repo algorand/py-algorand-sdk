@@ -1,11 +1,11 @@
 # Example: backing up a wallet with mnemonic
 
-import node_access
+import tokens
 from algosdk import kmd, mnemonic
 from algosdk.wallet import Wallet
 
 # create a kmd client
-kcl = kmd.KMDClient(node_access.kmd_token, node_access.kmd_address)
+kcl = kmd.KMDClient(tokens.kmd_token, tokens.kmd_address)
 
 # create a wallet object
 wallet = Wallet("unencrypted-default-wallet", "", kcl)

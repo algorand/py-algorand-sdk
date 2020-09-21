@@ -56,7 +56,7 @@ $ ./goal account new -d [data directory] -w [wallet name]
 
 Visit the [Algorand dispenser](https://bank.testnet.algorand.network/) and enter the account address to fund your account.
 
-Next, in [node_access.py](https://github.com/algorand/py-algorand-sdk/blob/master/examples/node_access.py), either update the tokens and addresses, or provide a path to the data directory.
+Next, in [tokens.py](https://github.com/algorand/py-algorand-sdk/blob/master/examples/tokens.py), either update the tokens and addresses, or provide a path to the data directory.
 
 You're now ready to run example.py!
 

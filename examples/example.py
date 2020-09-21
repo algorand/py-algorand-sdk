@@ -4,12 +4,12 @@ from algosdk import kmd
 from algosdk.v2client import algod
 from algosdk import account
 from algosdk import mnemonic
-import node_access
+import tokens
 import json
 
 # create kmd and algod clients
-kcl = kmd.KMDClient(node_access.kmd_token, node_access.kmd_address)
-acl = algod.AlgodClient(node_access.algod_token, node_access.algod_address)
+kcl = kmd.KMDClient(tokens.kmd_token, tokens.kmd_address)
+acl = algod.AlgodClient(tokens.algod_token, tokens.algod_address)
 
 # enter existing wallet and account info here
 existing_wallet_name = input("Name of an existing wallet? ")

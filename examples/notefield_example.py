@@ -4,12 +4,12 @@
 # with an auction bid. Note that you can put any bytes you want in the "note"
 # field; you don't have to use the NoteField object.
 
-import node_access
+import tokens
 from algosdk import algod, mnemonic, account, auction, constants, encoding
 from algosdk.future import transaction
 import base64
 
-acl = algod.AlgodClient(node_access.algod_token, node_access.algod_address)
+acl = algod.AlgodClient(tokens.algod_token, tokens.algod_address)
 
 # generate an account
 private_key, public_key = account.generate_account()

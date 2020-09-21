@@ -2,7 +2,7 @@
 
 from algosdk import account, algod
 from algosdk.future import transaction
-import node_access
+import tokens
 
 sender_private_key, sender = account.generate_account() # this should be the current account
 rekey_private_key, rekey_address = account.generate_account()
@@ -10,7 +10,7 @@ receiver = sender
 amount = 0
 
 # get suggested parameters
-acl = algod.AlgodClient(node_access.algod_token, node_access.algod_address)
+acl = algod.AlgodClient(tokens.algod_token, tokens.algod_address)
 suggested_params = acl.suggested_params_as_object()
 
 # To rekey an account to a new address, add the `rekey_to` argument to creation.
