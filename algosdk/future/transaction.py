@@ -283,7 +283,9 @@ class PaymentTxn(Transaction):
         if self.close_remainder_to:
             d["close"] = encoding.decode_address(self.close_remainder_to)
         if self.receiver:
-            d["rcv"] = encoding.decode_address(self.receiver)
+            decoded = encoding.decode_address(self.receiver)
+            if any(decoded):
+                d["rcv"] = encoding.decode_address(self.receiver)
 
         d.update(super(PaymentTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
