@@ -289,3 +289,13 @@ class AlgodClient:
         data = encoding.msgpack_encode(drr)
         data = base64.b64decode(data)
         return self.algod_request("POST", req, data=data, headers=headers, **kwargs)
+
+    def genesis(self, **kwargs):
+        """
+        Get the genesis file.
+
+        Returns:
+            dict: loaded from json response body
+        """
+        req = "/genesis"
+        return self.algod_request("POST", req, **kwargs)
