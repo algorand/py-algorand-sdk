@@ -1,15 +1,15 @@
 from algosdk import encoding
-from algosdk import transaction
+from algosdk.future import transaction
 from algosdk import kmd
-from algosdk import algod
+from algosdk.v2client import algod
 from algosdk import account
 from algosdk import mnemonic
-import params
+import tokens
 import json
 
 # create kmd and algod clients
-kcl = kmd.KMDClient(params.kmd_token, params.kmd_address)
-acl = algod.AlgodClient(params.algod_token, params.algod_address)
+kcl = kmd.KMDClient(tokens.kmd_token, tokens.kmd_address)
+acl = algod.AlgodClient(tokens.algod_token, tokens.algod_address)
 
 # enter existing wallet and account info here
 existing_wallet_name = input("Name of an existing wallet? ")
@@ -112,11 +112,8 @@ transaction_id = acl.send_transaction(signed_with_kmd)
 print("\nTransaction was sent!")
 print("Transaction ID: " + transaction_id + "\n")
 
-# wait 2 rounds and then try to see the transaction
-print("Now let's wait a bit for the transaction to process.\n")
-acl.status_after_block(sp.first+2)
-print("Transaction info:", acl.transaction_info(existing_account,
-                                                transaction_id))
+# try to see the transaction in pending transactions
+print("Transaction info:", acl.pending_transaction_info(transaction_id))
 
 # To see the new wallet and accounts that we've created, use goal:
 # $ ./goal wallet list
