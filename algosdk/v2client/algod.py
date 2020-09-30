@@ -117,17 +117,21 @@ class AlgodClient:
             **kwargs)
         return res
 
-    def block_info(self, block, response_format="json", **kwargs):
+    def block_info(self, block=None, response_format="json", round=None, **kwargs):
         """
         Get the block for the given round.
 
         Args:
             block (int): block number
-            response_format (str): the format in which the response is returned: either
-                "json" or "msgpack"
+            response_format (str): the format in which the response is 
+                returned: either "json" or "msgpack"
+            round (int, optional): alias for block; only specify one of these
         """
         query = {"format": response_format}
-        req = "/blocks/" + str(block)
+        if block:
+            req = "/blocks/" + str(block)
+        elif round:
+            req = "/blocks/" + str(round)
         res = self.algod_request("GET", req, query, response_format=response_format, **kwargs)
         return res
 
@@ -141,14 +145,18 @@ class AlgodClient:
         req = "/status"
         return self.algod_request("GET", req, **kwargs)
 
-    def status_after_block(self, block_num, **kwargs):
+    def status_after_block(self, block_num=None, round=None, **kwargs):
         """
         Return node status immediately after blockNum.
 
         Args:
             block_num: block number
+            round (int, optional): alias for block_num; specify one of these
         """
-        req = "/status/wait-for-block-after/" + str(block_num)
+        if block_num:
+            req = "/status/wait-for-block-after/" + str(block_num)
+        elif round:
+            req = "/status/wait-for-block-after/" + str(round)
         return self.algod_request("GET", req, **kwargs)
 
     def send_transaction(self, txn, **kwargs):

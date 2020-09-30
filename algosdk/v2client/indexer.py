@@ -88,7 +88,8 @@ class IndexerClient:
 
     def accounts(
         self, asset_id=None, limit=None, next_page=None, min_balance=None,
-        max_balance=None, block=None, auth_addr=None, application_id=None, **kwargs):
+        max_balance=None, block=None, auth_addr=None, application_id=None,
+        round=None, **kwargs):
         """
         Return accounts that match the search; microalgos are the default
         currency unless asset_id is specified, in which case the asset will
@@ -108,7 +109,7 @@ class IndexerClient:
             auth_addr (str, optional): Include accounts configured to use
                 this spending key.
             application_id (int, optional): results should filter on this application
-
+            round (int, optional): alias for block; only specify one of these
         """
         req = "/accounts"
         query = dict()
@@ -124,6 +125,8 @@ class IndexerClient:
             query["currency-less-than"] = max_balance
         if block:
             query["round"] = block
+        elif round:
+            query["round"] = round
         if auth_addr:
             query["auth-addr"] = auth_addr
         if application_id:
@@ -131,7 +134,7 @@ class IndexerClient:
         return self.indexer_request("GET", req, query, **kwargs)
 
     def asset_balances(self, asset_id, limit=None, next_page=None, min_balance=None,
-        max_balance=None, block=None, **kwargs):
+        max_balance=None, block=None, round=None, **kwargs):
         """
         Return accounts that hold the asset; microalgos are the default
         currency unless asset_id is specified, in which case the asset will
@@ -148,6 +151,7 @@ class IndexerClient:
             block (int, optional): include results for the specified round;
                 for performance reasons, this parameter may be disabled on
                 some configurations
+            round (int, optional): alias for block; only specify one of these
         """
         req = "/assets/" + str(asset_id) + "/balances"
         query = dict()
@@ -161,30 +165,39 @@ class IndexerClient:
             query["currency-less-than"] = max_balance
         if block:
             query["round"] = block
+        elif round:
+            query["round"] = round
         return self.indexer_request("GET", req, query, **kwargs)
 
-    def block_info(self, block, **kwargs):
+    def block_info(self, block=None, round=None, **kwargs):
         """
         Get the block for the given round.
 
         Args:
-            block (int): block number
+            block (int, optional): block number
+            round (int, optional): alias for block; specify one of these
         """
-        req = "/blocks/" + str(block)
+        if block:
+            req = "/blocks/" + str(block)
+        else:
+            req = "/blocks/" + str(round)
         return self.indexer_request("GET", req, **kwargs)
 
-    def account_info(self, address, block=None, **kwargs):
+    def account_info(self, address, block=None, round=None, **kwargs):
         """
         Return account information.
 
         Args:
             address (str): account public key
             block (int, optional): use results from the specified round
+            round (int, optional): alias for block; only specify one of these
         """
         req = "/accounts/" + address
         query = dict()
         if block:
             query["round"] = block
+        elif round:
+            query["round"] = round
         return self.indexer_request("GET", req, query, **kwargs)
 
     def search_transactions(
@@ -192,7 +205,8 @@ class IndexerClient:
         sig_type=None, txid=None, block=None, min_round=None, max_round=None,
         asset_id=None, start_time=None, end_time=None, min_amount=None,
         max_amount=None, address=None, address_role=None,
-        exclude_close_to=False, application_id=None, rekey_to=False, **kwargs):
+        exclude_close_to=False, application_id=None, rekey_to=False,
+        round=None, **kwargs):
         """
         Return a list of transactions satisfying the conditions.
 
@@ -236,8 +250,9 @@ class IndexerClient:
                 to true
             application_id (int, optional): filter for transactions pertaining
                 to an application
-            rekey_to (bool, optional) Include results which include the
-                rekey-to field.
+            rekey_to (bool, optional): include results which include the
+                rekey-to field
+            round (int, optional): alias for block; only specify one of these
         """
         req = "/transactions"
         query = dict()
@@ -255,6 +270,8 @@ class IndexerClient:
             query["txid"] = txid
         if block:
             query["round"] = block
+        elif round:
+            query["round"] = round
         if min_round:
             query["min-round"] = min_round
         if max_round:
@@ -280,14 +297,14 @@ class IndexerClient:
         if rekey_to:
             query["rekey-to"] = "true"
 
-
         return self.indexer_request("GET", req, query, **kwargs)
 
     def search_transactions_by_address(
         self, address, limit=None, next_page=None, note_prefix=None,
         txn_type=None, sig_type=None, txid=None, block=None, min_round=None,
         max_round=None, asset_id=None, start_time=None, end_time=None,
-        min_amount=None, max_amount=None, rekey_to=False, **kwargs):
+        min_amount=None, max_amount=None, rekey_to=False, round=None,
+        **kwargs):
         """
         Return a list of transactions satisfying the conditions for the address.
 
@@ -321,8 +338,9 @@ class IndexerClient:
             max_amount (int, optional): results should have an amount less
                 than this value, microalgos are the default currency unless an
                 asset-id is provided, in which case the asset will be used
-            rekey_to (bool, optional) Include results which include the
-                rekey-to field.
+            rekey_to (bool, optional): include results which include the
+                rekey-to field
+            round (int, optional): alias for block; only specify one of these
         """
         req = "/accounts/" + address + "/transactions"
         query = dict()
@@ -340,6 +358,8 @@ class IndexerClient:
             query["txid"] = txid
         if block:
             query["round"] = block
+        elif round:
+            query["round"] = round
         if min_round:
             query["min-round"] = min_round
         if max_round:
@@ -363,14 +383,13 @@ class IndexerClient:
         txn_type=None, sig_type=None, txid=None, block=None, min_round=None,
         max_round=None, address=None, start_time=None, end_time=None,
         min_amount=None, max_amount=None, address_role=None,
-        exclude_close_to=False, rekey_to=False, **kwargs):
+        exclude_close_to=False, rekey_to=False, round=None, **kwargs):
         """
         Return a list of transactions satisfying the conditions for the address.
 
         Args:
             asset_id (int): include transactions for the specified
                 asset
-                
             limit (int, optional): maximum number of results to return
             next_page (str, optional): the next page of results; use the next
                 token provided by the previous results
@@ -406,8 +425,9 @@ class IndexerClient:
                 search for; the close to fields are normally treated as a
                 receiver, if you would like to exclude them set this parameter
                 to true
-            rekey_to (bool, optional) Include results which include the
-                rekey-to field.
+            rekey_to (bool, optional): include results which include the
+                rekey-to field
+            round (int, optional): alias for block; only specify one of these
         """
         req = "/assets/" + str(asset_id) + "/transactions"
         query = dict()
@@ -425,6 +445,8 @@ class IndexerClient:
             query["txid"] = txid
         if block:
             query["round"] = block
+        elif round:
+            query["round"] = round
         if min_round:
             query["min-round"] = min_round
         if max_round:
