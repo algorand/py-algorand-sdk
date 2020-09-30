@@ -265,7 +265,11 @@ class PaymentTxn(Transaction):
                  lease=None, rekey_to=None):
         Transaction.__init__(self, sender, sp, note,
                              lease, constants.payment_txn, rekey_to)
-        self.receiver = receiver
+        if receiver:
+            self.receiver = receiver
+        else:
+            raise error.ZeroAddressError
+
         self.amt = amt
         if (not isinstance(self.amt, int)) or self.amt < 0:
             raise error.WrongAmountType
@@ -282,10 +286,10 @@ class PaymentTxn(Transaction):
             d["amt"] = self.amt
         if self.close_remainder_to:
             d["close"] = encoding.decode_address(self.close_remainder_to)
-        if self.receiver:
-            decoded = encoding.decode_address(self.receiver)
-            if any(decoded):
-                d["rcv"] = encoding.decode_address(self.receiver)
+
+        decoded_receiver = encoding.decode_address(self.receiver)
+        if any(decoded_receiver):
+            d["rcv"] = encoding.decode_address(self.receiver)
 
         d.update(super(PaymentTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
@@ -767,7 +771,10 @@ class AssetTransferTxn(Transaction):
                  lease=None, rekey_to=None):
         Transaction.__init__(self, sender, sp, note,
                              lease, constants.assettransfer_txn, rekey_to)
-        self.receiver = receiver
+        if receiver:
+            self.receiver = receiver
+        else:
+            raise error.ZeroAddressError
         self.amount = amt
         if (not isinstance(self.amount, int)) or self.amount < 0:
             raise error.WrongAmountType
@@ -787,7 +794,9 @@ class AssetTransferTxn(Transaction):
             d["aamt"] = self.amount
         if self.close_assets_to:
             d["aclose"] = encoding.decode_address(self.close_assets_to)
-        if self.receiver:
+
+        decoded_receiver = encoding.decode_address(self.receiver)
+        if any(decoded_receiver):
             d["arcv"] = encoding.decode_address(self.receiver)
         if self.revocation_target:
             d["asnd"] = encoding.decode_address(self.revocation_target)
