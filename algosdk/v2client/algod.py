@@ -129,9 +129,9 @@ class AlgodClient:
         """
         query = {"format": response_format}
         req = "/blocks"
-        if block:
+        if block is not None:
             req += str(block)
-        elif round:
+        elif round is not None:
             req += str(round)
         res = self.algod_request("GET", req, query, response_format=response_format, **kwargs)
         return res
@@ -155,9 +155,9 @@ class AlgodClient:
             round (int, optional): alias for block_num; specify one of these
         """
         req = "/status/wait-for-block-after/"
-        if block_num:
+        if block_num is not None:
             req += str(block_num)
-        elif round:
+        elif round is not None:
             req += str(round)
         return self.algod_request("GET", req, **kwargs)
 
