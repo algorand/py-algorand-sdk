@@ -91,7 +91,7 @@ class KMDClient:
         if "wallets" in res:
             return res["wallets"]
         else:
-            return res
+            return []
 
     def create_wallet(self, name, pswd, driver_name="sqlite",
                       master_deriv_key=None):
