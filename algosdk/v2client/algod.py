@@ -128,7 +128,7 @@ class AlgodClient:
             round (int, optional): alias for block; only specify one of these
         """
         query = {"format": response_format}
-        req = "/blocks"
+        req = "/blocks/"
         if block is not None:
             req += str(block)
         elif round is not None:
