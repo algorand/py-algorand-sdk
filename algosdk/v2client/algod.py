@@ -128,10 +128,11 @@ class AlgodClient:
             round (int, optional): alias for block; only specify one of these
         """
         query = {"format": response_format}
+        req = "/blocks"
         if block:
-            req = "/blocks/" + str(block)
+            req += str(block)
         elif round:
-            req = "/blocks/" + str(round)
+            req += str(round)
         res = self.algod_request("GET", req, query, response_format=response_format, **kwargs)
         return res
 
@@ -153,10 +154,11 @@ class AlgodClient:
             block_num: block number
             round (int, optional): alias for block_num; specify one of these
         """
+        req = "/status/wait-for-block-after/"
         if block_num:
-            req = "/status/wait-for-block-after/" + str(block_num)
+            req += str(block_num)
         elif round:
-            req = "/status/wait-for-block-after/" + str(round)
+            req += str(round)
         return self.algod_request("GET", req, **kwargs)
 
     def send_transaction(self, txn, **kwargs):
