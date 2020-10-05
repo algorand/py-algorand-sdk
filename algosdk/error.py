@@ -111,6 +111,12 @@ class WrongContractError(Exception):
                            + contract_type + " contract is needed")
 
 
+class OverspecifiedRoundError(Exception):
+    def __init__(self, contract_type):
+        Exception.__init__(self, "Both 'block' and 'round' are specified; "
+                                 "please only specify one")
+
+
 class TemplateInputError(Exception):
     pass
 

@@ -123,10 +123,9 @@ class IndexerClient:
             query["currency-greater-than"] = min_balance
         if max_balance:
             query["currency-less-than"] = max_balance
-        if block:
-            query["round"] = block
-        elif round:
-            query["round"] = round
+        round_specified = self.round_specification(block, round)
+        if round_specified is not None:
+            query["round"] = round_specified
         if auth_addr:
             query["auth-addr"] = auth_addr
         if application_id:
@@ -163,10 +162,9 @@ class IndexerClient:
             query["currency-greater-than"] = min_balance
         if max_balance:
             query["currency-less-than"] = max_balance
-        if block:
-            query["round"] = block
-        elif round:
-            query["round"] = round
+        round_specified = self.round_specification(block, round)
+        if round_specified is not None:
+            query["round"] = round_specified
         return self.indexer_request("GET", req, query, **kwargs)
 
     def block_info(self, block=None, round=None, **kwargs):
@@ -177,10 +175,10 @@ class IndexerClient:
             block (int, optional): block number
             round (int, optional): alias for block; specify one of these
         """
-        if block:
-            req = "/blocks/" + str(block)
-        else:
-            req = "/blocks/" + str(round)
+        req = "/blocks"
+        round_specified = self.round_specification(block, round)
+        if round_specified is not None:
+            req += str(round_specified)
         return self.indexer_request("GET", req, **kwargs)
 
     def account_info(self, address, block=None, round=None, **kwargs):
@@ -194,10 +192,9 @@ class IndexerClient:
         """
         req = "/accounts/" + address
         query = dict()
-        if block:
-            query["round"] = block
-        elif round:
-            query["round"] = round
+        round_specified = self.round_specification(block, round)
+        if round_specified is not None:
+            query["round"] = round_specified
         return self.indexer_request("GET", req, query, **kwargs)
 
     def search_transactions(
@@ -268,10 +265,9 @@ class IndexerClient:
             query["sig-type"] = sig_type
         if txid:
             query["txid"] = txid
-        if block:
-            query["round"] = block
-        elif round:
-            query["round"] = round
+        round_specified = self.round_specification(block, round)
+        if round_specified is not None:
+            query["round"] = round_specified
         if min_round:
             query["min-round"] = min_round
         if max_round:
@@ -356,10 +352,9 @@ class IndexerClient:
             query["sig-type"] = sig_type
         if txid:
             query["txid"] = txid
-        if block:
-            query["round"] = block
-        elif round:
-            query["round"] = round
+        round_specified = self.round_specification(block, round)
+        if round_specified is not None:
+            query["round"] = round_specified
         if min_round:
             query["min-round"] = min_round
         if max_round:
@@ -443,10 +438,9 @@ class IndexerClient:
             query["sig-type"] = sig_type
         if txid:
             query["txid"] = txid
-        if block:
-            query["round"] = block
-        elif round:
-            query["round"] = round
+        round_specified = self.round_specification(block, round)
+        if round_specified is not None:
+            query["round"] = round_specified
         if min_round:
             query["min-round"] = min_round
         if max_round:
@@ -552,3 +546,11 @@ class IndexerClient:
             query["next"] = next_page
 
         return self.indexer_request("GET", req, query, **kwargs)
+
+    def round_specification(self, block, round):
+        if block is not None and round is not None:
+            raise error.OverspecifiedRoundError
+        elif block is not None:
+            return block
+        else:
+            return round
