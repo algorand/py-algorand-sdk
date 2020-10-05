@@ -169,6 +169,23 @@ class TestTransaction(unittest.TestCase):
 
         self.assertEqual(golden, encoding.msgpack_encode(txn))
 
+    def test_error_empty_receiver_txn(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        receiver = None
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(3, 1, 100, gh)
+        
+        with self.assertRaises(error.ZeroAddressError):
+            transaction.PaymentTxn(address, sp, receiver, 1000)
+    
+    def test_error_empty_receiver_asset_txn(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        receiver = None
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(3, 1, 100, gh)
+        
+        with self.assertRaises(error.ZeroAddressError):
+            transaction.AssetTransferTxn(address, sp, receiver, 1000, 24)
 
     def test_serialize_pay(self):
         mn = (
