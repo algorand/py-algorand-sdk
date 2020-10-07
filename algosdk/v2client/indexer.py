@@ -123,9 +123,7 @@ class IndexerClient:
             query["currency-greater-than"] = min_balance
         if max_balance:
             query["currency-less-than"] = max_balance
-        round_specified = self.round_specification(block, round)
-        if round_specified is not None:
-            query["round"] = round_specified
+        self._round_specification(query, block, round)
         if auth_addr:
             query["auth-addr"] = auth_addr
         if application_id:
@@ -162,9 +160,7 @@ class IndexerClient:
             query["currency-greater-than"] = min_balance
         if max_balance:
             query["currency-less-than"] = max_balance
-        round_specified = self.round_specification(block, round)
-        if round_specified is not None:
-            query["round"] = round_specified
+        self._round_specification(query, block, round)
         return self.indexer_request("GET", req, query, **kwargs)
 
     def block_info(self, block=None, round=None, **kwargs):
@@ -176,9 +172,13 @@ class IndexerClient:
             round (int, optional): alias for block; specify one of these
         """
         req = "/blocks"
-        round_specified = self.round_specification(block, round)
-        if round_specified is not None:
-            req += str(round_specified)
+        if block is not None and round is not None:
+            raise error.OverspecifiedRoundError
+        if block is not None:
+            req += str(block)
+        elif round is not None:
+            req += str(round)
+
         return self.indexer_request("GET", req, **kwargs)
 
     def account_info(self, address, block=None, round=None, **kwargs):
@@ -192,9 +192,8 @@ class IndexerClient:
         """
         req = "/accounts/" + address
         query = dict()
-        round_specified = self.round_specification(block, round)
-        if round_specified is not None:
-            query["round"] = round_specified
+        self._round_specification(query, block, round)
+
         return self.indexer_request("GET", req, query, **kwargs)
 
     def search_transactions(
@@ -265,9 +264,7 @@ class IndexerClient:
             query["sig-type"] = sig_type
         if txid:
             query["txid"] = txid
-        round_specified = self.round_specification(block, round)
-        if round_specified is not None:
-            query["round"] = round_specified
+        self._round_specification(query, block, round)
         if min_round:
             query["min-round"] = min_round
         if max_round:
@@ -352,9 +349,7 @@ class IndexerClient:
             query["sig-type"] = sig_type
         if txid:
             query["txid"] = txid
-        round_specified = self.round_specification(block, round)
-        if round_specified is not None:
-            query["round"] = round_specified
+        self._round_specification(query, block, round)
         if min_round:
             query["min-round"] = min_round
         if max_round:
@@ -438,9 +433,7 @@ class IndexerClient:
             query["sig-type"] = sig_type
         if txid:
             query["txid"] = txid
-        round_specified = self.round_specification(block, round)
-        if round_specified is not None:
-            query["round"] = round_specified
+        self._round_specification(query, block, round)
         if min_round:
             query["min-round"] = min_round
         if max_round:
@@ -547,10 +540,20 @@ class IndexerClient:
 
         return self.indexer_request("GET", req, query, **kwargs)
 
-    def round_specification(self, block, round):
-        if block is not None and round is not None:
+    def _round_specification(self, query, block, round_num):
+        """
+        Set the round number in the query dictionary from either 'block' or 'round'.
+
+        Args:
+            query (dict): dictionary in which to set round
+            block (int): user specified variable
+            round_num (int): user specified variable
+        """
+
+        if block is not None and round_num is not None:
             raise error.OverspecifiedRoundError
         elif block is not None:
-            return block
-        else:
-            return round
+            if block:
+                query["round"] = block
+        elif round_num:
+            query["round"] = round_num

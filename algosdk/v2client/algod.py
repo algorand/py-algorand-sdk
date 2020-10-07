@@ -129,6 +129,8 @@ class AlgodClient:
         """
         query = {"format": response_format}
         req = "/blocks/"
+        if block is not None and round is not None:
+            raise error.OverspecifiedRoundError
         if block is not None:
             req += str(block)
         elif round is not None:
@@ -155,6 +157,8 @@ class AlgodClient:
             round (int, optional): alias for block_num; specify one of these
         """
         req = "/status/wait-for-block-after/"
+        if block_num is not None and round is not None:
+            raise error.OverspecifiedRoundError
         if block_num is not None:
             req += str(block_num)
         elif round is not None:
