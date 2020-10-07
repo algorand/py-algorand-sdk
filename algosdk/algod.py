@@ -9,7 +9,7 @@ from . import encoding
 from . import constants
 from . import transaction
 from . import future
-from v2client.algod import _specify_round_string
+from .v2client.algod import _specify_round_string
 
 api_version_path_prefix = "/v1"
 

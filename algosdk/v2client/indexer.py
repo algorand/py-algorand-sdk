@@ -6,7 +6,7 @@ import base64
 from .. import error
 from .. import encoding
 from .. import constants
-from algod import _specify_round_string
+from .algod import _specify_round_string
 
 api_version_path_prefix = "/v2"
 
