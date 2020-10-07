@@ -232,10 +232,11 @@ class HTLC(Template):
                 "an invalid hash function was provided in the contract")
 
         receiver = encoding.encode_address(bytearrays[0])
+        zero_receiver = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ"
 
         lsig = transaction.LogicSig(contract, [base64.b64decode(preimage)])
         txn = transaction.PaymentTxn(logic.address(
-            contract), sp, None, 0, close_remainder_to=receiver)
+            contract), sp, zero_receiver, 0, close_remainder_to=receiver)
 
         if txn.fee > max_fee:
             raise error.TemplateInputError(

@@ -111,6 +111,12 @@ class WrongContractError(Exception):
                            + contract_type + " contract is needed")
 
 
+class ZeroAddressError(Exception):
+    def __init__(self):
+        Exception.__init__(self, "For the zero address, please specify "
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ")
+        
+
 class TemplateInputError(Exception):
     pass
 
