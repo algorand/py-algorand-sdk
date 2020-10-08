@@ -310,7 +310,6 @@ def _specify_round_string(block, round_num):
     if block is not None and round_num is not None:
         raise error.OverspecifiedRoundError
     elif block is not None:
-        if block:
-            return str(block)
-    elif round_num:
+        return str(block)
+    elif round_num is not None:
         return str(round_num)
