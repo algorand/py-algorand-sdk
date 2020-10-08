@@ -178,7 +178,7 @@ class IndexerClient:
         req = "/blocks/"
         if block is None and round_num is None:
             raise error.UnderspecifiedRoundError
-        req = "/status/wait-for-block-after/" + _specify_round_string(block, round_num)
+        req = "/blocks/" + _specify_round_string(block, round_num)
 
         return self.indexer_request("GET", req, **kwargs)
 
