@@ -111,11 +111,22 @@ class WrongContractError(Exception):
                            + contract_type + " contract is needed")
 
 
+class OverspecifiedRoundError(Exception):
+    def __init__(self, contract_type):
+        Exception.__init__(self, "Two arguments were given for the round "
+                                 "or block number; please only give one")
+
+
+class UnderspecifiedRoundError(Exception):
+    def __init__(self, contract_type):
+        Exception.__init__(self, "Please specify a round number")
+
+
 class ZeroAddressError(Exception):
     def __init__(self):
         Exception.__init__(self, "For the zero address, please specify "
             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ")
-        
+
 
 class TemplateInputError(Exception):
     pass
