@@ -1495,8 +1495,7 @@ class Multisig:
             if subsig.signature is not None:
                 verify_key = VerifyKey(subsig.public_key)
                 try:
-                    verify_key.verify(message,
-                                      base64.b64decode(subsig.signature))
+                    verify_key.verify(message, subsig.signature)
                     verified_count += 1
                 except BadSignatureError:
                     return False
@@ -1724,7 +1723,7 @@ class LogicSig:
         else:
             sig, index = LogicSig.single_sig_multisig(self.logic, private_key,
                                                       multisig)
-            multisig.subsigs[index].signature = sig
+            multisig.subsigs[index].signature = base64.b64decode(sig)
             self.msig = multisig
 
     def append_to_multisig(self, private_key):
@@ -1743,7 +1742,7 @@ class LogicSig:
             raise error.InvalidSecretKeyError
         sig, index = LogicSig.single_sig_multisig(self.logic, private_key,
                                                   self.msig)
-        self.msig.subsigs[index].signature = sig
+        self.msig.subsigs[index].signature = base64.b64decode(sig)
 
     def __eq__(self, other):
         if not isinstance(other, (
@@ -1799,6 +1798,7 @@ class LogicSigTransaction:
         if self.lsig:
             od["lsig"] = self.lsig.dictify()
         od["txn"] = self.transaction.dictify()
+
         return od
 
     @staticmethod
