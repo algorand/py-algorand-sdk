@@ -189,6 +189,40 @@ class TestTransaction(unittest.TestCase):
         encoded = encoding.msgpack_encode(lstx)
         self.assertEquals(encoded, golden)
 
+    def test_serialize_zero_receiver(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        receiver = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(3, 1, 100, gh)
+        txn = transaction.PaymentTxn(address, sp, receiver,
+                                     1000, note=bytes([1, 32, 200]))
+
+        golden = (
+            "iKNhbXTNA+ijZmVlzQPoomZ2AaJnaMQgJgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMe"
+            "K+wRSaQ7dKibHZkpG5vdGXEAwEgyKNzbmTEIP5oQQPnKvM7kbGuuSOunAVfSbJzHQ"
+            "tAtCP3Bf2XdDxmpHR5cGWjcGF5")
+        print(encoding.msgpack_encode(txn))
+
+        self.assertEqual(golden, encoding.msgpack_encode(txn))
+
+    def test_error_empty_receiver_txn(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        receiver = None
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(3, 1, 100, gh)
+        
+        with self.assertRaises(error.ZeroAddressError):
+            transaction.PaymentTxn(address, sp, receiver, 1000)
+    
+    def test_error_empty_receiver_asset_txn(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        receiver = None
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(3, 1, 100, gh)
+        
+        with self.assertRaises(error.ZeroAddressError):
+            transaction.AssetTransferTxn(address, sp, receiver, 1000, 24)
+
     def test_serialize_pay(self):
         mn = (
             "advice pudding treat near rule blouse same whisper inner electric"

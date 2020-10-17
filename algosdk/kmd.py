@@ -87,7 +87,11 @@ class KMDClient:
             dict[]: list of dictionaries containing wallet information
         """
         req = "/wallets"
-        return self.kmd_request("GET", req)["wallets"]
+        res = self.kmd_request("GET", req)
+        if "wallets" in res:
+            return res["wallets"]
+        else:
+            return []
 
     def create_wallet(self, name, pswd, driver_name="sqlite",
                       master_deriv_key=None):
