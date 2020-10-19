@@ -1,6 +1,6 @@
 import base64
 import unittest
-import node_access
+import tokens
 import os
 from algosdk import kmd
 from algosdk.future import transaction
@@ -21,8 +21,8 @@ wallet_pswd = ""
 class TestIntegration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.acl = algod.AlgodClient(node_access.algod_token, node_access.algod_address)
-        cls.kcl = kmd.KMDClient(node_access.kmd_token, node_access.kmd_address)
+        cls.acl = algod.AlgodClient(tokens.algod_token, tokens.algod_address)
+        cls.kcl = kmd.KMDClient(tokens.kmd_token, tokens.kmd_address)
         w = wallet.Wallet(wallet_name, wallet_pswd, cls.kcl)
         keys = w.list_keys()
         max_balance = 0
