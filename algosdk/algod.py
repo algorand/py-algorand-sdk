@@ -9,6 +9,7 @@ from . import encoding
 from . import constants
 from . import transaction
 from . import future
+from .v2client.algod import _specify_round_string
 
 api_version_path_prefix = "/v1"
 
@@ -94,14 +95,19 @@ class AlgodClient:
         req = "/health"
         return self.algod_request("GET", req, **kwargs)
 
-    def status_after_block(self, block_num, **kwargs):
+    def status_after_block(self, block_num=None, round_num=None, **kwargs):
         """
         Return node status immediately after blockNum.
 
         Args:
-            block_num: block number
+            block_num (int, optional): block number
+            round_num (int, optional): alias for block_num; specify one of
+                these
         """
-        req = "/status/wait-for-block-after/" + str(block_num)
+        if block_num is None and round_num is None:
+            raise error.UnderspecifiedRoundError
+        req = "/status/wait-for-block-after/" + _specify_round_string(block_num, round_num)
+        
         return self.algod_request("GET", req, **kwargs)
 
     def pending_transactions(self, max_txns=0, **kwargs):
@@ -303,24 +309,35 @@ class AlgodClient:
         return self.send_raw_transaction(base64.b64encode(
                                          b''.join(serialized)), **kwargs)
 
-    def block_info(self, round, **kwargs):
+    def block_info(self, round=None, round_num=None, **kwargs):
         """
         Return block information.
 
         Args:
-            round (int): block number
+            round (int, optional): block number; deprecated, please use
+                round_num
+            round_num (int, optional): alias for round; specify only one of
+                these
         """
-        req = "/block/" + str(round)
+        if round is None and round_num is None:
+            raise error.UnderspecifiedRoundError
+        req = "/block/" + _specify_round_string(round, round_num)
+        
         return self.algod_request("GET", req, **kwargs)
 
-    def block_raw(self, round, **kwargs):
+    def block_raw(self, round=None, round_num=None, **kwargs):
         """
         Return decoded raw block as the network sees it.
 
         Args:
-            round (int): block number
+            round (int, optional): block number; deprecated, please use
+                round_num
+            round_num (int, optional): alias for round; specify only one of
+                these
         """
-        req = "/block/" + str(round)
+        if round is None and round_num is None:
+            raise error.UnderspecifiedRoundError
+        req = "/block/" + _specify_round_string(round, round_num)
         query = {"raw": 1}
         kwargs['raw_response'] = True
         response = self.algod_request("GET", req, query, **kwargs)
