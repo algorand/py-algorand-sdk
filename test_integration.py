@@ -1,6 +1,6 @@
 import base64
 import unittest
-import tokens
+from examples import tokens
 import os
 from algosdk import kmd
 from algosdk.future import transaction
