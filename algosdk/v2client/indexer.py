@@ -198,6 +198,16 @@ class IndexerClient:
 
         return self.indexer_request("GET", req, query, **kwargs)
 
+    def transaction_by_id(self, txid, **kwargs):
+        """
+        Return transaction information.
+
+        Args:
+            txid (str): transaction ID
+        """
+        req = "/transactions/" + txid
+        return self.indexer_request("GET", req, **kwargs)
+
     def search_transactions(
         self, limit=None, next_page=None, note_prefix=None, txn_type=None,
         sig_type=None, txid=None, block=None, min_round=None, max_round=None,

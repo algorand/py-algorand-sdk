@@ -305,7 +305,7 @@ class AlgodClient:
             dict: loaded from json response body
         """
         req = "/genesis"
-        return self.algod_request("POST", req, **kwargs)
+        return self.algod_request("GET", req, **kwargs)
 
 
 def _specify_round_string(block, round_num):

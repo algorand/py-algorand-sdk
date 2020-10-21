@@ -38,7 +38,7 @@ Follow the instructions in Algorand's [developer resources](https://developer.al
 
 ## Running examples/example.py
 
-Before running [example.py](https://github.com/algorand/py-algorand-sdk/blob/master/examples/example.py), start kmd on a private network or testnet node:
+Before running [example.py](https://github.com/algorand/py-algorand-sdk/blob/develop/examples/example.py), start kmd on a private network or testnet node:
 
 ```
 $ ./goal kmd start -d [data directory]
