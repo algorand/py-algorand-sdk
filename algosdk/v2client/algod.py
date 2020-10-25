@@ -191,7 +191,7 @@ class AlgodClient:
     def wait_for_confirmation(self, transaction_id, timeout):
         """
         Wait until the transaction is confirmed or rejected, or until 'timeout'
-        number of rounds have passed.
+        number of rounds have passed. 
 
         Args:
             transaction_id (str): the transaction to wait for
@@ -200,6 +200,9 @@ class AlgodClient:
         Returns:
             dict: pending transaction information, or None if the transaction
                 is not confirmed or rejected in the next timeout rounds
+
+        Raises:
+            AlgodHTTPError: if the transaction is not found
         """
         start_round = self.status()["next-version-round"]
         current_round = start_round
