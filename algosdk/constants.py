@@ -28,6 +28,7 @@ assettransfer_txn = "axfer"
 appcall_txn = "appl"
 """str: indicates an app call transaction, allows creating, deleting, and interacting with an application"""
 
+
 # note field types
 note_field_type_deposit = "d"
 """str: indicates a signed deposit in NoteField"""
@@ -37,6 +38,7 @@ note_field_type_settlement = "s"
 """str: indicates a signed settlement in NoteField"""
 note_field_type_params = "p"
 """str: indicates signed params in NoteField"""
+
 
 # prefixes
 txid_prefix = b"TX"
