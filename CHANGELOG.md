@@ -1,4 +1,10 @@
 # Changelog
+
+## 1.4.1
+## Bugfix
+- Dependency on missing constant removed
+- Logic multisig signing fixed
+
 ## 1.4.0
 ## Added
 - Support for Applications 
