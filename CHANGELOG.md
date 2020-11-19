@@ -4,6 +4,14 @@
 ## Bugfix
 - Dependency on missing constant removed
 - Logic multisig signing fixed
+- kmd.sign_transaction now works with application txn
+- check for empty result in list_wallets
+- handle zero receiver in transactions
+- add init file for testing
+
+## Changed
+- examples moved out of README into examples folder
+- add optional 'round_num' arguments to standardize 'round_num', 'round', and 'block'
 
 ## 1.4.0
 ## Added
