@@ -1,20 +1,18 @@
-# Example of accesing a remote API with a custom token key.
-#
+# Example: accesing a remote API with a custom token key.
+
 # In this case, the API is expecting the key "X-API-Key" instead of the
 # default "X-Algo-API-Token". This is done by using a dict with our custom
 # key, instead of a string, as the token.
 
+import tokens
 from algosdk import algod
 
-algod_address = "https://......"
-algod_token = ""
 headers = {
    "X-API-Key": "#######",
 }
 
-
 def main():
-    algod_client = algod.AlgodClient(algod_token, algod_address, headers)
+    algod_client = algod.AlgodClient(tokens.algod_token, tokens.algod_address, headers)
 
     try:
         status = algod_client.status()
@@ -34,6 +32,5 @@ def main():
     print("####################")
     block = algod_client.block_info(last_round)
     print(block)
-
 
 main()

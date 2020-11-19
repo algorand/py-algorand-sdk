@@ -117,17 +117,20 @@ class AlgodClient:
             **kwargs)
         return res
 
-    def block_info(self, block, response_format="json", **kwargs):
+    def block_info(self, block=None, response_format="json", round_num=None, **kwargs):
         """
         Get the block for the given round.
 
         Args:
             block (int): block number
-            response_format (str): the format in which the response is returned: either
-                "json" or "msgpack"
+            response_format (str): the format in which the response is 
+                returned: either "json" or "msgpack"
+            round_num (int, optional): alias for block; specify one of these
         """
         query = {"format": response_format}
-        req = "/blocks/" + str(block)
+        if block is None and round_num is None:
+            raise error.UnderspecifiedRoundError
+        req = "/blocks/" + _specify_round_string(block, round_num)
         res = self.algod_request("GET", req, query, response_format=response_format, **kwargs)
         return res
 
@@ -141,14 +144,18 @@ class AlgodClient:
         req = "/status"
         return self.algod_request("GET", req, **kwargs)
 
-    def status_after_block(self, block_num, **kwargs):
+    def status_after_block(self, block_num=None, round_num=None, **kwargs):
         """
         Return node status immediately after blockNum.
 
         Args:
             block_num: block number
+            round_num (int, optional): alias for block_num; specify one of
+                these
         """
-        req = "/status/wait-for-block-after/" + str(block_num)
+        if block_num is None and round_num is None:
+            raise error.UnderspecifiedRoundError
+        req = "/status/wait-for-block-after/" + _specify_round_string(block_num, round_num)
         return self.algod_request("GET", req, **kwargs)
 
     def send_transaction(self, txn, **kwargs):
@@ -266,7 +273,8 @@ class AlgodClient:
             request_header (dict, optional): additional header for request
 
         Returns:
-            bytes: compilation result
+            dict: loaded from json response body. "result" property contains compiled bytes, "hash" - program hash (escrow address)
+
         """
         req = "/teal/compile"
         headers = { 'Content-Type': 'application/x-binary' }
@@ -281,10 +289,27 @@ class AlgodClient:
             request_header (dict, optional): additional header for request
 
         Returns:
-            bytes: compilation result
+            dict: loaded from json response body
         """
         req = "/teal/dryrun"
         headers = { 'Content-Type': 'application/msgpack' }
         data = encoding.msgpack_encode(drr)
         data = base64.b64decode(data)
         return self.algod_request("POST", req, data=data, headers=headers, **kwargs)
+
+
+def _specify_round_string(block, round_num):
+    """
+    Return the round number specified in either 'block' or 'round_num'.
+
+    Args:
+        block (int): user specified variable
+        round_num (int): user specified variable
+    """
+
+    if block is not None and round_num is not None:
+        raise error.OverspecifiedRoundError
+    elif block is not None:
+        return str(block)
+    elif round_num is not None:
+        return str(round_num)

@@ -87,7 +87,11 @@ class KMDClient:
             dict[]: list of dictionaries containing wallet information
         """
         req = "/wallets"
-        return self.kmd_request("GET", req)["wallets"]
+        res = self.kmd_request("GET", req)
+        if "wallets" in res:
+            return res["wallets"]
+        else:
+            return []
 
     def create_wallet(self, name, pswd, driver_name="sqlite",
                       master_deriv_key=None):
@@ -337,7 +341,7 @@ class KMDClient:
             query["public_key"] = signing_address
         result = self.kmd_request("POST", req, data=query)
         result = result["signed_transaction"]
-        return encoding.msgpack_decode(result)
+        return encoding.future_msgpack_decode(result)
 
     def list_multisig(self, handle):
         """
@@ -450,6 +454,6 @@ class KMDClient:
             "partial_multisig": partial
         }
         result = self.kmd_request("POST", req, data=query)["multisig"]
-        msig = encoding.msgpack_decode(result)
+        msig = encoding.future_msgpack_decode(result)
         mtx.multisig = msig
         return mtx

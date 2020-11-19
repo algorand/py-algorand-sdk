@@ -265,7 +265,11 @@ class PaymentTxn(Transaction):
                  lease=None, rekey_to=None):
         Transaction.__init__(self, sender, sp, note,
                              lease, constants.payment_txn, rekey_to)
-        self.receiver = receiver
+        if receiver:
+            self.receiver = receiver
+        else:
+            raise error.ZeroAddressError
+
         self.amt = amt
         if (not isinstance(self.amt, int)) or self.amt < 0:
             raise error.WrongAmountType
@@ -282,7 +286,9 @@ class PaymentTxn(Transaction):
             d["amt"] = self.amt
         if self.close_remainder_to:
             d["close"] = encoding.decode_address(self.close_remainder_to)
-        if self.receiver:
+
+        decoded_receiver = encoding.decode_address(self.receiver)
+        if any(decoded_receiver):
             d["rcv"] = encoding.decode_address(self.receiver)
 
         d.update(super(PaymentTxn, self).dictify())
@@ -765,7 +771,10 @@ class AssetTransferTxn(Transaction):
                  lease=None, rekey_to=None):
         Transaction.__init__(self, sender, sp, note,
                              lease, constants.assettransfer_txn, rekey_to)
-        self.receiver = receiver
+        if receiver:
+            self.receiver = receiver
+        else:
+            raise error.ZeroAddressError
         self.amount = amt
         if (not isinstance(self.amount, int)) or self.amount < 0:
             raise error.WrongAmountType
@@ -785,7 +794,9 @@ class AssetTransferTxn(Transaction):
             d["aamt"] = self.amount
         if self.close_assets_to:
             d["aclose"] = encoding.decode_address(self.close_assets_to)
-        if self.receiver:
+
+        decoded_receiver = encoding.decode_address(self.receiver)
+        if any(decoded_receiver):
             d["arcv"] = encoding.decode_address(self.receiver)
         if self.revocation_target:
             d["asnd"] = encoding.decode_address(self.revocation_target)
@@ -990,8 +1001,8 @@ class ApplicationCallTxn(Transaction):
         args = {
             "index": d["apid"] if "apid" in d else None,
             "on_complete": d["apan"] if "apan" in d else None,
-            "local_schema": StateSchema.undictify(d["apls"]) if "apls" in d else None,
-            "global_schema": StateSchema.undictify(d["apgs"]) if "apgs" in d else None,
+            "local_schema": StateSchema(**StateSchema.undictify(d["apls"])) if "apls" in d else None,
+            "global_schema": StateSchema(**StateSchema.undictify(d["apgs"])) if "apgs" in d else None,
             "approval_program": d["apap"] if "apap" in d else None,
             "clear_program": d["apsu"] if "apsu" in d else None,
             "app_args": d["apaa"] if "apaa" in d else None,
@@ -1495,8 +1506,7 @@ class Multisig:
             if subsig.signature is not None:
                 verify_key = VerifyKey(subsig.public_key)
                 try:
-                    verify_key.verify(message,
-                                      base64.b64decode(subsig.signature))
+                    verify_key.verify(message, subsig.signature)
                     verified_count += 1
                 except BadSignatureError:
                     return False
@@ -1724,7 +1734,7 @@ class LogicSig:
         else:
             sig, index = LogicSig.single_sig_multisig(self.logic, private_key,
                                                       multisig)
-            multisig.subsigs[index].signature = sig
+            multisig.subsigs[index].signature = base64.b64decode(sig)
             self.msig = multisig
 
     def append_to_multisig(self, private_key):
@@ -1743,7 +1753,7 @@ class LogicSig:
             raise error.InvalidSecretKeyError
         sig, index = LogicSig.single_sig_multisig(self.logic, private_key,
                                                   self.msig)
-        self.msig.subsigs[index].signature = sig
+        self.msig.subsigs[index].signature = base64.b64decode(sig)
 
     def __eq__(self, other):
         if not isinstance(other, (
@@ -1799,6 +1809,7 @@ class LogicSigTransaction:
         if self.lsig:
             od["lsig"] = self.lsig.dictify()
         od["txn"] = self.transaction.dictify()
+
         return od
 
     @staticmethod

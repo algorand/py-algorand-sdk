@@ -153,6 +153,76 @@ class TestTransaction(unittest.TestCase):
         re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
         self.assertEqual(enc, re_enc)
 
+    def test_sign_logic_multisig(self):
+        program = b"\x01\x20\x01\x01\x22" 
+        lsig = transaction.LogicSig(program)
+        passphrase = "sight garment riot tattoo tortoise identify left talk sea ill walnut leg robot myth toe perfect rifle dizzy spend april build legend brother above hospital"
+        sk = mnemonic.to_private_key(passphrase)
+        addr = account.address_from_private_key(sk)
+
+        passphrase2 = "sentence spoil search picnic civil quote question express uniform laundry visit wisdom level domain pigeon pattern search animal upper joke fiscal latin they ability stove"
+        sk2 = mnemonic.to_private_key(passphrase2)
+        addr2 = account.address_from_private_key(sk2)
+
+        msig = transaction.Multisig(1, 2, [addr, addr2])
+        lsig.sign(sk, msig)
+        lsig.append_to_multisig(sk2)    
+
+        receiver = "DOMUC6VGZH7SSY5V332JR5HRLZSOJDWNPBI4OI2IIBU6A3PFLOBOXZ3KFY"
+        gh = "zNQES/4IqimxRif40xYvzBBIYCZSbYvNSRIzVIh4swo="
+
+        params = transaction.SuggestedParams(0, 447, 1447, gh, gen="network-v1")
+        txn = transaction.PaymentTxn(msig.address(), params, receiver, 1000000)
+        lstx = transaction.LogicSigTransaction(txn, lsig)
+
+        golden = (
+            "gqRsc2lngqFsxAUBIAEBIqRtc2lng6ZzdWJzaWeSgqJwa8QgeUdQSBmJmLH5xdID"
+            "nkf+V3AQH6usPifhfJVwnJ7d7nOhc8RAuP0Ms22j1xXTcXYOivDMztXm7vY2uBi8"
+            "vJCDlpWhVxLoEDKhqmqEbT7SfvCrS2aNXPiJUSZ7cNMyUdytOpFdD4KicGvEILxI"
+            "bwe4gu5YCR4TLASEBpTJ25cdJZqxMqhkgMHQqr61oXPEQGOeeZZ1FAJjJ65N5Asj"
+            "i1bK+Q2LZblC77u7NYcw4gPAig8rRUKJYNQtiKVVJQ53A8ufQkn9dZ6uybbaIPxu"
+            "bQejdGhyAqF2AaN0eG6Jo2FtdM4AD0JAo2ZlZc0D6KJmds0Bv6NnZW6qbmV0d29y"
+            "ay12MaJnaMQgzNQES/4IqimxRif40xYvzBBIYCZSbYvNSRIzVIh4swqibHbNBaej"
+            "cmN2xCAbmUF6psn/KWO13vSY9PFeZOSOzXhRxyNIQGngbeVbgqNzbmTEIIytL7Xv"
+            "2XuuO6mS+3IetwlKVPM0qdKBIiMVdhzAOMPKpHR5cGWjcGF5")
+
+        encoded = encoding.msgpack_encode(lstx)
+        self.assertEquals(encoded, golden)
+
+    def test_serialize_zero_receiver(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        receiver = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(3, 1, 100, gh)
+        txn = transaction.PaymentTxn(address, sp, receiver,
+                                     1000, note=bytes([1, 32, 200]))
+
+        golden = (
+            "iKNhbXTNA+ijZmVlzQPoomZ2AaJnaMQgJgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMe"
+            "K+wRSaQ7dKibHZkpG5vdGXEAwEgyKNzbmTEIP5oQQPnKvM7kbGuuSOunAVfSbJzHQ"
+            "tAtCP3Bf2XdDxmpHR5cGWjcGF5")
+        print(encoding.msgpack_encode(txn))
+
+        self.assertEqual(golden, encoding.msgpack_encode(txn))
+
+    def test_error_empty_receiver_txn(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        receiver = None
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(3, 1, 100, gh)
+        
+        with self.assertRaises(error.ZeroAddressError):
+            transaction.PaymentTxn(address, sp, receiver, 1000)
+    
+    def test_error_empty_receiver_asset_txn(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        receiver = None
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(3, 1, 100, gh)
+        
+        with self.assertRaises(error.ZeroAddressError):
+            transaction.AssetTransferTxn(address, sp, receiver, 1000, 24)
+
     def test_serialize_pay(self):
         mn = (
             "advice pudding treat near rule blouse same whisper inner electric"
@@ -1430,7 +1500,6 @@ class TestTemplate(unittest.TestCase):
             "xECMSEDEHKBIQMQkpEhAxCCQSEDECJRIQMQQhBBIQMQYqEhCjc2lnxEAhLNdfdDp9"
             "Wbi0YwsEQCpP7TVHbHG7y41F4MoESNW/vL1guS+5Wj4f5V9fmM63/VKTSMFidHOSw"
             "m5o+pbV5lYH")
-
         self.assertEqual(golden_txn, encoding.msgpack_encode(txn))
         self.assertEqual(golden_lsig, encoding.msgpack_encode(lsig))
 
@@ -1458,6 +1527,7 @@ class TestTemplate(unittest.TestCase):
             "tSx+j1ncoSt3SABJtkGmjcmN2xCD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJclW"
             "lfaiE6NzbmTEIIU9h0wnKapwajF0N7K4zy3orGLF+rQ8kLIk/vW6FhPvpHR5cGWjc"
             "GF5")
+
         actual = (base64.b64decode(encoding.msgpack_encode(txns[0])) +
                   base64.b64decode(encoding.msgpack_encode(txns[1])))
         self.assertEqual(golden_txns, base64.b64encode(actual).decode())
