@@ -497,7 +497,7 @@ class AssetConfigTxn(Transaction):
         if strict_empty_address_check:
             if not (manager and reserve and freeze and clawback):
                 raise error.EmptyAddressError
-        self.index = index
+        self.index = int(index)
         self.total = total
         self.default_frozen = default_frozen
         self.unit_name = unit_name
@@ -953,7 +953,7 @@ class ApplicationCallTxn(Transaction):
                  note=None, lease=None, rekey_to=None):
         Transaction.__init__(self, sender, sp, note,
                              lease, constants.appcall_txn, rekey_to)
-        self.index = index
+        self.index = int(index)
         self.on_complete = on_complete
         self.local_schema = local_schema
         self.global_schema = global_schema
