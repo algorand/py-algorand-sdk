@@ -969,7 +969,6 @@ class ApplicationCallTxn(Transaction):
             self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
 
-
     @staticmethod
     def bytes_list(lst):
         def as_bytes(e):
@@ -977,7 +976,10 @@ class ApplicationCallTxn(Transaction):
                 return e
             if isinstance(e, str):
                 return e.encode()
-            assert False, f"{e} is neither bytes nor str"
+            if isinstance(e, int):
+                # Uses 8 bytes, big endian to match TEAL's btoi
+                return e.to_bytes(8, "big")  # raises for negative or too big
+            assert False, f"{e} is not bytes, str, or int"
 
         if not lst:
             return lst
@@ -1061,7 +1063,7 @@ class ApplicationCreateTxn(ApplicationCallTxn):
         approval_program (bytes): the compiled TEAL that approves a transaction
         clear_program (bytes): the compiled TEAL that runs when clearing state
         global_schema (StateSchema): restricts the number of ints and byte slices in the global state
-        local_schema (StateSchema): restructs the number of ints and byte slices in the per-user local state
+        local_schema (StateSchema): restricts the number of ints and byte slices in the per-user local state
         app_args(list[bytes], optional): any additional arguments to the application
         accounts(list[str], optional): any additional accounts to supply to the application
         foreign_apps(list[int], optional): any other apps used by the application, identified by app index
