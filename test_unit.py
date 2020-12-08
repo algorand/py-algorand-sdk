@@ -8,7 +8,6 @@ from algosdk.future import transaction
 from algosdk import encoding
 from algosdk import account
 from algosdk import mnemonic
-from algosdk import wordlist
 from algosdk import error
 from algosdk import constants
 from algosdk import util
@@ -771,6 +770,9 @@ class TestApplicationTransactions(unittest.TestCase):
 
 
 class TestMnemonic(unittest.TestCase):
+    zero_bytes = bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
     def test_mnemonic_private_key(self):
         priv_key, _ = account.generate_account()
         mn = mnemonic.from_private_key(priv_key)
@@ -778,17 +780,45 @@ class TestMnemonic(unittest.TestCase):
         self.assertEqual(priv_key, mnemonic.to_private_key(mn))
 
     def test_zero_mnemonic(self):
-        zero_bytes = bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
         expected_mnemonic = (
             "abandon abandon abandon abandon abandon abandon abandon abandon "
             "abandon abandon abandon abandon abandon abandon abandon abandon "
             "abandon abandon abandon abandon abandon abandon abandon abandon "
             "invest")
-        result = mnemonic._from_key(zero_bytes)
+        result = mnemonic._from_key(self.zero_bytes)
         self.assertEqual(expected_mnemonic, result)
         result = mnemonic._to_key(result)
-        self.assertEqual(zero_bytes, result)
+        self.assertEqual(self.zero_bytes, result)
+
+    def test_whitespace_irrelevance(self):
+        padded = """
+        abandon abandon abandon abandon abandon abandon abandon abandon
+        abandon abandon abandon abandon abandon abandon abandon abandon
+        abandon abandon abandon abandon abandon abandon abandon abandon
+        invest
+        """
+        result = mnemonic._to_key(padded)
+        self.assertEqual(self.zero_bytes, result)
+
+    def test_case_irrelevance(self):
+        padded = """
+        abandon ABANDON abandon abandon abandon abandon abandon abandon
+        abandon abandon abandon abandon abandon abandon abandon abandon
+        abandon abandon abandon abandon abandon abandon abandon abandon
+        invEST
+        """
+        result = mnemonic._to_key(padded)
+        self.assertEqual(self.zero_bytes, result)
+
+    def test_short_words(self):
+        padded = """
+        aban abandon abandon abandon abandon abandon abandon abandon
+        aban abandon abandon abandon abandon abandon abandon abandon
+        aban abandon abandon abandon abandon abandon abandon abandon
+        inve
+        """
+        result = mnemonic._to_key(padded)
+        self.assertEqual(self.zero_bytes, result)
 
     def test_wrong_checksum(self):
         mn = (
@@ -804,11 +834,7 @@ class TestMnemonic(unittest.TestCase):
             "abandon abandon abandon abandon abandon abandon abandon abandon "
             "abandon abandon abandon venues abandon abandon abandon abandon "
             "invest")
-        self.assertRaises(ValueError, mnemonic._to_key, mn)
-
-    def test_wordlist(self):
-        result = mnemonic._checksum(bytes(wordlist.word_list_raw(), "utf-8"))
-        self.assertEqual(result, "venue")
+        self.assertRaises(KeyError, mnemonic._to_key, mn)
 
     def test_mnemonic_wrong_len(self):
         mn = "abandon abandon abandon"

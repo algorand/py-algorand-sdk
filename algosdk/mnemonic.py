@@ -6,7 +6,17 @@ from . import constants
 from . import encoding
 
 
-word_list = wordlist.word_list_raw().split("\n")
+word_to_index = {}
+index_to_word = {}
+for i, word in enumerate(wordlist.word_list_raw().split("\n")):
+    index_to_word[i] = word
+    # Put all prefixes of words at least four letters long into map,
+    # since they are guarenteed unique, so some people may only save
+    # that part, and expect to be able to recover.
+    for length in range(4, len(word)):
+        assert word[:length] not in word_to_index
+        word_to_index[word[:length]] = i
+    word_to_index[word] = i     # in case word is less than four letters long
 
 
 def from_master_derivation_key(key):
@@ -94,10 +104,10 @@ def _from_key(key):
     """
     if not len(key) == constants.key_len_bytes:
         raise error.WrongKeyBytesLengthError
-    chksum = _checksum(key)
+    chkword = index_to_word[_checksum(key)]
     nums = _to_11_bit(key)
     words = _apply_words(nums)
-    return " ".join(words) + " " + chksum
+    return " ".join(words) + " " + chkword
 
 
 def _to_key(mnemonic):
@@ -110,10 +120,10 @@ def _to_key(mnemonic):
     Returns:
         bytes: key
     """
-    mnemonic = mnemonic.split(" ")
+    mnemonic = mnemonic.lower().split()
     if not len(mnemonic) == constants.mnemonic_len:
         raise error.WrongMnemonicLengthError
-    m_checksum = mnemonic[-1]
+    m_checksum = word_to_index[mnemonic[-1]]
     mnemonic = _from_words(mnemonic[:-1])
     m_bytes = _to_bytes(mnemonic)
     if not m_bytes[-1:len(m_bytes)] == b'\x00':
@@ -133,12 +143,12 @@ def _checksum(data):
         data (bytes): data to compute checksum of
 
     Returns:
-        bytes: checksum
+        int: checksum
     """
     chksum = encoding.checksum(data)
     temp = chksum[0:2]
     nums = _to_11_bit(temp)
-    return _apply_words(nums)[0]
+    return nums[0]
 
 
 def _apply_words(nums):
@@ -151,10 +161,7 @@ def _apply_words(nums):
     Returns:
         str[]: list of words
     """
-    words = []
-    for n in nums:
-        words.append(word_list[n])
-    return words
+    return [index_to_word[n] for n in nums]
 
 
 def _from_words(words):
@@ -167,10 +174,7 @@ def _from_words(words):
     Returns:
         int[]: list of 11-bit numbers
     """
-    nums = []
-    for w in words:
-        nums.append(word_list.index(w))
-    return nums
+    return [word_to_index[w] for w in words]
 
 
 def _to_11_bit(data):
