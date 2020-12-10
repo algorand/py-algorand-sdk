@@ -12,6 +12,7 @@ from algosdk import error
 from algosdk import constants
 from algosdk import util
 from algosdk import logic
+from algosdk import wordlist
 from algosdk.future import template
 from algosdk.testing import dryrun
 
@@ -834,7 +835,21 @@ class TestMnemonic(unittest.TestCase):
             "abandon abandon abandon abandon abandon abandon abandon abandon "
             "abandon abandon abandon venues abandon abandon abandon abandon "
             "invest")
-        self.assertRaises(KeyError, mnemonic._to_key, mn)
+        self.assertRaises(ValueError, mnemonic._to_key, mn)
+        mn = (
+            "abandon abandon abandon abandon abandon abandon abandon abandon "
+            "abandon abandon abandon abandon abandon abandon abandon abandon "
+            "abandon abandon abandon abandon abandon abandon abandon abandon "
+            "x-ray")
+        self.assertRaises(ValueError, mnemonic._to_key, mn)
+
+    def test_wordlist_integrity(self):
+        """This isn't a test of _checksum, it reminds us not to change the
+        wordlist.
+
+        """
+        result = mnemonic._checksum(bytes(wordlist.word_list_raw(), "utf-8"))
+        self.assertEqual(result, 1939)
 
     def test_mnemonic_wrong_len(self):
         mn = "abandon abandon abandon"

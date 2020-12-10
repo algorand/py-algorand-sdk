@@ -123,8 +123,11 @@ def _to_key(mnemonic):
     mnemonic = mnemonic.lower().split()
     if not len(mnemonic) == constants.mnemonic_len:
         raise error.WrongMnemonicLengthError
-    m_checksum = word_to_index[mnemonic[-1]]
-    mnemonic = _from_words(mnemonic[:-1])
+    try:
+        m_checksum = word_to_index[mnemonic[-1]]
+        mnemonic = _from_words(mnemonic[:-1])
+    except KeyError:            # We used to return ValueError, so keep it
+        raise ValueError(mnemonic)
     m_bytes = _to_bytes(mnemonic)
     if not m_bytes[-1:len(m_bytes)] == b'\x00':
         raise error.WrongChecksumError

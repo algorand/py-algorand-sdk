@@ -225,6 +225,9 @@ class Transaction:
                 self.type == other.type and
                 self.rekey_to == other.rekey_to)
 
+    def __repr__(self):
+        return repr(self.dictify())
+
 
 class PaymentTxn(Transaction):
     """
