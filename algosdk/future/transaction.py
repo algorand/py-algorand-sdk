@@ -61,7 +61,7 @@ class Transaction:
         self.last_valid_round = sp.last
         self.note = note
         if self.note is not None:
-            if not isinstance(self.note, bytes):
+            if not isinstance(self.note, (bytes, bytearray)):
                 raise error.WrongNoteType
             if len(self.note) > constants.note_max_length:
                 raise error.WrongNoteLength
@@ -1154,7 +1154,7 @@ class ApplicationCallTxn(Transaction):
     @staticmethod
     def bytes_list(lst):
         def as_bytes(e):
-            if isinstance(e, bytes):
+            if isinstance(e, (bytes, bytearray)):
                 return e
             if isinstance(e, str):
                 return e.encode()
