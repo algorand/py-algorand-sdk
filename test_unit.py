@@ -18,7 +18,8 @@ from algosdk.testing import dryrun
 
 from nacl.signing import SigningKey
 
-class TestTransaction(unittest.TestCase):
+
+class TestPaymentTransaction(unittest.TestCase):
     def test_min_txn_fee(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
@@ -201,7 +202,6 @@ class TestTransaction(unittest.TestCase):
             "iKNhbXTNA+ijZmVlzQPoomZ2AaJnaMQgJgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMe"
             "K+wRSaQ7dKibHZkpG5vdGXEAwEgyKNzbmTEIP5oQQPnKvM7kbGuuSOunAVfSbJzHQ"
             "tAtCP3Bf2XdDxmpHR5cGWjcGF5")
-        print(encoding.msgpack_encode(txn))
 
         self.assertEqual(golden, encoding.msgpack_encode(txn))
 
@@ -210,16 +210,16 @@ class TestTransaction(unittest.TestCase):
         receiver = None
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         sp = transaction.SuggestedParams(3, 1, 100, gh)
-        
+
         with self.assertRaises(error.ZeroAddressError):
             transaction.PaymentTxn(address, sp, receiver, 1000)
-    
+
     def test_error_empty_receiver_asset_txn(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         receiver = None
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         sp = transaction.SuggestedParams(3, 1, 100, gh)
-        
+
         with self.assertRaises(error.ZeroAddressError):
             transaction.AssetTransferTxn(address, sp, receiver, 1000, 24)
 
@@ -711,6 +711,63 @@ class TestTransaction(unittest.TestCase):
 
         txns = transaction.assign_group_id([tx1, tx2], address="NONEXISTENT")
         self.assertEqual(len(txns), 0)
+
+
+class TestApplicationTransactions(unittest.TestCase):
+    sender = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+    genesis = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+    schema = transaction.StateSchema(1, 1)
+
+    def test_application_call(self):
+        params = transaction.SuggestedParams(0, 1, 100, self.genesis)
+        for oc in transaction.OnComplete:
+            b = transaction.ApplicationCallTxn(self.sender, params, 10, oc,
+                                               app_args=[b"hello"])
+            s = transaction.ApplicationCallTxn(self.sender, params, "10", oc,
+                                               app_args=["hello"])
+            self.assertEqual(b, s) # string is encoded same as corresponding bytes
+            transaction.ApplicationCallTxn(self.sender, params, 10, oc,
+                                           app_args=[2,3,0]) # ints work
+            with self.assertRaises(AssertionError):
+                transaction.ApplicationCallTxn(self.sender, params, 10, oc,
+                                               app_args=[3.4]) # floats don't
+            with self.assertRaises(OverflowError):
+                transaction.ApplicationCallTxn(self.sender, params, 10, oc,
+                                               app_args=[-10]) # nor negative
+            transaction.ApplicationCallTxn(self.sender, params, 10, oc, # maxuint64
+                                           app_args=[18446744073709551615])
+            with self.assertRaises(OverflowError):
+                transaction.ApplicationCallTxn(self.sender, params, 10, oc, # too big
+                                               app_args=[18446744073709551616])
+
+            i = transaction.ApplicationCallTxn(self.sender, params, 10, oc,
+                                               foreign_apps=[4, 3],
+                                               foreign_assets=(2,1))
+            s = transaction.ApplicationCallTxn(self.sender, params, "10", oc,
+                                               foreign_apps=["4", 3],
+                                               foreign_assets=[2, "1"])
+            self.assertEqual(i, s) # string is encoded same as corresponding int
+
+    def test_application_create(self):
+        empty = b""
+        params = transaction.SuggestedParams(0, 1, 100, self.genesis)
+        for oc in transaction.OnComplete:
+            transaction.ApplicationCreateTxn(self.sender, params, oc,
+                                             empty, empty,
+                                             self.schema, self.schema)
+
+    def test_application_update(self):
+        empty = b""
+        params = transaction.SuggestedParams(0, 1, 100, self.genesis)
+        i = transaction.ApplicationUpdateTxn(self.sender, params, 10, empty, empty)
+        s = transaction.ApplicationUpdateTxn(self.sender, params, "10", empty, empty)
+        self.assertEqual(i, s) # int and string encoded same
+
+    def test_application_delete(self):
+        params = transaction.SuggestedParams(0, 1, 100, self.genesis)
+        i = transaction.ApplicationDeleteTxn(self.sender, params, 10)
+        s = transaction.ApplicationDeleteTxn(self.sender, params, "10")
+        self.assertEqual(i, s) # int and string encoded same
 
 
 class TestMnemonic(unittest.TestCase):
@@ -2025,7 +2082,8 @@ class TestDryrun(dryrun.DryrunTestCaseMixin, unittest.TestCase):
 
 if __name__ == "__main__":
     to_run = [
-        TestTransaction,
+        TestPaymentTransaction,
+        TestApplicationTransactions,
         TestMnemonic,
         TestAddress,
         TestMultisig,

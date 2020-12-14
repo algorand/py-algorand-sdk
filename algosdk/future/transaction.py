@@ -959,15 +959,37 @@ class ApplicationCallTxn(Transaction):
         self.global_schema = global_schema
         self.approval_program = approval_program
         self.clear_program = clear_program
-        self.app_args = app_args
+        self.app_args = self.bytes_list(app_args)
         self.accounts = accounts
-        self.foreign_apps = foreign_apps
-        self.foreign_assets = foreign_assets
+        self.foreign_apps = self.int_list(foreign_apps)
+        self.foreign_assets = self.int_list(foreign_assets)
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
             self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
+
+    @staticmethod
+    def bytes_list(lst):
+        def as_bytes(e):
+            if isinstance(e, bytes):
+                return e
+            if isinstance(e, str):
+                return e.encode()
+            if isinstance(e, int):
+                # Uses 8 bytes, big endian to match TEAL's btoi
+                return e.to_bytes(8, "big")  # raises for negative or too big
+            assert False, f"{e} is not bytes, str, or int"
+
+        if not lst:
+            return lst
+        return [as_bytes(elt) for elt in lst]
+
+    @staticmethod
+    def int_list(lst):
+        if not lst:
+            return lst
+        return [int(elt) for elt in lst]
 
     def dictify(self):
         d = dict()
@@ -1041,7 +1063,7 @@ class ApplicationCreateTxn(ApplicationCallTxn):
         approval_program (bytes): the compiled TEAL that approves a transaction
         clear_program (bytes): the compiled TEAL that runs when clearing state
         global_schema (StateSchema): restricts the number of ints and byte slices in the global state
-        local_schema (StateSchema): restructs the number of ints and byte slices in the per-user local state
+        local_schema (StateSchema): restricts the number of ints and byte slices in the per-user local state
         app_args(list[bytes], optional): any additional arguments to the application
         accounts(list[str], optional): any additional accounts to supply to the application
         foreign_apps(list[int], optional): any other apps used by the application, identified by app index
