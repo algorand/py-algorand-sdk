@@ -519,7 +519,7 @@ class AssetConfigTxn(Transaction):
                 raise error.EmptyAddressError
         self.index = self.creatable_index(index)
         self.total = int(total) if total else None
-        self.default_frozen = default_frozen
+        self.default_frozen = bool(default_frozen)
         self.unit_name = unit_name
         self.asset_name = asset_name
         self.manager = manager
@@ -646,8 +646,7 @@ class AssetConfigTxn(Transaction):
         return (super(AssetConfigTxn, self).__eq__(other) and
                 self.index == other.index and
                 self.total == other.total and
-                # coerce default_frozen so that None == False
-                bool(self.default_frozen) == bool(other.default_frozen) and
+                self.default_frozen == other.default_frozen and
                 self.unit_name == other.unit_name and
                 self.asset_name == other.asset_name and
                 self.manager == other.manager and
@@ -1137,10 +1136,10 @@ class ApplicationCallTxn(Transaction):
             assert isinstance(global_schema, StateSchema)
         self.global_schema = global_schema
         if approval_program is not None:
-            assert isinstance(approval_program, bytes)
+            assert isinstance(approval_program, (bytes, bytearray))
         self.approval_program = approval_program
         if clear_program is not None:
-            assert isinstance(clear_program, bytes)
+            assert isinstance(clear_program, (bytes, bytearray))
         self.clear_program = clear_program
         self.app_args = self.bytes_list(app_args)
         self.accounts = accounts
