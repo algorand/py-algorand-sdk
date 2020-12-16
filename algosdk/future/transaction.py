@@ -61,7 +61,7 @@ class Transaction:
         self.last_valid_round = sp.last
         self.note = note
         if self.note is not None:
-            if not isinstance(self.note, bytes):
+            if not isinstance(self.note, (bytes, bytearray)):
                 raise error.WrongNoteType
             if len(self.note) > constants.note_max_length:
                 raise error.WrongNoteLength
@@ -224,6 +224,32 @@ class Transaction:
                 self.lease == other.lease and
                 self.type == other.type and
                 self.rekey_to == other.rekey_to)
+
+    @staticmethod
+    def required(arg):
+        if not arg:
+            raise ValueError(f"{arg} supplied as a required argument")
+        return arg
+
+    @staticmethod
+    def creatable_index(index, required=False):
+        """Coerce an index for apps or assets to an integer.
+
+        By using this in all constructors, we allow callers to use
+        strings as indexes, check our convenience Txn types to ensure
+        index is set, and ensure that 0 is always used internally for
+        an unset id, not None, so __eq__ works properly.
+        """
+        i = int(index or 0)
+        if i == 0 and required:
+            raise IndexError("Required an index")
+        if i < 0:
+            raise IndexError(i)
+        return i
+
+    def __str__(self):
+        return str(self.__dict__)
+
 
 
 class PaymentTxn(Transaction):
@@ -497,9 +523,9 @@ class AssetConfigTxn(Transaction):
         if strict_empty_address_check:
             if not (manager and reserve and freeze and clawback):
                 raise error.EmptyAddressError
-        self.index = int(index) if index else None
-        self.total = total
-        self.default_frozen = default_frozen
+        self.index = self.creatable_index(index)
+        self.total = int(total) if total else None
+        self.default_frozen = bool(default_frozen)
         self.unit_name = unit_name
         self.asset_name = asset_name
         self.manager = manager
@@ -508,8 +534,8 @@ class AssetConfigTxn(Transaction):
         self.clawback = clawback
         self.url = url
         self.metadata_hash = metadata_hash
-        self.decimals = decimals
-        if decimals < 0 or decimals > constants.max_asset_decimals:
+        self.decimals = int(decimals)
+        if self.decimals < 0 or self.decimals > constants.max_asset_decimals:
             raise error.OutOfRangeDecimalsError
         if metadata_hash is not None:
             if len(metadata_hash) != constants.metadata_length:
@@ -637,8 +663,116 @@ class AssetConfigTxn(Transaction):
                 self.metadata_hash == other.metadata_hash and
                 self.decimals == other.decimals)
 
+class AssetCreateTxn(AssetConfigTxn):
+    """Represents a transaction for asset creation.
+
+    Keyword arguments are required, starting with the special
+    addresses, to prevent errors, as type checks can't prevent simple
+    confusion of similar typed arguments. Since the special addresses
+    are required, strict_empty_address_check is turned off.
+
+    Args:
+        sender (str): address of the sender
+        sp (SuggestedParams): suggested params from algod
+        total (int): total number of base units of this asset created
+        decimals (int, optional): number of digits to use for display after
+            decimal. If set to 0, the asset is not divisible. If set to 1, the
+            base unit of the asset is in tenths. Must be between 0 and 19,
+            inclusive. Defaults to 0.
+        default_frozen (bool): whether slots for this asset in user
+            accounts are frozen by default
+        manager (str): address allowed to change nonzero addresses
+            for this asset
+        reserve (str): account whose holdings of this asset should
+            be reported as "not minted"
+        freeze (str): account allowed to change frozen state of
+            holdings of this asset
+        clawback (str): account allowed take units of this asset
+            from any account
+        unit_name (str): hint for the name of a unit of this asset
+        asset_name (str): hint for the name of the asset
+        url (str): a URL where more information about the asset
+            can be retrieved
+        metadata_hash (byte[32], optional): a commitment to some unspecified
+            asset metadata (32 byte hash)
+        note (bytes, optional): arbitrary optional bytes
+        lease (byte[32], optional): specifies a lease, and no other transaction
+            with the same sender and lease can be confirmed in this
+            transaction's valid rounds
+        rekey_to (str, optional): additionally rekey the sender to this address
+
+    """
+    def __init__(self, sender, sp, total, decimals,
+                 default_frozen, *,
+                 manager, reserve, freeze, clawback,
+                 unit_name, asset_name, url,
+                 metadata_hash=None,
+                 note=None, lease=None, rekey_to=None):
+        super().__init__(sender=sender, sp=sp, total=total, decimals=decimals,
+                         default_frozen=default_frozen,
+                         manager=manager, reserve=reserve,
+                         freeze=freeze, clawback=clawback,
+                         unit_name=unit_name, asset_name=asset_name, url=url,
+                         metadata_hash=metadata_hash,
+                         note=note, lease=lease, rekey_to=rekey_to,
+                         strict_empty_address_check=False)
+
+class AssetDestroyTxn(AssetConfigTxn):
+    """Represents a transaction for asset destruction.
+
+    An asset destruction transaction can only be sent by the manager
+    address, and only when the manager possseses all units of the
+    asset.
+
+    """
+    def __init__(self, sender, sp, index,
+                 note=None, lease=None, rekey_to=None):
+        super().__init__(sender=sender, sp=sp, index=self.creatable_index(index),
+                         note=note, lease=lease, rekey_to=rekey_to,
+                         strict_empty_address_check=False)
+
+class AssetUpdateTxn(AssetConfigTxn):
+    """Represents a transaction for asset modification.
+
+    To update asset configuration, include the following:
+        index, manager, reserve, freeze, clawback.
+
+    Keyword arguments are required, starting with the special
+    addresses, to prevent argument reordinering errors. Since the
+    special addresses are required, strict_empty_address_check is
+    turned off.
+
+    Args:
+        sender (str): address of the sender
+        sp (SuggestedParams): suggested params from algod
+        index (int): index of the asset to reconfigure
+        manager (str): address allowed to change nonzero addresses
+            for this asset
+        reserve (str): account whose holdings of this asset should
+            be reported as "not minted"
+        freeze (str): account allowed to change frozen state of
+            holdings of this asset
+        clawback (str): account allowed take units of this asset
+            from any account
+        note (bytes, optional): arbitrary optional bytes
+        lease (byte[32], optional): specifies a lease, and no other transaction
+            with the same sender and lease can be confirmed in this
+            transaction's valid rounds
+        rekey_to (str, optional): additionally rekey the sender to this address
+
+    """
+    def __init__(self, sender, sp, index, *,
+                 manager, reserve, freeze, clawback,
+                 note=None, lease=None, rekey_to=None):
+        super().__init__(sender=sender, sp=sp, index=self.creatable_index(index),
+                         manager=manager, reserve=reserve,
+                         freeze=freeze, clawback=clawback,
+                         note=note, lease=lease, rekey_to=rekey_to,
+                         strict_empty_address_check=False)
+
 
 class AssetFreezeTxn(Transaction):
+
     """
     Represents a transaction for freezing or unfreezing an account's asset
     holdings. Must be issued by the asset's freeze manager.
@@ -677,7 +811,7 @@ class AssetFreezeTxn(Transaction):
                  lease=None, rekey_to=None):
         Transaction.__init__(self, sender, sp, note,
                              lease, constants.assetfreeze_txn, rekey_to)
-        self.index = int(index) if index else None
+        self.index = self.creatable_index(index, required=True)
         self.target = target
         self.new_freeze_state = new_freeze_state
         if sp.flat_fee:
@@ -726,7 +860,7 @@ class AssetTransferTxn(Transaction):
     Represents a transaction for asset transfer.
 
     To begin accepting an asset, supply the same address as both sender and
-    receiver, and set amount to 0.
+    receiver, and set amount to 0 (or use AssetOptInTxn)
 
     To revoke an asset, set revocation_target, and issue the transaction from
     the asset's revocation manager account.
@@ -778,7 +912,7 @@ class AssetTransferTxn(Transaction):
         self.amount = amt
         if (not isinstance(self.amount, int)) or self.amount < 0:
             raise error.WrongAmountType
-        self.index = int(index) if index else None
+        self.index = self.creatable_index(index, required=True)
         self.close_assets_to = close_assets_to
         self.revocation_target = revocation_target
         if sp.flat_fee:
@@ -835,6 +969,52 @@ class AssetTransferTxn(Transaction):
                 self.receiver == other.receiver and
                 self.close_assets_to == other.close_assets_to and
                 self.revocation_target == other.revocation_target)
+
+
+class AssetOptInTxn(AssetTransferTxn):
+    """
+    Make a transaction that will opt in to an ASA
+
+    Args:
+        sender (str): address of sender
+        sp (SuggestedParams): contains information such as fee and genesis hash
+        index (int): the ASA to opt into
+        note(bytes, optional): transaction note field
+        lease(bytes, optional): transaction lease field
+        rekey_to(str, optional): rekey-to field, see Transaction
+
+    Attributes:
+        See AssetTransferTxn
+    """
+
+    def __init__(self, sender, sp, index,
+                 note=None, lease=None, rekey_to=None):
+        super().__init__(sender=sender, sp=sp, receiver=sender, amt=0,
+                         index=index, note=note, lease=lease, rekey_to=rekey_to)
+
+
+class AssetCloseOutTxn(AssetTransferTxn):
+    """
+    Make a transaction that will send all of an ASA away, and opt out of it.
+
+    Args:
+        sender (str): address of sender
+        sp (SuggestedParams): contains information such as fee and genesis hash
+        receiver (str): address of the receiver
+        index (int): the ASA to opt into
+        note(bytes, optional): transaction note field
+        lease(bytes, optional): transaction lease field
+        rekey_to(str, optional): rekey-to field, see Transaction
+
+    Attributes:
+        See AssetTransferTxn
+    """
+
+    def __init__(self, sender, sp, receiver, index,
+                 note=None, lease=None, rekey_to=None):
+        super().__init__(sender=sender, sp=sp, receiver=receiver,
+                         amt=0, index=index, close_assets_to=receiver,
+                         note=note, lease=lease, rekey_to=rekey_to)
 
 
 class StateSchema:
@@ -953,12 +1133,12 @@ class ApplicationCallTxn(Transaction):
                  note=None, lease=None, rekey_to=None):
         Transaction.__init__(self, sender, sp, note,
                              lease, constants.appcall_txn, rekey_to)
-        self.index = int(index) if index else None
+        self.index = self.creatable_index(index)
         self.on_complete = on_complete
-        self.local_schema = local_schema
-        self.global_schema = global_schema
-        self.approval_program = approval_program
-        self.clear_program = clear_program
+        self.local_schema = self.state_schema(local_schema)
+        self.global_schema = self.state_schema(global_schema)
+        self.approval_program = self.teal_bytes(approval_program)
+        self.clear_program = self.teal_bytes(clear_program)
         self.app_args = self.bytes_list(app_args)
         self.accounts = accounts
         self.foreign_apps = self.int_list(foreign_apps)
@@ -970,9 +1150,26 @@ class ApplicationCallTxn(Transaction):
                            constants.min_txn_fee)
 
     @staticmethod
+    def state_schema(schema):
+        """Confirm the argument is a StateSchema, or false which is coerced to None"""
+        if not schema:
+            return None         # Coerce false values to None, to help __eq__
+        assert isinstance(schema, StateSchema), f"{schema} is not a StateSchema"
+        return schema
+
+    @staticmethod
+    def teal_bytes(teal):
+        """Confirm the argument is bytes-like, or false which is coerced to None"""
+        if not teal:
+            return None         # Coerce false values like "" to None, to help __eq__
+        assert isinstance(teal, (bytes, bytearray)), f"Program {teal} is not bytes"
+        return teal
+
+    @staticmethod
     def bytes_list(lst):
+        """Confirm or coerce list elements to bytes. Return None for empty/false lst. """
         def as_bytes(e):
-            if isinstance(e, bytes):
+            if isinstance(e, (bytes, bytearray)):
                 return e
             if isinstance(e, str):
                 return e.encode()
@@ -982,13 +1179,14 @@ class ApplicationCallTxn(Transaction):
             assert False, f"{e} is not bytes, str, or int"
 
         if not lst:
-            return lst
+            return None
         return [as_bytes(elt) for elt in lst]
 
     @staticmethod
     def int_list(lst):
+        """Confirm or coerce list elements to int. Return None for empty/false lst. """
         if not lst:
-            return lst
+            return None
         return [int(elt) for elt in lst]
 
     def dictify(self):
@@ -1081,17 +1279,12 @@ class ApplicationCreateTxn(ApplicationCallTxn):
                  app_args=None, accounts=None, foreign_apps=None, foreign_assets=None, note=None,
                  lease=None, rekey_to=None):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=0, on_complete=on_complete,
-                                    approval_program=approval_program, clear_program=clear_program,
+                                    approval_program=self.required(approval_program),
+                                    clear_program=self.required(clear_program),
                                     global_schema=global_schema,
                                     local_schema=local_schema, app_args=app_args, accounts=accounts,
                                     foreign_apps=foreign_apps, foreign_assets=foreign_assets,
                                     note=note, lease=lease, rekey_to=rekey_to)
-
-    def dictify(self):
-        d = dict()
-        d.update(super(ApplicationCreateTxn, self).dictify())
-        od = OrderedDict(sorted(d.items()))
-        return od
 
 
 class ApplicationUpdateTxn(ApplicationCallTxn):
@@ -1119,16 +1312,12 @@ class ApplicationUpdateTxn(ApplicationCallTxn):
     def __init__(self, sender, sp, index, approval_program, clear_program, app_args=None,
                  accounts=None, foreign_apps=None, foreign_assets=None,
                  note=None, lease=None, rekey_to=None):
-        ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.UpdateApplicationOC,
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp,
+                                    index=self.creatable_index(index, required=True),
+                                    on_complete=OnComplete.UpdateApplicationOC,
                                     approval_program=approval_program, clear_program=clear_program,
                                     app_args=app_args, accounts=accounts, foreign_apps=foreign_apps,
                                     foreign_assets=foreign_assets, note=note, lease=lease, rekey_to=rekey_to)
-
-    def dictify(self):
-        d = dict()
-        d.update(super(ApplicationUpdateTxn, self).dictify())
-        od = OrderedDict(sorted(d.items()))
-        return od
 
 
 class ApplicationDeleteTxn(ApplicationCallTxn):
@@ -1153,15 +1342,11 @@ class ApplicationDeleteTxn(ApplicationCallTxn):
 
     def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
                 foreign_assets=None, note=None, lease=None, rekey_to=None):
-        ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.DeleteApplicationOC,
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp,
+                                    index=self.creatable_index(index, required=True),
+                                    on_complete=OnComplete.DeleteApplicationOC,
                                     app_args=app_args, accounts=accounts, foreign_apps=foreign_apps,
                                     foreign_assets=foreign_assets, note=note, lease=lease, rekey_to=rekey_to)
-
-    def dictify(self):
-        d = dict()
-        d.update(super(ApplicationDeleteTxn, self).dictify())
-        od = OrderedDict(sorted(d.items()))
-        return od
 
 
 class ApplicationOptInTxn(ApplicationCallTxn):
@@ -1185,15 +1370,11 @@ class ApplicationOptInTxn(ApplicationCallTxn):
     """
     def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
                  foreign_assets=None, note=None, lease=None, rekey_to=None):
-        ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.OptInOC,
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp,
+                                    index=self.creatable_index(index, required=True),
+                                    on_complete=OnComplete.OptInOC,
                                     app_args=app_args, accounts=accounts, foreign_apps=foreign_apps,
                                     foreign_assets=foreign_assets, note=note, lease=lease, rekey_to=rekey_to)
-
-    def dictify(self):
-        d = dict()
-        d.update(super(ApplicationOptInTxn, self).dictify())
-        od = OrderedDict(sorted(d.items()))
-        return od
 
 
 class ApplicationCloseOutTxn(ApplicationCallTxn):
@@ -1217,20 +1398,16 @@ class ApplicationCloseOutTxn(ApplicationCallTxn):
     """
     def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
                 foreign_assets=None, note=None, lease=None, rekey_to=None):
-        ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.CloseOutOC,
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp,
+                                    index=self.creatable_index(index),
+                                    on_complete=OnComplete.CloseOutOC,
                                     app_args=app_args, accounts=accounts, foreign_apps=foreign_apps,
                                     foreign_assets=foreign_assets, note=note, lease=lease, rekey_to=rekey_to)
-
-    def dictify(self):
-        d = dict()
-        d.update(super(ApplicationCloseOutTxn, self).dictify())
-        od = OrderedDict(sorted(d.items()))
-        return od
 
 
 class ApplicationClearStateTxn(ApplicationCallTxn):
     """
-    Make a transaction that will clear a user's state an application
+    Make a transaction that will clear a user's state for an application
 
     Args:
         sender (str): address of sender
@@ -1249,15 +1426,11 @@ class ApplicationClearStateTxn(ApplicationCallTxn):
     """
     def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
                  foreign_assets=None, note=None, lease=None, rekey_to=None):
-        ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.ClearStateOC,
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp,
+                                    index=self.creatable_index(index),
+                                    on_complete=OnComplete.ClearStateOC,
                                     app_args=app_args, accounts=accounts, foreign_apps=foreign_apps,
                                     foreign_assets=foreign_assets, note=note, lease=lease, rekey_to=rekey_to)
-
-    def dictify(self):
-        d = dict()
-        d.update(super(ApplicationClearStateTxn, self).dictify())
-        od = OrderedDict(sorted(d.items()))
-        return od
 
 
 class ApplicationNoOpTxn(ApplicationCallTxn):
@@ -1282,15 +1455,11 @@ class ApplicationNoOpTxn(ApplicationCallTxn):
     """
     def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None, foreign_assets=None,
                  note=None, lease=None, rekey_to=None):
-        ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=index, on_complete=OnComplete.NoOpOC,
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp,
+                                    index=self.creatable_index(index),
+                                    on_complete=OnComplete.NoOpOC,
                                     app_args=app_args, accounts=accounts, foreign_apps=foreign_apps,
                                     foreign_assets=foreign_assets, note=note, lease=lease, rekey_to=rekey_to)
-
-    def dictify(self):
-        d = dict()
-        d.update(super(ApplicationNoOpTxn, self).dictify())
-        od = OrderedDict(sorted(d.items()))
-        return od
 
 
 class SignedTransaction:
