@@ -226,6 +226,12 @@ class Transaction:
                 self.rekey_to == other.rekey_to)
 
     @staticmethod
+    def required(arg):
+        if not arg:
+            raise ValueError(f"{arg} supplied as a required argument")
+        return arg
+
+    @staticmethod
     def creatable_index(index, required=False):
         """Coerce an index for apps or assets to an integer.
 
@@ -1129,18 +1135,10 @@ class ApplicationCallTxn(Transaction):
                              lease, constants.appcall_txn, rekey_to)
         self.index = self.creatable_index(index)
         self.on_complete = on_complete
-        if local_schema is not None:
-            assert isinstance(local_schema, StateSchema)
-        self.local_schema = local_schema
-        if global_schema is not None:
-            assert isinstance(global_schema, StateSchema)
-        self.global_schema = global_schema
-        if approval_program is not None:
-            assert isinstance(approval_program, (bytes, bytearray))
-        self.approval_program = approval_program
-        if clear_program is not None:
-            assert isinstance(clear_program, (bytes, bytearray))
-        self.clear_program = clear_program
+        self.local_schema = self.state_schema(local_schema)
+        self.global_schema = self.state_schema(global_schema)
+        self.approval_program = self.teal_bytes(approval_program)
+        self.clear_program = self.teal_bytes(clear_program)
         self.app_args = self.bytes_list(app_args)
         self.accounts = accounts
         self.foreign_apps = self.int_list(foreign_apps)
@@ -1152,7 +1150,24 @@ class ApplicationCallTxn(Transaction):
                            constants.min_txn_fee)
 
     @staticmethod
+    def state_schema(schema):
+        """Confirm the argument is a StateSchema, or false which is coerced to None"""
+        if not schema:
+            return None         # Coerce false values to None, to help __eq__
+        assert isinstance(schema, StateSchema), f"{schema} is not a StateSchema"
+        return schema
+
+    @staticmethod
+    def teal_bytes(teal):
+        """Confirm the argument is bytes-like, or false which is coerced to None"""
+        if not teal:
+            return None         # Coerce false values like "" to None, to help __eq__
+        assert isinstance(teal, (bytes, bytearray)), f"Program {teal} is not bytes"
+        return teal
+
+    @staticmethod
     def bytes_list(lst):
+        """Confirm or coerce list elements to bytes. Return None for empty/false lst. """
         def as_bytes(e):
             if isinstance(e, (bytes, bytearray)):
                 return e
@@ -1164,13 +1179,14 @@ class ApplicationCallTxn(Transaction):
             assert False, f"{e} is not bytes, str, or int"
 
         if not lst:
-            return lst
+            return None
         return [as_bytes(elt) for elt in lst]
 
     @staticmethod
     def int_list(lst):
+        """Confirm or coerce list elements to int. Return None for empty/false lst. """
         if not lst:
-            return lst
+            return None
         return [int(elt) for elt in lst]
 
     def dictify(self):
@@ -1263,7 +1279,8 @@ class ApplicationCreateTxn(ApplicationCallTxn):
                  app_args=None, accounts=None, foreign_apps=None, foreign_assets=None, note=None,
                  lease=None, rekey_to=None):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=0, on_complete=on_complete,
-                                    approval_program=approval_program, clear_program=clear_program,
+                                    approval_program=self.required(approval_program),
+                                    clear_program=self.required(clear_program),
                                     global_schema=global_schema,
                                     local_schema=local_schema, app_args=app_args, accounts=accounts,
                                     foreign_apps=foreign_apps, foreign_assets=foreign_assets,
