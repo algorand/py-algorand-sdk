@@ -713,6 +713,7 @@ class TestPaymentTransaction(unittest.TestCase):
         self.assertEqual(len(txns), 0)
 
 
+
 class TestAssetConfigConveniences(unittest.TestCase):
     """Tests that the simplified versions of Config are equivalent to Config"""
     sender = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
@@ -851,6 +852,7 @@ class TestApplicationTransactions(unittest.TestCase):
             self.assertEqual(create.dictify(), call.dictify())
             self.assertEqual(create, call)
             self.assertEqual(call, create)
+
 
     def test_application_update(self):
         empty = b""
