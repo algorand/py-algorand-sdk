@@ -40,7 +40,7 @@ class TestPaymentTransaction(unittest.TestCase):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         sp = transaction.SuggestedParams(0, 1, 100, gh)
-        f = lambda: transaction.PaymentTxn(address, sp, address, 
+        f = lambda: transaction.PaymentTxn(address, sp, address,
                                            1000, note=("0"*1025).encode())
         self.assertRaises(error.WrongNoteLength, f)
 
@@ -155,7 +155,7 @@ class TestPaymentTransaction(unittest.TestCase):
         self.assertEqual(enc, re_enc)
 
     def test_sign_logic_multisig(self):
-        program = b"\x01\x20\x01\x01\x22" 
+        program = b"\x01\x20\x01\x01\x22"
         lsig = transaction.LogicSig(program)
         passphrase = "sight garment riot tattoo tortoise identify left talk sea ill walnut leg robot myth toe perfect rifle dizzy spend april build legend brother above hospital"
         sk = mnemonic.to_private_key(passphrase)
@@ -167,7 +167,7 @@ class TestPaymentTransaction(unittest.TestCase):
 
         msig = transaction.Multisig(1, 2, [addr, addr2])
         lsig.sign(sk, msig)
-        lsig.append_to_multisig(sk2)    
+        lsig.append_to_multisig(sk2)
 
         receiver = "DOMUC6VGZH7SSY5V332JR5HRLZSOJDWNPBI4OI2IIBU6A3PFLOBOXZ3KFY"
         gh = "zNQES/4IqimxRif40xYvzBBIYCZSbYvNSRIzVIh4swo="
@@ -188,7 +188,7 @@ class TestPaymentTransaction(unittest.TestCase):
             "2XuuO6mS+3IetwlKVPM0qdKBIiMVdhzAOMPKpHR5cGWjcGF5")
 
         encoded = encoding.msgpack_encode(lstx)
-        self.assertEquals(encoded, golden)
+        self.assertEqual(encoded, golden)
 
     def test_serialize_zero_receiver(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
@@ -713,10 +713,92 @@ class TestPaymentTransaction(unittest.TestCase):
         self.assertEqual(len(txns), 0)
 
 
+
+class TestAssetConfigConveniences(unittest.TestCase):
+    """Tests that the simplified versions of Config are equivalent to Config"""
+    sender = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+    genesis = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+    params = transaction.SuggestedParams(0, 1, 100, genesis)
+
+    def test_asset_create(self):
+        create = transaction.AssetCreateTxn(self.sender, self.params,
+                                            1000, "2", False,
+                                            manager=None,
+                                            reserve=None,
+                                            freeze=None,
+                                            clawback=None,
+                                            unit_name="NEWCOIN",
+                                            asset_name="A new kind of coin",
+                                            url="https://newcoin.co/")
+        config = transaction.AssetConfigTxn(self.sender, self.params, index=None,
+                                            total="1000", decimals=2,
+                                            unit_name="NEWCOIN",
+                                            asset_name="A new kind of coin",
+                                            url="https://newcoin.co/",
+                                            strict_empty_address_check=False)
+        self.assertEqual(create.dictify(), config.dictify())
+        self.assertEqual(config, create)
+
+        self.assertEqual(transaction.AssetCreateTxn.undictify(create.dictify()),
+                         config)
+
+
+    def test_asset_update(self):
+        update = transaction.AssetUpdateTxn(self.sender, self.params, 6,
+                                            manager=None,
+                                            reserve=self.sender,
+                                            freeze=None,
+                                            clawback=None)
+        config = transaction.AssetConfigTxn(self.sender, self.params, index="6",
+                                            reserve=self.sender,
+                                            strict_empty_address_check=False)
+        self.assertEqual(update.dictify(), config.dictify())
+        self.assertEqual(config, update)
+
+        self.assertEqual(transaction.AssetUpdateTxn.undictify(update.dictify()),
+                         config)
+
+    def test_asset_destroy(self):
+        destroy = transaction.AssetDestroyTxn(self.sender, self.params, 23)
+        config = transaction.AssetConfigTxn(self.sender, self.params, index="23",
+                                            strict_empty_address_check=False)
+        self.assertEqual(destroy.dictify(), config.dictify())
+        self.assertEqual(config, destroy)
+
+        self.assertEqual(transaction.AssetDestroyTxn.undictify(destroy.dictify()),
+                         config)
+
+class TestAssetTransferConveniences(unittest.TestCase):
+    sender = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+    receiver = "DOMUC6VGZH7SSY5V332JR5HRLZSOJDWNPBI4OI2IIBU6A3PFLOBOXZ3KFY"
+    genesis = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+    params = transaction.SuggestedParams(0, 1, 100, genesis)
+    def test_asset_optin(self):
+        optin = transaction.AssetOptInTxn(self.sender, self.params, "7")
+        xfer = transaction.AssetTransferTxn(self.sender, self.params, self.sender,
+                                            0, index=7)
+        self.assertEqual(optin.dictify(), xfer.dictify())
+        self.assertEqual(xfer, optin)
+
+        self.assertEqual(transaction.AssetOptInTxn.undictify(optin.dictify()),
+                         xfer)
+
+    def test_asset_closeout(self):
+        closeout = transaction.AssetCloseOutTxn(self.sender, self.params,
+                                                self.receiver, "7")
+        xfer = transaction.AssetTransferTxn(self.sender, self.params, self.receiver,
+                                            0, index=7, close_assets_to=self.receiver)
+        self.assertEqual(closeout.dictify(), xfer.dictify())
+        self.assertEqual(xfer, closeout)
+
+        self.assertEqual(transaction.AssetCloseOutTxn.undictify(closeout.dictify()),
+                         xfer)
+
 class TestApplicationTransactions(unittest.TestCase):
     sender = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
     genesis = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
-    schema = transaction.StateSchema(1, 1)
+    lschema = transaction.StateSchema(1, 2)
+    gschema = transaction.StateSchema(3, 4)
 
     def test_application_call(self):
         params = transaction.SuggestedParams(0, 1, 100, self.genesis)
@@ -749,12 +831,28 @@ class TestApplicationTransactions(unittest.TestCase):
             self.assertEqual(i, s) # string is encoded same as corresponding int
 
     def test_application_create(self):
-        empty = b""
+        approve = b"\0"
+        clear = b"\1"
         params = transaction.SuggestedParams(0, 1, 100, self.genesis)
         for oc in transaction.OnComplete:
-            transaction.ApplicationCreateTxn(self.sender, params, oc,
-                                             empty, empty,
-                                             self.schema, self.schema)
+            # We will confirm that the Create is just shorthand for
+            # the Call.  But note that the programs come before the
+            # schemas and the schemas are REVERSED!  That's
+            # unfortunate, and we should consider adding "*" to the
+            # argument list after on_completion, thereby forcing the
+            # use of named arguments.
+            create = transaction.ApplicationCreateTxn(self.sender, params, oc,
+                                                      approve, clear,
+                                                      self.lschema, self.gschema)
+            call = transaction.ApplicationCallTxn(self.sender, params, 0, oc,
+                                                  self.gschema, self.lschema,
+                                                  approve, clear)
+            # Check the dict first, it's important on it's own, and it
+            # also gives more a meaningful error if they're not equal.
+            self.assertEqual(create.dictify(), call.dictify())
+            self.assertEqual(create, call)
+            self.assertEqual(call, create)
+
 
     def test_application_update(self):
         empty = b""
@@ -763,12 +861,23 @@ class TestApplicationTransactions(unittest.TestCase):
         s = transaction.ApplicationUpdateTxn(self.sender, params, "10", empty, empty)
         self.assertEqual(i, s) # int and string encoded same
 
+        call = transaction.ApplicationCallTxn(self.sender, params, 10,
+                                              transaction.OnComplete.UpdateApplicationOC,
+                                              None, None,
+                                              empty, empty)
+        self.assertEqual(i.dictify(), call.dictify())
+        self.assertEqual(i, call)
+
     def test_application_delete(self):
         params = transaction.SuggestedParams(0, 1, 100, self.genesis)
         i = transaction.ApplicationDeleteTxn(self.sender, params, 10)
         s = transaction.ApplicationDeleteTxn(self.sender, params, "10")
         self.assertEqual(i, s) # int and string encoded same
 
+        call = transaction.ApplicationCallTxn(self.sender, params, 10,
+                                              transaction.OnComplete.DeleteApplicationOC)
+        self.assertEqual(i.dictify(), call.dictify())
+        self.assertEqual(i, call)
 
 class TestMnemonic(unittest.TestCase):
     zero_bytes = bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2124,6 +2233,8 @@ class TestDryrun(dryrun.DryrunTestCaseMixin, unittest.TestCase):
 if __name__ == "__main__":
     to_run = [
         TestPaymentTransaction,
+        TestAssetConfigConveniences,
+        TestAssetTransferConveniences,
         TestApplicationTransactions,
         TestMnemonic,
         TestAddress,
