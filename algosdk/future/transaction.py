@@ -251,7 +251,6 @@ class Transaction:
         return str(self.__dict__)
 
 
-
 class PaymentTxn(Transaction):
     """
     Represents a payment transaction.
