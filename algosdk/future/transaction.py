@@ -1151,8 +1151,8 @@ class ApplicationCallTxn(Transaction):
     @staticmethod
     def state_schema(schema):
         """Confirm the argument is a StateSchema, or false which is coerced to None"""
-        if not schema:
-            return None         # Coerce false values to None, to help __eq__
+        if not schema or not schema.dictify():
+            return None         # Coerce false/empty values to None, to help __eq__
         assert isinstance(schema, StateSchema), f"{schema} is not a StateSchema"
         return schema
 
