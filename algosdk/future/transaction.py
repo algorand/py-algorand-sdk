@@ -703,8 +703,8 @@ class AssetCreateTxn(AssetConfigTxn):
     """
     def __init__(self, sender, sp, total, decimals,
                  default_frozen, *,
-                 manager, reserve, freeze, clawback,
-                 unit_name, asset_name, url,
+                 manager=None, reserve=None, freeze=None, clawback=None,
+                 unit_name="", asset_name="", url="",
                  metadata_hash=None,
                  note=None, lease=None, rekey_to=None):
         super().__init__(sender=sender, sp=sp, total=total, decimals=decimals,
