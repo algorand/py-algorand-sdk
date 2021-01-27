@@ -156,7 +156,7 @@ class Transaction:
         if self.group:
             d["grp"] = self.group
         d["lv"] = self.last_valid_round
-        if self.lease:
+        if self.lease and self.lease != constants.empty_lease:
             d["lx"] = self.lease
         if self.note:
             d["note"] = self.note

@@ -72,6 +72,8 @@ metadata_length = 32
 note_max_length = 1024
 """int: maximum length of note field"""
 lease_length = 32
+"""byte: empty lease - equivalent to no lease"""
+empty_lease = bytearray(lease_length)
 """int: byte length of leases"""
 multisig_account_limit = 255
 """int: maximum number of addresses in a multisig account"""
