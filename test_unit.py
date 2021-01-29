@@ -852,7 +852,25 @@ class TestApplicationTransactions(unittest.TestCase):
             self.assertEqual(create.dictify(), call.dictify())
             self.assertEqual(create, call)
             self.assertEqual(call, create)
-
+    
+    def test_application_create_schema(self):
+        approve = b"\0"
+        clear = b"\1"
+        zero_schema = transaction.StateSchema(0, 0)
+        params = transaction.SuggestedParams(0, 1, 100, self.genesis)
+        for oc in transaction.OnComplete:
+            # verify that a schema with 0 uints and 0 bytes behaves the same as no schema
+            txn_zero_schema = transaction.ApplicationCreateTxn(self.sender, params, oc,
+                                                      approve, clear,
+                                                      zero_schema, zero_schema)
+            txn_none_schema = transaction.ApplicationCreateTxn(self.sender, params, oc,
+                                                      approve, clear,
+                                                      None, None)
+            # Check the dict first, it's important on it's own, and it
+            # also gives more a meaningful error if they're not equal.
+            self.assertEqual(txn_zero_schema.dictify(), txn_none_schema.dictify())
+            self.assertEqual(txn_zero_schema, txn_none_schema)
+            self.assertEqual(txn_none_schema, txn_zero_schema)
 
     def test_application_update(self):
         empty = b""

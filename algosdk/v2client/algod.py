@@ -169,6 +169,8 @@ class AlgodClient:
         Returns:
             str: transaction ID
         """
+        assert not isinstance(txn, future.transaction.Transaction), \
+            f"Attempt to send UNSIGNED transaction {txn}"
         return self.send_raw_transaction(encoding.msgpack_encode(txn),
                                          **kwargs)
 
@@ -243,6 +245,8 @@ class AlgodClient:
         """
         serialized = []
         for txn in txns:
+            assert not isinstance(txn, future.transaction.Transaction), \
+                f"Attempt to send UNSIGNED transaction {txn}"
             serialized.append(base64.b64decode(encoding.msgpack_encode(txn)))
 
         return self.send_raw_transaction(base64.b64encode(
