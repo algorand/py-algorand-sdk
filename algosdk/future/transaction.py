@@ -59,21 +59,38 @@ class Transaction:
         self.fee = sp.fee
         self.first_valid_round = sp.first
         self.last_valid_round = sp.last
-        self.note = note
-        if self.note is not None:
-            if not isinstance(self.note, (bytes, bytearray)):
-                raise error.WrongNoteType
-            if len(self.note) > constants.note_max_length:
-                raise error.WrongNoteLength
+        self.note = self.as_note(note)
         self.genesis_id = sp.gen
         self.genesis_hash = sp.gh
         self.group = None
-        self.lease = lease
-        if self.lease is not None:
-            if len(self.lease) != constants.lease_length:
-                raise error.WrongLeaseLengthError
+        self.lease = self.as_lease(lease)
         self.type = txn_type
         self.rekey_to = rekey_to
+
+    @staticmethod
+    def as_note(note):
+        if not note:
+            return None
+        if not isinstance(note, (bytes, bytearray, str)):
+            raise error.WrongNoteType
+        if isinstance(note, str):
+            note = note.encode()
+        if len(note) > constants.note_max_length:
+                raise error.WrongNoteLength
+        return note
+
+    @staticmethod
+    def as_lease(lease):
+        if not lease:
+            return None
+        assert isinstance(lease, (bytes, bytearray, str)), f"{lease} is not bytes or str"
+        if isinstance(lease, str):
+            lease = lease.encode()
+        if len(lease) != constants.lease_length:
+            raise error.WrongLeaseLengthError
+        if not any(lease):
+            return None
+        return lease
 
     def get_txid(self):
         """

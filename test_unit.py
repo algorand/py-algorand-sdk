@@ -1,22 +1,15 @@
 import base64
 import copy
-import unittest
 import random
+import unittest
 from unittest.mock import Mock
 
-from algosdk.future import transaction
-from algosdk import encoding
-from algosdk import account
-from algosdk import mnemonic
-from algosdk import error
-from algosdk import constants
-from algosdk import util
-from algosdk import logic
-from algosdk import wordlist
-from algosdk.future import template
-from algosdk.testing import dryrun
-
 from nacl.signing import SigningKey
+
+from algosdk import (account, constants, encoding, error, logic, mnemonic,
+                     util, wordlist)
+from algosdk.future import template, transaction
+from algosdk.testing import dryrun
 
 
 class TestPaymentTransaction(unittest.TestCase):
@@ -33,8 +26,16 @@ class TestPaymentTransaction(unittest.TestCase):
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         sp = transaction.SuggestedParams(0, 1, 100, gh)
         f = lambda: transaction.PaymentTxn(address, sp, address,
-                                           1000, note="hello")
+                                           1000, note=45)
         self.assertRaises(error.WrongNoteType, f)
+
+    def test_note_strings_allowed(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(0, 1, 100, gh)
+        txn = transaction.PaymentTxn(address, sp, address,
+                                     1000, note="helo")
+        self.assertEqual(constants.min_txn_fee, txn.fee)
 
     def test_note_wrong_length(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
@@ -43,6 +44,20 @@ class TestPaymentTransaction(unittest.TestCase):
         f = lambda: transaction.PaymentTxn(address, sp, address,
                                            1000, note=("0"*1025).encode())
         self.assertRaises(error.WrongNoteLength, f)
+
+    def test_leases(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(0, 1, 100, gh)
+        # 32 byte zero lease should be dropped from msgpack
+        txn1 = transaction.PaymentTxn(address, sp, address,
+                                      1000, lease=("\0"*32))
+        txn2 = transaction.PaymentTxn(address, sp, address,
+                                      1000)
+
+        self.assertEqual(txn1.dictify(), txn2.dictify())
+        self.assertEqual(txn1, txn2)
+        self.assertEqual(txn2, txn1)
 
     def test_serialize(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
@@ -852,7 +867,7 @@ class TestApplicationTransactions(unittest.TestCase):
             self.assertEqual(create.dictify(), call.dictify())
             self.assertEqual(create, call)
             self.assertEqual(call, create)
-    
+
     def test_application_create_schema(self):
         approve = b"\0"
         clear = b"\1"
@@ -866,7 +881,7 @@ class TestApplicationTransactions(unittest.TestCase):
             txn_none_schema = transaction.ApplicationCreateTxn(self.sender, params, oc,
                                                       approve, clear,
                                                       None, None)
-            # Check the dict first, it's important on it's own, and it
+            # Check the dict first, it's important on its own, and it
             # also gives more a meaningful error if they're not equal.
             self.assertEqual(txn_zero_schema.dictify(), txn_none_schema.dictify())
             self.assertEqual(txn_zero_schema, txn_none_schema)
