@@ -55,6 +55,8 @@ logic_data_prefix = b"ProgData"
 """bytes: program (logic) data prefix when signing"""
 
 
+hash_len = 32
+"""int: how long various hash-like fields should be"""
 check_sum_len_bytes = 4
 """int: how long checksums should be"""
 key_len_bytes = 32

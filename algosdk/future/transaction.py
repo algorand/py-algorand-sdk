@@ -68,6 +68,20 @@ class Transaction:
         self.rekey_to = rekey_to
 
     @staticmethod
+    def as_hash(hash):
+        """Confirm that a value is 32 bytes. If all zeros, or a falsy value, return None"""
+        if not hash:
+            return None
+        assert isinstance(hash, (bytes, bytearray, str)), f"{hash} is not bytes or str"
+        if len(hash) != constants.hash_len:
+            raise error.WrongHashLengthError
+        if isinstance(hash, str):
+            hash = hash.encode()
+        if not any(hash):
+            return None
+        return hash
+
+    @staticmethod
     def as_note(note):
         if not note:
             return None
@@ -79,18 +93,12 @@ class Transaction:
                 raise error.WrongNoteLength
         return note
 
-    @staticmethod
-    def as_lease(lease):
-        if not lease:
-            return None
-        assert isinstance(lease, (bytes, bytearray, str)), f"{lease} is not bytes or str"
-        if isinstance(lease, str):
-            lease = lease.encode()
-        if len(lease) != constants.lease_length:
+    @classmethod
+    def as_lease(cls, lease):
+        try:
+            return cls.as_hash(lease)
+        except error.WrongHashLengthError:
             raise error.WrongLeaseLengthError
-        if not any(lease):
-            return None
-        return lease
 
     def get_txid(self):
         """
@@ -549,13 +557,10 @@ class AssetConfigTxn(Transaction):
         self.freeze = freeze
         self.clawback = clawback
         self.url = url
-        self.metadata_hash = metadata_hash
+        self.metadata_hash = self.as_metadata(metadata_hash)
         self.decimals = int(decimals)
         if self.decimals < 0 or self.decimals > constants.max_asset_decimals:
             raise error.OutOfRangeDecimalsError
-        if metadata_hash is not None:
-            if len(metadata_hash) != constants.metadata_length:
-                raise error.WrongMetadataLengthError
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
@@ -678,6 +683,15 @@ class AssetConfigTxn(Transaction):
                 self.url == other.url and
                 self.metadata_hash == other.metadata_hash and
                 self.decimals == other.decimals)
+
+    @classmethod
+    def as_metadata(cls, md):
+        try:
+            return cls.as_hash(md)
+        except error.WrongHashLengthError:
+            raise error.WrongMetadataLengthError
+
+
 
 class AssetCreateTxn(AssetConfigTxn):
     """Represents a transaction for asset creation.
