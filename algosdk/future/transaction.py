@@ -72,11 +72,9 @@ class Transaction:
         """Confirm that a value is 32 bytes. If all zeros, or a falsy value, return None"""
         if not hash:
             return None
-        assert isinstance(hash, (bytes, bytearray, str)), f"{hash} is not bytes or str"
+        assert isinstance(hash, (bytes, bytearray)), f"{hash} is not bytes"
         if len(hash) != constants.hash_len:
             raise error.WrongHashLengthError
-        if isinstance(hash, str):
-            hash = hash.encode()
         if not any(hash):
             return None
         return hash

@@ -51,7 +51,7 @@ class TestPaymentTransaction(unittest.TestCase):
         sp = transaction.SuggestedParams(0, 1, 100, gh)
         # 32 byte zero lease should be dropped from msgpack
         txn1 = transaction.PaymentTxn(address, sp, address,
-                                      1000, lease=("\0"*32))
+                                      1000, lease=(b"\0"*32))
         txn2 = transaction.PaymentTxn(address, sp, address,
                                       1000)
 
