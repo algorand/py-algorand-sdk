@@ -59,21 +59,44 @@ class Transaction:
         self.fee = sp.fee
         self.first_valid_round = sp.first
         self.last_valid_round = sp.last
-        self.note = note
-        if self.note is not None:
-            if not isinstance(self.note, (bytes, bytearray)):
-                raise error.WrongNoteType
-            if len(self.note) > constants.note_max_length:
-                raise error.WrongNoteLength
+        self.note = self.as_note(note)
         self.genesis_id = sp.gen
         self.genesis_hash = sp.gh
         self.group = None
-        self.lease = lease
-        if self.lease is not None:
-            if len(self.lease) != constants.lease_length:
-                raise error.WrongLeaseLengthError
+        self.lease = self.as_lease(lease)
         self.type = txn_type
         self.rekey_to = rekey_to
+
+    @staticmethod
+    def as_hash(hash):
+        """Confirm that a value is 32 bytes. If all zeros, or a falsy value, return None"""
+        if not hash:
+            return None
+        assert isinstance(hash, (bytes, bytearray)), f"{hash} is not bytes"
+        if len(hash) != constants.hash_len:
+            raise error.WrongHashLengthError
+        if not any(hash):
+            return None
+        return hash
+
+    @staticmethod
+    def as_note(note):
+        if not note:
+            return None
+        if not isinstance(note, (bytes, bytearray, str)):
+            raise error.WrongNoteType
+        if isinstance(note, str):
+            note = note.encode()
+        if len(note) > constants.note_max_length:
+                raise error.WrongNoteLength
+        return note
+
+    @classmethod
+    def as_lease(cls, lease):
+        try:
+            return cls.as_hash(lease)
+        except error.WrongHashLengthError:
+            raise error.WrongLeaseLengthError
 
     def get_txid(self):
         """
@@ -532,13 +555,10 @@ class AssetConfigTxn(Transaction):
         self.freeze = freeze
         self.clawback = clawback
         self.url = url
-        self.metadata_hash = metadata_hash
+        self.metadata_hash = self.as_metadata(metadata_hash)
         self.decimals = int(decimals)
         if self.decimals < 0 or self.decimals > constants.max_asset_decimals:
             raise error.OutOfRangeDecimalsError
-        if metadata_hash is not None:
-            if len(metadata_hash) != constants.metadata_length:
-                raise error.WrongMetadataLengthError
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
@@ -661,6 +681,15 @@ class AssetConfigTxn(Transaction):
                 self.url == other.url and
                 self.metadata_hash == other.metadata_hash and
                 self.decimals == other.decimals)
+
+    @classmethod
+    def as_metadata(cls, md):
+        try:
+            return cls.as_hash(md)
+        except error.WrongHashLengthError:
+            raise error.WrongMetadataLengthError
+
+
 
 class AssetCreateTxn(AssetConfigTxn):
     """Represents a transaction for asset creation.

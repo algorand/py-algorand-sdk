@@ -45,6 +45,13 @@ class WrongMnemonicLengthError(Exception):
         Exception.__init__(self, "mnemonic length must be 25")
 
 
+class WrongHashLengthError(Exception):
+    """General error that is normally changed to be more specific"""
+
+    def __init(self):
+        Exception.__init__(self, "length must be 32 bytes")
+
+
 class WrongKeyBytesLengthError(Exception):
     def __init__(self):
         Exception.__init__(self, "key length in bytes must be 32")
