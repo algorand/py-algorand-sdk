@@ -1773,15 +1773,18 @@ class LogicSigTransaction:
     Arguments:
         transaction (Transaction)
         lsig (LogicSig)
+        authorizing_address (str, optional): the address authorizing the transaction, if different from sender
 
     Attributes:
         transaction (Transaction)
         lsig (LogicSig)
+        authorizing_address (str)
     """
 
-    def __init__(self, transaction, lsig):
+    def __init__(self, transaction, lsig, authorizing_address=None):
         self.transaction = transaction
         self.lsig = lsig
+        self.authorizing_address = authorizing_address
 
     def verify(self):
         """
@@ -1792,7 +1795,10 @@ class LogicSigTransaction:
                 the logic hash or the signature is valid against the sender\
                 address), false otherwise
         """
-        public_key = encoding.decode_address(self.transaction.sender)
+        if self.authorizing_address:
+            public_key = encoding.decode_address(self.authorizing_address)
+        else:
+            public_key = encoding.decode_address(self.transaction.sender)
         return self.lsig.verify(public_key)
 
     def get_txid(self):
@@ -1809,7 +1815,8 @@ class LogicSigTransaction:
         if self.lsig:
             od["lsig"] = self.lsig.dictify()
         od["txn"] = self.transaction.dictify()
-
+        if self.authorizing_address:
+            od["sgnr"] = encoding.decode_address(self.authorizing_address)
         return od
 
     @staticmethod
@@ -1818,7 +1825,10 @@ class LogicSigTransaction:
         if "lsig" in d:
             lsig = LogicSig.undictify(d["lsig"])
         txn = Transaction.undictify(d["txn"])
-        lstx = LogicSigTransaction(txn, lsig)
+        auth = None
+        if "sgnr" in d:
+            auth = encoding.encode_address(d["sgnr"])
+        lstx = LogicSigTransaction(txn, lsig, auth)
         return lstx
 
     def __eq__(self, other):
