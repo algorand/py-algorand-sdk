@@ -8,7 +8,7 @@ algod_auth_header = "X-Algo-API-Token"
 """str: header key for algod requests"""
 indexer_auth_header = "X-Indexer-API-Token"
 """str: header key for indexer requests"""
-unversioned_paths = ["/health", "/versions", "/metrics"]
+unversioned_paths = ["/health", "/versions", "/metrics", "/genesis"]
 """str[]: paths that don't use the version path prefix"""
 no_auth = []
 """str[]: requests that don't require authentication"""
