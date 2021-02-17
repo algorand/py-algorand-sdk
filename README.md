@@ -34,7 +34,7 @@ else:
 
 ## Node setup
 
-Follow the instructions in Algorand's [developer resources](https://developer.algorand.org/docs/introduction-installing-node) to install a node on your computer. 
+Follow the instructions in Algorand's [developer resources](https://developer.algorand.org/docs/run-a-node/setup/install/) to install a node on your computer.
 
 ## Running examples/example.py
 
