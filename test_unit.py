@@ -1305,7 +1305,7 @@ class TestMsgpack(unittest.TestCase):
             "OUJOiKibHbOALuxk6NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tu"
             "H9pHR5cGWma2V5cmVn")
         # using future_msgpack_decode instead of msgpack_decode
-        # becaue as non-future transactions do not support offline keyreg
+        # because non-future transactions do not support offline keyreg
         self.assertEqual(keyregtxn, encoding.msgpack_encode(
                          encoding.future_msgpack_decode(keyregtxn)))
 
@@ -1315,7 +1315,7 @@ class TestMsgpack(unittest.TestCase):
             "OUJOiKibHbOALuxk6dub25wYXJ0w6NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUO"
             "B+jFx2mGR9tuH9pHR5cGWma2V5cmVn")
         # using future_msgpack_decode instead of msgpack_decode
-        # becaue as non-future transactions do not support offline keyreg
+        # because non-future transactions do not support nonpart keyreg
         self.assertEqual(keyregtxn, encoding.msgpack_encode(
                          encoding.future_msgpack_decode(keyregtxn)))
 
