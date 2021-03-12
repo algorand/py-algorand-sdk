@@ -1385,6 +1385,16 @@ class TestLogic(unittest.TestCase):
         size = logic.check_byte_const_block(data, 0)
         self.assertEqual(size, len(data))
 
+    def test_parse_pushint(self):
+        data = b"\x81\x80\x80\x04"
+        size = logic.check_push_int_block(data, 0)
+        self.assertEqual(size, len(data))
+    
+    def test_parse_pushbytes(self):
+        data = b"\x80\x0b\x68\x65\x6c\x6c\x6f\x20\x77\x6f\x72\x6c\x64"
+        size = logic.check_push_byte_block(data, 0)
+        self.assertEqual(size, len(data))
+
     def test_check_program(self):
         program = b"\x01\x20\x01\x01\x22"  # int 1
         self.assertTrue(logic.check_program(program, None))
@@ -1420,6 +1430,7 @@ class TestLogic(unittest.TestCase):
         with self.assertRaises(error.InvalidProgram):
             logic.check_program(program, [])
 
+    def test_check_program_teal_2(self):
         # check TEAL v2 opcodes
         self.assertIsNotNone(logic.spec, "Must be called after any of logic.check_program")
         self.assertTrue(logic.spec['EvalMaxVersion'] >= 2)
@@ -1435,6 +1446,28 @@ class TestLogic(unittest.TestCase):
 
         # asset_holding_get
         program = b"\x02\x20\x01\x00\x22\x22\x70\x00"  # int 0; int 0; asset_holding_get Balance
+        self.assertTrue(logic.check_program(program, None))
+    
+    def test_check_program_teal_3(self):
+        # check TEAL v2 opcodes
+        self.assertIsNotNone(logic.spec, "Must be called after any of logic.check_program")
+        self.assertTrue(logic.spec['EvalMaxVersion'] >= 3)
+        self.assertTrue(logic.spec['LogicSigVersion'] >= 3)
+
+        # min_balance
+        program = b"\x03\x20\x01\x00\x22\x78" # int 0; min_balance
+        self.assertTrue(logic.check_program(program, None))
+
+        # pushbytes
+        program = b"\x03\x20\x01\x00\x22\x80\x02\x68\x69\x48" # int 0; pushbytes "hi"; pop
+        self.assertTrue(logic.check_program(program, None))
+
+        # pushint
+        program = b"\x03\x20\x01\x00\x22\x81\x01\x48" # int 0; pushint 1; pop
+        self.assertTrue(logic.check_program(program, None))
+
+        # swap
+        program = b"\x03\x20\x02\x00\x01\x22\x23\x4c\x48" # int 0; int 1; swap; pop
         self.assertTrue(logic.check_program(program, None))
 
     def test_teal_sign(self):
