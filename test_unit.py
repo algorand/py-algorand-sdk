@@ -304,7 +304,7 @@ class TestPaymentTransaction(unittest.TestCase):
 
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
-    def test_serialize_keyreg(self):
+    def test_serialize_keyreg_online(self):
         mn = (
             "awful drop leaf tennis indoor begin mandate discover uncle seven "
             "only coil atom any hospital uncover make any climb actor armed me"
@@ -333,6 +333,58 @@ class TestPaymentTransaction(unittest.TestCase):
             "16epAd5mdddQ4H6MXHaYZH224f2kdHlwZaZrZXlyZWendm90ZWZzdM0nEKZ2b3Rla"
             "2QLp3ZvdGVrZXnEICr+0CO3IYtcumsaMvre8MwFaXj6kav65I81of0TGMi6p3ZvdG"
             "Vsc3TNJ38=")
+        self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
+
+    def test_serialize_keyreg_offline(self):
+        mn = (
+            "awful drop leaf tennis indoor begin mandate discover uncle seven "
+            "only coil atom any hospital uncover make any climb actor armed "
+            "measure need above hundred")
+        sk = mnemonic.to_private_key(mn)
+        pk = mnemonic.to_public_key(mn)
+        fee = 1000
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        votepk = None
+        selpk = None
+        votefirst = None
+        votelast = None
+        votedilution = None
+
+        sp = transaction.SuggestedParams(
+            fee, 12299691, 12300691, gh, flat_fee=True)
+        txn = transaction.KeyregTxn(pk, sp, votepk, selpk, votefirst, votelast,
+                                    votedilution)
+        signed_txn = txn.sign(sk)
+
+        golden = (
+            "gqNzaWfEQJosTMSKwGr+eWN5XsAJvbjh2DkzOtEN6lrDNM4TAnYIjl9L43zU70gAX"
+            "USAehZo9RyejgDA12B75SR6jIdhzQCjdHhuhqNmZWXNA+iiZnbOALutq6JnaMQgSG"
+            "O1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOALuxk6NzbmTEIAn70nYs"
+            "CPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWma2V5cmVn")
+        self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
+
+    def test_serialize_keyreg_nonpart(self):
+        mn = (
+            "awful drop leaf tennis indoor begin mandate discover uncle seven "
+            "only coil atom any hospital uncover make any climb actor armed "
+            "measure need above hundred")
+        sk = mnemonic.to_private_key(mn)
+        pk = mnemonic.to_public_key(mn)
+        fee = 1000
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        nonpart = True
+
+        sp = transaction.SuggestedParams(
+            fee, 12299691, 12300691, gh, flat_fee=True)
+        txn = transaction.KeyregTxn(pk, sp, None, None, None, None, None,
+                                    nonpart=nonpart)
+        signed_txn = txn.sign(sk)
+
+        golden = (
+            "gqNzaWfEQN7kw3tLcC1IweQ2Ru5KSqFS0Ba0cn34ncOWPIyv76wU8JPLxyS8alErm4"
+            "PHg3Q7n1Mfqa9SQ9zDY+FMeZLLgQyjdHhuh6NmZWXNA+iiZnbOALutq6JnaMQgSGO1"
+            "GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOALuxk6dub25wYXJ0w6Nzbm"
+            "TEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWma2V5cmVn")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_serialize_asset_create(self):
@@ -1237,7 +1289,7 @@ class TestMsgpack(unittest.TestCase):
         self.assertEqual(msigtxn, encoding.msgpack_encode(
                          encoding.msgpack_decode(msigtxn)))
 
-    def test_keyreg_txn(self):
+    def test_keyreg_txn_online(self):
         keyregtxn = (
             "jKNmZWXNA+iiZnbNcoqjZ2Vuq25ldHdvcmstdjM4omdoxCBN/+nfiNPXLbuigk8M/"
             "TXsMUfMK7dV//xB1wkoOhNu9qJsds1y7qZzZWxrZXnEIBguZEIjiD6KAPJq76B0ch"
@@ -1246,6 +1298,26 @@ class TestMsgpack(unittest.TestCase):
             "GC5kQiOIPooA8mrvoHRyFtk27F/PPN08bAufGhnp0BGndm90ZWxzdM1y7g==")
         self.assertEqual(keyregtxn, encoding.msgpack_encode(
                          encoding.msgpack_decode(keyregtxn)))
+
+    def test_keyreg_txn_offline(self):
+        keyregtxn = (
+            "hqNmZWXNA+iiZnbOALutq6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/c"
+            "OUJOiKibHbOALuxk6NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tu"
+            "H9pHR5cGWma2V5cmVn")
+        # using future_msgpack_decode instead of msgpack_decode
+        # because non-future transactions do not support offline keyreg
+        self.assertEqual(keyregtxn, encoding.msgpack_encode(
+                         encoding.future_msgpack_decode(keyregtxn)))
+
+    def test_keyreg_txn_nonpart(self):
+        keyregtxn = (
+            "h6NmZWXNA+iiZnbOALutq6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/c"
+            "OUJOiKibHbOALuxk6dub25wYXJ0w6NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUO"
+            "B+jFx2mGR9tuH9pHR5cGWma2V5cmVn")
+        # using future_msgpack_decode instead of msgpack_decode
+        # because non-future transactions do not support nonpart keyreg
+        self.assertEqual(keyregtxn, encoding.msgpack_encode(
+                         encoding.future_msgpack_decode(keyregtxn)))
 
     def test_asset_create(self):
         golden = (

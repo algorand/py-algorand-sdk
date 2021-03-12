@@ -383,6 +383,7 @@ class KeyregTxn(Transaction):
             with the same sender and lease can be confirmed in this
             transaction's valid rounds
         rekey_to (str, optional): additionally rekey the sender to this address
+        nonpart (bool, optional): mark the account non-participating if true
 
     Attributes:
         sender (str)
@@ -401,11 +402,12 @@ class KeyregTxn(Transaction):
         type (str)
         lease (byte[32])
         rekey_to (str)
+        nonpart (bool)
     """
 
     def __init__(self, sender, sp, votekey, selkey, votefst,
                  votelst, votekd, note=None,
-                 lease=None, rekey_to=None):
+                 lease=None, rekey_to=None, nonpart=None):
         Transaction.__init__(self, sender, sp, note,
                              lease, constants.keyreg_txn, rekey_to)
         self.votepk = votekey
@@ -413,6 +415,7 @@ class KeyregTxn(Transaction):
         self.votefst = votefst
         self.votelst = votelst
         self.votekd = votekd
+        self.nonpart = nonpart
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
@@ -421,11 +424,12 @@ class KeyregTxn(Transaction):
 
     def dictify(self):
         d = {
-            "selkey": base64.b64decode(self.selkey),
+            "selkey": base64.b64decode(self.selkey) if self.selkey is not None else None,
             "votefst": self.votefst,
             "votekd": self.votekd,
-            "votekey": base64.b64decode(self.votepk),
-            "votelst": self.votelst
+            "votekey": base64.b64decode(self.votepk) if self.votepk is not None else None,
+            "votelst": self.votelst,
+            "nonpart": self.nonpart
         }
         d.update(super(KeyregTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
@@ -434,12 +438,31 @@ class KeyregTxn(Transaction):
 
     @staticmethod
     def _undictify(d):
+        votekey = None
+        selkey = None
+        votefst = None
+        votelst = None
+        votekd = None
+        nonpart = None
+
+        if "votekey" in d:
+            votekey = base64.b64encode(d["votekey"]).decode()
+        if "selkey" in d:
+            selkey = base64.b64encode(d["selkey"]).decode()
+        if "votefst" in d:
+            votefst = d["votefst"]
+        if "votelst" in d:
+            votelst = d["votelst"]
+        if "nonpart" in d:
+            nonpart = d["nonpart"]
+
         args = {
-            "votekey": base64.b64encode(d["votekey"]).decode(),
-            "selkey": base64.b64encode(d["selkey"]).decode(),
-            "votefst": d["votefst"],
-            "votelst": d["votelst"],
-            "votekd": d["votekd"]
+            "votekey": votekey,
+            "selkey": selkey,
+            "votefst": votefst,
+            "votelst": votelst,
+            "votekd": votekd,
+            "nonpart": nonpart
         }
         return args
 
