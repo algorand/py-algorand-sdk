@@ -301,6 +301,21 @@ class AlgodClient:
         data = base64.b64decode(data)
         return self.algod_request("POST", req, data=data, headers=headers, **kwargs)
 
+    def genesis(self, **kwargs):
+        """Returns the entire genesis file."""
+        req = "/genesis"
+        return self.algod_request("GET", req, **kwargs)
+    
+    def proof(self, round_num, txid, **kwargs):
+        """
+        Get the proof for a given transaction in a round.
+
+        Args:
+            round_num (int): The round in which the transaction appears.
+            txid (str): The transaction ID for which to generate a proof.
+        """
+        req = "/blocks/{}/transactions/{}/proof".format(round_num, txid)
+        return self.algod_request("GET", req, **kwargs)
 
 def _specify_round_string(block, round_num):
     """
