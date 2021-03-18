@@ -90,7 +90,7 @@ class IndexerClient:
     def accounts(
         self, asset_id=None, limit=None, next_page=None, min_balance=None,
         max_balance=None, block=None, auth_addr=None, application_id=None,
-        round_num=None, **kwargs):
+        round_num=None, include_all=False, **kwargs):
         """
         Return accounts that match the search; microalgos are the default
         currency unless asset_id is specified, in which case the asset will
@@ -113,6 +113,10 @@ class IndexerClient:
                 application
             round_num (int, optional): alias for block; only specify one of
                 these
+            include_all (bool, optional): include all items including closed
+                accounts, deleted applications, destroyed assets, opted-out
+                asset holdings, and closed-out application localstates. Defaults
+                to false.
         """
         req = "/accounts"
         query = dict()
@@ -131,10 +135,12 @@ class IndexerClient:
             query["auth-addr"] = auth_addr
         if application_id:
             query["application-id"] = application_id
+        if include_all:
+            query["include-all"] = include_all
         return self.indexer_request("GET", req, query, **kwargs)
 
     def asset_balances(self, asset_id, limit=None, next_page=None, min_balance=None,
-        max_balance=None, block=None, round_num=None, **kwargs):
+        max_balance=None, block=None, round_num=None, include_all=False, **kwargs):
         """
         Return accounts that hold the asset; microalgos are the default
         currency unless asset_id is specified, in which case the asset will
@@ -153,6 +159,10 @@ class IndexerClient:
                 some configurations
             round_num (int, optional): alias for block; only specify one of
                 these
+            include_all (bool, optional): include all items including closed
+                accounts, deleted applications, destroyed assets, opted-out
+                asset holdings, and closed-out application localstates. Defaults
+                to false.
         """
         req = "/assets/" + str(asset_id) + "/balances"
         query = dict()
@@ -164,6 +174,8 @@ class IndexerClient:
             query["currency-greater-than"] = min_balance
         if max_balance:
             query["currency-less-than"] = max_balance
+        if include_all:
+            query["include-all"] = include_all
         _specify_round(query, block, round_num)
         return self.indexer_request("GET", req, query, **kwargs)
 
@@ -182,7 +194,8 @@ class IndexerClient:
 
         return self.indexer_request("GET", req, **kwargs)
 
-    def account_info(self, address, block=None, round_num=None, **kwargs):
+    def account_info(self, address, block=None, round_num=None,
+        include_all=False, **kwargs):
         """
         Return account information.
 
@@ -191,12 +204,29 @@ class IndexerClient:
             block (int, optional): use results from the specified round
             round_num (int, optional): alias for block; only specify one of
                 these
+            include_all (bool, optional): include all items including closed
+                accounts, deleted applications, destroyed assets, opted-out
+                asset holdings, and closed-out application localstates. Defaults
+                to false.
         """
         req = "/accounts/" + address
         query = dict()
         _specify_round(query, block, round_num)
+        if include_all:
+            query["include-all"] = include_all
 
         return self.indexer_request("GET", req, query, **kwargs)
+
+    def transaction(self, txid, **kwargs):
+        """
+        Returns information about the given transaction.
+
+        Args:
+            txid (str): The ID of the transaction to look up.
+        """
+        req = "/transactions/" + txid
+
+        return self.indexer_request("GET", req, **kwargs)
 
     def search_transactions(
         self, limit=None, next_page=None, note_prefix=None, txn_type=None,
@@ -464,7 +494,7 @@ class IndexerClient:
 
     def search_assets(
         self, limit=None, next_page=None, creator=None, name=None, unit=None,
-        asset_id=None, **kwargs):
+        asset_id=None, include_all=False, **kwargs):
         """
         Return assets that satisfy the conditions.
 
@@ -477,6 +507,10 @@ class IndexerClient:
             name (str, optional): filter just assets with the given name
             unit (str, optional): filter just assets with the given unit
             asset_id (int, optional): return only the asset with this ID
+            include_all (bool, optional): include all items including closed
+                accounts, deleted applications, destroyed assets, opted-out
+                asset holdings, and closed-out application localstates. Defaults
+                to false.
         """
         req = "/assets"
         query = dict()
@@ -492,49 +526,66 @@ class IndexerClient:
             query["unit"] = unit
         if asset_id:
             query["asset-id"] = asset_id
+        if include_all:
+            query["include-all"] = include_all
 
         return self.indexer_request("GET", req, query, **kwargs)
 
-    def asset_info(self, asset_id, **kwargs):
+    def asset_info(self, asset_id, include_all=False, **kwargs):
         """
         Return asset information.
 
         Args:
             asset_id (int): asset index
+            include_all (bool, optional): include all items including closed
+                accounts, deleted applications, destroyed assets, opted-out
+                asset holdings, and closed-out application localstates. Defaults
+                to false.
         """
         req = "/assets/" + str(asset_id)
-        return self.indexer_request("GET", req, **kwargs)
+        query = dict()
+        if include_all:
+            query["include-all"] = include_all
+        return self.indexer_request("GET", req, query, **kwargs)
 
-    def applications(
-            self, application_id, round=None, round_num=None, **kwargs):
+    def applications(self, application_id, round=None, round_num=None,
+        include_all=False, **kwargs):
         """
         Return applications that satisfy the conditions.
 
         Args:
             application_id (int): application index
-            round (int, optional): restrict search to passed round;
-                deprecated, please use round_num
-            round_num (int, optional): alias for round; only specify one of these
+            round (int, optional): not supported, DO NOT USE!
+            round_num (int, optional): not supported, DO NOT USE!
+            include_all (bool, optional): include all items including closed
+                accounts, deleted applications, destroyed assets, opted-out
+                asset holdings, and closed-out application localstates. Defaults
+                to false.
         """
         req = "/applications/" + str(application_id)
         query = dict()
         _specify_round(query, round, round_num)
+        if include_all:
+            query["include-all"] = include_all
 
         return self.indexer_request("GET", req, query, **kwargs)
 
     def search_applications(
             self, application_id=None, round=None, limit=None, next_page=None,
-            round_num=None, **kwargs):
+            round_num=None, include_all=False, **kwargs):
         """
         Return applications that satisfy the conditions.
 
         Args:
             application_id (int, optional): restrict search to application index
-            round (int, optional): restrict search to passed round
-                deprecated, please use round_num
+            round (int, optional): not supported, DO NOT USE!
             limit (int, optional): restrict number of results to limit
             next_page (string, optional): used for pagination
-            round_num (int, optional): alias for round; only specify one of these
+            round_num (int, optional): not supported, DO NOT USE!
+            include_all (bool, optional): include all items including closed
+                accounts, deleted applications, destroyed assets, opted-out
+                asset holdings, and closed-out application localstates. Defaults
+                to false.
         """
         req = "/applications"
         query = dict()
@@ -545,6 +596,8 @@ class IndexerClient:
             query["limit"] = limit
         if next_page:
             query["next"] = next_page
+        if include_all:
+            query["include-all"] = include_all
 
         return self.indexer_request("GET", req, query, **kwargs)
 
