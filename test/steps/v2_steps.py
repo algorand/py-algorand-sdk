@@ -229,7 +229,7 @@ def parse_acc_info(context, address):
 def asset_info(context, asset_id):
     context.response = context.acl.asset_info(int(asset_id))
 
-@when(u'we make a GetApplicationByID call for applicationID {app_id}')
+@when('we make a GetApplicationByID call for applicationID {app_id}')
 def application_info(context, app_id):
     context.response = context.acl.application_info(int(app_id))
 
