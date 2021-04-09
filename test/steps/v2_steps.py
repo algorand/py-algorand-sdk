@@ -225,6 +225,13 @@ def acc_info_any(context):
 def parse_acc_info(context, address):
     assert context.response["address"] == address
 
+@when('we make a GetAssetByID call for assetID {asset_id}')
+def asset_info(context, asset_id):
+    context.response = context.acl.asset_info(int(asset_id))
+
+@when(u'we make a GetApplicationByID call for applicationID {app_id}')
+def application_info(context, app_id):
+    context.response = context.acl.application_info(int(app_id))
 
 @when('we make a Get Block call against block number {block} with format "{response_format}"')
 def block(context, block, response_format):
@@ -586,6 +593,13 @@ def lookup_asset_any(context):
 def parse_asset(context, index):
     assert context.response["asset"]["index"] == int(index)
 
+@when('we make a LookupApplications call with applicationID {app_id}')
+def lookup_application(context, app_id):
+    context.response = context.icl.applications(int(app_id))
+
+@when('we make a SearchForApplications call with applicationID {app_id}')
+def search_application(context, app_id):
+    context.response = context.icl.search_applications(int(app_id))
 
 @when(
     'we make a Search Accounts call with assetID {index} limit {limit} currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} and round {block}')
