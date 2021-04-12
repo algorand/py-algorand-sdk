@@ -742,6 +742,8 @@ class AssetTransferTxn(Transaction):
         self.amount = amt
         if (not isinstance(self.amount, int)) or self.amount < 0:
             raise error.WrongAmountType
+        if type(index) != int:
+            raise TypeError("Index must be an int")
         self.index = index
         self.close_assets_to = close_assets_to
         self.revocation_target = revocation_target
