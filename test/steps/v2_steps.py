@@ -14,7 +14,7 @@ from algosdk import account, encoding, error, mnemonic
 from algosdk.v2client import *
 from algosdk.v2client.models import DryrunRequest, DryrunSource, \
     Account, Application, ApplicationLocalState
-from algosdk.error import AlgodHTTPError
+from algosdk.error import AlgodHTTPError, IndexerHTTPError
 from algosdk.testing.dryrun import DryrunTestCaseMixin
 
 from test.steps.steps import token as daemon_token
@@ -27,6 +27,13 @@ def parse_string(text):
 
 register_type(MaybeString=parse_string)
 
+@parse.with_pattern(r"true|false")
+def parse_bool(value):
+    if value not in ("true", "false"):
+        raise ValueError("Unknown value for include_all: {}".format(value))
+    return value == "true"
+
+register_type(MaybeBool=parse_bool)
 
 @given("mock server recording request paths")
 def setup_mockserver(context):
@@ -218,6 +225,13 @@ def acc_info_any(context):
 def parse_acc_info(context, address):
     assert context.response["address"] == address
 
+@when('we make a GetAssetByID call for assetID {asset_id}')
+def asset_info(context, asset_id):
+    context.response = context.acl.asset_info(int(asset_id))
+
+@when('we make a GetApplicationByID call for applicationID {app_id}')
+def application_info(context, app_id):
+    context.response = context.acl.application_info(int(app_id))
 
 @when('we make a Get Block call against block number {block} with format "{response_format}"')
 def block(context, block, response_format):
@@ -579,6 +593,13 @@ def lookup_asset_any(context):
 def parse_asset(context, index):
     assert context.response["asset"]["index"] == int(index)
 
+@when('we make a LookupApplications call with applicationID {app_id}')
+def lookup_application(context, app_id):
+    context.response = context.icl.applications(int(app_id))
+
+@when('we make a SearchForApplications call with applicationID {app_id}')
+def search_application(context, app_id):
+    context.response = context.icl.search_applications(int(app_id))
 
 @when(
     'we make a Search Accounts call with assetID {index} limit {limit} currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} and round {block}')
@@ -598,6 +619,16 @@ def search_accounts(context, index, limit, currencyGreaterThan, currencyLessThan
                                             max_balance=int(currencyLessThan), block=int(block), auth_addr=authAddr)
 
 @when(
+    'I use {indexer} to search for an account with {assetid}, {limit}, {currencygt}, {currencylt}, "{auth_addr:MaybeString}", {application_id}, "{include_all:MaybeBool}" and token "{token:MaybeString}"')
+def icl_search_accounts_with_auth_addr_and_app_id_and_include_all(context, indexer, assetid, limit, currencygt, currencylt, auth_addr, application_id, include_all, token):
+    context.response = context.icls[indexer].accounts(asset_id=int(assetid), limit=int(limit), next_page=token,
+                                                      min_balance=int(currencygt),
+                                                      max_balance=int(currencylt),
+                                                      auth_addr=auth_addr,
+                                                      application_id=int(application_id),
+                                                      include_all=include_all)
+
+@when(
     'I use {indexer} to search for an account with {assetid}, {limit}, {currencygt}, {currencylt}, "{auth_addr:MaybeString}", {application_id} and token "{token:MaybeString}"')
 def icl_search_accounts_with_auth_addr_and_app_id(context, indexer, assetid, limit, currencygt, currencylt, auth_addr, application_id, token):
     context.response = context.icls[indexer].accounts(asset_id=int(assetid), limit=int(limit), next_page=token,
@@ -605,7 +636,6 @@ def icl_search_accounts_with_auth_addr_and_app_id(context, indexer, assetid, lim
                                                       max_balance=int(currencylt),
                                                       auth_addr=auth_addr,
                                                       application_id=int(application_id))
-
 
 @when(
     'I use {indexer} to search for an account with {assetid}, {limit}, {currencygt}, {currencylt} and token "{token:MaybeString}"')
@@ -906,24 +936,33 @@ def check_assets(context, num, assetidout):
     if int(num) > 0:
         assert context.response["assets"][0]["index"] == int(assetidout)
 
+@when('I use {indexer} to search for applications with {limit}, {application_id}, "{include_all:MaybeBool}" and token "{token:MaybeString}"')
+def search_applications_include_all(context, indexer, limit, application_id, include_all, token):
+    context.response = context.icls[indexer].search_applications(application_id=int(application_id),limit=int(limit),
+                                                                 include_all=include_all,next_page=token)
 
 @when('I use {indexer} to search for applications with {limit}, {application_id}, and token "{token:MaybeString}"')
-def step_impl(context, indexer, limit, application_id, token):
+def search_applications(context, indexer, limit, application_id, token):
     context.response = context.icls[indexer].search_applications(application_id=int(application_id),limit=int(limit),
                                                                  next_page=token)
 
+@when('I use {indexer} to lookup application with {application_id} and "{include_all:MaybeBool}"')
+def lookup_application_include_all(context, indexer, application_id, include_all):
+    try:
+        context.response = context.icls[indexer].applications(application_id=int(application_id), include_all=include_all)
+    except IndexerHTTPError as e:
+        context.response = json.loads(str(e))
 
 @when('I use {indexer} to lookup application with {application_id}')
-def step_impl(context, indexer, application_id):
+def lookup_application(context, indexer, application_id):
     context.response = context.icls[indexer].applications(application_id=int(application_id))
-
 
 @then(u'the parsed response should equal "{jsonfile}".')
 def step_impl(context, jsonfile):
     loaded_response = None
     dir_path = os.path.dirname(os.path.realpath(__file__))
     dir_path = os.path.dirname(os.path.dirname(dir_path))
-    with open(dir_path + "/test-harness/features/resources/" + jsonfile, "rb") as f:
+    with open(dir_path + "/test/features/resources/" + jsonfile, "rb") as f:
         loaded_response = bytearray(f.read())
     # sort context.response
     def recursively_sort_on_key(dictionary):
@@ -1085,12 +1124,12 @@ def build_app_transaction(context, operation, application_id, sender, approval_p
     if approval_program == "none":
         approval_program = None
     elif approval_program:
-        with open(dir_path + "/test-harness/features/resources/" + approval_program, "rb") as f:
+        with open(dir_path + "/test/features/resources/" + approval_program, "rb") as f:
             approval_program = bytearray(f.read())
     if clear_program == "none":
         clear_program = None
     elif clear_program:
-        with open(dir_path + "/test-harness/features/resources/" + clear_program, "rb") as f:
+        with open(dir_path + "/test/features/resources/" + clear_program, "rb") as f:
             clear_program = bytearray(f.read())
     if app_args == "none":
         app_args = None
@@ -1172,12 +1211,12 @@ def build_app_txn_with_transient(context, operation, approval_program, clear_pro
     if approval_program == "none":
         approval_program = None
     elif approval_program:
-        with open(dir_path + "/test-harness/features/resources/" + approval_program, "rb") as f:
+        with open(dir_path + "/test/features/resources/" + approval_program, "rb") as f:
             approval_program = bytearray(f.read())
     if clear_program == "none":
         clear_program = None
     elif clear_program:
-        with open(dir_path + "/test-harness/features/resources/" + clear_program, "rb") as f:
+        with open(dir_path + "/test/features/resources/" + clear_program, "rb") as f:
             clear_program = bytearray(f.read())
     if int(local_ints) == 0 and int(local_bytes) == 0:
         local_schema = None

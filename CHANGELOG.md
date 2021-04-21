@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.5.0
+### Added
+- Support new features for indexer 2.3.2
+- Support for offline and nonparticipating key registration transactions.
+- Add TEAL 3 support
+
+### BugFix
+- Detects the sending of unsigned transactions
+- Add asset_info() and application_info() methods to the v2 AlgodClient class.
+
 ## 1.4.1
 ## Bugfix
 - Dependency on missing constant removed

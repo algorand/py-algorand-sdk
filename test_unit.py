@@ -1,24 +1,18 @@
 import base64
 import copy
-import unittest
 import random
+import unittest
 from unittest.mock import Mock
-
-from algosdk.future import transaction
-from algosdk import encoding
-from algosdk import account
-from algosdk import mnemonic
-from algosdk import wordlist
-from algosdk import error
-from algosdk import constants
-from algosdk import util
-from algosdk import logic
-from algosdk.future import template
-from algosdk.testing import dryrun
 
 from nacl.signing import SigningKey
 
-class TestTransaction(unittest.TestCase):
+from algosdk import (account, constants, encoding, error, logic, mnemonic,
+                     util, wordlist)
+from algosdk.future import template, transaction
+from algosdk.testing import dryrun
+
+
+class TestPaymentTransaction(unittest.TestCase):
     def test_min_txn_fee(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
@@ -32,16 +26,38 @@ class TestTransaction(unittest.TestCase):
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         sp = transaction.SuggestedParams(0, 1, 100, gh)
         f = lambda: transaction.PaymentTxn(address, sp, address,
-                                           1000, note="hello")
+                                           1000, note=45)
         self.assertRaises(error.WrongNoteType, f)
+
+    def test_note_strings_allowed(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(0, 1, 100, gh)
+        txn = transaction.PaymentTxn(address, sp, address,
+                                     1000, note="helo")
+        self.assertEqual(constants.min_txn_fee, txn.fee)
 
     def test_note_wrong_length(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         sp = transaction.SuggestedParams(0, 1, 100, gh)
-        f = lambda: transaction.PaymentTxn(address, sp, address, 
+        f = lambda: transaction.PaymentTxn(address, sp, address,
                                            1000, note=("0"*1025).encode())
         self.assertRaises(error.WrongNoteLength, f)
+
+    def test_leases(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(0, 1, 100, gh)
+        # 32 byte zero lease should be dropped from msgpack
+        txn1 = transaction.PaymentTxn(address, sp, address,
+                                      1000, lease=(b"\0"*32))
+        txn2 = transaction.PaymentTxn(address, sp, address,
+                                      1000)
+
+        self.assertEqual(txn1.dictify(), txn2.dictify())
+        self.assertEqual(txn1, txn2)
+        self.assertEqual(txn2, txn1)
 
     def test_serialize(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
@@ -154,7 +170,7 @@ class TestTransaction(unittest.TestCase):
         self.assertEqual(enc, re_enc)
 
     def test_sign_logic_multisig(self):
-        program = b"\x01\x20\x01\x01\x22" 
+        program = b"\x01\x20\x01\x01\x22"
         lsig = transaction.LogicSig(program)
         passphrase = "sight garment riot tattoo tortoise identify left talk sea ill walnut leg robot myth toe perfect rifle dizzy spend april build legend brother above hospital"
         sk = mnemonic.to_private_key(passphrase)
@@ -166,7 +182,7 @@ class TestTransaction(unittest.TestCase):
 
         msig = transaction.Multisig(1, 2, [addr, addr2])
         lsig.sign(sk, msig)
-        lsig.append_to_multisig(sk2)    
+        lsig.append_to_multisig(sk2)
 
         receiver = "DOMUC6VGZH7SSY5V332JR5HRLZSOJDWNPBI4OI2IIBU6A3PFLOBOXZ3KFY"
         gh = "zNQES/4IqimxRif40xYvzBBIYCZSbYvNSRIzVIh4swo="
@@ -187,7 +203,7 @@ class TestTransaction(unittest.TestCase):
             "2XuuO6mS+3IetwlKVPM0qdKBIiMVdhzAOMPKpHR5cGWjcGF5")
 
         encoded = encoding.msgpack_encode(lstx)
-        self.assertEquals(encoded, golden)
+        self.assertEqual(encoded, golden)
 
     def test_serialize_zero_receiver(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
@@ -201,7 +217,6 @@ class TestTransaction(unittest.TestCase):
             "iKNhbXTNA+ijZmVlzQPoomZ2AaJnaMQgJgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMe"
             "K+wRSaQ7dKibHZkpG5vdGXEAwEgyKNzbmTEIP5oQQPnKvM7kbGuuSOunAVfSbJzHQ"
             "tAtCP3Bf2XdDxmpHR5cGWjcGF5")
-        print(encoding.msgpack_encode(txn))
 
         self.assertEqual(golden, encoding.msgpack_encode(txn))
 
@@ -210,16 +225,16 @@ class TestTransaction(unittest.TestCase):
         receiver = None
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         sp = transaction.SuggestedParams(3, 1, 100, gh)
-        
+
         with self.assertRaises(error.ZeroAddressError):
             transaction.PaymentTxn(address, sp, receiver, 1000)
-    
+
     def test_error_empty_receiver_asset_txn(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         receiver = None
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         sp = transaction.SuggestedParams(3, 1, 100, gh)
-        
+
         with self.assertRaises(error.ZeroAddressError):
             transaction.AssetTransferTxn(address, sp, receiver, 1000, 24)
 
@@ -289,7 +304,7 @@ class TestTransaction(unittest.TestCase):
 
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
-    def test_serialize_keyreg(self):
+    def test_serialize_keyreg_online(self):
         mn = (
             "awful drop leaf tennis indoor begin mandate discover uncle seven "
             "only coil atom any hospital uncover make any climb actor armed me"
@@ -318,6 +333,58 @@ class TestTransaction(unittest.TestCase):
             "16epAd5mdddQ4H6MXHaYZH224f2kdHlwZaZrZXlyZWendm90ZWZzdM0nEKZ2b3Rla"
             "2QLp3ZvdGVrZXnEICr+0CO3IYtcumsaMvre8MwFaXj6kav65I81of0TGMi6p3ZvdG"
             "Vsc3TNJ38=")
+        self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
+
+    def test_serialize_keyreg_offline(self):
+        mn = (
+            "awful drop leaf tennis indoor begin mandate discover uncle seven "
+            "only coil atom any hospital uncover make any climb actor armed "
+            "measure need above hundred")
+        sk = mnemonic.to_private_key(mn)
+        pk = mnemonic.to_public_key(mn)
+        fee = 1000
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        votepk = None
+        selpk = None
+        votefirst = None
+        votelast = None
+        votedilution = None
+
+        sp = transaction.SuggestedParams(
+            fee, 12299691, 12300691, gh, flat_fee=True)
+        txn = transaction.KeyregTxn(pk, sp, votepk, selpk, votefirst, votelast,
+                                    votedilution)
+        signed_txn = txn.sign(sk)
+
+        golden = (
+            "gqNzaWfEQJosTMSKwGr+eWN5XsAJvbjh2DkzOtEN6lrDNM4TAnYIjl9L43zU70gAX"
+            "USAehZo9RyejgDA12B75SR6jIdhzQCjdHhuhqNmZWXNA+iiZnbOALutq6JnaMQgSG"
+            "O1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOALuxk6NzbmTEIAn70nYs"
+            "CPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWma2V5cmVn")
+        self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
+
+    def test_serialize_keyreg_nonpart(self):
+        mn = (
+            "awful drop leaf tennis indoor begin mandate discover uncle seven "
+            "only coil atom any hospital uncover make any climb actor armed "
+            "measure need above hundred")
+        sk = mnemonic.to_private_key(mn)
+        pk = mnemonic.to_public_key(mn)
+        fee = 1000
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        nonpart = True
+
+        sp = transaction.SuggestedParams(
+            fee, 12299691, 12300691, gh, flat_fee=True)
+        txn = transaction.KeyregTxn(pk, sp, None, None, None, None, None,
+                                    nonpart=nonpart)
+        signed_txn = txn.sign(sk)
+
+        golden = (
+            "gqNzaWfEQN7kw3tLcC1IweQ2Ru5KSqFS0Ba0cn34ncOWPIyv76wU8JPLxyS8alErm4"
+            "PHg3Q7n1Mfqa9SQ9zDY+FMeZLLgQyjdHhuh6NmZWXNA+iiZnbOALutq6JnaMQgSGO1"
+            "GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOALuxk6dub25wYXJ0w6Nzbm"
+            "TEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWma2V5cmVn")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_serialize_asset_create(self):
@@ -713,7 +780,194 @@ class TestTransaction(unittest.TestCase):
         self.assertEqual(len(txns), 0)
 
 
+
+class TestAssetConfigConveniences(unittest.TestCase):
+    """Tests that the simplified versions of Config are equivalent to Config"""
+    sender = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+    genesis = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+    params = transaction.SuggestedParams(0, 1, 100, genesis)
+
+    def test_asset_create(self):
+        create = transaction.AssetCreateTxn(self.sender, self.params,
+                                            1000, "2", False,
+                                            manager=None,
+                                            reserve=None,
+                                            freeze=None,
+                                            clawback=None,
+                                            unit_name="NEWCOIN",
+                                            asset_name="A new kind of coin",
+                                            url="https://newcoin.co/")
+        config = transaction.AssetConfigTxn(self.sender, self.params, index=None,
+                                            total="1000", decimals=2,
+                                            unit_name="NEWCOIN",
+                                            asset_name="A new kind of coin",
+                                            url="https://newcoin.co/",
+                                            strict_empty_address_check=False)
+        self.assertEqual(create.dictify(), config.dictify())
+        self.assertEqual(config, create)
+
+        self.assertEqual(transaction.AssetCreateTxn.undictify(create.dictify()),
+                         config)
+
+
+    def test_asset_update(self):
+        update = transaction.AssetUpdateTxn(self.sender, self.params, 6,
+                                            manager=None,
+                                            reserve=self.sender,
+                                            freeze=None,
+                                            clawback=None)
+        config = transaction.AssetConfigTxn(self.sender, self.params, index="6",
+                                            reserve=self.sender,
+                                            strict_empty_address_check=False)
+        self.assertEqual(update.dictify(), config.dictify())
+        self.assertEqual(config, update)
+
+        self.assertEqual(transaction.AssetUpdateTxn.undictify(update.dictify()),
+                         config)
+
+    def test_asset_destroy(self):
+        destroy = transaction.AssetDestroyTxn(self.sender, self.params, 23)
+        config = transaction.AssetConfigTxn(self.sender, self.params, index="23",
+                                            strict_empty_address_check=False)
+        self.assertEqual(destroy.dictify(), config.dictify())
+        self.assertEqual(config, destroy)
+
+        self.assertEqual(transaction.AssetDestroyTxn.undictify(destroy.dictify()),
+                         config)
+
+class TestAssetTransferConveniences(unittest.TestCase):
+    sender = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+    receiver = "DOMUC6VGZH7SSY5V332JR5HRLZSOJDWNPBI4OI2IIBU6A3PFLOBOXZ3KFY"
+    genesis = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+    params = transaction.SuggestedParams(0, 1, 100, genesis)
+    def test_asset_optin(self):
+        optin = transaction.AssetOptInTxn(self.sender, self.params, "7")
+        xfer = transaction.AssetTransferTxn(self.sender, self.params, self.sender,
+                                            0, index=7)
+        self.assertEqual(optin.dictify(), xfer.dictify())
+        self.assertEqual(xfer, optin)
+
+        self.assertEqual(transaction.AssetOptInTxn.undictify(optin.dictify()),
+                         xfer)
+
+    def test_asset_closeout(self):
+        closeout = transaction.AssetCloseOutTxn(self.sender, self.params,
+                                                self.receiver, "7")
+        xfer = transaction.AssetTransferTxn(self.sender, self.params, self.receiver,
+                                            0, index=7, close_assets_to=self.receiver)
+        self.assertEqual(closeout.dictify(), xfer.dictify())
+        self.assertEqual(xfer, closeout)
+
+        self.assertEqual(transaction.AssetCloseOutTxn.undictify(closeout.dictify()),
+                         xfer)
+
+class TestApplicationTransactions(unittest.TestCase):
+    sender = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+    genesis = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+    lschema = transaction.StateSchema(1, 2)
+    gschema = transaction.StateSchema(3, 4)
+
+    def test_application_call(self):
+        params = transaction.SuggestedParams(0, 1, 100, self.genesis)
+        for oc in transaction.OnComplete:
+            b = transaction.ApplicationCallTxn(self.sender, params, 10, oc,
+                                               app_args=[b"hello"])
+            s = transaction.ApplicationCallTxn(self.sender, params, "10", oc,
+                                               app_args=["hello"])
+            self.assertEqual(b, s) # string is encoded same as corresponding bytes
+            transaction.ApplicationCallTxn(self.sender, params, 10, oc,
+                                           app_args=[2,3,0]) # ints work
+            with self.assertRaises(AssertionError):
+                transaction.ApplicationCallTxn(self.sender, params, 10, oc,
+                                               app_args=[3.4]) # floats don't
+            with self.assertRaises(OverflowError):
+                transaction.ApplicationCallTxn(self.sender, params, 10, oc,
+                                               app_args=[-10]) # nor negative
+            transaction.ApplicationCallTxn(self.sender, params, 10, oc, # maxuint64
+                                           app_args=[18446744073709551615])
+            with self.assertRaises(OverflowError):
+                transaction.ApplicationCallTxn(self.sender, params, 10, oc, # too big
+                                               app_args=[18446744073709551616])
+
+            i = transaction.ApplicationCallTxn(self.sender, params, 10, oc,
+                                               foreign_apps=[4, 3],
+                                               foreign_assets=(2,1))
+            s = transaction.ApplicationCallTxn(self.sender, params, "10", oc,
+                                               foreign_apps=["4", 3],
+                                               foreign_assets=[2, "1"])
+            self.assertEqual(i, s) # string is encoded same as corresponding int
+
+    def test_application_create(self):
+        approve = b"\0"
+        clear = b"\1"
+        params = transaction.SuggestedParams(0, 1, 100, self.genesis)
+        for oc in transaction.OnComplete:
+            # We will confirm that the Create is just shorthand for
+            # the Call.  But note that the programs come before the
+            # schemas and the schemas are REVERSED!  That's
+            # unfortunate, and we should consider adding "*" to the
+            # argument list after on_completion, thereby forcing the
+            # use of named arguments.
+            create = transaction.ApplicationCreateTxn(self.sender, params, oc,
+                                                      approve, clear,
+                                                      self.lschema, self.gschema)
+            call = transaction.ApplicationCallTxn(self.sender, params, 0, oc,
+                                                  self.gschema, self.lschema,
+                                                  approve, clear)
+            # Check the dict first, it's important on it's own, and it
+            # also gives more a meaningful error if they're not equal.
+            self.assertEqual(create.dictify(), call.dictify())
+            self.assertEqual(create, call)
+            self.assertEqual(call, create)
+
+    def test_application_create_schema(self):
+        approve = b"\0"
+        clear = b"\1"
+        zero_schema = transaction.StateSchema(0, 0)
+        params = transaction.SuggestedParams(0, 1, 100, self.genesis)
+        for oc in transaction.OnComplete:
+            # verify that a schema with 0 uints and 0 bytes behaves the same as no schema
+            txn_zero_schema = transaction.ApplicationCreateTxn(self.sender, params, oc,
+                                                      approve, clear,
+                                                      zero_schema, zero_schema)
+            txn_none_schema = transaction.ApplicationCreateTxn(self.sender, params, oc,
+                                                      approve, clear,
+                                                      None, None)
+            # Check the dict first, it's important on its own, and it
+            # also gives more a meaningful error if they're not equal.
+            self.assertEqual(txn_zero_schema.dictify(), txn_none_schema.dictify())
+            self.assertEqual(txn_zero_schema, txn_none_schema)
+            self.assertEqual(txn_none_schema, txn_zero_schema)
+
+    def test_application_update(self):
+        empty = b""
+        params = transaction.SuggestedParams(0, 1, 100, self.genesis)
+        i = transaction.ApplicationUpdateTxn(self.sender, params, 10, empty, empty)
+        s = transaction.ApplicationUpdateTxn(self.sender, params, "10", empty, empty)
+        self.assertEqual(i, s) # int and string encoded same
+
+        call = transaction.ApplicationCallTxn(self.sender, params, 10,
+                                              transaction.OnComplete.UpdateApplicationOC,
+                                              None, None,
+                                              empty, empty)
+        self.assertEqual(i.dictify(), call.dictify())
+        self.assertEqual(i, call)
+
+    def test_application_delete(self):
+        params = transaction.SuggestedParams(0, 1, 100, self.genesis)
+        i = transaction.ApplicationDeleteTxn(self.sender, params, 10)
+        s = transaction.ApplicationDeleteTxn(self.sender, params, "10")
+        self.assertEqual(i, s) # int and string encoded same
+
+        call = transaction.ApplicationCallTxn(self.sender, params, 10,
+                                              transaction.OnComplete.DeleteApplicationOC)
+        self.assertEqual(i.dictify(), call.dictify())
+        self.assertEqual(i, call)
+
 class TestMnemonic(unittest.TestCase):
+    zero_bytes = bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
     def test_mnemonic_private_key(self):
         priv_key, _ = account.generate_account()
         mn = mnemonic.from_private_key(priv_key)
@@ -721,17 +975,45 @@ class TestMnemonic(unittest.TestCase):
         self.assertEqual(priv_key, mnemonic.to_private_key(mn))
 
     def test_zero_mnemonic(self):
-        zero_bytes = bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
         expected_mnemonic = (
             "abandon abandon abandon abandon abandon abandon abandon abandon "
             "abandon abandon abandon abandon abandon abandon abandon abandon "
             "abandon abandon abandon abandon abandon abandon abandon abandon "
             "invest")
-        result = mnemonic._from_key(zero_bytes)
+        result = mnemonic._from_key(self.zero_bytes)
         self.assertEqual(expected_mnemonic, result)
         result = mnemonic._to_key(result)
-        self.assertEqual(zero_bytes, result)
+        self.assertEqual(self.zero_bytes, result)
+
+    def test_whitespace_irrelevance(self):
+        padded = """
+        abandon abandon abandon abandon abandon abandon abandon abandon
+        abandon abandon abandon abandon abandon abandon abandon abandon
+        abandon abandon abandon abandon abandon abandon abandon abandon
+        invest
+        """
+        result = mnemonic._to_key(padded)
+        self.assertEqual(self.zero_bytes, result)
+
+    def test_case_irrelevance(self):
+        padded = """
+        abandon ABANDON abandon abandon abandon abandon abandon abandon
+        abandon abandon abandon abandon abandon abandon abandon abandon
+        abandon abandon abandon abandon abandon abandon abandon abandon
+        invEST
+        """
+        result = mnemonic._to_key(padded)
+        self.assertEqual(self.zero_bytes, result)
+
+    def test_short_words(self):
+        padded = """
+        aban abandon abandon abandon abandon abandon abandon abandon
+        aban abandon abandon abandon abandon abandon abandon abandon
+        aban abandon abandon abandon abandon abandon abandon abandon
+        inve
+        """
+        result = mnemonic._to_key(padded)
+        self.assertEqual(self.zero_bytes, result)
 
     def test_wrong_checksum(self):
         mn = (
@@ -748,10 +1030,20 @@ class TestMnemonic(unittest.TestCase):
             "abandon abandon abandon venues abandon abandon abandon abandon "
             "invest")
         self.assertRaises(ValueError, mnemonic._to_key, mn)
+        mn = (
+            "abandon abandon abandon abandon abandon abandon abandon abandon "
+            "abandon abandon abandon abandon abandon abandon abandon abandon "
+            "abandon abandon abandon abandon abandon abandon abandon abandon "
+            "x-ray")
+        self.assertRaises(ValueError, mnemonic._to_key, mn)
 
-    def test_wordlist(self):
+    def test_wordlist_integrity(self):
+        """This isn't a test of _checksum, it reminds us not to change the
+        wordlist.
+
+        """
         result = mnemonic._checksum(bytes(wordlist.word_list_raw(), "utf-8"))
-        self.assertEqual(result, "venue")
+        self.assertEqual(result, 1939)
 
     def test_mnemonic_wrong_len(self):
         mn = "abandon abandon abandon"
@@ -997,7 +1289,7 @@ class TestMsgpack(unittest.TestCase):
         self.assertEqual(msigtxn, encoding.msgpack_encode(
                          encoding.msgpack_decode(msigtxn)))
 
-    def test_keyreg_txn(self):
+    def test_keyreg_txn_online(self):
         keyregtxn = (
             "jKNmZWXNA+iiZnbNcoqjZ2Vuq25ldHdvcmstdjM4omdoxCBN/+nfiNPXLbuigk8M/"
             "TXsMUfMK7dV//xB1wkoOhNu9qJsds1y7qZzZWxrZXnEIBguZEIjiD6KAPJq76B0ch"
@@ -1006,6 +1298,26 @@ class TestMsgpack(unittest.TestCase):
             "GC5kQiOIPooA8mrvoHRyFtk27F/PPN08bAufGhnp0BGndm90ZWxzdM1y7g==")
         self.assertEqual(keyregtxn, encoding.msgpack_encode(
                          encoding.msgpack_decode(keyregtxn)))
+
+    def test_keyreg_txn_offline(self):
+        keyregtxn = (
+            "hqNmZWXNA+iiZnbOALutq6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/c"
+            "OUJOiKibHbOALuxk6NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tu"
+            "H9pHR5cGWma2V5cmVn")
+        # using future_msgpack_decode instead of msgpack_decode
+        # because non-future transactions do not support offline keyreg
+        self.assertEqual(keyregtxn, encoding.msgpack_encode(
+                         encoding.future_msgpack_decode(keyregtxn)))
+
+    def test_keyreg_txn_nonpart(self):
+        keyregtxn = (
+            "h6NmZWXNA+iiZnbOALutq6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/c"
+            "OUJOiKibHbOALuxk6dub25wYXJ0w6NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUO"
+            "B+jFx2mGR9tuH9pHR5cGWma2V5cmVn")
+        # using future_msgpack_decode instead of msgpack_decode
+        # because non-future transactions do not support nonpart keyreg
+        self.assertEqual(keyregtxn, encoding.msgpack_encode(
+                         encoding.future_msgpack_decode(keyregtxn)))
 
     def test_asset_create(self):
         golden = (
@@ -1145,6 +1457,16 @@ class TestLogic(unittest.TestCase):
         size = logic.check_byte_const_block(data, 0)
         self.assertEqual(size, len(data))
 
+    def test_parse_pushint(self):
+        data = b"\x81\x80\x80\x04"
+        size = logic.check_push_int_block(data, 0)
+        self.assertEqual(size, len(data))
+    
+    def test_parse_pushbytes(self):
+        data = b"\x80\x0b\x68\x65\x6c\x6c\x6f\x20\x77\x6f\x72\x6c\x64"
+        size = logic.check_push_byte_block(data, 0)
+        self.assertEqual(size, len(data))
+
     def test_check_program(self):
         program = b"\x01\x20\x01\x01\x22"  # int 1
         self.assertTrue(logic.check_program(program, None))
@@ -1180,6 +1502,7 @@ class TestLogic(unittest.TestCase):
         with self.assertRaises(error.InvalidProgram):
             logic.check_program(program, [])
 
+    def test_check_program_teal_2(self):
         # check TEAL v2 opcodes
         self.assertIsNotNone(logic.spec, "Must be called after any of logic.check_program")
         self.assertTrue(logic.spec['EvalMaxVersion'] >= 2)
@@ -1195,6 +1518,28 @@ class TestLogic(unittest.TestCase):
 
         # asset_holding_get
         program = b"\x02\x20\x01\x00\x22\x22\x70\x00"  # int 0; int 0; asset_holding_get Balance
+        self.assertTrue(logic.check_program(program, None))
+    
+    def test_check_program_teal_3(self):
+        # check TEAL v2 opcodes
+        self.assertIsNotNone(logic.spec, "Must be called after any of logic.check_program")
+        self.assertTrue(logic.spec['EvalMaxVersion'] >= 3)
+        self.assertTrue(logic.spec['LogicSigVersion'] >= 3)
+
+        # min_balance
+        program = b"\x03\x20\x01\x00\x22\x78" # int 0; min_balance
+        self.assertTrue(logic.check_program(program, None))
+
+        # pushbytes
+        program = b"\x03\x20\x01\x00\x22\x80\x02\x68\x69\x48" # int 0; pushbytes "hi"; pop
+        self.assertTrue(logic.check_program(program, None))
+
+        # pushint
+        program = b"\x03\x20\x01\x00\x22\x81\x01\x48" # int 0; pushint 1; pop
+        self.assertTrue(logic.check_program(program, None))
+
+        # swap
+        program = b"\x03\x20\x02\x00\x01\x22\x23\x4c\x48" # int 0; int 1; swap; pop
         self.assertTrue(logic.check_program(program, None))
 
     def test_teal_sign(self):
@@ -2025,7 +2370,10 @@ class TestDryrun(dryrun.DryrunTestCaseMixin, unittest.TestCase):
 
 if __name__ == "__main__":
     to_run = [
-        TestTransaction,
+        TestPaymentTransaction,
+        TestAssetConfigConveniences,
+        TestAssetTransferConveniences,
+        TestApplicationTransactions,
         TestMnemonic,
         TestAddress,
         TestMultisig,

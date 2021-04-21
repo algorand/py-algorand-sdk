@@ -94,6 +94,26 @@ class AlgodClient:
         """
         req = "/accounts/" + address
         return self.algod_request("GET", req, **kwargs)
+    
+    def asset_info(self, asset_id, **kwargs):
+        """
+        Return information about a specific asset.
+
+        Args:
+            asset_id (int): The ID of the asset to look up.
+        """
+        req = "/assets/" + str(asset_id)
+        return self.algod_request("GET", req, **kwargs)
+    
+    def application_info(self, application_id, **kwargs):
+        """
+        Return information about a specific application.
+
+        Args:
+            application_id (int): The ID of the application to look up.
+        """
+        req = "/applications/" + str(application_id)
+        return self.algod_request("GET", req, **kwargs)
 
     def pending_transactions_by_address(self, address, limit=0, response_format="json",
                                         **kwargs):
@@ -169,6 +189,8 @@ class AlgodClient:
         Returns:
             str: transaction ID
         """
+        assert not isinstance(txn, future.transaction.Transaction), \
+            f"Attempt to send UNSIGNED transaction {txn}"
         return self.send_raw_transaction(encoding.msgpack_encode(txn),
                                          **kwargs)
 
@@ -243,6 +265,8 @@ class AlgodClient:
         """
         serialized = []
         for txn in txns:
+            assert not isinstance(txn, future.transaction.Transaction), \
+                f"Attempt to send UNSIGNED transaction {txn}"
             serialized.append(base64.b64decode(encoding.msgpack_encode(txn)))
 
         return self.send_raw_transaction(base64.b64encode(
@@ -297,6 +321,21 @@ class AlgodClient:
         data = base64.b64decode(data)
         return self.algod_request("POST", req, data=data, headers=headers, **kwargs)
 
+    def genesis(self, **kwargs):
+        """Returns the entire genesis file."""
+        req = "/genesis"
+        return self.algod_request("GET", req, **kwargs)
+    
+    def proof(self, round_num, txid, **kwargs):
+        """
+        Get the proof for a given transaction in a round.
+
+        Args:
+            round_num (int): The round in which the transaction appears.
+            txid (str): The transaction ID for which to generate a proof.
+        """
+        req = "/blocks/{}/transactions/{}/proof".format(round_num, txid)
+        return self.algod_request("GET", req, **kwargs)
 
 def _specify_round_string(block, round_num):
     """
