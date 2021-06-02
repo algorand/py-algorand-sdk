@@ -1597,7 +1597,7 @@ def split_and_process_app_args(in_args):
 
 
 @when(
-    'I build an application transaction with operation "{operation:MaybeString}", application-id {application_id}, sender "{sender:MaybeString}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", fee {fee}, first-valid {first_valid}, last-valid {last_valid}, genesis-hash "{genesis_hash:MaybeString}"'
+    'I build an application transaction with operation "{operation:MaybeString}", application-id {application_id}, sender "{sender:MaybeString}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", fee {fee}, first-valid {first_valid}, last-valid {last_valid}, genesis-hash "{genesis_hash:MaybeString}", extra-pages {extra_pages}'
 )
 def build_app_transaction(
     context,
@@ -1618,6 +1618,7 @@ def build_app_transaction(
     first_valid,
     last_valid,
     genesis_hash,
+    extra_pages,
 ):
     if operation == "none":
         operation = None
@@ -1683,6 +1684,7 @@ def build_app_transaction(
         accounts=app_accounts,
         foreign_apps=foreign_apps,
         foreign_assets=foreign_assets,
+        extra_pages=int(extra_pages),
         note=None,
         lease=None,
         rekey_to=None,
@@ -1728,7 +1730,7 @@ def create_transient_and_fund(context, transient_fund_amount):
 
 
 @step(
-    'I build an application transaction with the transient account, the current application, suggested params, operation "{operation}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}"'
+    'I build an application transaction with the transient account, the current application, suggested params, operation "{operation}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", extra-pages {extra_pages}'
 )
 def build_app_txn_with_transient(
     context,
@@ -1743,6 +1745,7 @@ def build_app_txn_with_transient(
     foreign_apps,
     foreign_assets,
     app_accounts,
+    extra_pages,
 ):
     if operation == "none":
         operation = None
@@ -1805,6 +1808,7 @@ def build_app_txn_with_transient(
         accounts=app_accounts,
         foreign_apps=foreign_apps,
         foreign_assets=foreign_assets,
+        extra_pages=int(extra_pages),
         note=None,
         lease=None,
         rekey_to=None,
@@ -2117,89 +2121,3 @@ def dryrun_test_case_local_state_assert_fail_step(
 
     ts.assertNoError(drr)
     ts.assertLocalStateContains(drr, account, dict(key=key, value=val))
-
-
-@step(
-    'I build an application transaction with the transient account, the current application, suggested params, operation "{operation}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", extra-pages {extra_pages}'
-)
-def build_app_txn_with_extra_pages(
-    context,
-    operation,
-    approval_program,
-    clear_program,
-    global_bytes,
-    global_ints,
-    local_bytes,
-    local_ints,
-    app_args,
-    foreign_apps,
-    foreign_assets,
-    app_accounts,
-    extra_pages,
-):
-    if operation == "none":
-        operation = None
-    else:
-        operation = operation_string_to_enum(operation)
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
-    if approval_program == "none":
-        approval_program = None
-    elif approval_program:
-        with open(dir_path + "/test/features/resources/" + approval_program, "rb") as f:
-            approval_program = bytearray(f.read())
-    if clear_program == "none":
-        clear_program = None
-    elif clear_program:
-        with open(dir_path + "/test/features/resources/" + clear_program, "rb") as f:
-            clear_program = bytearray(f.read())
-    if int(local_ints) == 0 and int(local_bytes) == 0:
-        local_schema = None
-    else:
-        local_schema = transaction.StateSchema(
-            num_uints=int(local_ints), num_byte_slices=int(local_bytes)
-        )
-    if int(global_ints) == 0 and int(global_bytes) == 0:
-        global_schema = None
-    else:
-        global_schema = transaction.StateSchema(
-            num_uints=int(global_ints), num_byte_slices=int(global_bytes)
-        )
-    if app_args == "none":
-        app_args = None
-    elif app_args:
-        app_args = split_and_process_app_args(app_args)
-    if foreign_apps == "none":
-        foreign_apps = None
-    elif foreign_apps:
-        foreign_apps = [int(app) for app in foreign_apps.split(",")]
-    if foreign_assets == "none":
-        foreign_assets = None
-    elif foreign_assets:
-        foreign_assets = [int(asset) for asset in foreign_assets.split(",")]
-    if app_accounts == "none":
-        app_accounts = None
-    elif app_accounts:
-        app_accounts = [account_pubkey for account_pubkey in app_accounts.split(",")]
-    application_id = 0
-    if hasattr(context, "current_application_id") and context.current_application_id:
-        application_id = context.current_application_id
-    sp = context.app_acl.suggested_params()
-    context.app_transaction = transaction.ApplicationCallTxn(
-        sender=context.transient_pk,
-        sp=sp,
-        index=int(application_id),
-        on_complete=operation,
-        local_schema=local_schema,
-        global_schema=global_schema,
-        approval_program=approval_program,
-        clear_program=clear_program,
-        app_args=app_args,
-        accounts=app_accounts,
-        foreign_apps=foreign_apps,
-        foreign_assets=foreign_assets,
-        extra_pages=extra_pages,
-        note=None,
-        lease=None,
-        rekey_to=None,
-    )
