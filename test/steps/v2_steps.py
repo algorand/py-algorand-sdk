@@ -1597,36 +1597,10 @@ def split_and_process_app_args(in_args):
 
 
 @when(
-<<<<<<< HEAD
         'I build an application transaction with operation "{operation:MaybeString}", application-id {application_id}, sender "{sender:MaybeString}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", fee {fee}, first-valid {first_valid}, last-valid {last_valid}, genesis-hash "{genesis_hash:MaybeString}", extra-pages {extra_pages}')
 def build_app_transaction(context, operation, application_id, sender, approval_program, clear_program, global_bytes,
                           global_ints, local_bytes, local_ints, app_args, foreign_apps, foreign_assets, app_accounts,
                           fee, first_valid, last_valid, genesis_hash, extra_pages):
-=======
-    'I build an application transaction with operation "{operation:MaybeString}", application-id {application_id}, sender "{sender:MaybeString}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", fee {fee}, first-valid {first_valid}, last-valid {last_valid}, genesis-hash "{genesis_hash:MaybeString}", extra-pages {extra_pages}'
-)
-def build_app_transaction(
-    context,
-    operation,
-    application_id,
-    sender,
-    approval_program,
-    clear_program,
-    global_bytes,
-    global_ints,
-    local_bytes,
-    local_ints,
-    app_args,
-    foreign_apps,
-    foreign_assets,
-    app_accounts,
-    fee,
-    first_valid,
-    last_valid,
-    genesis_hash,
-    extra_pages,
-):
->>>>>>> c76ea1b0ad3bc768754267c5513e7369e3ccc722
     if operation == "none":
         operation = None
     else:
@@ -1672,7 +1646,6 @@ def build_app_transaction(
     if int(global_ints) == 0 and int(global_bytes) == 0:
         global_schema = None
     else:
-<<<<<<< HEAD
         global_schema = transaction.StateSchema(num_uints=int(global_ints), num_byte_slices=int(global_bytes))
     sp = transaction.SuggestedParams(int(fee), int(first_valid), int(last_valid), genesis_hash, flat_fee=True)
     context.transaction = transaction.ApplicationCallTxn(sender=sender, sp=sp, index=int(application_id),
@@ -1687,35 +1660,6 @@ def build_app_transaction(
 
 
 @when('sign the transaction')
-=======
-        global_schema = transaction.StateSchema(
-            num_uints=int(global_ints), num_byte_slices=int(global_bytes)
-        )
-    sp = transaction.SuggestedParams(
-        int(fee), int(first_valid), int(last_valid), genesis_hash, flat_fee=True
-    )
-    context.transaction = transaction.ApplicationCallTxn(
-        sender=sender,
-        sp=sp,
-        index=int(application_id),
-        on_complete=operation,
-        local_schema=local_schema,
-        global_schema=global_schema,
-        approval_program=approval_program,
-        clear_program=clear_program,
-        app_args=app_args,
-        accounts=app_accounts,
-        foreign_apps=foreign_apps,
-        foreign_assets=foreign_assets,
-        extra_pages=int(extra_pages),
-        note=None,
-        lease=None,
-        rekey_to=None,
-    )
-
-
-@when("sign the transaction")
->>>>>>> c76ea1b0ad3bc768754267c5513e7369e3ccc722
 def sign_transaction_with_signing_account(context):
     private_key = mnemonic.to_private_key(context.signing_mnemonic)
     context.signed_transaction = context.transaction.sign(private_key)
@@ -1752,31 +1696,9 @@ def create_transient_and_fund(context, transient_fund_amount):
     context.app_acl.send_transaction(signed_payment)
     context.app_acl.status_after_block(sp.first + 2)
 
-<<<<<<< HEAD
 @step('I build an application transaction with the transient account, the current application, suggested params, operation "{operation}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", extra-pages {extra_pages}')
 def build_app_txn_with_transient(context, operation, approval_program, clear_program, global_bytes, global_ints, local_bytes, local_ints,
               app_args, foreign_apps, foreign_assets, app_accounts, extra_pages):
-=======
-
-@step(
-    'I build an application transaction with the transient account, the current application, suggested params, operation "{operation}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", extra-pages {extra_pages}'
-)
-def build_app_txn_with_transient(
-    context,
-    operation,
-    approval_program,
-    clear_program,
-    global_bytes,
-    global_ints,
-    local_bytes,
-    local_ints,
-    app_args,
-    foreign_apps,
-    foreign_assets,
-    app_accounts,
-    extra_pages,
-):
->>>>>>> c76ea1b0ad3bc768754267c5513e7369e3ccc722
     if operation == "none":
         operation = None
     else:
@@ -1825,7 +1747,6 @@ def build_app_txn_with_transient(
     if hasattr(context, "current_application_id") and context.current_application_id:
         application_id = context.current_application_id
     sp = context.app_acl.suggested_params()
-<<<<<<< HEAD
     context.app_transaction = transaction.ApplicationCallTxn(sender=context.transient_pk, sp=sp,
                                                              index=int(application_id),
                                                              on_complete=operation, local_schema=local_schema,
@@ -1840,31 +1761,6 @@ def build_app_txn_with_transient(
 
 
 @step('I sign and submit the transaction, saving the txid. If there is an error it is "{error_string:MaybeString}".')
-=======
-    context.app_transaction = transaction.ApplicationCallTxn(
-        sender=context.transient_pk,
-        sp=sp,
-        index=int(application_id),
-        on_complete=operation,
-        local_schema=local_schema,
-        global_schema=global_schema,
-        approval_program=approval_program,
-        clear_program=clear_program,
-        app_args=app_args,
-        accounts=app_accounts,
-        foreign_apps=foreign_apps,
-        foreign_assets=foreign_assets,
-        extra_pages=int(extra_pages),
-        note=None,
-        lease=None,
-        rekey_to=None,
-    )
-
-
-@step(
-    'I sign and submit the transaction, saving the txid. If there is an error it is "{error_string:MaybeString}".'
-)
->>>>>>> c76ea1b0ad3bc768754267c5513e7369e3ccc722
 def sign_submit_save_txid_with_error(context, error_string):
     try:
         signed_app_transaction = context.app_transaction.sign(context.transient_sk)

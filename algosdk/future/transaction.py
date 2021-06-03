@@ -37,17 +37,8 @@ class SuggestedParams:
         min_fee (int)
     """
 
-    def __init__(
-        self,
-        fee,
-        first,
-        last,
-        gh,
-        gen=None,
-        flat_fee=False,
-        consensus_version=None,
-        min_fee=None,
-    ):
+    def __init__(self, fee, first, last, gh, gen=None, flat_fee=False,
+                 consensus_version=None, min_fee=None):
         self.first = first
         self.last = last
         self.gh = gh
@@ -97,7 +88,7 @@ class Transaction:
         if isinstance(note, str):
             note = note.encode()
         if len(note) > constants.note_max_length:
-            raise error.WrongNoteLength
+                raise error.WrongNoteLength
         return note
 
     @classmethod
@@ -167,7 +158,7 @@ class Transaction:
         private_key = base64.b64decode(private_key)
         txn = encoding.msgpack_encode(self)
         to_sign = constants.txid_prefix + base64.b64decode(txn)
-        signing_key = SigningKey(private_key[: constants.key_len_bytes])
+        signing_key = SigningKey(private_key[:constants.key_len_bytes])
         signed = signing_key.sign(to_sign)
         sig = signed.signature
         return sig
@@ -207,14 +198,13 @@ class Transaction:
             d["lv"],
             base64.b64encode(d["gh"]).decode(),
             d["gen"] if "gen" in d else None,
-            flat_fee=True,
-        )
+            flat_fee=True)
         args = {
             "sp": sp,
             "sender": encoding.encode_address(d["snd"]),
             "note": d["note"] if "note" in d else None,
             "lease": d["lx"] if "lx" in d else None,
-            "rekey_to": encoding.encode_address(d["rekey"]) if "rekey" in d else None,
+            "rekey_to": encoding.encode_address(d["rekey"]) if "rekey" in d else None
         }
         txn_type = d["type"]
         if not isinstance(d["type"], str):
@@ -242,21 +232,21 @@ class Transaction:
         return txn
 
     def __eq__(self, other):
-        if not isinstance(other, (Transaction, transaction.Transaction)):
+        if not isinstance(other, (
+                Transaction,
+                transaction.Transaction)):
             return False
-        return (
-            self.sender == other.sender
-            and self.fee == other.fee
-            and self.first_valid_round == other.first_valid_round
-            and self.last_valid_round == other.last_valid_round
-            and self.genesis_hash == other.genesis_hash
-            and self.genesis_id == other.genesis_id
-            and self.note == other.note
-            and self.group == other.group
-            and self.lease == other.lease
-            and self.type == other.type
-            and self.rekey_to == other.rekey_to
-        )
+        return (self.sender == other.sender and
+                self.fee == other.fee and
+                self.first_valid_round == other.first_valid_round and
+                self.last_valid_round == other.last_valid_round and
+                self.genesis_hash == other.genesis_hash and
+                self.genesis_id == other.genesis_id and
+                self.note == other.note and
+                self.group == other.group and
+                self.lease == other.lease and
+                self.type == other.type and
+                self.rekey_to == other.rekey_to)
 
     @staticmethod
     def required(arg):
@@ -318,20 +308,11 @@ class PaymentTxn(Transaction):
         rekey_to (str)
     """
 
-    def __init__(
-        self,
-        sender,
-        sp,
-        receiver,
-        amt,
-        close_remainder_to=None,
-        note=None,
-        lease=None,
-        rekey_to=None,
-    ):
-        Transaction.__init__(
-            self, sender, sp, note, lease, constants.payment_txn, rekey_to
-        )
+    def __init__(self, sender, sp, receiver, amt,
+                 close_remainder_to=None, note=None,
+                 lease=None, rekey_to=None):
+        Transaction.__init__(self, sender, sp, note,
+                             lease, constants.payment_txn, rekey_to)
         if receiver:
             self.receiver = receiver
         else:
@@ -344,7 +325,8 @@ class PaymentTxn(Transaction):
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
-            self.fee = max(self.estimate_size() * self.fee, constants.min_txn_fee)
+            self.fee = max(self.estimate_size() * self.fee,
+                           constants.min_txn_fee)
 
     def dictify(self):
         d = dict()
@@ -365,23 +347,23 @@ class PaymentTxn(Transaction):
     @staticmethod
     def _undictify(d):
         args = {
-            "close_remainder_to": encoding.encode_address(d["close"])
-            if "close" in d
-            else None,
+            "close_remainder_to": encoding.encode_address(
+                d["close"]) if "close" in d else None,
             "amt": d["amt"] if "amt" in d else 0,
-            "receiver": encoding.encode_address(d["rcv"]) if "rcv" in d else None,
+            "receiver": encoding.encode_address(
+                d["rcv"]) if "rcv" in d else None
         }
         return args
 
     def __eq__(self, other):
-        if not isinstance(other, (PaymentTxn, transaction.PaymentTxn)):
+        if not isinstance(other, (
+                PaymentTxn,
+                transaction.PaymentTxn)):
             return False
-        return (
-            super(PaymentTxn, self).__eq__(other)
-            and self.receiver == other.receiver
-            and self.amt == other.amt
-            and self.close_remainder_to == other.close_remainder_to
-        )
+        return (super(PaymentTxn, self).__eq__(other) and
+                self.receiver == other.receiver and
+                self.amt == other.amt and
+                self.close_remainder_to == other.close_remainder_to)
 
 
 class KeyregTxn(Transaction):
@@ -423,23 +405,11 @@ class KeyregTxn(Transaction):
         nonpart (bool)
     """
 
-    def __init__(
-        self,
-        sender,
-        sp,
-        votekey,
-        selkey,
-        votefst,
-        votelst,
-        votekd,
-        note=None,
-        lease=None,
-        rekey_to=None,
-        nonpart=None,
-    ):
-        Transaction.__init__(
-            self, sender, sp, note, lease, constants.keyreg_txn, rekey_to
-        )
+    def __init__(self, sender, sp, votekey, selkey, votefst,
+                 votelst, votekd, note=None,
+                 lease=None, rekey_to=None, nonpart=None):
+        Transaction.__init__(self, sender, sp, note,
+                             lease, constants.keyreg_txn, rekey_to)
         self.votepk = votekey
         self.selkey = selkey
         self.votefst = votefst
@@ -449,20 +419,17 @@ class KeyregTxn(Transaction):
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
-            self.fee = max(self.estimate_size() * self.fee, constants.min_txn_fee)
+            self.fee = max(self.estimate_size() * self.fee,
+                           constants.min_txn_fee)
 
     def dictify(self):
         d = {
-            "selkey": base64.b64decode(self.selkey)
-            if self.selkey is not None
-            else None,
+            "selkey": base64.b64decode(self.selkey) if self.selkey is not None else None,
             "votefst": self.votefst,
             "votekd": self.votekd,
-            "votekey": base64.b64decode(self.votepk)
-            if self.votepk is not None
-            else None,
+            "votekey": base64.b64decode(self.votepk) if self.votepk is not None else None,
             "votelst": self.votelst,
-            "nonpart": self.nonpart,
+            "nonpart": self.nonpart
         }
         d.update(super(KeyregTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
@@ -495,21 +462,21 @@ class KeyregTxn(Transaction):
             "votefst": votefst,
             "votelst": votelst,
             "votekd": votekd,
-            "nonpart": nonpart,
+            "nonpart": nonpart
         }
         return args
 
     def __eq__(self, other):
-        if not isinstance(other, (KeyregTxn, transaction.KeyregTxn)):
+        if not isinstance(other, (
+                KeyregTxn,
+                transaction.KeyregTxn)):
             return False
-        return (
-            super(KeyregTxn, self).__eq__(other)
-            and self.votepk == other.votepk
-            and self.selkey == other.selkey
-            and self.votefst == other.votefst
-            and self.votelst == other.votelst
-            and self.votekd == other.votekd
-        )
+        return (super(KeyregTxn, self).__eq__(other) and
+                self.votepk == other.votepk and
+                self.selkey == other.selkey and
+                self.votefst == other.votefst and
+                self.votelst == other.votelst and
+                self.votekd == other.votekd)
 
 
 class AssetConfigTxn(Transaction):
@@ -591,29 +558,13 @@ class AssetConfigTxn(Transaction):
     """
 
     def __init__(
-        self,
-        sender,
-        sp,
-        index=None,
-        total=None,
-        default_frozen=None,
-        unit_name=None,
-        asset_name=None,
-        manager=None,
-        reserve=None,
-        freeze=None,
-        clawback=None,
-        url=None,
-        metadata_hash=None,
-        note=None,
-        lease=None,
-        strict_empty_address_check=True,
-        decimals=0,
-        rekey_to=None,
-    ):
-        Transaction.__init__(
-            self, sender, sp, note, lease, constants.assetconfig_txn, rekey_to
-        )
+            self, sender, sp, index=None, total=None, default_frozen=None,
+            unit_name=None, asset_name=None, manager=None, reserve=None,
+            freeze=None, clawback=None, url=None, metadata_hash=None,
+            note=None, lease=None, strict_empty_address_check=True,
+            decimals=0, rekey_to=None):
+        Transaction.__init__(self, sender, sp, note,
+                             lease, constants.assetconfig_txn, rekey_to)
         if strict_empty_address_check:
             if not (manager and reserve and freeze and clawback):
                 raise error.EmptyAddressError
@@ -634,22 +585,15 @@ class AssetConfigTxn(Transaction):
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
-            self.fee = max(self.estimate_size() * self.fee, constants.min_txn_fee)
+            self.fee = max(self.estimate_size() * self.fee,
+                           constants.min_txn_fee)
 
     def dictify(self):
         d = dict()
 
-        if (
-            self.total
-            or self.default_frozen
-            or self.unit_name
-            or self.asset_name
-            or self.manager
-            or self.reserve
-            or self.freeze
-            or self.clawback
-            or self.decimals
-        ):
+        if (self.total or self.default_frozen or self.unit_name or
+                self.asset_name or self.manager or self.reserve or
+                self.freeze or self.clawback or self.decimals):
             apar = OrderedDict()
             if self.metadata_hash:
                 apar["am"] = self.metadata_hash
@@ -737,29 +681,29 @@ class AssetConfigTxn(Transaction):
             "url": url,
             "metadata_hash": metadata_hash,
             "strict_empty_address_check": False,
-            "decimals": decimals,
+            "decimals": decimals
         }
 
         return args
 
     def __eq__(self, other):
-        if not isinstance(other, (AssetConfigTxn, transaction.AssetConfigTxn)):
+        if not isinstance(other, (
+                AssetConfigTxn,
+                transaction.AssetConfigTxn)):
             return False
-        return (
-            super(AssetConfigTxn, self).__eq__(other)
-            and self.index == other.index
-            and self.total == other.total
-            and self.default_frozen == other.default_frozen
-            and self.unit_name == other.unit_name
-            and self.asset_name == other.asset_name
-            and self.manager == other.manager
-            and self.reserve == other.reserve
-            and self.freeze == other.freeze
-            and self.clawback == other.clawback
-            and self.url == other.url
-            and self.metadata_hash == other.metadata_hash
-            and self.decimals == other.decimals
-        )
+        return (super(AssetConfigTxn, self).__eq__(other) and
+                self.index == other.index and
+                self.total == other.total and
+                self.default_frozen == other.default_frozen and
+                self.unit_name == other.unit_name and
+                self.asset_name == other.asset_name and
+                self.manager == other.manager and
+                self.reserve == other.reserve and
+                self.freeze == other.freeze and
+                self.clawback == other.clawback and
+                self.url == other.url and
+                self.metadata_hash == other.metadata_hash and
+                self.decimals == other.decimals)
 
     @classmethod
     def as_metadata(cls, md):
@@ -767,6 +711,7 @@ class AssetConfigTxn(Transaction):
             return cls.as_hash(md)
         except error.WrongHashLengthError:
             raise error.WrongMetadataLengthError
+
 
 
 class AssetCreateTxn(AssetConfigTxn):
@@ -808,47 +753,20 @@ class AssetCreateTxn(AssetConfigTxn):
         rekey_to (str, optional): additionally rekey the sender to this address
 
     """
-
-    def __init__(
-        self,
-        sender,
-        sp,
-        total,
-        decimals,
-        default_frozen,
-        *,
-        manager=None,
-        reserve=None,
-        freeze=None,
-        clawback=None,
-        unit_name="",
-        asset_name="",
-        url="",
-        metadata_hash=None,
-        note=None,
-        lease=None,
-        rekey_to=None,
-    ):
-        super().__init__(
-            sender=sender,
-            sp=sp,
-            total=total,
-            decimals=decimals,
-            default_frozen=default_frozen,
-            manager=manager,
-            reserve=reserve,
-            freeze=freeze,
-            clawback=clawback,
-            unit_name=unit_name,
-            asset_name=asset_name,
-            url=url,
-            metadata_hash=metadata_hash,
-            note=note,
-            lease=lease,
-            rekey_to=rekey_to,
-            strict_empty_address_check=False,
-        )
-
+    def __init__(self, sender, sp, total, decimals,
+                 default_frozen, *,
+                 manager=None, reserve=None, freeze=None, clawback=None,
+                 unit_name="", asset_name="", url="",
+                 metadata_hash=None,
+                 note=None, lease=None, rekey_to=None):
+        super().__init__(sender=sender, sp=sp, total=total, decimals=decimals,
+                         default_frozen=default_frozen,
+                         manager=manager, reserve=reserve,
+                         freeze=freeze, clawback=clawback,
+                         unit_name=unit_name, asset_name=asset_name, url=url,
+                         metadata_hash=metadata_hash,
+                         note=note, lease=lease, rekey_to=rekey_to,
+                         strict_empty_address_check=False)
 
 class AssetDestroyTxn(AssetConfigTxn):
     """Represents a transaction for asset destruction.
@@ -858,18 +776,11 @@ class AssetDestroyTxn(AssetConfigTxn):
     asset.
 
     """
-
-    def __init__(self, sender, sp, index, note=None, lease=None, rekey_to=None):
-        super().__init__(
-            sender=sender,
-            sp=sp,
-            index=self.creatable_index(index),
-            note=note,
-            lease=lease,
-            rekey_to=rekey_to,
-            strict_empty_address_check=False,
-        )
-
+    def __init__(self, sender, sp, index,
+                 note=None, lease=None, rekey_to=None):
+        super().__init__(sender=sender, sp=sp, index=self.creatable_index(index),
+                         note=note, lease=lease, rekey_to=rekey_to,
+                         strict_empty_address_check=False)
 
 class AssetUpdateTxn(AssetConfigTxn):
     """Represents a transaction for asset modification.
@@ -901,34 +812,14 @@ class AssetUpdateTxn(AssetConfigTxn):
         rekey_to (str, optional): additionally rekey the sender to this address
 
     """
-
-    def __init__(
-        self,
-        sender,
-        sp,
-        index,
-        *,
-        manager,
-        reserve,
-        freeze,
-        clawback,
-        note=None,
-        lease=None,
-        rekey_to=None,
-    ):
-        super().__init__(
-            sender=sender,
-            sp=sp,
-            index=self.creatable_index(index),
-            manager=manager,
-            reserve=reserve,
-            freeze=freeze,
-            clawback=clawback,
-            note=note,
-            lease=lease,
-            rekey_to=rekey_to,
-            strict_empty_address_check=False,
-        )
+    def __init__(self, sender, sp, index, *,
+                 manager, reserve, freeze, clawback,
+                 note=None, lease=None, rekey_to=None):
+        super().__init__(sender=sender, sp=sp, index=self.creatable_index(index),
+                         manager=manager, reserve=reserve,
+                         freeze=freeze, clawback=clawback,
+                         note=note, lease=lease, rekey_to=rekey_to,
+                         strict_empty_address_check=False)
 
 
 class AssetFreezeTxn(Transaction):
@@ -967,27 +858,18 @@ class AssetFreezeTxn(Transaction):
         rekey_to (str)
     """
 
-    def __init__(
-        self,
-        sender,
-        sp,
-        index,
-        target,
-        new_freeze_state,
-        note=None,
-        lease=None,
-        rekey_to=None,
-    ):
-        Transaction.__init__(
-            self, sender, sp, note, lease, constants.assetfreeze_txn, rekey_to
-        )
+    def __init__(self, sender, sp, index, target, new_freeze_state, note=None,
+                 lease=None, rekey_to=None):
+        Transaction.__init__(self, sender, sp, note,
+                             lease, constants.assetfreeze_txn, rekey_to)
         self.index = self.creatable_index(index, required=True)
         self.target = target
         self.new_freeze_state = new_freeze_state
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
-            self.fee = max(self.estimate_size() * self.fee, constants.min_txn_fee)
+            self.fee = max(self.estimate_size() * self.fee,
+                           constants.min_txn_fee)
 
     def dictify(self):
         d = dict()
@@ -1008,20 +890,20 @@ class AssetFreezeTxn(Transaction):
         args = {
             "index": d["faid"],
             "new_freeze_state": d["afrz"] if "afrz" in d else False,
-            "target": encoding.encode_address(d["fadd"]),
+            "target": encoding.encode_address(d["fadd"])
         }
 
         return args
 
     def __eq__(self, other):
-        if not isinstance(other, (AssetFreezeTxn, transaction.AssetFreezeTxn)):
+        if not isinstance(other, (
+                AssetFreezeTxn,
+                transaction.AssetFreezeTxn)):
             return False
-        return (
-            super(AssetFreezeTxn, self).__eq__(other)
-            and self.index == other.index
-            and self.target == other.target
-            and self.new_freeze_state == other.new_freeze_state
-        )
+        return (super(AssetFreezeTxn, self).__eq__(other) and
+                self.index == other.index and
+                self.target == other.target and
+                self.new_freeze_state == other.new_freeze_state)
 
 
 class AssetTransferTxn(Transaction):
@@ -1069,22 +951,11 @@ class AssetTransferTxn(Transaction):
         rekey_to (str)
     """
 
-    def __init__(
-        self,
-        sender,
-        sp,
-        receiver,
-        amt,
-        index,
-        close_assets_to=None,
-        revocation_target=None,
-        note=None,
-        lease=None,
-        rekey_to=None,
-    ):
-        Transaction.__init__(
-            self, sender, sp, note, lease, constants.assettransfer_txn, rekey_to
-        )
+    def __init__(self, sender, sp, receiver, amt, index,
+                 close_assets_to=None, revocation_target=None, note=None,
+                 lease=None, rekey_to=None):
+        Transaction.__init__(self, sender, sp, note,
+                             lease, constants.assettransfer_txn, rekey_to)
         if receiver:
             self.receiver = receiver
         else:
@@ -1098,7 +969,8 @@ class AssetTransferTxn(Transaction):
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
-            self.fee = max(self.estimate_size() * self.fee, constants.min_txn_fee)
+            self.fee = max(self.estimate_size() * self.fee,
+                           constants.min_txn_fee)
 
     def dictify(self):
         d = dict()
@@ -1125,30 +997,29 @@ class AssetTransferTxn(Transaction):
     @staticmethod
     def _undictify(d):
         args = {
-            "receiver": encoding.encode_address(d["arcv"]) if "arcv" in d else None,
+            "receiver": encoding.encode_address(
+                d["arcv"]) if "arcv" in d else None,
             "amt": d["aamt"] if "aamt" in d else 0,
             "index": d["xaid"] if "xaid" in d else None,
-            "close_assets_to": encoding.encode_address(d["aclose"])
-            if "aclose" in d
-            else None,
-            "revocation_target": encoding.encode_address(d["asnd"])
-            if "asnd" in d
-            else None,
+            "close_assets_to": encoding.encode_address(
+                d["aclose"]) if "aclose" in d else None,
+            "revocation_target": encoding.encode_address(
+                d["asnd"]) if "asnd" in d else None
         }
 
         return args
 
     def __eq__(self, other):
-        if not isinstance(other, (AssetTransferTxn, transaction.AssetTransferTxn)):
+        if not isinstance(other, (
+                AssetTransferTxn,
+                transaction.AssetTransferTxn)):
             return False
-        return (
-            super(AssetTransferTxn, self).__eq__(other)
-            and self.index == other.index
-            and self.amount == other.amount
-            and self.receiver == other.receiver
-            and self.close_assets_to == other.close_assets_to
-            and self.revocation_target == other.revocation_target
-        )
+        return (super(AssetTransferTxn, self).__eq__(other) and
+                self.index == other.index and
+                self.amount == other.amount and
+                self.receiver == other.receiver and
+                self.close_assets_to == other.close_assets_to and
+                self.revocation_target == other.revocation_target)
 
 
 class AssetOptInTxn(AssetTransferTxn):
@@ -1167,17 +1038,10 @@ class AssetOptInTxn(AssetTransferTxn):
         See AssetTransferTxn
     """
 
-    def __init__(self, sender, sp, index, note=None, lease=None, rekey_to=None):
-        super().__init__(
-            sender=sender,
-            sp=sp,
-            receiver=sender,
-            amt=0,
-            index=index,
-            note=note,
-            lease=lease,
-            rekey_to=rekey_to,
-        )
+    def __init__(self, sender, sp, index,
+                 note=None, lease=None, rekey_to=None):
+        super().__init__(sender=sender, sp=sp, receiver=sender, amt=0,
+                         index=index, note=note, lease=lease, rekey_to=rekey_to)
 
 
 class AssetCloseOutTxn(AssetTransferTxn):
@@ -1197,20 +1061,11 @@ class AssetCloseOutTxn(AssetTransferTxn):
         See AssetTransferTxn
     """
 
-    def __init__(
-        self, sender, sp, receiver, index, note=None, lease=None, rekey_to=None
-    ):
-        super().__init__(
-            sender=sender,
-            sp=sp,
-            receiver=receiver,
-            amt=0,
-            index=index,
-            close_assets_to=receiver,
-            note=note,
-            lease=lease,
-            rekey_to=rekey_to,
-        )
+    def __init__(self, sender, sp, receiver, index,
+                 note=None, lease=None, rekey_to=None):
+        super().__init__(sender=sender, sp=sp, receiver=receiver,
+                         amt=0, index=index, close_assets_to=receiver,
+                         note=note, lease=lease, rekey_to=rekey_to)
 
 
 class StateSchema:
@@ -1243,17 +1098,15 @@ class StateSchema:
     def undictify(d):
         args = {
             "num_uints": d["nui"] if "nui" in d else None,
-            "num_byte_slices": d["nbs"] if "nbs" in d else None,
+            "num_byte_slices": d["nbs"] if "nbs" in d else None
         }
         return args
 
     def __eq__(self, other):
         if not isinstance(other, StateSchema):
             return False
-        return (
-            self.num_uints == other.num_uints
-            and self.num_byte_slices == other.num_byte_slices
-        )
+        return (self.num_uints == other.num_uints and
+                self.num_byte_slices == other.num_byte_slices)
 
 
 class OnComplete(IntEnum):
@@ -1305,7 +1158,7 @@ class ApplicationCallTxn(Transaction):
         accounts (list[string], optional): list of additional accounts involved in call
         foreign_apps (list[int], optional): list of other applications (identified by index) involved in call
         foreign_assets (list[int], optional): list of assets involved in call
-        extra_pages (int, optional): additional program space for supporting larger programs. A page is 1024 bytes.
+        extra_pages (int, optional): additional program space for supporting larger programs.  A page is 1024 bytes.
 
     Attributes:
         sender (str)
@@ -1347,13 +1200,14 @@ class ApplicationCallTxn(Transaction):
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
-            self.fee = max(self.estimate_size() * self.fee, constants.min_txn_fee)
+            self.fee = max(self.estimate_size() * self.fee,
+                           constants.min_txn_fee)
 
     @staticmethod
     def state_schema(schema):
         """Confirm the argument is a StateSchema, or false which is coerced to None"""
         if not schema or not schema.dictify():
-            return None  # Coerce false/empty values to None, to help __eq__
+            return None         # Coerce false/empty values to None, to help __eq__
         assert isinstance(schema, StateSchema), f"{schema} is not a StateSchema"
         return schema
 
@@ -1361,14 +1215,13 @@ class ApplicationCallTxn(Transaction):
     def teal_bytes(teal):
         """Confirm the argument is bytes-like, or false which is coerced to None"""
         if not teal:
-            return None  # Coerce false values like "" to None, to help __eq__
+            return None         # Coerce false values like "" to None, to help __eq__
         assert isinstance(teal, (bytes, bytearray)), f"Program {teal} is not bytes"
         return teal
 
     @staticmethod
     def bytes_list(lst):
-        """Confirm or coerce list elements to bytes. Return None for empty/false lst."""
-
+        """Confirm or coerce list elements to bytes. Return None for empty/false lst. """
         def as_bytes(e):
             if isinstance(e, (bytes, bytearray)):
                 return e
@@ -1385,7 +1238,7 @@ class ApplicationCallTxn(Transaction):
 
     @staticmethod
     def int_list(lst):
-        """Confirm or coerce list elements to int. Return None for empty/false lst."""
+        """Confirm or coerce list elements to int. Return None for empty/false lst. """
         if not lst:
             return None
         return [int(elt) for elt in lst]
@@ -1406,10 +1259,7 @@ class ApplicationCallTxn(Transaction):
         if self.app_args:
             d["apaa"] = self.app_args
         if self.accounts:
-            d["apat"] = [
-                encoding.decode_address(account_pubkey)
-                for account_pubkey in self.accounts
-            ]
+            d["apat"] = [encoding.decode_address(account_pubkey) for account_pubkey in self.accounts]
         if self.foreign_apps:
             d["apfa"] = self.foreign_apps
         if self.foreign_assets:
@@ -1427,12 +1277,8 @@ class ApplicationCallTxn(Transaction):
         args = {
             "index": d["apid"] if "apid" in d else None,
             "on_complete": d["apan"] if "apan" in d else None,
-            "local_schema": StateSchema(**StateSchema.undictify(d["apls"]))
-            if "apls" in d
-            else None,
-            "global_schema": StateSchema(**StateSchema.undictify(d["apgs"]))
-            if "apgs" in d
-            else None,
+            "local_schema": StateSchema(**StateSchema.undictify(d["apls"])) if "apls" in d else None,
+            "global_schema": StateSchema(**StateSchema.undictify(d["apgs"])) if "apgs" in d else None,
             "approval_program": d["apap"] if "apap" in d else None,
             "clear_program": d["apsu"] if "apsu" in d else None,
             "app_args": d["apaa"] if "apaa" in d else None,
@@ -1442,10 +1288,7 @@ class ApplicationCallTxn(Transaction):
             "extra_pages": d["apep"] if "apep" in d else 0,
         }
         if args["accounts"]:
-            args["accounts"] = [
-                encoding.encode_address(account_bytes)
-                for account_bytes in args["accounts"]
-            ]
+            args["accounts"] = [encoding.encode_address(account_bytes) for account_bytes in args["accounts"]]
         return args
 
     def __eq__(self, other):
@@ -1526,37 +1369,15 @@ class ApplicationUpdateTxn(ApplicationCallTxn):
         See ApplicationCallTxn
     """
 
-    def __init__(
-        self,
-        sender,
-        sp,
-        index,
-        approval_program,
-        clear_program,
-        app_args=None,
-        accounts=None,
-        foreign_apps=None,
-        foreign_assets=None,
-        note=None,
-        lease=None,
-        rekey_to=None,
-    ):
-        ApplicationCallTxn.__init__(
-            self,
-            sender=sender,
-            sp=sp,
-            index=self.creatable_index(index, required=True),
-            on_complete=OnComplete.UpdateApplicationOC,
-            approval_program=approval_program,
-            clear_program=clear_program,
-            app_args=app_args,
-            accounts=accounts,
-            foreign_apps=foreign_apps,
-            foreign_assets=foreign_assets,
-            note=note,
-            lease=lease,
-            rekey_to=rekey_to,
-        )
+    def __init__(self, sender, sp, index, approval_program, clear_program, app_args=None,
+                 accounts=None, foreign_apps=None, foreign_assets=None,
+                 note=None, lease=None, rekey_to=None):
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp,
+                                    index=self.creatable_index(index, required=True),
+                                    on_complete=OnComplete.UpdateApplicationOC,
+                                    approval_program=approval_program, clear_program=clear_program,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps,
+                                    foreign_assets=foreign_assets, note=note, lease=lease, rekey_to=rekey_to)
 
 
 class ApplicationDeleteTxn(ApplicationCallTxn):
@@ -1579,33 +1400,13 @@ class ApplicationDeleteTxn(ApplicationCallTxn):
         See ApplicationCallTxn
     """
 
-    def __init__(
-        self,
-        sender,
-        sp,
-        index,
-        app_args=None,
-        accounts=None,
-        foreign_apps=None,
-        foreign_assets=None,
-        note=None,
-        lease=None,
-        rekey_to=None,
-    ):
-        ApplicationCallTxn.__init__(
-            self,
-            sender=sender,
-            sp=sp,
-            index=self.creatable_index(index, required=True),
-            on_complete=OnComplete.DeleteApplicationOC,
-            app_args=app_args,
-            accounts=accounts,
-            foreign_apps=foreign_apps,
-            foreign_assets=foreign_assets,
-            note=note,
-            lease=lease,
-            rekey_to=rekey_to,
-        )
+    def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
+                foreign_assets=None, note=None, lease=None, rekey_to=None):
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp,
+                                    index=self.creatable_index(index, required=True),
+                                    on_complete=OnComplete.DeleteApplicationOC,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps,
+                                    foreign_assets=foreign_assets, note=note, lease=lease, rekey_to=rekey_to)
 
 
 class ApplicationOptInTxn(ApplicationCallTxn):
@@ -1627,34 +1428,13 @@ class ApplicationOptInTxn(ApplicationCallTxn):
     Attributes:
         See ApplicationCallTxn
     """
-
-    def __init__(
-        self,
-        sender,
-        sp,
-        index,
-        app_args=None,
-        accounts=None,
-        foreign_apps=None,
-        foreign_assets=None,
-        note=None,
-        lease=None,
-        rekey_to=None,
-    ):
-        ApplicationCallTxn.__init__(
-            self,
-            sender=sender,
-            sp=sp,
-            index=self.creatable_index(index, required=True),
-            on_complete=OnComplete.OptInOC,
-            app_args=app_args,
-            accounts=accounts,
-            foreign_apps=foreign_apps,
-            foreign_assets=foreign_assets,
-            note=note,
-            lease=lease,
-            rekey_to=rekey_to,
-        )
+    def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
+                 foreign_assets=None, note=None, lease=None, rekey_to=None):
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp,
+                                    index=self.creatable_index(index, required=True),
+                                    on_complete=OnComplete.OptInOC,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps,
+                                    foreign_assets=foreign_assets, note=note, lease=lease, rekey_to=rekey_to)
 
 
 class ApplicationCloseOutTxn(ApplicationCallTxn):
@@ -1676,34 +1456,13 @@ class ApplicationCloseOutTxn(ApplicationCallTxn):
     Attributes:
         See ApplicationCallTxn
     """
-
-    def __init__(
-        self,
-        sender,
-        sp,
-        index,
-        app_args=None,
-        accounts=None,
-        foreign_apps=None,
-        foreign_assets=None,
-        note=None,
-        lease=None,
-        rekey_to=None,
-    ):
-        ApplicationCallTxn.__init__(
-            self,
-            sender=sender,
-            sp=sp,
-            index=self.creatable_index(index),
-            on_complete=OnComplete.CloseOutOC,
-            app_args=app_args,
-            accounts=accounts,
-            foreign_apps=foreign_apps,
-            foreign_assets=foreign_assets,
-            note=note,
-            lease=lease,
-            rekey_to=rekey_to,
-        )
+    def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
+                foreign_assets=None, note=None, lease=None, rekey_to=None):
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp,
+                                    index=self.creatable_index(index),
+                                    on_complete=OnComplete.CloseOutOC,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps,
+                                    foreign_assets=foreign_assets, note=note, lease=lease, rekey_to=rekey_to)
 
 
 class ApplicationClearStateTxn(ApplicationCallTxn):
@@ -1725,34 +1484,13 @@ class ApplicationClearStateTxn(ApplicationCallTxn):
     Attributes:
         See ApplicationCallTxn
     """
-
-    def __init__(
-        self,
-        sender,
-        sp,
-        index,
-        app_args=None,
-        accounts=None,
-        foreign_apps=None,
-        foreign_assets=None,
-        note=None,
-        lease=None,
-        rekey_to=None,
-    ):
-        ApplicationCallTxn.__init__(
-            self,
-            sender=sender,
-            sp=sp,
-            index=self.creatable_index(index),
-            on_complete=OnComplete.ClearStateOC,
-            app_args=app_args,
-            accounts=accounts,
-            foreign_apps=foreign_apps,
-            foreign_assets=foreign_assets,
-            note=note,
-            lease=lease,
-            rekey_to=rekey_to,
-        )
+    def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
+                 foreign_assets=None, note=None, lease=None, rekey_to=None):
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp,
+                                    index=self.creatable_index(index),
+                                    on_complete=OnComplete.ClearStateOC,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps,
+                                    foreign_assets=foreign_assets, note=note, lease=lease, rekey_to=rekey_to)
 
 
 class ApplicationNoOpTxn(ApplicationCallTxn):
@@ -1775,34 +1513,13 @@ class ApplicationNoOpTxn(ApplicationCallTxn):
     Attributes:
         See ApplicationCallTxn
     """
-
-    def __init__(
-        self,
-        sender,
-        sp,
-        index,
-        app_args=None,
-        accounts=None,
-        foreign_apps=None,
-        foreign_assets=None,
-        note=None,
-        lease=None,
-        rekey_to=None,
-    ):
-        ApplicationCallTxn.__init__(
-            self,
-            sender=sender,
-            sp=sp,
-            index=self.creatable_index(index),
-            on_complete=OnComplete.NoOpOC,
-            app_args=app_args,
-            accounts=accounts,
-            foreign_apps=foreign_apps,
-            foreign_assets=foreign_assets,
-            note=note,
-            lease=lease,
-            rekey_to=rekey_to,
-        )
+    def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None, foreign_assets=None,
+                 note=None, lease=None, rekey_to=None):
+        ApplicationCallTxn.__init__(self, sender=sender, sp=sp,
+                                    index=self.creatable_index(index),
+                                    on_complete=OnComplete.NoOpOC,
+                                    app_args=app_args, accounts=accounts, foreign_apps=foreign_apps,
+                                    foreign_assets=foreign_assets, note=note, lease=lease, rekey_to=rekey_to)
 
 
 class SignedTransaction:
@@ -1856,13 +1573,13 @@ class SignedTransaction:
         return stx
 
     def __eq__(self, other):
-        if not isinstance(other, (SignedTransaction, transaction.SignedTransaction)):
+        if not isinstance(other, (
+                SignedTransaction,
+                transaction.SignedTransaction)):
             return False
-        return (
-            self.transaction == other.transaction
-            and self.signature == other.signature
-            and self.authorizing_address == other.authorizing_address
-        )
+        return (self.transaction == other.transaction and
+                self.signature == other.signature and
+                self.authorizing_address == other.authorizing_address)
 
 
 class MultisigTransaction:
@@ -1902,7 +1619,7 @@ class MultisigTransaction:
             raise error.BadTxnSenderError
         index = -1
         public_key = base64.b64decode(bytes(private_key, "utf-8"))
-        public_key = public_key[constants.key_len_bytes :]
+        public_key = public_key[constants.key_len_bytes:]
         for s in range(len(self.multisig.subsigs)):
             if self.multisig.subsigs[s].public_key == public_key:
                 index = s
@@ -1968,22 +1685,20 @@ class MultisigTransaction:
                 for s in range(len(stx.multisig.subsigs)):
                     if stx.multisig.subsigs[s].signature:
                         if not msigstx.multisig.subsigs[s].signature:
-                            msigstx.multisig.subsigs[
-                                s
-                            ].signature = stx.multisig.subsigs[s].signature
-                        elif (
-                            not msigstx.multisig.subsigs[s].signature
-                            == stx.multisig.subsigs[s].signature
-                        ):
+                            msigstx.multisig.subsigs[s].signature = \
+                                stx.multisig.subsigs[s].signature
+                        elif not msigstx.multisig.subsigs[s].signature == \
+                                 stx.multisig.subsigs[s].signature:
                             raise error.DuplicateSigMismatchError
         return msigstx
 
     def __eq__(self, other):
-        if not isinstance(
-            other, (MultisigTransaction, transaction.MultisigTransaction)
-        ):
+        if not isinstance(other, (
+                MultisigTransaction,
+                transaction.MultisigTransaction)):
             return False
-        return self.transaction == other.transaction and self.multisig == other.multisig
+        return (self.transaction == other.transaction and
+                self.multisig == other.multisig)
 
 
 class Multisig:
@@ -2012,22 +1727,16 @@ class Multisig:
         """Check if the multisig account is valid."""
         if not self.version == 1:
             raise error.UnknownMsigVersionError
-        if (
-            self.threshold <= 0
-            or len(self.subsigs) == 0
-            or self.threshold > len(self.subsigs)
-        ):
+        if (self.threshold <= 0 or len(self.subsigs) == 0 or
+                self.threshold > len(self.subsigs)):
             raise error.InvalidThresholdError
         if len(self.subsigs) > constants.multisig_account_limit:
             raise error.MultisigAccountSizeError
 
     def address(self):
         """Return the multisig account address."""
-        msig_bytes = (
-            bytes(constants.msig_addr_prefix, "utf-8")
-            + bytes([self.version])
-            + bytes([self.threshold])
-        )
+        msig_bytes = (bytes(constants.msig_addr_prefix, "utf-8") +
+                      bytes([self.version]) + bytes([self.threshold]))
         for s in self.subsigs:
             msig_bytes += s.public_key
         addr = encoding.checksum(msig_bytes)
@@ -2069,7 +1778,7 @@ class Multisig:
         d = {
             "subsig": [subsig.json_dictify() for subsig in self.subsigs],
             "thr": self.threshold,
-            "v": self.version,
+            "v": self.version
         }
         return d
 
@@ -2093,13 +1802,13 @@ class Multisig:
         return pks
 
     def __eq__(self, other):
-        if not isinstance(other, (Multisig, transaction.Multisig)):
+        if not isinstance(other, (
+                Multisig,
+                transaction.Multisig)):
             return False
-        return (
-            self.version == other.version
-            and self.threshold == other.threshold
-            and self.subsigs == other.subsigs
-        )
+        return (self.version == other.version and
+                self.threshold == other.threshold and
+                self.subsigs == other.subsigs)
 
 
 class MultisigSubsig:
@@ -2121,7 +1830,9 @@ class MultisigSubsig:
         return od
 
     def json_dictify(self):
-        d = {"pk": base64.b64encode(self.public_key).decode()}
+        d = {
+            "pk": base64.b64encode(self.public_key).decode()
+        }
         if self.signature:
             d["s"] = base64.b64encode(self.signature).decode()
         return d
@@ -2135,9 +1846,12 @@ class MultisigSubsig:
         return mss
 
     def __eq__(self, other):
-        if not isinstance(other, (MultisigSubsig, transaction.MultisigSubsig)):
+        if not isinstance(other, (
+                MultisigSubsig,
+                transaction.MultisigSubsig)):
             return False
-        return self.public_key == other.public_key and self.signature == other.signature
+        return (self.public_key == other.public_key and
+                self.signature == other.signature)
 
 
 class LogicSig:
@@ -2180,7 +1894,7 @@ class LogicSig:
         if "sig" in d:
             lsig.sig = base64.b64encode(d["sig"]).decode()
         elif "msig" in d:
-            lsig.msig = Multisig.undictify(d["msig"])
+            lsig.msig = Multisig.undictify(d['msig'])
         return lsig
 
     def verify(self, public_key):
@@ -2232,7 +1946,7 @@ class LogicSig:
     @staticmethod
     def sign_program(program, private_key):
         private_key = base64.b64decode(private_key)
-        signing_key = SigningKey(private_key[: constants.key_len_bytes])
+        signing_key = SigningKey(private_key[:constants.key_len_bytes])
         to_sign = constants.logic_prefix + program
         signed = signing_key.sign(to_sign)
         return base64.b64encode(signed.signature).decode()
@@ -2241,7 +1955,7 @@ class LogicSig:
     def single_sig_multisig(program, private_key, multisig):
         index = -1
         public_key = base64.b64decode(bytes(private_key, "utf-8"))
-        public_key = public_key[constants.key_len_bytes :]
+        public_key = public_key[constants.key_len_bytes:]
         for s in range(len(multisig.subsigs)):
             if multisig.subsigs[s].public_key == public_key:
                 index = s
@@ -2269,7 +1983,8 @@ class LogicSig:
         if not multisig:
             self.sig = LogicSig.sign_program(self.logic, private_key)
         else:
-            sig, index = LogicSig.single_sig_multisig(self.logic, private_key, multisig)
+            sig, index = LogicSig.single_sig_multisig(self.logic, private_key,
+                                                      multisig)
             multisig.subsigs[index].signature = base64.b64decode(sig)
             self.msig = multisig
 
@@ -2287,18 +2002,19 @@ class LogicSig:
 
         if self.msig is None:
             raise error.InvalidSecretKeyError
-        sig, index = LogicSig.single_sig_multisig(self.logic, private_key, self.msig)
+        sig, index = LogicSig.single_sig_multisig(self.logic, private_key,
+                                                  self.msig)
         self.msig.subsigs[index].signature = base64.b64decode(sig)
 
     def __eq__(self, other):
-        if not isinstance(other, (LogicSig, transaction.LogicSig)):
+        if not isinstance(other, (
+                LogicSig,
+                transaction.LogicSig)):
             return False
-        return (
-            self.logic == other.logic
-            and self.args == other.args
-            and self.sig == other.sig
-            and self.msig == other.msig
-        )
+        return (self.logic == other.logic and
+                self.args == other.args and
+                self.sig == other.sig and
+                self.msig == other.msig)
 
 
 class LogicSigTransaction:
@@ -2357,11 +2073,12 @@ class LogicSigTransaction:
         return lstx
 
     def __eq__(self, other):
-        if not isinstance(
-            other, (LogicSigTransaction, transaction.LogicSigTransaction)
-        ):
+        if not isinstance(other, (
+                LogicSigTransaction,
+                transaction.LogicSigTransaction)):
             return False
-        return self.lsig == other.lsig and self.transaction == other.transaction
+        return (self.lsig == other.lsig and
+                self.transaction == other.transaction)
 
 
 def write_to_file(txns, path, overwrite=True):
@@ -2421,7 +2138,7 @@ def retrieve_from_file(path):
         elif "type" in txn:
             txns.append(Transaction.undictify(txn))
         elif "txn" in txn:
-            txns.append(Transaction.undictify(txn["txn"]))
+            txns.append(Transaction.undictify(txn['txn']))
     f.close()
     return txns
 
