@@ -1158,6 +1158,7 @@ class ApplicationCallTxn(Transaction):
         accounts (list[string], optional): list of additional accounts involved in call
         foreign_apps (list[int], optional): list of other applications (identified by index) involved in call
         foreign_assets (list[int], optional): list of assets involved in call
+        extra_pages (int, optional): additional program space for supporting larger programs.  A page is 1024 bytes.
 
     Attributes:
         sender (str)
@@ -1175,13 +1176,14 @@ class ApplicationCallTxn(Transaction):
         accounts (list[str])
         foreign_apps (list[int])
         foreign_assets (list[int])
+        extra_pages (int)
     """
 
     def __init__(self, sender, sp, index,
                  on_complete, local_schema=None, global_schema=None,
                  approval_program=None, clear_program=None, app_args=None,
                  accounts=None, foreign_apps=None, foreign_assets=None,
-                 note=None, lease=None, rekey_to=None):
+                 note=None, lease=None, rekey_to=None, extra_pages=0):
         Transaction.__init__(self, sender, sp, note,
                              lease, constants.appcall_txn, rekey_to)
         self.index = self.creatable_index(index)
@@ -1194,6 +1196,7 @@ class ApplicationCallTxn(Transaction):
         self.accounts = accounts
         self.foreign_apps = self.int_list(foreign_apps)
         self.foreign_assets = self.int_list(foreign_assets)
+        self.extra_pages = extra_pages        
         if sp.flat_fee:
             self.fee = max(constants.min_txn_fee, self.fee)
         else:
@@ -1261,6 +1264,8 @@ class ApplicationCallTxn(Transaction):
             d["apfa"] = self.foreign_apps
         if self.foreign_assets:
             d["apas"] = self.foreign_assets
+        if self.extra_pages:
+            d["apep"] = self.extra_pages
 
         d.update(super(ApplicationCallTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
@@ -1279,7 +1284,8 @@ class ApplicationCallTxn(Transaction):
             "app_args": d["apaa"] if "apaa" in d else None,
             "accounts": d["apat"] if "apat" in d else None,
             "foreign_apps": d["apfa"] if "apfa" in d else None,
-            "foreign_assets": d["apas"] if "apas" in d else None
+            "foreign_assets": d["apas"] if "apas" in d else None,
+            "extra_pages": d["apep"] if "apep" in d else 0,
         }
         if args["accounts"]:
             args["accounts"] = [encoding.encode_address(account_bytes) for account_bytes in args["accounts"]]
@@ -1298,7 +1304,9 @@ class ApplicationCallTxn(Transaction):
                 self.app_args == other.app_args and
                 self.accounts == other.accounts and
                 self.foreign_apps == other.foreign_apps and
-                self.foreign_assets == other.foreign_assets)
+                self.foreign_assets == other.foreign_assets and 
+                self.extra_pages == other.extra_pages)
+                
 
 
 class ApplicationCreateTxn(ApplicationCallTxn):
@@ -1320,6 +1328,7 @@ class ApplicationCreateTxn(ApplicationCallTxn):
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
+        extra_pages(int, optional): provides extra program size
 
     Attributes:
         See ApplicationCallTxn
@@ -1328,14 +1337,14 @@ class ApplicationCreateTxn(ApplicationCallTxn):
     def __init__(self, sender, sp, on_complete, approval_program, clear_program, global_schema,
                  local_schema,
                  app_args=None, accounts=None, foreign_apps=None, foreign_assets=None, note=None,
-                 lease=None, rekey_to=None):
+                 lease=None, rekey_to=None, extra_pages=0):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=0, on_complete=on_complete,
                                     approval_program=self.required(approval_program),
                                     clear_program=self.required(clear_program),
                                     global_schema=global_schema,
                                     local_schema=local_schema, app_args=app_args, accounts=accounts,
                                     foreign_apps=foreign_apps, foreign_assets=foreign_assets,
-                                    note=note, lease=lease, rekey_to=rekey_to)
+                                    note=note, lease=lease, rekey_to=rekey_to, extra_pages=extra_pages)
 
 
 class ApplicationUpdateTxn(ApplicationCallTxn):
