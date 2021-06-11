@@ -1497,10 +1497,18 @@ class TestLogic(unittest.TestCase):
         program += b"\x02" * 10
         self.assertTrue(logic.check_program(program, None))
 
-        # check 800x keccak256 fail
+        # check 800x keccak256 fail for v3 and below
+        versions = [b"\x01", b"\x02", b"\x03"]
         program += b"\x02" * 800
-        with self.assertRaises(error.InvalidProgram):
-            logic.check_program(program, [])
+        for v in versions:
+            program[0]=v
+            with self.assertRaises(error.InvalidProgram):
+                logic.check_program(program, [])
+        
+        versions = [b"\x04"]
+        for v in versions:
+            program[0]=v
+            self.assertTrue(logic.check_program(program, None))
 
     def test_check_program_teal_2(self):
         # check TEAL v2 opcodes

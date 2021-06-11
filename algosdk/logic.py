@@ -97,8 +97,9 @@ def read_program(program, args=None):
                 raise error.InvalidProgram("invalid instruction")
         pc += size
 
-    if cost >= constants.logic_sig_max_cost:
-        raise error.InvalidProgram("program too costly to run")
+    # costs calculated dynamically starting in v4
+    if version < 4 and cost >= constants.logic_sig_max_cost : 
+        raise error.InvalidProgram("program too costly for Teal version < 4. consider using v4.")
 
     return True, ints, bytearrays
 
