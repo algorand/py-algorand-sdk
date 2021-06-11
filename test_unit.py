@@ -1564,7 +1564,6 @@ class TestLogic(unittest.TestCase):
         # check TEAL v4 opcodes
         self.assertIsNotNone(logic.spec, "Must be called after any of logic.check_program")
         self.assertTrue(logic.spec['EvalMaxVersion'] >= 4)
-        self.assertTrue(logic.spec['LogicSigVersion'] >= 3)
 
         # divmodw
         program = b"\x04\x20\x03\x01\x00\x02\x22\x81\xd0\x0f\x23\x24\x1f" # int 1; pushint 2000; int 0; int 2; divmodw
