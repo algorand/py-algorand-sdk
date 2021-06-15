@@ -1593,6 +1593,14 @@ class TestLogic(unittest.TestCase):
         program = b"\x04\x26\x03\x01\x11\x01\x10\x01\x01\x28\x29\xad\x2a\x12" # byte 0x11; byte 0x10; b>=
         self.assertTrue(logic.check_program(program, None))
 
+        # callsub, retsub
+        program = b"\x04\x20\x02\x01\x02\x22\x88\x00\x03\x23\x12\x43\x49\x08\x89" # int 1; callsub double; int 2; ==; return; double: dup; +; retsub;
+        self.assertTrue(logic.check_program(program, None))
+
+        # loop
+        program = b"\x04\x20\x04\x01\x02\x0a\x10\x22\x23\x0b\x49\x24\x0c\x40\xff\xf8\x25\x12" # int 1; loop: int 2; *; dup; int 10; <; bnz loop; int 16; ==
+        self.assertTrue(logic.check_program(program, None))
+
 class TestLogicSig(unittest.TestCase):
     def test_basic(self):
         with self.assertRaises(error.InvalidProgram):
