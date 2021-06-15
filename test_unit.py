@@ -1501,14 +1501,14 @@ class TestLogic(unittest.TestCase):
         versions = [b"\x01", b"\x02", b"\x03"]
         program += b"\x02" * 800
         for v in versions:
-            program[0]=v
+            programv=v+program
             with self.assertRaises(error.InvalidProgram):
-                logic.check_program(program, [])
+                logic.check_program(programv, [])
         
         versions = [b"\x04"]
         for v in versions:
-            program[0]=v
-            self.assertTrue(logic.check_program(program, None))
+            programv=v+program
+            self.assertTrue(logic.check_program(programv, None))
 
     def test_check_program_teal_2(self):
         # check TEAL v2 opcodes
