@@ -1,17 +1,20 @@
 # py-algorand-sdk
 [![Build Status](https://travis-ci.com/algorand/py-algorand-sdk.svg?branch=master)](https://travis-ci.com/algorand/py-algorand-sdk) [![PyPI version](https://badge.fury.io/py/py-algorand-sdk.svg)](https://badge.fury.io/py/py-algorand-sdk) [![Documentation Status](https://readthedocs.org/projects/py-algorand-sdk/badge/?version=latest&style=flat)](https://py-algorand-sdk.readthedocs.io/en/latest)
 
-A python library for interacting with the Algorand network.
+A Python library for interacting with the Algorand network.
 
 ## Installation
 
-Run ```$ pip3 install py-algorand-sdk``` to install the package.
+Ensure that you're using Python 3.5 or above. Consider using [pyenv](https://github.com/pyenv/pyenv) to keep multiple Python versions installed at once.
+
+Run ```$ pip3 install py-algorand-sdk``` to install the package. 
+<sup>[Additional requirements for pip installations](https://packaging.python.org/tutorials/installing-packages/#requirements-for-installing-packages)</sup>
 
 Alternatively, choose a [distribution file](https://pypi.org/project/py-algorand-sdk/#files), and run ```$ pip3 install [file name]```.
 
 ## SDK Development
 
-Run tests with `make docker-test`
+Run tests with `make docker-test`.
 
 ## Quick start
 
