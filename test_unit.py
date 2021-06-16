@@ -1497,10 +1497,18 @@ class TestLogic(unittest.TestCase):
         program += b"\x02" * 10
         self.assertTrue(logic.check_program(program, None))
 
-        # check 800x keccak256 fail
+        # check 800x keccak256 fail for v3 and below
+        versions = [b"\x01", b"\x02", b"\x03"]
         program += b"\x02" * 800
-        with self.assertRaises(error.InvalidProgram):
-            logic.check_program(program, [])
+        for v in versions:
+            programv=v+program
+            with self.assertRaises(error.InvalidProgram):
+                logic.check_program(programv, [])
+        
+        versions = [b"\x04"]
+        for v in versions:
+            programv=v+program
+            self.assertTrue(logic.check_program(programv, None))
 
     def test_check_program_teal_2(self):
         # check TEAL v2 opcodes
@@ -1583,6 +1591,14 @@ class TestLogic(unittest.TestCase):
 
         # b^
         program = b"\x04\x26\x03\x01\x11\x01\x10\x01\x01\x28\x29\xad\x2a\x12" # byte 0x11; byte 0x10; b>=
+        self.assertTrue(logic.check_program(program, None))
+
+        # callsub, retsub
+        program = b"\x04\x20\x02\x01\x02\x22\x88\x00\x03\x23\x12\x43\x49\x08\x89" # int 1; callsub double; int 2; ==; return; double: dup; +; retsub;
+        self.assertTrue(logic.check_program(program, None))
+
+        # loop
+        program = b"\x04\x20\x04\x01\x02\x0a\x10\x22\x23\x0b\x49\x24\x0c\x40\xff\xf8\x25\x12" # int 1; loop: int 2; *; dup; int 10; <; bnz loop; int 16; ==
         self.assertTrue(logic.check_program(program, None))
 
 class TestLogicSig(unittest.TestCase):
