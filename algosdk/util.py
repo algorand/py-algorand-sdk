@@ -1,9 +1,25 @@
-from . import constants
-from . import encoding
-import decimal
 import base64
-from nacl.signing import SigningKey, VerifyKey
+import decimal
+from inspect import signature
+
 from nacl.exceptions import BadSignatureError
+from nacl.signing import SigningKey, VerifyKey
+
+from . import constants, encoding
+
+
+class TypeCheck:
+    def __new__(cls, *args, **kwargs):
+        sig = signature(cls.__init__)
+        obj = super().__new__(cls)
+        bound_args = sig.bind(obj, *args, **kwargs)
+        bound_args.apply_defaults()
+        for arg_name, arg_type in cls.__init__.__annotations__.items():
+            if bound_args.arguments.get(arg_name):
+                assert isinstance(
+                    bound_args.arguments[arg_name], arg_type
+                ), f"expected type of {arg_name}: {arg_type} but got {type(bound_args.arguments[arg_name])}"
+        return obj
 
 
 def microalgos_to_algos(microalgos):

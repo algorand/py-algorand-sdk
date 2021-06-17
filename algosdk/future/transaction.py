@@ -1,18 +1,16 @@
 import base64
-from enum import IntEnum
-import msgpack
 from collections import OrderedDict
-from .. import account
-from .. import constants
-from .. import encoding
-from .. import error
-from .. import logic
-from .. import transaction
-from nacl.signing import SigningKey, VerifyKey
+from enum import IntEnum
+
+import msgpack
 from nacl.exceptions import BadSignatureError
+from nacl.signing import SigningKey, VerifyKey
+
+from .. import account, constants, encoding, error, logic, transaction
+from ..util import TypeCheck
 
 
-class SuggestedParams:
+class SuggestedParams(TypeCheck):
     """
     Contains various fields common to all transaction types.
 
@@ -37,8 +35,17 @@ class SuggestedParams:
         min_fee (int)
     """
 
-    def __init__(self, fee, first, last, gh, gen=None, flat_fee=False,
-                 consensus_version=None, min_fee=None):
+    def __init__(
+        self,
+        fee: int,
+        first: int,
+        last: int,
+        gh: str,
+        gen: str = None,
+        flat_fee: bool = False,
+        consensus_version: str = None,
+        min_fee: int = None,
+    ):
         self.first = first
         self.last = last
         self.gh = gh
