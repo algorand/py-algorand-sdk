@@ -93,7 +93,7 @@ class Transaction:
 
     def dictify(self):
         d = dict()
-        d["fee"] = self.fee
+        if self.fee: d["fee"] = self.fee
         if self.first_valid_round:
             d["fv"] = self.first_valid_round
         if self.genesis_id:
@@ -117,7 +117,7 @@ class Transaction:
     def undictify(d):
         args = {
             "sender": encoding.encode_address(d["snd"]),
-            "fee": d["fee"],
+            "fee": d["fee"] if "fee" in d else 0,
             "first": d["fv"] if "fv" in d else 0,
             "last": d["lv"],
             "gh": base64.b64encode(d["gh"]).decode(),
@@ -173,7 +173,9 @@ class PaymentTxn(Transaction):
 
     Args:
         sender (str): address of the sender
-        fee (int): transaction fee (per byte if flat_fee is false)
+        fee (int): transaction fee (per byte if flat_fee is false). When flat_fee is true, 
+            fee may fall to zero but a group of N atomic transactions must
+            still have a fee of at least N*min_txn_fee.
         first (int): first round for which the transaction is valid
         last (int): last round for which the transaction is valid
         gh (str): genesis_hash
@@ -219,9 +221,7 @@ class PaymentTxn(Transaction):
         if (not isinstance(self.amt, int)) or self.amt < 0:
             raise error.WrongAmountType
         self.close_remainder_to = close_remainder_to
-        if flat_fee:
-            self.fee = max(constants.min_txn_fee, self.fee)
-        else:
+        if not flat_fee:
             self.fee = max(self.estimate_size()*self.fee,
                            constants.min_txn_fee)
 
@@ -269,7 +269,9 @@ class KeyregTxn(Transaction):
 
     Args:
         sender (str): address of sender
-        fee (int): transaction fee (per byte if flat_fee is false)
+        fee (int): transaction fee (per byte if flat_fee is false). When flat_fee is true, 
+            fee may fall to zero but a group of N atomic transactions must
+            still have a fee of at least N*min_txn_fee.
         first (int): first round for which the transaction is valid
         last (int): last round for which the transaction is valid
         gh (str): genesis_hash
@@ -315,9 +317,7 @@ class KeyregTxn(Transaction):
         self.votefst = votefst
         self.votelst = votelst
         self.votekd = votekd
-        if flat_fee:
-            self.fee = max(constants.min_txn_fee, self.fee)
-        else:
+        if not flat_fee:
             self.fee = max(self.estimate_size()*self.fee,
                            constants.min_txn_fee)
 
@@ -377,7 +377,9 @@ class AssetConfigTxn(Transaction):
 
     Args:
         sender (str): address of the sender
-        fee (int): transaction fee (per byte if flat_fee is false)
+        fee (int): transaction fee (per byte if flat_fee is false). When flat_fee is true, 
+            fee may fall to zero but a group of N atomic transactions must
+            still have a fee of at least N*min_txn_fee.
         first (int): first round for which the transaction is valid
         last (int): last round for which the transaction is valid
         gh (str): genesis_hash
@@ -469,9 +471,7 @@ class AssetConfigTxn(Transaction):
         if metadata_hash is not None:
             if len(metadata_hash) != constants.metadata_length:
                 raise error.WrongMetadataLengthError
-        if flat_fee:
-            self.fee = max(constants.min_txn_fee, self.fee)
-        else:
+        if not flat_fee:
             self.fee = max(self.estimate_size()*self.fee,
                            constants.min_txn_fee)
 
@@ -601,7 +601,9 @@ class AssetFreezeTxn(Transaction):
     Args:
         sender (str): address of the sender, who must be the asset's freeze
             manager
-        fee (int): transaction fee (per byte if flat_fee is false)
+        fee (int): transaction fee (per byte if flat_fee is false). When flat_fee is true, 
+            fee may fall to zero but a group of N atomic transactions must
+            still have a fee of at least N*min_txn_fee.
         first (int): first round for which the transaction is valid
         last (int): last round for which the transaction is valid
         gh (str): genesis_hash
@@ -641,11 +643,10 @@ class AssetFreezeTxn(Transaction):
         self.index = index
         self.target = target
         self.new_freeze_state = new_freeze_state
-        if flat_fee:
-            self.fee = max(constants.min_txn_fee, self.fee)
-        else:
+        if not flat_fee:
             self.fee = max(self.estimate_size()*self.fee,
                            constants.min_txn_fee)
+            
 
     def dictify(self):
         d = dict()
@@ -692,7 +693,9 @@ class AssetTransferTxn(Transaction):
 
     Args:
         sender (str): address of the sender
-        fee (int): transaction fee (per byte if flat_fee is false)
+        fee (int): transaction fee (per byte if flat_fee is false). When flat_fee is true, 
+            fee may fall to zero but a group of N atomic transactions must
+            still have a fee of at least N*min_txn_fee.
         first (int): first round for which the transaction is valid
         last (int): last round for which the transaction is valid
         gh (str): genesis_hash
@@ -745,9 +748,7 @@ class AssetTransferTxn(Transaction):
         self.index = index
         self.close_assets_to = close_assets_to
         self.revocation_target = revocation_target
-        if flat_fee:
-            self.fee = max(constants.min_txn_fee, self.fee)
-        else:
+        if not flat_fee:
             self.fee = max(self.estimate_size()*self.fee,
                            constants.min_txn_fee)
 
