@@ -17,7 +17,9 @@ class SuggestedParams:
     Contains various fields common to all transaction types.
 
     Args:
-        fee (int): transaction fee (per byte)
+        fee (int): transaction fee (per byte if flat_fee is false). When flat_fee is true, 
+            fee may fall to zero but a group of N atomic transactions must
+            still have a fee of at least N*min_txn_fee.
         first (int): first round for which the transaction is valid
         last (int): last round for which the transaction is valid
         gh (str): genesis hash
@@ -170,7 +172,7 @@ class Transaction:
 
     def dictify(self):
         d = dict()
-        d["fee"] = self.fee
+        if self.fee: d["fee"] = self.fee
         if self.first_valid_round:
             d["fv"] = self.first_valid_round
         if self.genesis_id:
@@ -193,7 +195,7 @@ class Transaction:
     @staticmethod
     def undictify(d):
         sp = SuggestedParams(
-            d["fee"],
+            d["fee"] if "fee" in d else 0,
             d["fv"] if "fv" in d else 0,
             d["lv"],
             base64.b64encode(d["gh"]).decode(),
@@ -322,9 +324,7 @@ class PaymentTxn(Transaction):
         if (not isinstance(self.amt, int)) or self.amt < 0:
             raise error.WrongAmountType
         self.close_remainder_to = close_remainder_to
-        if sp.flat_fee:
-            self.fee = max(constants.min_txn_fee, self.fee)
-        else:
+        if not sp.flat_fee:
             self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
 
@@ -416,9 +416,7 @@ class KeyregTxn(Transaction):
         self.votelst = votelst
         self.votekd = votekd
         self.nonpart = nonpart
-        if sp.flat_fee:
-            self.fee = max(constants.min_txn_fee, self.fee)
-        else:
+        if not sp.flat_fee:
             self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
 
@@ -582,9 +580,7 @@ class AssetConfigTxn(Transaction):
         self.decimals = int(decimals)
         if self.decimals < 0 or self.decimals > constants.max_asset_decimals:
             raise error.OutOfRangeDecimalsError
-        if sp.flat_fee:
-            self.fee = max(constants.min_txn_fee, self.fee)
-        else:
+        if not sp.flat_fee:
             self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
 
@@ -865,9 +861,7 @@ class AssetFreezeTxn(Transaction):
         self.index = self.creatable_index(index, required=True)
         self.target = target
         self.new_freeze_state = new_freeze_state
-        if sp.flat_fee:
-            self.fee = max(constants.min_txn_fee, self.fee)
-        else:
+        if not sp.flat_fee:
             self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
 
@@ -966,9 +960,7 @@ class AssetTransferTxn(Transaction):
         self.index = self.creatable_index(index, required=True)
         self.close_assets_to = close_assets_to
         self.revocation_target = revocation_target
-        if sp.flat_fee:
-            self.fee = max(constants.min_txn_fee, self.fee)
-        else:
+        if not sp.flat_fee:
             self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
 
@@ -1197,9 +1189,7 @@ class ApplicationCallTxn(Transaction):
         self.foreign_apps = self.int_list(foreign_apps)
         self.foreign_assets = self.int_list(foreign_assets)
         self.extra_pages = extra_pages        
-        if sp.flat_fee:
-            self.fee = max(constants.min_txn_fee, self.fee)
-        else:
+        if not sp.flat_fee:
             self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
 
