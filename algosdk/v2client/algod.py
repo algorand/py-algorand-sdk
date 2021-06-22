@@ -80,8 +80,8 @@ class AlgodClient:
         if response_format == "json":
             try:
                 return json.load(resp)
-            except json.JSONDecodeError:
-                raise
+            except Exception as e:
+                raise error.AlgodResponseError("Failed to parse JSON response from algod") from e
         else:
             return resp.read()
 
