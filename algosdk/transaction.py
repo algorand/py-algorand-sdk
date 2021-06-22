@@ -320,7 +320,7 @@ class KeyregTxn(Transaction):
         if not flat_fee:
             self.fee = max(self.estimate_size()*self.fee,
                            constants.min_txn_fee)
-            
+
     def dictify(self):
         d = {
             "selkey": encoding.decode_address(self.selkey),
@@ -474,7 +474,7 @@ class AssetConfigTxn(Transaction):
         if not flat_fee:
             self.fee = max(self.estimate_size()*self.fee,
                            constants.min_txn_fee)
-           
+
     def dictify(self):
         d = dict()
 
@@ -751,7 +751,7 @@ class AssetTransferTxn(Transaction):
         if not flat_fee:
             self.fee = max(self.estimate_size()*self.fee,
                            constants.min_txn_fee)
-        
+
     def dictify(self):
         d = dict()
 
