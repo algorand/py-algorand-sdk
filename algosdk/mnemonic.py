@@ -4,6 +4,7 @@ from . import wordlist
 from . import error
 from . import constants
 from . import encoding
+import warnings
 
 
 word_to_index = {}
@@ -78,6 +79,7 @@ def to_private_key(mnemonic):
 
 
 def to_public_key(mnemonic):
+    warnings.warn("to_public_key returns the Algorand address and will be deprecated, use to_address", DeprecationWarning)
     """
     Return the public key for the mnemonic.
 
@@ -86,6 +88,21 @@ def to_public_key(mnemonic):
 
     Returns:
         str: public key in base32
+    """
+    key_bytes = _to_key(mnemonic)
+    key = signing.SigningKey(key_bytes)
+    return encoding.encode_address(key.verify_key.encode())
+
+
+def to_address(mnemonic):
+    """
+    Return the address for the mnemonic of the public key.
+
+    Args:
+        mnemonic (str): mnemonic of the public key
+
+    Returns:
+        str: address in base32
     """
     key_bytes = _to_key(mnemonic)
     key = signing.SigningKey(key_bytes)
