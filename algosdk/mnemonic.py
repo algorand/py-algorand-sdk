@@ -79,7 +79,7 @@ def to_private_key(mnemonic):
 
 
 def to_public_key(mnemonic):
-    warnings.warn("to_public_key returns the Algorand address and will be deprecated, use to_address", DeprecationWarning)
+    warnings.warn("to_public_key returns the Algorand address and will be deprecated, use to_address instead", DeprecationWarning)
     """
     Return the public key for the mnemonic.
 
