@@ -81,7 +81,7 @@ class AlgodClient:
             try:
                 return json.load(resp)
             except json.JSONDecodeError:
-                return None
+                raise json.JSONDecodeError
         else:
             return resp.read()
 
