@@ -944,6 +944,4 @@ def fee_not_in_txn(context):
         stxn = context.signed_transaction.dictify()
     else:
         stxn = context.mtx.dictify()
-        print(stxn)
-        print(context.params.flat_fee)
     assert 'fee' not in stxn['txn']

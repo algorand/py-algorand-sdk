@@ -321,7 +321,6 @@ class KeyregTxn(Transaction):
             self.fee = max(self.estimate_size()*self.fee,
                            constants.min_txn_fee)
             
-
     def dictify(self):
         d = {
             "selkey": encoding.decode_address(self.selkey),
@@ -753,7 +752,6 @@ class AssetTransferTxn(Transaction):
             self.fee = max(self.estimate_size()*self.fee,
                            constants.min_txn_fee)
         
-
     def dictify(self):
         d = dict()
 
