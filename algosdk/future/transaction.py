@@ -9,7 +9,6 @@ from nacl.signing import SigningKey, VerifyKey
 from .. import account, constants, encoding, error, logic, transaction
 from ..util import TypeCheck
 
-
 class SuggestedParams(TypeCheck):
     """
     Contains various fields common to all transaction types.
@@ -56,12 +55,20 @@ class SuggestedParams(TypeCheck):
         self.min_fee = min_fee
 
 
-class Transaction:
+class Transaction(TypeCheck):
     """
     Superclass for various transaction types.
     """
 
-    def __init__(self, sender, sp, note, lease, txn_type, rekey_to):
+    def __init__(
+        self, 
+        sender: str, 
+        sp: SuggestedParams, 
+        note: bytes, 
+        lease: bytes, 
+        txn_type: str, 
+        rekey_to:str
+    ):
         self.sender = sender
         self.fee = sp.fee
         self.first_valid_round = sp.first
@@ -315,9 +322,9 @@ class PaymentTxn(Transaction):
         rekey_to (str)
     """
 
-    def __init__(self, sender, sp, receiver, amt,
-                 close_remainder_to=None, note=None,
-                 lease=None, rekey_to=None):
+    def __init__(self, sender: str, sp: SuggestedParams, receiver: str, amt: int,
+                 close_remainder_to: str = None, note: bytes = None,
+                 lease: bytes = None, rekey_to: str = None):
         Transaction.__init__(self, sender, sp, note,
                              lease, constants.payment_txn, rekey_to)
         if receiver:
@@ -412,9 +419,9 @@ class KeyregTxn(Transaction):
         nonpart (bool)
     """
 
-    def __init__(self, sender, sp, votekey, selkey, votefst,
-                 votelst, votekd, note=None,
-                 lease=None, rekey_to=None, nonpart=None):
+    def __init__(self, sender: str, sp:SuggestedParams, votekey:str, selkey:str, votefst:int,
+                 votelst:int, votekd:int, note:bytes=None,
+                 lease:bytes=None, rekey_to:str=None, nonpart:bool=False):
         Transaction.__init__(self, sender, sp, note,
                              lease, constants.keyreg_txn, rekey_to)
         self.votepk = votekey
@@ -565,11 +572,11 @@ class AssetConfigTxn(Transaction):
     """
 
     def __init__(
-            self, sender, sp, index=None, total=None, default_frozen=None,
-            unit_name=None, asset_name=None, manager=None, reserve=None,
-            freeze=None, clawback=None, url=None, metadata_hash=None,
-            note=None, lease=None, strict_empty_address_check=True,
-            decimals=0, rekey_to=None):
+            self, sender: str, sp: SuggestedParams, index: int=None, total: int=None, default_frozen: bool=None,
+            unit_name: str=None, asset_name: str=None, manager: str=None, reserve:str=None,
+            freeze:str=None, clawback:str=None, url:str=None, metadata_hash:bytes=None,
+            note:bytes=None, lease:bytes=None, strict_empty_address_check:bool=True,
+            decimals:int=0, rekey_to:str=None):
         Transaction.__init__(self, sender, sp, note,
                              lease, constants.assetconfig_txn, rekey_to)
         if strict_empty_address_check:
@@ -760,12 +767,12 @@ class AssetCreateTxn(AssetConfigTxn):
         rekey_to (str, optional): additionally rekey the sender to this address
 
     """
-    def __init__(self, sender, sp, total, decimals,
-                 default_frozen, *,
-                 manager=None, reserve=None, freeze=None, clawback=None,
-                 unit_name="", asset_name="", url="",
-                 metadata_hash=None,
-                 note=None, lease=None, rekey_to=None):
+    def __init__(self, sender: str, sp: SuggestedParams, total: int, decimals: int,
+                 default_frozen: bool, *,
+                 manager:str=None, reserve:str=None, freeze:str=None, clawback:str=None,
+                 unit_name:str="", asset_name:str="", url:str="",
+                 metadata_hash:bytes=None,
+                 note:bytes=None, lease:bytes=None, rekey_to:str=None):
         super().__init__(sender=sender, sp=sp, total=total, decimals=decimals,
                          default_frozen=default_frozen,
                          manager=manager, reserve=reserve,
@@ -783,8 +790,8 @@ class AssetDestroyTxn(AssetConfigTxn):
     asset.
 
     """
-    def __init__(self, sender, sp, index,
-                 note=None, lease=None, rekey_to=None):
+    def __init__(self, sender:str, sp:SuggestedParams, index:int,
+                 note:bytes=None, lease:bytes=None, rekey_to:str=None):
         super().__init__(sender=sender, sp=sp, index=self.creatable_index(index),
                          note=note, lease=lease, rekey_to=rekey_to,
                          strict_empty_address_check=False)
@@ -819,9 +826,9 @@ class AssetUpdateTxn(AssetConfigTxn):
         rekey_to (str, optional): additionally rekey the sender to this address
 
     """
-    def __init__(self, sender, sp, index, *,
-                 manager, reserve, freeze, clawback,
-                 note=None, lease=None, rekey_to=None):
+    def __init__(self, sender:str, sp:SuggestedParams, index:int, *,
+                 manager:str, reserve:str, freeze:str, clawback:str,
+                 note:bytes=None, lease:bytes=None, rekey_to:str=None):
         super().__init__(sender=sender, sp=sp, index=self.creatable_index(index),
                          manager=manager, reserve=reserve,
                          freeze=freeze, clawback=clawback,
@@ -865,8 +872,8 @@ class AssetFreezeTxn(Transaction):
         rekey_to (str)
     """
 
-    def __init__(self, sender, sp, index, target, new_freeze_state, note=None,
-                 lease=None, rekey_to=None):
+    def __init__(self, sender:str, sp:SuggestedParams, index:int, target:str, new_freeze_state:bool, note:bytes=None,
+                 lease:bytes=None, rekey_to:str=None):
         Transaction.__init__(self, sender, sp, note,
                              lease, constants.assetfreeze_txn, rekey_to)
         self.index = self.creatable_index(index, required=True)
@@ -958,9 +965,9 @@ class AssetTransferTxn(Transaction):
         rekey_to (str)
     """
 
-    def __init__(self, sender, sp, receiver, amt, index,
-                 close_assets_to=None, revocation_target=None, note=None,
-                 lease=None, rekey_to=None):
+    def __init__(self, sender:str, sp:SuggestedParams, receiver:str, amt:int, index:int,
+                 close_assets_to:str=None, revocation_target:str=None, note:bytes=None,
+                 lease:bytes=None, rekey_to:str=None):
         Transaction.__init__(self, sender, sp, note,
                              lease, constants.assettransfer_txn, rekey_to)
         if receiver:
@@ -1045,8 +1052,8 @@ class AssetOptInTxn(AssetTransferTxn):
         See AssetTransferTxn
     """
 
-    def __init__(self, sender, sp, index,
-                 note=None, lease=None, rekey_to=None):
+    def __init__(self, sender:str, sp:SuggestedParams, index:int,
+                 note:bytes=None, lease:bytes=None, rekey_to:str=None):
         super().__init__(sender=sender, sp=sp, receiver=sender, amt=0,
                          index=index, note=note, lease=lease, rekey_to=rekey_to)
 
@@ -1068,8 +1075,8 @@ class AssetCloseOutTxn(AssetTransferTxn):
         See AssetTransferTxn
     """
 
-    def __init__(self, sender, sp, receiver, index,
-                 note=None, lease=None, rekey_to=None):
+    def __init__(self, sender:str, sp:SuggestedParams, receiver:str, index:int,
+                 note:bytes=None, lease:bytes=None, rekey_to:str=None):
         super().__init__(sender=sender, sp=sp, receiver=receiver,
                          amt=0, index=index, close_assets_to=receiver,
                          note=note, lease=lease, rekey_to=rekey_to)
@@ -1088,7 +1095,7 @@ class StateSchema:
         num_byte_slices (int)
     """
 
-    def __init__(self, num_uints=None, num_byte_slices=None):
+    def __init__(self, num_uints: int = None, num_byte_slices:int=None):
         self.num_uints = num_uints
         self.num_byte_slices = num_byte_slices
 
@@ -1186,11 +1193,11 @@ class ApplicationCallTxn(Transaction):
         extra_pages (int)
     """
 
-    def __init__(self, sender, sp, index,
-                 on_complete, local_schema=None, global_schema=None,
-                 approval_program=None, clear_program=None, app_args=None,
-                 accounts=None, foreign_apps=None, foreign_assets=None,
-                 note=None, lease=None, rekey_to=None, extra_pages=0):
+    def __init__(self, sender:str, sp:SuggestedParams, index:int,
+                 on_complete:OnComplete, local_schema:StateSchema=None, global_schema:StateSchema=None,
+                 approval_program:bytes=None, clear_program:bytes=None, app_args:list=None,
+                 accounts:list=None, foreign_apps:list=None, foreign_assets:list=None,
+                 note:bytes=None, lease:bytes=None, rekey_to:str=None, extra_pages:int=0):
         Transaction.__init__(self, sender, sp, note,
                              lease, constants.appcall_txn, rekey_to)
         self.index = self.creatable_index(index)
@@ -1341,10 +1348,10 @@ class ApplicationCreateTxn(ApplicationCallTxn):
         See ApplicationCallTxn
     """
 
-    def __init__(self, sender, sp, on_complete, approval_program, clear_program, global_schema,
-                 local_schema,
-                 app_args=None, accounts=None, foreign_apps=None, foreign_assets=None, note=None,
-                 lease=None, rekey_to=None, extra_pages=0):
+    def __init__(self, sender:str, sp:SuggestedParams, on_complete:OnComplete, approval_program:bytes, clear_program:bytes, global_schema:StateSchema,
+                 local_schema:StateSchema,
+                 app_args:list=None, accounts:list=None, foreign_apps:list=None, foreign_assets:list=None, note:bytes=None,
+                 lease:bytes=None, rekey_to:str=None, extra_pages:int=0):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp, index=0, on_complete=on_complete,
                                     approval_program=self.required(approval_program),
                                     clear_program=self.required(clear_program),
@@ -1376,9 +1383,9 @@ class ApplicationUpdateTxn(ApplicationCallTxn):
         See ApplicationCallTxn
     """
 
-    def __init__(self, sender, sp, index, approval_program, clear_program, app_args=None,
-                 accounts=None, foreign_apps=None, foreign_assets=None,
-                 note=None, lease=None, rekey_to=None):
+    def __init__(self, sender:str, sp:SuggestedParams, index:int, approval_program:bytes, clear_program:bytes, app_args:list=None,
+                 accounts:list=None, foreign_apps:list=None, foreign_assets:list=None,
+                 note:bytes=None, lease:bytes=None, rekey_to:str=None):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp,
                                     index=self.creatable_index(index, required=True),
                                     on_complete=OnComplete.UpdateApplicationOC,
@@ -1407,8 +1414,8 @@ class ApplicationDeleteTxn(ApplicationCallTxn):
         See ApplicationCallTxn
     """
 
-    def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
-                foreign_assets=None, note=None, lease=None, rekey_to=None):
+    def __init__(self, sender:str, sp:SuggestedParams, index:int, app_args:list=None, accounts:list=None, foreign_apps:list=None,
+                foreign_assets:list=None, note:bytes=None, lease:bytes=None, rekey_to:str=None):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp,
                                     index=self.creatable_index(index, required=True),
                                     on_complete=OnComplete.DeleteApplicationOC,
@@ -1435,8 +1442,8 @@ class ApplicationOptInTxn(ApplicationCallTxn):
     Attributes:
         See ApplicationCallTxn
     """
-    def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
-                 foreign_assets=None, note=None, lease=None, rekey_to=None):
+    def __init__(self, sender:str, sp:SuggestedParams, index:int, app_args:list=None, accounts:list=None, foreign_apps:list=None,
+                 foreign_assets:list=None, note:bytes=None, lease:bytes=None, rekey_to:str=None):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp,
                                     index=self.creatable_index(index, required=True),
                                     on_complete=OnComplete.OptInOC,
@@ -1463,8 +1470,8 @@ class ApplicationCloseOutTxn(ApplicationCallTxn):
     Attributes:
         See ApplicationCallTxn
     """
-    def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
-                foreign_assets=None, note=None, lease=None, rekey_to=None):
+    def __init__(self, sender:str, sp:SuggestedParams, index:int, app_args:list=None, accounts:list=None, foreign_apps:list=None,
+                foreign_assets:list=None, note:bytes=None, lease:bytes=None, rekey_to:str=None):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp,
                                     index=self.creatable_index(index),
                                     on_complete=OnComplete.CloseOutOC,
@@ -1491,8 +1498,8 @@ class ApplicationClearStateTxn(ApplicationCallTxn):
     Attributes:
         See ApplicationCallTxn
     """
-    def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None,
-                 foreign_assets=None, note=None, lease=None, rekey_to=None):
+    def __init__(self, sender:str, sp:SuggestedParams, index:int, app_args:list=None, accounts:list=None, foreign_apps:list=None,
+                 foreign_assets:list=None, note:bytes=None, lease:bytes=None, rekey_to:str=None):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp,
                                     index=self.creatable_index(index),
                                     on_complete=OnComplete.ClearStateOC,
@@ -1520,8 +1527,8 @@ class ApplicationNoOpTxn(ApplicationCallTxn):
     Attributes:
         See ApplicationCallTxn
     """
-    def __init__(self, sender, sp, index, app_args=None, accounts=None, foreign_apps=None, foreign_assets=None,
-                 note=None, lease=None, rekey_to=None):
+    def __init__(self, sender:str, sp:SuggestedParams, index:int, app_args:list=None, accounts:list=None, foreign_apps:list=None, foreign_assets:list=None,
+                 note:bytes=None, lease:bytes=None, rekey_to:str=None):
         ApplicationCallTxn.__init__(self, sender=sender, sp=sp,
                                     index=self.creatable_index(index),
                                     on_complete=OnComplete.NoOpOC,
