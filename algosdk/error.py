@@ -152,5 +152,11 @@ class AlgodHTTPError(Exception):
         super().__init__(msg)
         self.code = code
 
+
+class AlgodResponseError(Exception):
+    def __init__(self, msg):
+        super().__init__(msg)
+
+
 class IndexerHTTPError(Exception):
     pass

@@ -21,6 +21,22 @@ class TestPaymentTransaction(unittest.TestCase):
         txn = transaction.PaymentTxn(address, sp, address,
                                      1000, note=b'\x00')
         self.assertEqual(constants.min_txn_fee, txn.fee)
+    
+    def test_zero_txn_fee(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(0, 1, 100, gh, flat_fee=True)
+        txn = transaction.PaymentTxn(address, sp, address,
+                                     1000, note=b'\x00')
+        self.assertEqual(0, txn.fee)
+    
+    def test_txn_flat_fee(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(100, 1, 100, gh, flat_fee=True)
+        txn = transaction.PaymentTxn(address, sp, address,
+                                     1000, note=b'\x00')
+        self.assertEqual(100, txn.fee)
 
     def test_note_wrong_type(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
