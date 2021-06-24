@@ -13,6 +13,6 @@ print("Account backup phrase:", backup, "\n")
 
 # recover the account from the backup phrase
 recovered_private_key = mnemonic.to_private_key(backup)
-recovered_public_key = mnemonic.to_address(backup)
+recovered_public_key = account.address_from_private_key(recovered_private_key)
 print("Recovered public key:", recovered_public_key)
 print("Recovered private key:", recovered_private_key)
