@@ -20,6 +20,22 @@ class TestPaymentTransaction(unittest.TestCase):
         txn = transaction.PaymentTxn(address, sp, address,
                                      1000, note=b'\x00')
         self.assertEqual(constants.min_txn_fee, txn.fee)
+    
+    def test_zero_txn_fee(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(0, 1, 100, gh, flat_fee=True)
+        txn = transaction.PaymentTxn(address, sp, address,
+                                     1000, note=b'\x00')
+        self.assertEqual(0, txn.fee)
+    
+    def test_txn_flat_fee(self):
+        address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(100, 1, 100, gh, flat_fee=True)
+        txn = transaction.PaymentTxn(address, sp, address,
+                                     1000, note=b'\x00')
+        self.assertEqual(100, txn.fee)
 
     def test_note_wrong_type(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
@@ -1497,10 +1513,18 @@ class TestLogic(unittest.TestCase):
         program += b"\x02" * 10
         self.assertTrue(logic.check_program(program, None))
 
-        # check 800x keccak256 fail
+        # check 800x keccak256 fail for v3 and below
+        versions = [b"\x01", b"\x02", b"\x03"]
         program += b"\x02" * 800
-        with self.assertRaises(error.InvalidProgram):
-            logic.check_program(program, [])
+        for v in versions:
+            programv=v+program
+            with self.assertRaises(error.InvalidProgram):
+                logic.check_program(programv, [])
+        
+        versions = [b"\x04"]
+        for v in versions:
+            programv=v+program
+            self.assertTrue(logic.check_program(programv, None))
 
     def test_check_program_teal_2(self):
         # check TEAL v2 opcodes
@@ -1559,6 +1583,39 @@ class TestLogic(unittest.TestCase):
         msg = constants.logic_data_prefix + encoding.decode_address(addr) + data
         res = verify_key.verify(msg, sig1)
         self.assertIsNotNone(res)
+
+    def test_check_program_teal_4(self):
+        # check TEAL v4 opcodes
+        self.assertIsNotNone(logic.spec, "Must be called after any of logic.check_program")
+        self.assertTrue(logic.spec['EvalMaxVersion'] >= 4)
+
+        # divmodw
+        program = b"\x04\x20\x03\x01\x00\x02\x22\x81\xd0\x0f\x23\x24\x1f" # int 1; pushint 2000; int 0; int 2; divmodw
+        self.assertTrue(logic.check_program(program, None))
+
+        # gloads i
+        program = b"\x04\x20\x01\x00\x22\x3b\x00" # int 0; gloads 0
+        self.assertTrue(logic.check_program(program, None))
+        
+        # callsub
+        program = b"\x04\x20\x02\x01\x02\x22\x88\x00\x02\x23\x12\x49" # int 1; callsub double; int 2; ==; double: dup;
+        self.assertTrue(logic.check_program(program, None))
+
+        # b>=
+        program = b"\x04\x26\x02\x01\x11\x01\x10\x28\x29\xa7" # byte 0x11; byte 0x10; b>=
+        self.assertTrue(logic.check_program(program, None))
+
+        # b^
+        program = b"\x04\x26\x03\x01\x11\x01\x10\x01\x01\x28\x29\xad\x2a\x12" # byte 0x11; byte 0x10; b>=
+        self.assertTrue(logic.check_program(program, None))
+
+        # callsub, retsub
+        program = b"\x04\x20\x02\x01\x02\x22\x88\x00\x03\x23\x12\x43\x49\x08\x89" # int 1; callsub double; int 2; ==; return; double: dup; +; retsub;
+        self.assertTrue(logic.check_program(program, None))
+
+        # loop
+        program = b"\x04\x20\x04\x01\x02\x0a\x10\x22\x23\x0b\x49\x24\x0c\x40\xff\xf8\x25\x12" # int 1; loop: int 2; *; dup; int 10; <; bnz loop; int 16; ==
+        self.assertTrue(logic.check_program(program, None))
 
 class TestLogicSig(unittest.TestCase):
     def test_basic(self):

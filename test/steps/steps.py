@@ -90,7 +90,10 @@ def txn_params(context, fee, fv, lv, gh, to, close, amt, gen, note):
     context.gh = gh
     context.to = to
     context.amt = int(amt)
-    context.params = transaction.SuggestedParams(context.fee, context.fv, context.lv, context.gh, gen)
+    if context.fee == 0: 
+        context.params = transaction.SuggestedParams(context.fee, context.fv, context.lv, context.gh, gen,flat_fee=True)
+    else:
+        context.params = transaction.SuggestedParams(context.fee, context.fv, context.lv, context.gh, gen)
     if close == "none":
         context.close = None
     else:
@@ -129,10 +132,14 @@ def create_msigpaytxn(context):
     context.mtx = transaction.MultisigTransaction(context.txn, context.msig)
 
 
+@when("I create the multisig payment transaction with zero fee")
+def create_msigpaytxn_zero_fee(context):
+    context.txn = transaction.PaymentTxn(context.msig.address(), context.params, context.to, context.amt, context.close, context.note)
+    context.mtx = transaction.MultisigTransaction(context.txn, context.msig)
+
 @when("I sign the multisig transaction with the private key")
 def sign_msig(context):
     context.mtx.sign(context.sk)
-
 
 @when("I sign the transaction with the private key")
 def sign_with_sk(context):
@@ -920,3 +927,21 @@ def set_sk_from_encoded_seed(context, sk_enc):
     key = SigningKey(seed)
     private_key = base64.b64encode(key.encode() + key.verify_key.encode()).decode()
     context.sk = private_key
+
+@then('fee field is in txn')
+def fee_in_txn(context):
+    if 'signed_transaction' in context:
+       stxn = context.signed_transaction.dictify()
+    else:
+        stxn = context.mtx.dictify()
+    
+    assert 'fee' in stxn['txn']
+
+
+@then('fee field not in txn')
+def fee_not_in_txn(context):
+    if 'signed_transaction' in context:
+        stxn = context.signed_transaction.dictify()
+    else:
+        stxn = context.mtx.dictify()
+    assert 'fee' not in stxn['txn']

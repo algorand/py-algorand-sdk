@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.0
+### Added
+- Support for dynamic opcode accounting, backward jumps, loops, callsub, retsub
+- Ability to pay for more app space
+- Ability to pool fees
+
+### Bug Fix
+- Raise JSONDecodeError instead of None (#193)
+
 ## 1.5.0
 ### Added
 - Support new features for indexer 2.3.2
