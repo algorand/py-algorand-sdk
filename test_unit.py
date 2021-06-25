@@ -376,10 +376,8 @@ class TestPaymentTransaction(unittest.TestCase):
 
         golden = (
             "gqNzaWfEQJosTMSKwGr+eWN5XsAJvbjh2DkzOtEN6lrDNM4TAnYIjl9L43zU70gAX"
-            "USAehZo9RyejgDA12B75SR6jIdhzQCjdHhuhqNmZWXNA"
-            "+iiZnbOALutq6JnaMQgSG"
-            "O1GKSzyE7IEPItTxCByw9x8FmnrCDexi9"
-            "/cOUJOiKibHbOALuxk6NzbmTEIAn70nYs"
+            "USAehZo9RyejgDA12B75SR6jIdhzQCjdHhuhqNmZWXNA+iiZnbOALutq6JnaMQgSG"
+            "O1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOALuxk6NzbmTEIAn70nYs"
             "CPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWma2V5cmVn")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
