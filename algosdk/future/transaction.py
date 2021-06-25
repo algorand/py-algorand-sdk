@@ -220,6 +220,9 @@ class Transaction:
         elif txn_type == constants.offline_keyreg_txn:
             args.update(OfflineKeyregTxn._undictify(d))
             txn = OfflineKeyregTxn(**args)
+        elif txn_type == constants.online_keyreg_txn:
+            args.update(OnlineKeyregTxn._undictify(d))
+            txn = OnlineKeyregTxn(**args)
         elif txn_type == constants.assetconfig_txn:
             args.update(AssetConfigTxn._undictify(d))
             txn = AssetConfigTxn(**args)
@@ -480,9 +483,112 @@ class KeyregTxn(Transaction):
                 self.votekd == other.votekd)
 
 
+class OnlineKeyregTxn(Transaction):
+    """
+    Represents an online key registration transaction.
+    nonpart is implicitly False for this transaction.
+
+    Args:
+        sender (str): address of sender
+        sp (SuggestedParams): suggested params from algod
+        votekey (str): participation public key in base64
+        selkey (str): VRF public key in base64
+        votefst (int): first round to vote
+        votelst (int): last round to vote
+        votekd (int): vote key dilution
+        note (bytes, optional): arbitrary optional bytes
+        lease (byte[32], optional): specifies a lease, and no other transaction
+            with the same sender and lease can be confirmed in this
+            transaction's valid rounds
+        rekey_to (str, optional): additionally rekey the sender to this address
+
+    Attributes:
+        sender (str)
+        fee (int)
+        first_valid_round (int)
+        last_valid_round (int)
+        note (bytes)
+        genesis_id (str)
+        genesis_hash (str)
+        group(bytes)
+        votepk (str)
+        selkey (str)
+        votefst (int)
+        votelst (int)
+        votekd (int)
+        type (str)
+        lease (byte[32])
+        rekey_to (str)
+    """
+
+    def __init__(self, sender, sp, votekey, selkey, votefst,
+                 votelst, votekd, note=None,
+                 lease=None, rekey_to=None):
+        Transaction.__init__(self, sender, sp, note,
+                             lease, constants.keyreg_txn, rekey_to)
+        self.votepk = votekey
+        self.selkey = selkey
+        self.votefst = votefst
+        self.votelst = votelst
+        self.votekd = votekd
+        if not sp.flat_fee:
+            self.fee = max(self.estimate_size() * self.fee,
+                           constants.min_txn_fee)
+
+    def dictify(self):
+        d = {
+            "selkey": base64.b64decode(self.selkey) if self.selkey is not None else None,
+            "votefst": self.votefst,
+            "votekd": self.votekd,
+            "votekey": base64.b64decode(self.votepk) if self.votepk is not None else None,
+            "votelst": self.votelst,
+        }
+        d.update(super(OnlineKeyregTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
+
+        return od
+
+    @staticmethod
+    def _undictify(d):
+        votekey = None
+        selkey = None
+        votefst = None
+        votelst = None
+        votekd = None
+
+        if "votekey" in d:
+            votekey = base64.b64encode(d["votekey"]).decode()
+        if "selkey" in d:
+            selkey = base64.b64encode(d["selkey"]).decode()
+        if "votefst" in d:
+            votefst = d["votefst"]
+        if "votelst" in d:
+            votelst = d["votelst"]
+
+        args = {
+            "votekey": votekey,
+            "selkey": selkey,
+            "votefst": votefst,
+            "votelst": votelst,
+            "votekd": votekd,
+        }
+        return args
+
+    def __eq__(self, other):
+        if not isinstance(other, OnlineKeyregTxn):
+            return False
+        return (super(OnlineKeyregTxn, self).__eq__(other) and
+                self.votepk == other.votepk and
+                self.selkey == other.selkey and
+                self.votefst == other.votefst and
+                self.votelst == other.votelst and
+                self.votekd == other.votekd)
+
+
 class OfflineKeyregTxn(Transaction):
     """
-    Represents an offline key registration transaction. nonpart is implicitly True for this transaction.
+    Represents an offline key registration transaction.
+    nonpart is implicitly True for this transaction.
 
     Args:
         sender (str): address of sender

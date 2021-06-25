@@ -339,8 +339,8 @@ class TestPaymentTransaction(unittest.TestCase):
 
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True)
-        txn = transaction.KeyregTxn(pk, sp, votepk, selpk, votefirst, votelast,
-                                    votedilution)
+        txn = transaction.OnlineKeyregTxn(
+            pk, sp, votepk, selpk, votefirst, votelast, votedilution)
         signed_txn = txn.sign(sk)
 
         golden = (
@@ -394,30 +394,6 @@ class TestPaymentTransaction(unittest.TestCase):
         txnr = transaction.retrieve_from_file(path)[0]
         os.remove(path)
         self.assertEqual(txn, txnr)
-
-    def test_serialize_keyreg_nonpart(self):
-        mn = (
-            "awful drop leaf tennis indoor begin mandate discover uncle seven "
-            "only coil atom any hospital uncover make any climb actor armed "
-            "measure need above hundred")
-        sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
-        fee = 1000
-        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
-        nonpart = True
-
-        sp = transaction.SuggestedParams(
-            fee, 12299691, 12300691, gh, flat_fee=True)
-        txn = transaction.KeyregTxn(pk, sp, None, None, None, None, None,
-                                    nonpart=nonpart)
-        signed_txn = txn.sign(sk)
-
-        golden = (
-            "gqNzaWfEQN7kw3tLcC1IweQ2Ru5KSqFS0Ba0cn34ncOWPIyv76wU8JPLxyS8alErm4"
-            "PHg3Q7n1Mfqa9SQ9zDY+FMeZLLgQyjdHhuh6NmZWXNA+iiZnbOALutq6JnaMQgSGO1"
-            "GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOALuxk6dub25wYXJ0w6Nzbm"
-            "TEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWma2V5cmVn")
-        self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_serialize_asset_create(self):
         mn = (
