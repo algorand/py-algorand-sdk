@@ -324,10 +324,8 @@ class TestPaymentTransaction(unittest.TestCase):
 
     def test_serialize_keyreg_online(self):
         mn = (
-            "awful drop leaf tennis indoor begin mandate discover uncle "
-            "seven "
-            "only coil atom any hospital uncover make any climb actor "
-            "armed me"
+            "awful drop leaf tennis indoor begin mandate discover uncle seven "
+            "only coil atom any hospital uncover make any climb actor armed me"
             "asure need above hundred")
         sk = mnemonic.to_private_key(mn)
         pk = mnemonic.to_public_key(mn)
@@ -341,20 +339,15 @@ class TestPaymentTransaction(unittest.TestCase):
 
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True)
-        txn = transaction.KeyregTxn(pk, sp, votepk, selpk, votefirst,
-                                    votelast,
+        txn = transaction.KeyregTxn(pk, sp, votepk, selpk, votefirst, votelast,
                                     votedilution)
         signed_txn = txn.sign(sk)
 
         golden = (
-            "gqNzaWfEQEA8ANbrvTRxU9c8v6WERcEPw7D"
-            "/HacRgg4vICa61vEof60Wwtx6KJKDy"
-            "vBuvViFeacLlngPY6vYCVP0DktTwQ2jdHhui6NmZWXNA"
-            "+iiZnbOAATsD6JnaMQgSG"
-            "O1GKSzyE7IEPItTxCByw9x8FmnrCDexi9"
-            "/cOUJOiKibHbOAATv96ZzZWxrZXnEIGz"
-            "4K7+GKID3HWlAMa7dUMrGGU1ckQLlDA+M0JgrvZZXo3NuZMQgCfvSdiwI"
-            "+Gxa5r9t"
+            "gqNzaWfEQEA8ANbrvTRxU9c8v6WERcEPw7D/HacRgg4vICa61vEof60Wwtx6KJKDy"
+            "vBuvViFeacLlngPY6vYCVP0DktTwQ2jdHhui6NmZWXNA+iiZnbOAATsD6JnaMQgSG"
+            "O1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOAATv96ZzZWxrZXnEIGz"
+            "4K7+GKID3HWlAMa7dUMrGGU1ckQLlDA+M0JgrvZZXo3NuZMQgCfvSdiwI+Gxa5r9t"
             "16epAd5mdddQ4H6MXHaYZH224f2kdHlwZaZrZXlyZWendm90ZWZzdM0nEKZ2b3Rla"
             "2QLp3ZvdGVrZXnEICr+0CO3IYtcumsaMvre8MwFaXj6kav65I81of0TGMi6p3ZvdG"
             "Vsc3TNJ38=")
@@ -362,10 +355,8 @@ class TestPaymentTransaction(unittest.TestCase):
 
     def test_serialize_keyreg_offline(self):
         mn = (
-            "awful drop leaf tennis indoor begin mandate discover uncle "
-            "seven "
-            "only coil atom any hospital uncover make any climb actor "
-            "armed "
+            "awful drop leaf tennis indoor begin mandate discover uncle seven "
+            "only coil atom any hospital uncover make any climb actor armed "
             "measure need above hundred")
         sk = mnemonic.to_private_key(mn)
         pk = mnemonic.to_public_key(mn)
@@ -379,8 +370,7 @@ class TestPaymentTransaction(unittest.TestCase):
 
         sp = transaction.SuggestedParams(
             fee, 12299691, 12300691, gh, flat_fee=True)
-        txn = transaction.KeyregTxn(pk, sp, votepk, selpk, votefirst,
-                                    votelast,
+        txn = transaction.KeyregTxn(pk, sp, votepk, selpk, votefirst, votelast,
                                     votedilution)
         signed_txn = txn.sign(sk)
 
@@ -395,10 +385,8 @@ class TestPaymentTransaction(unittest.TestCase):
 
     def test_serialize_keyreg_nonpart(self):
         mn = (
-            "awful drop leaf tennis indoor begin mandate discover uncle "
-            "seven "
-            "only coil atom any hospital uncover make any climb actor "
-            "armed "
+            "awful drop leaf tennis indoor begin mandate discover uncle seven "
+            "only coil atom any hospital uncover make any climb actor armed "
             "measure need above hundred")
         sk = mnemonic.to_private_key(mn)
         pk = mnemonic.to_public_key(mn)
@@ -414,10 +402,8 @@ class TestPaymentTransaction(unittest.TestCase):
 
         golden = (
             "gqNzaWfEQN7kw3tLcC1IweQ2Ru5KSqFS0Ba0cn34ncOWPIyv76wU8JPLxyS8alErm4"
-            "PHg3Q7n1Mfqa9SQ9zDY+FMeZLLgQyjdHhuh6NmZWXNA"
-            "+iiZnbOALutq6JnaMQgSGO1"
-            "GKSzyE7IEPItTxCByw9x8FmnrCDexi9"
-            "/cOUJOiKibHbOALuxk6dub25wYXJ0w6Nzbm"
+            "PHg3Q7n1Mfqa9SQ9zDY+FMeZLLgQyjdHhuh6NmZWXNA+iiZnbOALutq6JnaMQgSGO1"
+            "GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOALuxk6dub25wYXJ0w6Nzbm"
             "TEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWma2V5cmVn")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
