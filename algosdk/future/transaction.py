@@ -217,6 +217,9 @@ class Transaction:
         elif txn_type == constants.keyreg_txn:
             args.update(KeyregTxn._undictify(d))
             txn = KeyregTxn(**args)
+        elif txn_type == constants.offline_keyreg_txn:
+            args.update(OfflineKeyregTxn._undictify(d))
+            txn = OfflineKeyregTxn(**args)
         elif txn_type == constants.assetconfig_txn:
             args.update(AssetConfigTxn._undictify(d))
             txn = AssetConfigTxn(**args)
@@ -475,6 +478,56 @@ class KeyregTxn(Transaction):
                 self.votefst == other.votefst and
                 self.votelst == other.votelst and
                 self.votekd == other.votekd)
+
+
+class OfflineKeyregTxn(Transaction):
+    """
+    Represents an offline key registration transaction. nonpart is implicitly True for this transaction.
+
+    Args:
+        sender (str): address of sender
+        sp (SuggestedParams): suggested params from algod
+        note (bytes, optional): arbitrary optional bytes
+        lease (byte[32], optional): specifies a lease, and no other transaction
+            with the same sender and lease can be confirmed in this
+            transaction's valid rounds
+        rekey_to (str, optional): additionally rekey the sender to this address
+
+    Attributes:
+        sender (str)
+        fee (int)
+        first_valid_round (int)
+        last_valid_round (int)
+        note (bytes)
+        genesis_id (str)
+        genesis_hash (str)
+        group(bytes)
+        type (str)
+        lease (byte[32])
+        rekey_to (str)
+    """
+
+    def __init__(self, sender, sp, note=None, lease=None, rekey_to=None):
+        Transaction.__init__(self, sender, sp, note,
+                             lease, constants.offline_keyreg_txn, rekey_to)
+        if not sp.flat_fee:
+            self.fee = max(self.estimate_size() * self.fee,
+                           constants.min_txn_fee)
+
+    def dictify(self):
+        d = super(OfflineKeyregTxn, self).dictify()
+        od = OrderedDict(sorted(d.items()))
+        return od
+
+    @staticmethod
+    def _undictify(d):
+        args = {}
+        return args
+
+    def __eq__(self, other):
+        if not isinstance(other, OfflineKeyregTxn):
+            return False
+        return (super(OfflineKeyregTxn, self).__eq__(other))
 
 
 class AssetConfigTxn(Transaction):

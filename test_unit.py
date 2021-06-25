@@ -1,7 +1,9 @@
 import base64
 import copy
+import os
 import random
 import unittest
+import uuid
 from unittest.mock import Mock
 
 from nacl.signing import SigningKey
@@ -360,24 +362,38 @@ class TestPaymentTransaction(unittest.TestCase):
         pk = mnemonic.to_public_key(mn)
         fee = 1000
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
-        votepk = None
-        selpk = None
-        votefirst = None
-        votelast = None
-        votedilution = None
 
         sp = transaction.SuggestedParams(
             fee, 12299691, 12300691, gh, flat_fee=True)
-        txn = transaction.KeyregTxn(pk, sp, votepk, selpk, votefirst, votelast,
-                                    votedilution)
+        txn = transaction.OfflineKeyregTxn(pk, sp)
         signed_txn = txn.sign(sk)
 
         golden = (
-            "gqNzaWfEQJosTMSKwGr+eWN5XsAJvbjh2DkzOtEN6lrDNM4TAnYIjl9L43zU70gAX"
-            "USAehZo9RyejgDA12B75SR6jIdhzQCjdHhuhqNmZWXNA+iiZnbOALutq6JnaMQgSG"
-            "O1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOALuxk6NzbmTEIAn70nYs"
-            "CPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWma2V5cmVn")
+            "gqNzaWfEQO/BQUFo9+kq4wCLgVQ//Hj9YJgaL4L8KnNnjrJblJUgm5VbAl7C3USH2"
+            "mDk/mBA/6lZBa1YJ7HfoD79NbF2sw2jdHhuhqNmZWXNA+iiZnbOALutq6JnaMQgSG"
+            "O1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOALuxk6NzbmTEIAn70nY"
+            "sCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWyb2ZmbGluZV9rZXlyZWdf"
+            "dHhu")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
+
+    def test_write_read_keyreg_offline(self):
+        mn = (
+            "awful drop leaf tennis indoor begin mandate discover uncle seven "
+            "only coil atom any hospital uncover make any climb actor armed "
+            "measure need above hundred")
+        sk = mnemonic.to_private_key(mn)
+        pk = account.address_from_private_key(sk)
+        fee = 1000
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+
+        sp = transaction.SuggestedParams(
+            fee, 12299691, 12300691, gh, flat_fee=True)
+        txn = transaction.OfflineKeyregTxn(pk, sp)
+        path = "/tmp/%s" % uuid.uuid4()
+        transaction.write_to_file([txn], path)
+        txnr = transaction.retrieve_from_file(path)[0]
+        os.remove(path)
+        self.assertEqual(txn, txnr)
 
     def test_serialize_keyreg_nonpart(self):
         mn = (
