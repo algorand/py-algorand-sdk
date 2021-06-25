@@ -525,7 +525,7 @@ class OnlineKeyregTxn(Transaction):
                  votelst, votekd, note=None,
                  lease=None, rekey_to=None):
         Transaction.__init__(self, sender, sp, note,
-                             lease, constants.keyreg_txn, rekey_to)
+                             lease, constants.online_keyreg_txn, rekey_to)
         self.votepk = votekey
         self.selkey = selkey
         self.votefst = votefst
@@ -564,6 +564,8 @@ class OnlineKeyregTxn(Transaction):
             votefst = d["votefst"]
         if "votelst" in d:
             votelst = d["votelst"]
+        if "votekd" in d:
+            votekd = d["votekd"]
 
         args = {
             "votekey": votekey,

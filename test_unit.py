@@ -324,6 +324,105 @@ class TestPaymentTransaction(unittest.TestCase):
 
     def test_serialize_keyreg_online(self):
         mn = (
+            "awful drop leaf tennis indoor begin mandate discover uncle "
+            "seven "
+            "only coil atom any hospital uncover make any climb actor "
+            "armed me"
+            "asure need above hundred")
+        sk = mnemonic.to_private_key(mn)
+        pk = mnemonic.to_public_key(mn)
+        fee = 1000
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        votepk = "Kv7QI7chi1y6axoy+t7wzAVpePqRq/rkjzWh/RMYyLo="
+        selpk = "bPgrv4YogPcdaUAxrt1QysYZTVyRAuUMD4zQmCu9llc="
+        votefirst = 10000
+        votelast = 10111
+        votedilution = 11
+
+        sp = transaction.SuggestedParams(
+            fee, 322575, 323575, gh, flat_fee=True)
+        txn = transaction.KeyregTxn(pk, sp, votepk, selpk, votefirst,
+                                    votelast,
+                                    votedilution)
+        signed_txn = txn.sign(sk)
+
+        golden = (
+            "gqNzaWfEQEA8ANbrvTRxU9c8v6WERcEPw7D"
+            "/HacRgg4vICa61vEof60Wwtx6KJKDy"
+            "vBuvViFeacLlngPY6vYCVP0DktTwQ2jdHhui6NmZWXNA"
+            "+iiZnbOAATsD6JnaMQgSG"
+            "O1GKSzyE7IEPItTxCByw9x8FmnrCDexi9"
+            "/cOUJOiKibHbOAATv96ZzZWxrZXnEIGz"
+            "4K7+GKID3HWlAMa7dUMrGGU1ckQLlDA+M0JgrvZZXo3NuZMQgCfvSdiwI"
+            "+Gxa5r9t"
+            "16epAd5mdddQ4H6MXHaYZH224f2kdHlwZaZrZXlyZWendm90ZWZzdM0nEKZ2b3Rla"
+            "2QLp3ZvdGVrZXnEICr+0CO3IYtcumsaMvre8MwFaXj6kav65I81of0TGMi6p3ZvdG"
+            "Vsc3TNJ38=")
+        self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
+
+    def test_serialize_keyreg_offline(self):
+        mn = (
+            "awful drop leaf tennis indoor begin mandate discover uncle "
+            "seven "
+            "only coil atom any hospital uncover make any climb actor "
+            "armed "
+            "measure need above hundred")
+        sk = mnemonic.to_private_key(mn)
+        pk = mnemonic.to_public_key(mn)
+        fee = 1000
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        votepk = None
+        selpk = None
+        votefirst = None
+        votelast = None
+        votedilution = None
+
+        sp = transaction.SuggestedParams(
+            fee, 12299691, 12300691, gh, flat_fee=True)
+        txn = transaction.KeyregTxn(pk, sp, votepk, selpk, votefirst,
+                                    votelast,
+                                    votedilution)
+        signed_txn = txn.sign(sk)
+
+        golden = (
+            "gqNzaWfEQJosTMSKwGr+eWN5XsAJvbjh2DkzOtEN6lrDNM4TAnYIjl9L43zU70gAX"
+            "USAehZo9RyejgDA12B75SR6jIdhzQCjdHhuhqNmZWXNA"
+            "+iiZnbOALutq6JnaMQgSG"
+            "O1GKSzyE7IEPItTxCByw9x8FmnrCDexi9"
+            "/cOUJOiKibHbOALuxk6NzbmTEIAn70nYs"
+            "CPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWma2V5cmVn")
+        self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
+
+    def test_serialize_keyreg_nonpart(self):
+        mn = (
+            "awful drop leaf tennis indoor begin mandate discover uncle "
+            "seven "
+            "only coil atom any hospital uncover make any climb actor "
+            "armed "
+            "measure need above hundred")
+        sk = mnemonic.to_private_key(mn)
+        pk = mnemonic.to_public_key(mn)
+        fee = 1000
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        nonpart = True
+
+        sp = transaction.SuggestedParams(
+            fee, 12299691, 12300691, gh, flat_fee=True)
+        txn = transaction.KeyregTxn(pk, sp, None, None, None, None, None,
+                                    nonpart=nonpart)
+        signed_txn = txn.sign(sk)
+
+        golden = (
+            "gqNzaWfEQN7kw3tLcC1IweQ2Ru5KSqFS0Ba0cn34ncOWPIyv76wU8JPLxyS8alErm4"
+            "PHg3Q7n1Mfqa9SQ9zDY+FMeZLLgQyjdHhuh6NmZWXNA"
+            "+iiZnbOALutq6JnaMQgSGO1"
+            "GKSzyE7IEPItTxCByw9x8FmnrCDexi9"
+            "/cOUJOiKibHbOALuxk6dub25wYXJ0w6Nzbm"
+            "TEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWma2V5cmVn")
+        self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
+
+    def test_serialize_onlinekeyreg(self):
+        mn = (
             "awful drop leaf tennis indoor begin mandate discover uncle seven "
             "only coil atom any hospital uncover make any climb actor armed me"
             "asure need above hundred")
@@ -344,16 +443,41 @@ class TestPaymentTransaction(unittest.TestCase):
         signed_txn = txn.sign(sk)
 
         golden = (
-            "gqNzaWfEQEA8ANbrvTRxU9c8v6WERcEPw7D/HacRgg4vICa61vEof60Wwtx6KJKDy"
-            "vBuvViFeacLlngPY6vYCVP0DktTwQ2jdHhui6NmZWXNA+iiZnbOAATsD6JnaMQgSG"
+            "gqNzaWfEQIgd1uifO4h3tx840OCBBMevxVKj40U2DzgCRed7hCJDTA8foR2+4A2Uk"
+            "sNpfSp/IVmIM0XX9Aq512gulIlAfQijdHhui6NmZWXNA+iiZnbOAATsD6JnaMQgSG"
             "O1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOAATv96ZzZWxrZXnEIGz"
             "4K7+GKID3HWlAMa7dUMrGGU1ckQLlDA+M0JgrvZZXo3NuZMQgCfvSdiwI+Gxa5r9t"
-            "16epAd5mdddQ4H6MXHaYZH224f2kdHlwZaZrZXlyZWendm90ZWZzdM0nEKZ2b3Rla"
-            "2QLp3ZvdGVrZXnEICr+0CO3IYtcumsaMvre8MwFaXj6kav65I81of0TGMi6p3ZvdG"
-            "Vsc3TNJ38=")
+            "16epAd5mdddQ4H6MXHaYZH224f2kdHlwZbFvbmxpbmVfa2V5cmVnX3R4bqd2b3RlZ"
+            "nN0zScQpnZvdGVrZAundm90ZWtlecQgKv7QI7chi1y6axoy+t7wzAVpePqRq/rkjz"
+            "Wh/RMYyLqndm90ZWxzdM0nfw==")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
-    def test_serialize_keyreg_offline(self):
+    def test_serialize_write_read_onlinekeyreg(self):
+        mn = (
+            "awful drop leaf tennis indoor begin mandate discover uncle seven "
+            "only coil atom any hospital uncover make any climb actor armed me"
+            "asure need above hundred")
+        sk = mnemonic.to_private_key(mn)
+        pk = mnemonic.to_public_key(mn)
+        fee = 1000
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        votepk = "Kv7QI7chi1y6axoy+t7wzAVpePqRq/rkjzWh/RMYyLo="
+        selpk = "bPgrv4YogPcdaUAxrt1QysYZTVyRAuUMD4zQmCu9llc="
+        votefirst = 10000
+        votelast = 10111
+        votedilution = 11
+
+        sp = transaction.SuggestedParams(
+            fee, 322575, 323575, gh, flat_fee=True)
+        txn = transaction.OnlineKeyregTxn(
+            pk, sp, votepk, selpk, votefirst, votelast, votedilution)
+        path = "/tmp/%s" % uuid.uuid4()
+        transaction.write_to_file([txn], path)
+        txnr = transaction.retrieve_from_file(path)[0]
+        os.remove(path)
+        self.assertEqual(txn, txnr)
+
+    def test_serialize_offlinekeyreg(self):
         mn = (
             "awful drop leaf tennis indoor begin mandate discover uncle seven "
             "only coil atom any hospital uncover make any climb actor armed "
@@ -376,7 +500,7 @@ class TestPaymentTransaction(unittest.TestCase):
             "dHhu")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
-    def test_write_read_keyreg_offline(self):
+    def test_write_read_offlinekeyreg(self):
         mn = (
             "awful drop leaf tennis indoor begin mandate discover uncle seven "
             "only coil atom any hospital uncover make any climb actor armed "
