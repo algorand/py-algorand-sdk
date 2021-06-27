@@ -102,8 +102,11 @@ class IndexerClient:
             next_page (str, optional): the next page of results; use the next
                 token provided by the previous results
             min_balance (int, optional): results should have an amount greater
-                than this value
+                than this value (results with an amount equal to this value
+                are excluded)
             max_balance (int, optional): results should have an amount less
+                than this value (results with an amount equal to this value
+                are excluded)
             block (int, optional): include results for the specified round;
                 for performance reasons, this parameter may be disabled on
                 some configurations
@@ -152,8 +155,11 @@ class IndexerClient:
             next_page (str, optional): the next page of results; use the next
                 token provided by the previous results
             min_balance (int, optional): results should have an amount greater
-                than this value
+                than this value (results with an amount equal to this value
+                are excluded)
             max_balance (int, optional): results should have an amount less
+                than this value (results with an amount equal to this value
+                are excluded)
             block (int, optional): include results for the specified round;
                 for performance reasons, this parameter may be disabled on
                 some configurations
