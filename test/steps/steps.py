@@ -609,7 +609,7 @@ def keyreg_txn_params(context, fee, fv, lv, gh, votekey, selkey, votefst, votels
 
 @when("I create the key registration transaction")
 def create_keyreg_txn(context):
-    context.txn = transaction.KeyregTxn(context.pk, context.params, context.votekey, 
+    context.txn = transaction.OnlineKeyregTxn(context.pk, context.params, context.votekey,
                                         context.selkey, context.votefst, context.votelst, context.votekd, context.note)
 
 
