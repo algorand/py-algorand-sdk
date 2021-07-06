@@ -216,7 +216,6 @@ class Transaction:
             txn = PaymentTxn(**args)
         elif txn_type == constants.keyreg_txn:
             args.update(KeyregTxn._undictify(d))
-            print(d)
             if "nonpart" in d and d["nonpart"]:
                 txn = OfflineKeyregTxn(**args)
             else:
