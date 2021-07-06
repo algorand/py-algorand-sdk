@@ -426,14 +426,13 @@ class TestPaymentTransaction(unittest.TestCase):
             pk, sp, votepk, selpk, votefirst, votelast, votedilution)
         signed_txn = txn.sign(sk)
 
-        golden = (
-            "gqNzaWfEQIgd1uifO4h3tx840OCBBMevxVKj40U2DzgCRed7hCJDTA8foR2+4A2Uk"
-            "sNpfSp/IVmIM0XX9Aq512gulIlAfQijdHhui6NmZWXNA+iiZnbOAATsD6JnaMQgSG"
-            "O1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOAATv96ZzZWxrZXnEIGz"
-            "4K7+GKID3HWlAMa7dUMrGGU1ckQLlDA+M0JgrvZZXo3NuZMQgCfvSdiwI+Gxa5r9t"
-            "16epAd5mdddQ4H6MXHaYZH224f2kdHlwZbFvbmxpbmVfa2V5cmVnX3R4bqd2b3RlZ"
-            "nN0zScQpnZvdGVrZAundm90ZWtlecQgKv7QI7chi1y6axoy+t7wzAVpePqRq/rkjz"
-            "Wh/RMYyLqndm90ZWxzdM0nfw==")
+        golden = ("gqNzaWfEQEA8ANbrvTRxU9c8v6WERcEPw7D/HacRgg4vICa61vEof60Wwtx"
+                  "6KJKDyvBuvViFeacLlngPY6vYCVP0DktTwQ2jdHhui6NmZWXNA+iiZnbOAA"
+                  "TsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOA"
+                  "ATv96ZzZWxrZXnEIGz4K7+GKID3HWlAMa7dUMrGGU1ckQLlDA+M0JgrvZZX"
+                  "o3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2kdHlwZaZ"
+                  "rZXlyZWendm90ZWZzdM0nEKZ2b3Rla2QLp3ZvdGVrZXnEICr+0CO3IYtcum"
+                  "saMvre8MwFaXj6kav65I81of0TGMi6p3ZvdGVsc3TNJ38=")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_serialize_write_read_onlinekeyreg(self):
@@ -476,12 +475,11 @@ class TestPaymentTransaction(unittest.TestCase):
         txn = transaction.OfflineKeyregTxn(pk, sp)
         signed_txn = txn.sign(sk)
 
-        golden = (
-            "gqNzaWfEQO/BQUFo9+kq4wCLgVQ//Hj9YJgaL4L8KnNnjrJblJUgm5VbAl7C3USH2"
-            "mDk/mBA/6lZBa1YJ7HfoD79NbF2sw2jdHhuhqNmZWXNA+iiZnbOALutq6JnaMQgSG"
-            "O1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOALuxk6NzbmTEIAn70nY"
-            "sCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWyb2ZmbGluZV9rZXlyZWdf"
-            "dHhu")
+        golden = ("gqNzaWfEQN7kw3tLcC1IweQ2Ru5KSqFS0Ba0cn34ncOWPIyv76wU8JPLxyS"
+                  "8alErm4PHg3Q7n1Mfqa9SQ9zDY+FMeZLLgQyjdHhuh6NmZWXNA+iiZnbOAL"
+                  "utq6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOA"
+                  "Luxk6dub25wYXJ0w6NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2"
+                  "mGR9tuH9pHR5cGWma2V5cmVn")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_write_read_offlinekeyreg(self):
@@ -1417,11 +1415,12 @@ class TestMsgpack(unittest.TestCase):
 
     def test_keyreg_txn_offline(self):
         keyregtxn = (
-            "hqNmZWXNA+iiZnbOALutq6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/c"
-            "OUJOiKibHbOALuxk6NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tu"
-            "H9pHR5cGWma2V5cmVn")
+            "h6NmZWXNA+iiZnbOALutq6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/c"
+            "OUJOiKibHbOALuxk6dub25wYXJ0w6NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUO"
+            "B+jFx2mGR9tuH9pHR5cGWma2V5cmVn")
         # using future_msgpack_decode instead of msgpack_decode
         # because non-future transactions do not support offline keyreg
+        print(encoding.future_msgpack_decode(keyregtxn))
         self.assertEqual(keyregtxn, encoding.msgpack_encode(
                          encoding.future_msgpack_decode(keyregtxn)))
 

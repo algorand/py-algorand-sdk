@@ -216,13 +216,11 @@ class Transaction:
             txn = PaymentTxn(**args)
         elif txn_type == constants.keyreg_txn:
             args.update(KeyregTxn._undictify(d))
-            txn = KeyregTxn(**args)
-        elif txn_type == constants.offline_keyreg_txn:
-            args.update(OfflineKeyregTxn._undictify(d))
-            txn = OfflineKeyregTxn(**args)
-        elif txn_type == constants.online_keyreg_txn:
-            args.update(OnlineKeyregTxn._undictify(d))
-            txn = OnlineKeyregTxn(**args)
+            print(d)
+            if "nonpart" in d and d["nonpart"]:
+                txn = OfflineKeyregTxn(**args)
+            else:
+                txn = OnlineKeyregTxn(**args)
         elif txn_type == constants.assetconfig_txn:
             args.update(AssetConfigTxn._undictify(d))
             txn = AssetConfigTxn(**args)
@@ -442,32 +440,21 @@ class KeyregTxn(Transaction):
 
     @staticmethod
     def _undictify(d):
-        votekey = None
-        selkey = None
-        votefst = None
-        votelst = None
-        votekd = None
-        nonpart = None
-
-        if "votekey" in d:
+        if d["nonpart"]:
+            args = {}
+        else:
             votekey = base64.b64encode(d["votekey"]).decode()
-        if "selkey" in d:
             selkey = base64.b64encode(d["selkey"]).decode()
-        if "votefst" in d:
             votefst = d["votefst"]
-        if "votelst" in d:
             votelst = d["votelst"]
-        if "nonpart" in d:
-            nonpart = d["nonpart"]
-
-        args = {
-            "votekey": votekey,
-            "selkey": selkey,
-            "votefst": votefst,
-            "votelst": votelst,
-            "votekd": votekd,
-            "nonpart": nonpart
-        }
+            votekd = d["votekd"]
+            args = {
+                "votekey": votekey,
+                "selkey": selkey,
+                "votefst": votefst,
+                "votelst": votelst,
+                "votekd": votekd,
+            }
         return args
 
     def __eq__(self, other):
@@ -483,7 +470,7 @@ class KeyregTxn(Transaction):
                 self.votekd == other.votekd)
 
 
-class OnlineKeyregTxn(Transaction):
+class OnlineKeyregTxn(KeyregTxn):
     """
     Represents an online key registration transaction.
     nonpart is implicitly False for this transaction.
@@ -524,8 +511,8 @@ class OnlineKeyregTxn(Transaction):
     def __init__(self, sender, sp, votekey, selkey, votefst,
                  votelst, votekd, note=None,
                  lease=None, rekey_to=None):
-        Transaction.__init__(self, sender, sp, note,
-                             lease, constants.online_keyreg_txn, rekey_to)
+        KeyregTxn.__init__(self, sender, sp, votekey, selkey, votefst, votelst,
+                           votekd, note, lease, rekey_to, nonpart=False)
         self.votepk = votekey
         self.selkey = selkey
         self.votefst = votefst
@@ -536,37 +523,17 @@ class OnlineKeyregTxn(Transaction):
                            constants.min_txn_fee)
 
     def dictify(self):
-        d = {
-            "selkey": base64.b64decode(self.selkey) if self.selkey is not None else None,
-            "votefst": self.votefst,
-            "votekd": self.votekd,
-            "votekey": base64.b64decode(self.votepk) if self.votepk is not None else None,
-            "votelst": self.votelst,
-        }
-        d.update(super(OnlineKeyregTxn, self).dictify())
+        d = super(OnlineKeyregTxn, self).dictify()
         od = OrderedDict(sorted(d.items()))
-
         return od
 
     @staticmethod
     def _undictify(d):
-        votekey = None
-        selkey = None
-        votefst = None
-        votelst = None
-        votekd = None
-
-        if "votekey" in d:
-            votekey = base64.b64encode(d["votekey"]).decode()
-        if "selkey" in d:
-            selkey = base64.b64encode(d["selkey"]).decode()
-        if "votefst" in d:
-            votefst = d["votefst"]
-        if "votelst" in d:
-            votelst = d["votelst"]
-        if "votekd" in d:
-            votekd = d["votekd"]
-
+        votekey = base64.b64encode(d["votekey"]).decode()
+        selkey = base64.b64encode(d["selkey"]).decode()
+        votefst = d["votefst"]
+        votelst = d["votelst"]
+        votekd = d["votekd"]
         args = {
             "votekey": votekey,
             "selkey": selkey,
@@ -587,7 +554,7 @@ class OnlineKeyregTxn(Transaction):
                 self.votekd == other.votekd)
 
 
-class OfflineKeyregTxn(Transaction):
+class OfflineKeyregTxn(KeyregTxn):
     """
     Represents an offline key registration transaction.
     nonpart is implicitly True for this transaction.
@@ -616,8 +583,9 @@ class OfflineKeyregTxn(Transaction):
     """
 
     def __init__(self, sender, sp, note=None, lease=None, rekey_to=None):
-        Transaction.__init__(self, sender, sp, note,
-                             lease, constants.offline_keyreg_txn, rekey_to)
+        KeyregTxn.__init__(self, sender, sp, None, None, None, None, None,
+                           note=note, lease=lease, rekey_to=rekey_to,
+                           nonpart=True)
         if not sp.flat_fee:
             self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
