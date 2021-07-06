@@ -215,10 +215,11 @@ class Transaction:
             args.update(PaymentTxn._undictify(d))
             txn = PaymentTxn(**args)
         elif txn_type == constants.keyreg_txn:
-            args.update(KeyregTxn._undictify(d))
             if "nonpart" in d and d["nonpart"]:
+                args.update(OfflineKeyregTxn._undictify(d))
                 txn = OfflineKeyregTxn(**args)
             else:
+                args.update(OnlineKeyregTxn._undictify(d))
                 txn = OnlineKeyregTxn(**args)
         elif txn_type == constants.assetconfig_txn:
             args.update(AssetConfigTxn._undictify(d))
@@ -436,25 +437,6 @@ class KeyregTxn(Transaction):
         od = OrderedDict(sorted(d.items()))
 
         return od
-
-    @staticmethod
-    def _undictify(d):
-        if d["nonpart"]:
-            args = {}
-        else:
-            votekey = base64.b64encode(d["votekey"]).decode()
-            selkey = base64.b64encode(d["selkey"]).decode()
-            votefst = d["votefst"]
-            votelst = d["votelst"]
-            votekd = d["votekd"]
-            args = {
-                "votekey": votekey,
-                "selkey": selkey,
-                "votefst": votefst,
-                "votelst": votelst,
-                "votekd": votekd,
-            }
-        return args
 
     def __eq__(self, other):
         if not isinstance(other, (
