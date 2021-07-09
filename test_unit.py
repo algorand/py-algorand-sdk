@@ -260,7 +260,7 @@ class TestPaymentTransaction(unittest.TestCase):
             " quit surface sunny dismiss leader blood seat clown cost exist ho"
             "spital century reform able sponsor")
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
         to = "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI"
         fee = 4
         first_round = 12466
@@ -291,7 +291,7 @@ class TestPaymentTransaction(unittest.TestCase):
             " quit surface sunny dismiss leader blood seat clown cost exist ho"
             "spital century reform able sponsor")
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
         to = "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI"
         fee = 4
         first_round = 12466
@@ -326,7 +326,7 @@ class TestPaymentTransaction(unittest.TestCase):
             "only coil atom any hospital uncover make any climb actor armed me"
             "asure need above hundred")
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
         fee = 1000
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
         votepk = "Kv7QI7chi1y6axoy+t7wzAVpePqRq/rkjzWh/RMYyLo="
@@ -357,7 +357,7 @@ class TestPaymentTransaction(unittest.TestCase):
             "only coil atom any hospital uncover make any climb actor armed "
             "measure need above hundred")
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
         fee = 1000
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
         votepk = None
@@ -385,7 +385,7 @@ class TestPaymentTransaction(unittest.TestCase):
             "only coil atom any hospital uncover make any climb actor armed "
             "measure need above hundred")
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
         fee = 1000
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
         nonpart = True
@@ -409,7 +409,7 @@ class TestPaymentTransaction(unittest.TestCase):
             "only coil atom any hospital uncover make any climb actor armed me"
             "asure need above hundred")
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
         fee = 10
         first_round = 322575
         last_round = 323575
@@ -444,7 +444,7 @@ class TestPaymentTransaction(unittest.TestCase):
             "only coil atom any hospital uncover make any climb actor armed me"
             "asure need above hundred")
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
         fee = 10
         first_round = 322575
         last_round = 323575
@@ -491,7 +491,7 @@ class TestPaymentTransaction(unittest.TestCase):
             "only coil atom any hospital uncover make any climb actor armed me"
             "asure need above hundred")
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
         fee = 10
         first_round = 322575
         last_round = 323575
@@ -520,7 +520,7 @@ class TestPaymentTransaction(unittest.TestCase):
             "only coil atom any hospital uncover make any climb actor armed me"
             "asure need above hundred")
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
         fee = 10
         first_round = 322575
         last_round = 323575
@@ -543,7 +543,7 @@ class TestPaymentTransaction(unittest.TestCase):
             "only coil atom any hospital uncover make any climb actor armed me"
             "asure need above hundred")
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
         fee = 10
         first_round = 322575
         last_round = 323576
@@ -568,7 +568,7 @@ class TestPaymentTransaction(unittest.TestCase):
             "only coil atom any hospital uncover make any climb actor armed me"
             "asure need above hundred")
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
         fee = 10
         first_round = 322575
         last_round = 323576
@@ -596,7 +596,7 @@ class TestPaymentTransaction(unittest.TestCase):
             "only coil atom any hospital uncover make any climb actor armed me"
             "asure need above hundred")
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
         fee = 10
         first_round = 322575
         last_round = 323575
@@ -622,7 +622,7 @@ class TestPaymentTransaction(unittest.TestCase):
             "only coil atom any hospital uncover make any climb actor armed me"
             "asure need above hundred")
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
         fee = 10
         first_round = 322575
         last_round = 323575
