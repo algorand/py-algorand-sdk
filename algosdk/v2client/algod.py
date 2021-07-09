@@ -8,6 +8,7 @@ from .. import encoding
 from .. import constants
 from .. import future
 import msgpack
+from .. import util
 
 api_version_path_prefix = "/v2"
 
@@ -207,7 +208,9 @@ class AlgodClient:
         """
         txn = base64.b64decode(txn)
         req = "/transactions"
-        headers = { 'Content-Type': 'application/x-binary' }
+        headers = util.build_headers_from(kwargs.get("headers", False), {'Content-Type': 'application/x-binary'})
+        kwargs["headers"] = headers
+
         return self.algod_request("POST", req, data=txn, headers=headers, **kwargs)["txId"]
 
     def pending_transactions(self, max_txns=0, response_format="json", **kwargs):
@@ -301,7 +304,9 @@ class AlgodClient:
 
         """
         req = "/teal/compile"
-        headers = { 'Content-Type': 'application/x-binary' }
+        headers = util.build_headers_from(kwargs.get("headers", False), { 'Content-Type': 'application/x-binary' })
+        kwargs["headers"] = headers
+
         return self.algod_request("POST", req, data=source.encode('utf-8'), headers=headers, **kwargs)
 
     def dryrun(self, drr, **kwargs):
@@ -316,9 +321,11 @@ class AlgodClient:
             dict: loaded from json response body
         """
         req = "/teal/dryrun"
-        headers = { 'Content-Type': 'application/msgpack' }
+        headers = util.build_headers_from(kwargs.get("headers", False), {'Content-Type': 'application/msgpack'})
+        kwargs["headers"] = headers
         data = encoding.msgpack_encode(drr)
         data = base64.b64decode(data)
+
         return self.algod_request("POST", req, data=data, headers=headers, **kwargs)
 
     def genesis(self, **kwargs):
