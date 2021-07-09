@@ -85,6 +85,6 @@ def build_headers_from(kwarg_headers: Dict[str, Any], additional_headers: Dict[s
     if kwarg_headers:
         kwarg_headers.update(additional_headers)
     else:
-        kwarg_headers = { 'Content-Type': 'application/x-binary' }
+        kwarg_headers = additional_headers
     
     return kwarg_headers
