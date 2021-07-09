@@ -73,14 +73,14 @@ def verify_bytes(message, signature, public_key):
 
 def build_headers_from(kwarg_headers: Dict[str, Any], additional_headers: Dict[str, Any]):
     """
-    Build correct kwargs representation for `AlgodClient.algod_request`.
+    Build correct headers for `AlgodClient.algod_request`.
 
     Args:
-        kwarg_headers (Dict[str, Any]): kwargs passed for request
-        additional_headers (Dict[str, Any]): additional headers to pass to self.algod_request
+        kwarg_headers (Dict[str, Any]): headers passed through kwargs.
+        additional_headers (Dict[str, Any]): additional headers to pass to `AlgodClient.algod_request`
 
     Returns:
-        Dict[str, any]: final version of headers dictionary to be used for self.algod_request
+        Dict[str, any]: final version of headers dictionary to be used for `AlgodClient.algod_request`
     """
     if kwarg_headers:
         kwarg_headers.update(additional_headers)
