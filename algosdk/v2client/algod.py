@@ -211,7 +211,7 @@ class AlgodClient:
         headers = util.build_headers_from(kwargs.get("headers", False), {'Content-Type': 'application/x-binary'})
         kwargs["headers"] = headers
 
-        return self.algod_request("POST", req, data=txn, headers=headers, **kwargs)["txId"]
+        return self.algod_request("POST", req, data=txn, **kwargs)["txId"]
 
     def pending_transactions(self, max_txns=0, response_format="json", **kwargs):
         """
@@ -307,7 +307,7 @@ class AlgodClient:
         headers = util.build_headers_from(kwargs.get("headers", False), { 'Content-Type': 'application/x-binary' })
         kwargs["headers"] = headers
 
-        return self.algod_request("POST", req, data=source.encode('utf-8'), headers=headers, **kwargs)
+        return self.algod_request("POST", req, data=source.encode('utf-8'), **kwargs)
 
     def dryrun(self, drr, **kwargs):
         """
@@ -326,7 +326,7 @@ class AlgodClient:
         data = encoding.msgpack_encode(drr)
         data = base64.b64decode(data)
 
-        return self.algod_request("POST", req, data=data, headers=headers, **kwargs)
+        return self.algod_request("POST", req, data=data, **kwargs)
 
     def genesis(self, **kwargs):
         """Returns the entire genesis file."""
