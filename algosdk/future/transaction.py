@@ -527,12 +527,7 @@ class OnlineKeyregTxn(KeyregTxn):
     def __eq__(self, other):
         if not isinstance(other, OnlineKeyregTxn):
             return False
-        return (super(OnlineKeyregTxn, self).__eq__(other) and
-                self.votepk == other.votepk and
-                self.selkey == other.selkey and
-                self.votefst == other.votefst and
-                self.votelst == other.votelst and
-                self.votekd == other.votekd)
+        return super(OnlineKeyregTxn, self).__eq__(other)
 
 
 class OfflineKeyregTxn(KeyregTxn):
@@ -584,7 +579,7 @@ class OfflineKeyregTxn(KeyregTxn):
     def __eq__(self, other):
         if not isinstance(other, OfflineKeyregTxn):
             return False
-        return (super(OfflineKeyregTxn, self).__eq__(other))
+        return super(OfflineKeyregTxn, self).__eq__(other)
 
 
 class AssetConfigTxn(Transaction):
