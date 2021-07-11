@@ -1,0 +1,19 @@
+>>> from algosdk.v2client import algod
+>>> import json
+>>> ip_address = <algod-address>
+>>> token = <algod-token>
+>>> client = algod.AlgodClient(token, ip_address)
+>>> account_info = client.account_info('37CHQNNBVHN2YZWU3ZBPVQ2DLYDYFDWYFBER3JUDP5XFS32TVJT3ZEXNE4')
+>>> print(json.dumps(account_info, indent=4))
+{
+    "round": 4995033,
+    "address": "37CHQNNBVHN2YZWU3ZBPVQ2DLYDYFDWYFBER3JUDP5XFS32TVJT3ZEXNE4",
+    "amount": 100000000,
+    "pendingrewards": 0,
+    "amountwithoutpendingrewards": 100000000,
+    "rewards": 0,
+    "status": "Offline"
+}
+>>> account_balance = account_info.get('amount')
+>>> print('Account balance: {} microAlgos'.format(account_balance))
+Account balance: 100000000 microAlgos
