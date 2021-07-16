@@ -794,7 +794,7 @@ def fund_contract(context):
     context.txn = transaction.PaymentTxn(context.accounts[0], context.params, context.template.get_address(), context.fund_amt)
     context.txn = context.wallet.sign_transaction(context.txn)
     context.acl.send_transaction(context.txn)
-    context.acl.status_after_block(context.acl.status()["lastRound"]+3)
+    context.acl.wait_for_confirmation(context.txn.get_txid(), 10)
 
 
 @when("I claim the algos")
