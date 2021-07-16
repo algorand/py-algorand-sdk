@@ -261,7 +261,7 @@ class AlgodClient:
             if timeout is not None and current_round > last_round + timeout:
                 raise error.AlgodResponseError(f"Wait for transaction id {transaction_id} timed out")
 
-            tx_info = self.pending_transaction_info(tx_id, **kwargs)
+            tx_info = self.pending_transaction_info(transaction_id, **kwargs)
 
             # The transaction has been confirmed
             if 'confirmed-round' in tx_info:
