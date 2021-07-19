@@ -29,7 +29,7 @@ ASSETCONFIG_TXN = "acfg"
 assetconfig_txn = ASSETCONFIG_TXN 
 """str: indicates an asset configuration transaction"""
 ASSETFREEZE_TXN = "afrz"
-assetfreeze_txn = ASSETFREEXE_TXN 
+assetfreeze_txn = ASSETFREEZE_TXN 
 """str: indicates an asset freeze transaction"""
 ASSETTRANSFER_TXN = "axfer"
 assettransfer_txn = ASSETTRANSFER_TXN 
