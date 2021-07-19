@@ -25,7 +25,7 @@ payment_txn = PAYMENT_TXN
 KEYREG_TXN = "keyreg"
 keyreg_txn = KEYREG_TXN 
 """str: indicates a key registration transaction"""
-ASSET_CONFIG_TXN = "acfg"
+ASSETCONFIG_TXN = "acfg"
 assetconfig_txn = ASSETCONFIG_TXN 
 """str: indicates an asset configuration transaction"""
 ASSETFREEZE_TXN = "afrz"
