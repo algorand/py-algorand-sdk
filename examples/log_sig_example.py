@@ -5,7 +5,7 @@ from algosdk import algod, account
 from algosdk.future import transaction
 
 program = b"\x01\x20\x01\x00\x22"  # int 0
-lsig = transaction.LogicSig(program)
+lsig = transaction.LogicSigAccount(program)
 sender = lsig.address()
 receiver = account.generate_account()
 
