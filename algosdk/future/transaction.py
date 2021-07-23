@@ -1675,12 +1675,17 @@ class MultisigTransaction:
         ref_msig_addr = None
         ref_auth_addr = None
         for stx in part_stxs:
+            try:
+                other_auth_addr = stx.auth_addr
+            except AttributeError:
+                other_auth_addr = None
+
             if not ref_msig_addr:
                 ref_msig_addr = stx.multisig.address()
-                ref_auth_addr = stx.auth_addr
+                ref_auth_addr = other_auth_addr
             if not stx.multisig.address() == ref_msig_addr:
                 raise error.MergeKeysMismatchError
-            if not stx.auth_addr == ref_auth_addr:
+            if not other_auth_addr == ref_auth_addr:
                 raise error.MergeAuthAddrMismatchError
 
         msigstx = None
