@@ -1173,6 +1173,8 @@ class TestMultisig(unittest.TestCase):
             msig.address(), sp, rcv, 1000,
             note=base64.b64decode("X4Bl4wQ9rCo="), close_remainder_to=close)
         mtx = transaction.MultisigTransaction(txn, msig)
+        self.assertEqual(mtx.auth_addr, None)
+
         mtx.sign(sk)
         golden = (
             "gqRtc2lng6ZzdWJzaWeTgaJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC8mKvrEiC"
@@ -1186,6 +1188,45 @@ class TestMultisig(unittest.TestCase):
             "krSJkAFzoE36Q1mjZmpq/OosQqBd2cH3PuulR4A36aR0eXBlo3BheQ==")
         self.assertEqual(golden, encoding.msgpack_encode(mtx))
         txid_golden = "TDIO6RJWJIVDDJZELMSX5CPJW7MUNM3QR4YAHYAKHF3W2CFRTI7A"
+        self.assertEqual(txn.get_txid(), txid_golden)
+    
+    def test_sign_auth_addr(self):
+        msig = transaction.Multisig(1, 2, [
+            "DN7MBMCL5JQ3PFUQS7TMX5AH4EEKOBJVDUF4TCV6WERATKFLQF4MQUPZTA",
+            "BFRTECKTOOE7A5LHCF3TTEOH2A7BW46IYT2SX5VP6ANKEXHZYJY77SJTVM",
+            "47YPQTIGQEO7T4Y4RWDYWEKV6RTR2UNBQXBABEEGM72ESWDQNCQ52OPASU"
+        ])
+        mn = (
+            "advice pudding treat near rule blouse same whisper inner electric"
+            " quit surface sunny dismiss leader blood seat clown cost exist ho"
+            "spital century reform able sponsor")
+        sk = mnemonic.to_private_key(mn)
+
+        sender = "WTDCE2FEYM2VB5MKNXKLRSRDTSPR2EFTIGVH4GRW4PHGD6747GFJTBGT2A"
+        rcv = "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        close = "IDUTJEUIEVSMXTU4LGTJWZ2UE2E6TIODUKU6UW3FU3UKIQQ77RLUBBBFLA"
+        sp = transaction.SuggestedParams(4, 12466, 13466, gh, "devnet-v33.0")
+        txn = transaction.PaymentTxn(
+            sender, sp, rcv, 1000,
+            note=base64.b64decode("X4Bl4wQ9rCo="), close_remainder_to=close)
+        mtx = transaction.MultisigTransaction(txn, msig)
+        self.assertEqual(mtx.auth_addr, msig.address())
+
+        mtx.sign(sk)
+        golden = (
+            "g6Rtc2lng6ZzdWJzaWeTgaJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC8mKvrEiC"
+            "airgXiBonBrxCAJYzIJU3OJ8HVnEXc5kcfQPhtzyMT1K/av8BqiXPnCcYKicGvEIO"
+            "fw+E0GgR358xyNh4sRVfRnHVGhhcIAkIZn9ElYcGihoXPEQOtXd8NwMBC4Lve/OjK"
+            "PcryC/dSmrbY6dlqxq6cSGG2cAObZDdskW8IE8oI2KcZDpm2uQSCpB/xLbBpH2ZVG"
+            "YwKjdGhyAqF2AaRzZ25yxCCNkrSJkAFzoE36Q1mjZmpq/OosQqBd2cH3PuulR4A36"
+            "aN0eG6Lo2FtdM0D6KVjbG9zZcQgQOk0koglZMvOnFmmm2dUJonpocOiqepbZabopE"
+            "If/FejZmVlzQSYomZ2zTCyo2dlbqxkZXZuZXQtdjMzLjCiZ2jEICYLIAmgk6iGi3l"
+            "Yci+l5Ubt5+0X5NhcTHivsEUmkO3Somx2zTSapG5vdGXECF+AZeMEPawqo3JjdsQg"
+            "e2ziT+tbrMCxZOKcIixX9fY9w4fUOQSCWEEcX+EPfAKjc25kxCC0xiJopMM1UPWKb"
+            "dS4yiOcnx0Qs0Gqfho2485h+/z5iqR0eXBlo3BheQ==")
+        self.assertEqual(golden, encoding.msgpack_encode(mtx))
+        txid_golden = "BARRBT2T3DTXIXINAYDZHTJNPRF33OZHTYTQ3KZAEH4QMB7GBYLA"
         self.assertEqual(txn.get_txid(), txid_golden)
 
     def test_msig_address(self):
@@ -1210,11 +1251,6 @@ class TestMultisig(unittest.TestCase):
         _, account_2 = account.generate_account()
         private_key_3, account_3 = account.generate_account()
 
-        # create transaction
-        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
-        sp = transaction.SuggestedParams(3, 1234, 1334, gh)
-        txn = transaction.PaymentTxn(account_2, sp, account_2, 1000)
-
         # create multisig address with invalid version
         msig = transaction.Multisig(2, 2, [account_1, account_2])
         self.assertRaises(error.UnknownMsigVersionError, msig.validate)
@@ -1223,15 +1259,13 @@ class TestMultisig(unittest.TestCase):
         msig.version = 1
         msig.threshold = 3
         self.assertRaises(error.InvalidThresholdError, msig.validate)
-
-        # try to sign multisig transaction
         msig.threshold = 2
-        mtx = transaction.MultisigTransaction(txn, msig)
-        self.assertRaises(error.BadTxnSenderError,
-                          mtx.sign, private_key_1)
 
-        # change sender address to be correct
-        txn.sender = msig.address()
+        # create transaction
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(3, 1234, 1334, gh)
+        txn = transaction.PaymentTxn(account_2, sp, account_2, 1000)
+
         mtx = transaction.MultisigTransaction(txn, msig)
 
         # try to sign with incorrect private key
@@ -1246,6 +1280,13 @@ class TestMultisig(unittest.TestCase):
         self.assertRaises(error.MergeKeysMismatchError,
                           transaction.MultisigTransaction.merge,
                           [mtx, mtx_2])
+        
+        # try to merge with different auth_addrs
+        mtx_3 = transaction.MultisigTransaction(txn, msig)
+        mtx_3.auth_addr = None
+        self.assertRaises(error.MergeAuthAddrMismatchError,
+                          transaction.MultisigTransaction.merge,
+                          [mtx, mtx_3])
 
         # create another multisig with same address
         msig_3 = msig_2.get_multisig_account()

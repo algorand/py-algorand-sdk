@@ -20,6 +20,11 @@ class MergeKeysMismatchError(Exception):
         Exception.__init__(self, "multisig parameters do not match")
 
 
+class MergeAuthAddrMismatchError(Exception):
+    def __init__(self):
+        Exception.__init__(self, "multisig transaction auth addresses do not match")
+
+
 class DuplicateSigMismatchError(Exception):
     def __init__(self):
         Exception.__init__(self, "mismatched duplicate signatures in multisig")

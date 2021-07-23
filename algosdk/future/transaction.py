@@ -1584,11 +1584,18 @@ class MultisigTransaction:
     Attributes:
         transaction (Transaction)
         multisig (Multisig)
+        auth_addr (str, optional)
     """
 
-    def __init__(self, transaction, multisig):
+    def __init__(self, transaction: Transaction, multisig: "Multisig") -> None:
         self.transaction = transaction
         self.multisig = multisig
+
+        msigAddr = multisig.address()
+        if transaction.sender != msigAddr:
+            self.auth_addr = msigAddr
+        else:
+            self.auth_addr = None
 
     def sign(self, private_key):
         """
@@ -1605,9 +1612,6 @@ class MultisigTransaction:
             object with the same addresses.
         """
         self.multisig.validate()
-        addr = self.multisig.address()
-        if not self.transaction.sender == addr:
-            raise error.BadTxnSenderError
         index = -1
         public_key = base64.b64decode(bytes(private_key, "utf-8"))
         public_key = public_key[constants.key_len_bytes:]
@@ -1633,6 +1637,8 @@ class MultisigTransaction:
         od = OrderedDict()
         if self.multisig:
             od["msig"] = self.multisig.dictify()
+        if self.auth_addr:
+            od["sgnr"] = encoding.decode_address(self.auth_addr)
         od["txn"] = self.transaction.dictify()
         return od
 
@@ -1641,12 +1647,16 @@ class MultisigTransaction:
         msig = None
         if "msig" in d:
             msig = Multisig.undictify(d["msig"])
+        auth_addr = None
+        if "sgnr" in d:
+            auth_addr = encoding.encode_address(d["sgnr"])
         txn = Transaction.undictify(d["txn"])
         mtx = MultisigTransaction(txn, msig)
+        mtx.auth_addr = auth_addr
         return mtx
 
     @staticmethod
-    def merge(part_stxs):
+    def merge(part_stxs: List["MultisigTransaction"]) -> "MultisigTransaction":
         """
         Merge partially signed multisig transactions.
 
@@ -1662,12 +1672,17 @@ class MultisigTransaction:
             transactions. To append a signature to a multisig transaction, just
             use MultisigTransaction.sign()
         """
-        ref_addr = None
+        ref_msig_addr = None
+        ref_auth_addr = None
         for stx in part_stxs:
-            if not ref_addr:
-                ref_addr = stx.multisig.address()
-            elif not stx.multisig.address() == ref_addr:
+            if not ref_msig_addr:
+                ref_msig_addr = stx.multisig.address()
+                ref_auth_addr = stx.auth_addr
+            if not stx.multisig.address() == ref_msig_addr:
                 raise error.MergeKeysMismatchError
+            if not stx.auth_addr == ref_auth_addr:
+                raise error.MergeAuthAddrMismatchError
+
         msigstx = None
         for stx in part_stxs:
             if not msigstx:
@@ -1684,12 +1699,17 @@ class MultisigTransaction:
         return msigstx
 
     def __eq__(self, other):
-        if not isinstance(other, (
-                MultisigTransaction,
-                transaction.MultisigTransaction)):
-            return False
-        return (self.transaction == other.transaction and
+        if isinstance(other, transaction.MultisigTransaction):
+            return (self.transaction == other.transaction and
+                self.auth_addr == None and
                 self.multisig == other.multisig)
+
+        if isinstance(other, MultisigTransaction):
+            return (self.transaction == other.transaction and
+                self.auth_addr == other.auth_addr and
+                self.multisig == other.multisig)
+        
+        return False
 
 
 class Multisig:
@@ -2160,7 +2180,7 @@ class LogicSigTransaction:
         auth_addr (str, optional)
     """
 
-    def __init__(self, transaction, lsig: Union[LogicSig, LogicSigAccount]) -> None:
+    def __init__(self, transaction: Transaction, lsig: Union[LogicSig, LogicSigAccount]) -> None:
         self.transaction = transaction
 
         if isinstance(lsig, LogicSigAccount):
