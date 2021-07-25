@@ -456,7 +456,8 @@ class KeyregTxn(Transaction):
                 self.selkey == other.selkey and
                 self.votefst == other.votefst and
                 self.votelst == other.votelst and
-                self.votekd == other.votekd)
+                self.votekd == other.votekd and
+                self.nonpart == other.nonpart)
 
 
 class KeyregOnlineTxn(KeyregTxn):
@@ -521,11 +522,6 @@ class KeyregOnlineTxn(KeyregTxn):
             self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
 
-    def dictify(self):
-        d = super(KeyregOnlineTxn, self).dictify()
-        od = OrderedDict(sorted(d.items()))
-        return od
-
     @staticmethod
     def _undictify(d):
         votekey = base64.b64encode(d["votekey"]).decode()
@@ -584,11 +580,6 @@ class KeyregOfflineTxn(KeyregTxn):
             self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
 
-    def dictify(self):
-        d = super(KeyregOfflineTxn, self).dictify()
-        od = OrderedDict(sorted(d.items()))
-        return od
-
     @staticmethod
     def _undictify(d):
         args = {}
@@ -635,11 +626,6 @@ class KeyregNonparticipatingTxn(KeyregTxn):
         if not sp.flat_fee:
             self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
-
-    def dictify(self):
-        d = super(KeyregNonparticipatingTxn, self).dictify()
-        od = OrderedDict(sorted(d.items()))
-        return od
 
     @staticmethod
     def _undictify(d):
