@@ -219,8 +219,8 @@ class Transaction:
                 args.update(OfflineKeyregTxn._undictify(d))
                 txn = OfflineKeyregTxn(**args)
             else:
-                args.update(OnlineKeyregTxn._undictify(d))
-                txn = OnlineKeyregTxn(**args)
+                args.update(KeyregOnlineTxn._undictify(d))
+                txn = KeyregOnlineTxn(**args)
         elif txn_type == constants.assetconfig_txn:
             args.update(AssetConfigTxn._undictify(d))
             txn = AssetConfigTxn(**args)
@@ -451,7 +451,7 @@ class KeyregTxn(Transaction):
                 self.votekd == other.votekd)
 
 
-class OnlineKeyregTxn(KeyregTxn):
+class KeyregOnlineTxn(KeyregTxn):
     """
     Represents an online key registration transaction.
     nonpart is implicitly False for this transaction.
@@ -499,12 +499,22 @@ class OnlineKeyregTxn(KeyregTxn):
         self.votefst = votefst
         self.votelst = votelst
         self.votekd = votekd
+        if votekey is None:
+            raise error.KeyregOnlineTxnInitError("votekey")
+        if selkey is None:
+            raise error.KeyregOnlineTxnInitError("selkey")
+        if votefst is None:
+            raise error.KeyregOnlineTxnInitError("votefst")
+        if votelst is None:
+            raise error.KeyregOnlineTxnInitError("votelst")
+        if votekd is None:
+            raise error.KeyregOnlineTxnInitError("votekd")
         if not sp.flat_fee:
             self.fee = max(self.estimate_size() * self.fee,
                            constants.min_txn_fee)
 
     def dictify(self):
-        d = super(OnlineKeyregTxn, self).dictify()
+        d = super(KeyregOnlineTxn, self).dictify()
         od = OrderedDict(sorted(d.items()))
         return od
 
@@ -525,9 +535,9 @@ class OnlineKeyregTxn(KeyregTxn):
         return args
 
     def __eq__(self, other):
-        if not isinstance(other, OnlineKeyregTxn):
+        if not isinstance(other, KeyregOnlineTxn):
             return False
-        return super(OnlineKeyregTxn, self).__eq__(other)
+        return super(KeyregOnlineTxn, self).__eq__(other)
 
 
 class OfflineKeyregTxn(KeyregTxn):

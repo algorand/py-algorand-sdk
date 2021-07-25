@@ -422,7 +422,7 @@ class TestPaymentTransaction(unittest.TestCase):
 
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True)
-        txn = transaction.OnlineKeyregTxn(
+        txn = transaction.KeyregOnlineTxn(
             pk, sp, votepk, selpk, votefirst, votelast, votedilution)
         signed_txn = txn.sign(sk)
 
@@ -452,13 +452,36 @@ class TestPaymentTransaction(unittest.TestCase):
 
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True)
-        txn = transaction.OnlineKeyregTxn(
+        txn = transaction.KeyregOnlineTxn(
             pk, sp, votepk, selpk, votefirst, votelast, votedilution)
         path = "/tmp/%s" % uuid.uuid4()
         transaction.write_to_file([txn], path)
         txnr = transaction.retrieve_from_file(path)[0]
         os.remove(path)
         self.assertEqual(txn, txnr)
+
+    def test_init_keyregonlinetxn_with_none_values(self):
+        mn = (
+            "awful drop leaf tennis indoor begin mandate discover uncle seven "
+            "only coil atom any hospital uncover make any climb actor armed me"
+            "asure need above hundred")
+        sk = mnemonic.to_private_key(mn)
+        pk = mnemonic.to_public_key(mn)
+        fee = 1000
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+        votepk = "Kv7QI7chi1y6axoy+t7wzAVpePqRq/rkjzWh/RMYyLo="
+        selpk = "bPgrv4YogPcdaUAxrt1QysYZTVyRAuUMD4zQmCu9llc="
+        votefirst = 10000
+        votelast = None
+        votedilution = 11
+
+        sp = transaction.SuggestedParams(
+            fee, 322575, 323575, gh, flat_fee=True)
+        with self.assertRaises(error.KeyregOnlineTxnInitError) as cm:
+            transaction.KeyregOnlineTxn(
+                pk, sp, votepk, selpk, votefirst, votelast, votedilution)
+        the_exception = cm.exception
+        self.assertTrue("votelst" in the_exception.__repr__())
 
     def test_serialize_offlinekeyreg(self):
         mn = (
