@@ -216,8 +216,8 @@ class Transaction:
             txn = PaymentTxn(**args)
         elif txn_type == constants.keyreg_txn:
             if "nonpart" in d and d["nonpart"]:
-                args.update(OfflineKeyregTxn._undictify(d))
-                txn = OfflineKeyregTxn(**args)
+                args.update(KeyregNonparticipatingTxn._undictify(d))
+                txn = KeyregNonparticipatingTxn(**args)
             else:
                 args.update(KeyregOnlineTxn._undictify(d))
                 txn = KeyregOnlineTxn(**args)
@@ -540,9 +540,9 @@ class KeyregOnlineTxn(KeyregTxn):
         return super(KeyregOnlineTxn, self).__eq__(other)
 
 
-class OfflineKeyregTxn(KeyregTxn):
+class KeyregNonparticipatingTxn(KeyregTxn):
     """
-    Represents an offline key registration transaction.
+    Represents a nonparticipating key registration transaction.
     nonpart is implicitly True for this transaction.
 
     Args:
@@ -577,7 +577,7 @@ class OfflineKeyregTxn(KeyregTxn):
                            constants.min_txn_fee)
 
     def dictify(self):
-        d = super(OfflineKeyregTxn, self).dictify()
+        d = super(KeyregNonparticipatingTxn, self).dictify()
         od = OrderedDict(sorted(d.items()))
         return od
 
@@ -587,9 +587,9 @@ class OfflineKeyregTxn(KeyregTxn):
         return args
 
     def __eq__(self, other):
-        if not isinstance(other, OfflineKeyregTxn):
+        if not isinstance(other, KeyregNonparticipatingTxn):
             return False
-        return super(OfflineKeyregTxn, self).__eq__(other)
+        return super(KeyregNonparticipatingTxn, self).__eq__(other)
 
 
 class AssetConfigTxn(Transaction):

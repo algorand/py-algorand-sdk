@@ -483,7 +483,7 @@ class TestPaymentTransaction(unittest.TestCase):
         the_exception = cm.exception
         self.assertTrue("votelst" in the_exception.__repr__())
 
-    def test_serialize_offlinekeyreg(self):
+    def test_serialize_keyregnonparttxn(self):
         mn = (
             "awful drop leaf tennis indoor begin mandate discover uncle seven "
             "only coil atom any hospital uncover make any climb actor armed "
@@ -495,7 +495,7 @@ class TestPaymentTransaction(unittest.TestCase):
 
         sp = transaction.SuggestedParams(
             fee, 12299691, 12300691, gh, flat_fee=True)
-        txn = transaction.OfflineKeyregTxn(pk, sp)
+        txn = transaction.KeyregNonparticipatingTxn(pk, sp)
         signed_txn = txn.sign(sk)
 
         golden = ("gqNzaWfEQN7kw3tLcC1IweQ2Ru5KSqFS0Ba0cn34ncOWPIyv76wU8JPLxyS"
@@ -505,7 +505,7 @@ class TestPaymentTransaction(unittest.TestCase):
                   "mGR9tuH9pHR5cGWma2V5cmVn")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
-    def test_write_read_offlinekeyreg(self):
+    def test_write_read_keyregnonparttxn(self):
         mn = (
             "awful drop leaf tennis indoor begin mandate discover uncle seven "
             "only coil atom any hospital uncover make any climb actor armed "
@@ -517,7 +517,7 @@ class TestPaymentTransaction(unittest.TestCase):
 
         sp = transaction.SuggestedParams(
             fee, 12299691, 12300691, gh, flat_fee=True)
-        txn = transaction.OfflineKeyregTxn(pk, sp)
+        txn = transaction.KeyregNonparticipatingTxn(pk, sp)
         path = "/tmp/%s" % uuid.uuid4()
         transaction.write_to_file([txn], path)
         txnr = transaction.retrieve_from_file(path)[0]
