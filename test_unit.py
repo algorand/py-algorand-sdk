@@ -483,6 +483,47 @@ class TestPaymentTransaction(unittest.TestCase):
         the_exception = cm.exception
         self.assertTrue("votelst" in the_exception.__repr__())
 
+    def test_serialize_keyregofflinetxn(self):
+        mn = (
+            "awful drop leaf tennis indoor begin mandate discover uncle seven "
+            "only coil atom any hospital uncover make any climb actor armed "
+            "measure need above hundred")
+        sk = mnemonic.to_private_key(mn)
+        pk = mnemonic.to_public_key(mn)
+        fee = 1000
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+
+        sp = transaction.SuggestedParams(
+            fee, 12299691, 12300691, gh, flat_fee=True)
+        txn = transaction.KeyregOfflineTxn(pk, sp)
+        signed_txn = txn.sign(sk)
+
+        golden = ("gqNzaWfEQJosTMSKwGr+eWN5XsAJvbjh2DkzOtEN6lrDNM4TAnYIjl9L43zU"
+                  "70gAXUSAehZo9RyejgDA12B75SR6jIdhzQCjdHhuhqNmZWXNA+iiZnbOALut"
+                  "q6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOALux"
+                  "k6NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWm"
+                  "a2V5cmVn")
+        self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
+
+    def test_write_read_keyregofflinetxn(self):
+        mn = (
+            "awful drop leaf tennis indoor begin mandate discover uncle seven "
+            "only coil atom any hospital uncover make any climb actor armed "
+            "measure need above hundred")
+        sk = mnemonic.to_private_key(mn)
+        pk = account.address_from_private_key(sk)
+        fee = 1000
+        gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+
+        sp = transaction.SuggestedParams(
+            fee, 12299691, 12300691, gh, flat_fee=True)
+        txn = transaction.KeyregOfflineTxn(pk, sp)
+        path = "/tmp/%s" % uuid.uuid4()
+        transaction.write_to_file([txn], path)
+        txnr = transaction.retrieve_from_file(path)[0]
+        os.remove(path)
+        self.assertEqual(txn, txnr)
+
     def test_serialize_keyregnonparttxn(self):
         mn = (
             "awful drop leaf tennis indoor begin mandate discover uncle seven "

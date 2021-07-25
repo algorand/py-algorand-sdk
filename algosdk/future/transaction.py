@@ -219,8 +219,16 @@ class Transaction:
                 args.update(KeyregNonparticipatingTxn._undictify(d))
                 txn = KeyregNonparticipatingTxn(**args)
             else:
-                args.update(KeyregOnlineTxn._undictify(d))
-                txn = KeyregOnlineTxn(**args)
+                if (d["votekey"] is None and
+                    d["selkey"] is None and
+                    d["votefst"] is None and
+                    d["votelst"] is None and
+                    d["votekd"] is None):
+                    args.update(KeyregOfflineTxn._undictify(d))
+                    txn = KeyregOfflineTxn(**args)
+                else:
+                    args.update(KeyregOnlineTxn._undictify(d))
+                    txn = KeyregOnlineTxn(**args)
         elif txn_type == constants.assetconfig_txn:
             args.update(AssetConfigTxn._undictify(d))
             txn = AssetConfigTxn(**args)
@@ -538,6 +546,58 @@ class KeyregOnlineTxn(KeyregTxn):
         if not isinstance(other, KeyregOnlineTxn):
             return False
         return super(KeyregOnlineTxn, self).__eq__(other)
+
+
+class KeyregOfflineTxn(KeyregTxn):
+    """
+    Represents an offline key registration transaction.
+    nonpart is implicitly False for this transaction.
+
+    Args:
+        sender (str): address of sender
+        sp (SuggestedParams): suggested params from algod
+        note (bytes, optional): arbitrary optional bytes
+        lease (byte[32], optional): specifies a lease, and no other transaction
+            with the same sender and lease can be confirmed in this
+            transaction's valid rounds
+        rekey_to (str, optional): additionally rekey the sender to this address
+
+    Attributes:
+        sender (str)
+        fee (int)
+        first_valid_round (int)
+        last_valid_round (int)
+        note (bytes)
+        genesis_id (str)
+        genesis_hash (str)
+        group(bytes)
+        type (str)
+        lease (byte[32])
+        rekey_to (str)
+    """
+
+    def __init__(self, sender, sp, note=None, lease=None, rekey_to=None):
+        KeyregTxn.__init__(self, sender, sp, None, None, None, None, None,
+                           note=note, lease=lease, rekey_to=rekey_to,
+                           nonpart=False)
+        if not sp.flat_fee:
+            self.fee = max(self.estimate_size() * self.fee,
+                           constants.min_txn_fee)
+
+    def dictify(self):
+        d = super(KeyregOfflineTxn, self).dictify()
+        od = OrderedDict(sorted(d.items()))
+        return od
+
+    @staticmethod
+    def _undictify(d):
+        args = {}
+        return args
+
+    def __eq__(self, other):
+        if not isinstance(other, KeyregOfflineTxn):
+            return False
+        return super(KeyregOfflineTxn, self).__eq__(other)
 
 
 class KeyregNonparticipatingTxn(KeyregTxn):
