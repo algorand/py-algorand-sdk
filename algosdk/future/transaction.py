@@ -1996,11 +1996,16 @@ class LogicSig:
         Raises:
             InvalidSecretKeyError: if no matching private key in multisig\
                 object
+            LogicSigOverspecifiedSignature: if the opposite signature type has
+                already been provided
         """
-
         if not multisig:
+            if self.msig:
+                raise error.LogicSigOverspecifiedSignature
             self.sig = LogicSig.sign_program(self.logic, private_key)
         else:
+            if self.sig:
+                raise error.LogicSigOverspecifiedSignature
             sig, index = LogicSig.single_sig_multisig(self.logic, private_key,
                                                       multisig)
             multisig.subsigs[index].signature = base64.b64decode(sig)
@@ -2017,7 +2022,6 @@ class LogicSig:
             InvalidSecretKeyError: if no matching private key in multisig\
                 object
         """
-
         if self.msig is None:
             raise error.InvalidSecretKeyError
         sig, index = LogicSig.single_sig_multisig(self.logic, private_key,
@@ -2131,6 +2135,8 @@ class LogicSigAccount:
         Raises:
             InvalidSecretKeyError: if no matching private key in multisig
                 object
+            LogicSigOverspecifiedSignature: if this LogicSigAccount has already
+                been signed with a single private key.
         """
         self.lsig.sign(private_key, multisig)
 
@@ -2159,6 +2165,10 @@ class LogicSigAccount:
 
         Args:
             private_key (str): The private key of the delegating account.
+        
+        Raises:
+            LogicSigOverspecifiedSignature: if this LogicSigAccount has already
+                been signed by a multisig account.
         """
         self.lsig.sign(private_key)
         public_key = base64.b64decode(bytes(private_key, "utf-8"))

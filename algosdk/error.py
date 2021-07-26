@@ -39,6 +39,7 @@ class LogicSigSigningKeyMissing(Exception):
     def __init__(self):
         Exception.__init__(self, "LogicSigAccount is missing signing key")
 
+
 class WrongAmountType(Exception):
     def __init(self):
         Exception.__init__(self, "amount (amt) must be a non-negative integer")
