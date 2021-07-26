@@ -1,3 +1,4 @@
+from typing import List, Union
 import base64
 from enum import IntEnum
 import msgpack
@@ -1583,11 +1584,18 @@ class MultisigTransaction:
     Attributes:
         transaction (Transaction)
         multisig (Multisig)
+        auth_addr (str, optional)
     """
 
-    def __init__(self, transaction, multisig):
+    def __init__(self, transaction: Transaction, multisig: "Multisig") -> None:
         self.transaction = transaction
         self.multisig = multisig
+
+        msigAddr = multisig.address()
+        if transaction.sender != msigAddr:
+            self.auth_addr = msigAddr
+        else:
+            self.auth_addr = None
 
     def sign(self, private_key):
         """
@@ -1604,9 +1612,6 @@ class MultisigTransaction:
             object with the same addresses.
         """
         self.multisig.validate()
-        addr = self.multisig.address()
-        if not self.transaction.sender == addr:
-            raise error.BadTxnSenderError
         index = -1
         public_key = base64.b64decode(bytes(private_key, "utf-8"))
         public_key = public_key[constants.key_len_bytes:]
@@ -1632,6 +1637,8 @@ class MultisigTransaction:
         od = OrderedDict()
         if self.multisig:
             od["msig"] = self.multisig.dictify()
+        if self.auth_addr:
+            od["sgnr"] = encoding.decode_address(self.auth_addr)
         od["txn"] = self.transaction.dictify()
         return od
 
@@ -1640,12 +1647,16 @@ class MultisigTransaction:
         msig = None
         if "msig" in d:
             msig = Multisig.undictify(d["msig"])
+        auth_addr = None
+        if "sgnr" in d:
+            auth_addr = encoding.encode_address(d["sgnr"])
         txn = Transaction.undictify(d["txn"])
         mtx = MultisigTransaction(txn, msig)
+        mtx.auth_addr = auth_addr
         return mtx
 
     @staticmethod
-    def merge(part_stxs):
+    def merge(part_stxs: List["MultisigTransaction"]) -> "MultisigTransaction":
         """
         Merge partially signed multisig transactions.
 
@@ -1661,12 +1672,22 @@ class MultisigTransaction:
             transactions. To append a signature to a multisig transaction, just
             use MultisigTransaction.sign()
         """
-        ref_addr = None
+        ref_msig_addr = None
+        ref_auth_addr = None
         for stx in part_stxs:
-            if not ref_addr:
-                ref_addr = stx.multisig.address()
-            elif not stx.multisig.address() == ref_addr:
+            try:
+                other_auth_addr = stx.auth_addr
+            except AttributeError:
+                other_auth_addr = None
+
+            if not ref_msig_addr:
+                ref_msig_addr = stx.multisig.address()
+                ref_auth_addr = other_auth_addr
+            if not stx.multisig.address() == ref_msig_addr:
                 raise error.MergeKeysMismatchError
+            if not other_auth_addr == ref_auth_addr:
+                raise error.MergeAuthAddrMismatchError
+
         msigstx = None
         for stx in part_stxs:
             if not msigstx:
@@ -1683,12 +1704,17 @@ class MultisigTransaction:
         return msigstx
 
     def __eq__(self, other):
-        if not isinstance(other, (
-                MultisigTransaction,
-                transaction.MultisigTransaction)):
-            return False
-        return (self.transaction == other.transaction and
+        if isinstance(other, transaction.MultisigTransaction):
+            return (self.transaction == other.transaction and
+                self.auth_addr == None and
                 self.multisig == other.multisig)
+
+        if isinstance(other, MultisigTransaction):
+            return (self.transaction == other.transaction and
+                self.auth_addr == other.auth_addr and
+                self.multisig == other.multisig)
+        
+        return False
 
 
 class Multisig:
@@ -1848,6 +1874,8 @@ class LogicSig:
     """
     Represents a logic signature
 
+    NOTE: This type is deprecated. Use LogicSigAccount instead.
+
     Arguments:
         logic (bytes): compiled program
         args (list[bytes]): args are not signed, but are checked by logic
@@ -1968,11 +1996,16 @@ class LogicSig:
         Raises:
             InvalidSecretKeyError: if no matching private key in multisig\
                 object
+            LogicSigOverspecifiedSignature: if the opposite signature type has
+                already been provided
         """
-
         if not multisig:
+            if self.msig:
+                raise error.LogicSigOverspecifiedSignature
             self.sig = LogicSig.sign_program(self.logic, private_key)
         else:
+            if self.sig:
+                raise error.LogicSigOverspecifiedSignature
             sig, index = LogicSig.single_sig_multisig(self.logic, private_key,
                                                       multisig)
             multisig.subsigs[index].signature = base64.b64decode(sig)
@@ -1989,7 +2022,6 @@ class LogicSig:
             InvalidSecretKeyError: if no matching private key in multisig\
                 object
         """
-
         if self.msig is None:
             raise error.InvalidSecretKeyError
         sig, index = LogicSig.single_sig_multisig(self.logic, private_key,
@@ -2006,6 +2038,148 @@ class LogicSig:
                 self.sig == other.sig and
                 self.msig == other.msig)
 
+class LogicSigAccount:
+    """
+    Represents an account that can sign with a LogicSig program.
+    """
+
+    def __init__(self, program: bytes, args: List[bytes] = None) -> None:
+        """
+        Create a new LogicSigAccount. By default this will create an escrow
+        LogicSig account. Call `sign` or `sign_multisig` on the newly created
+        LogicSigAccount to make it a delegated account.
+
+        Args:
+            program (bytes): The compiled TEAL program which contains the logic
+                for this LogicSig.
+            args (List[bytes], optional): An optional array of arguments for the
+                program.
+        """
+        self.lsig = LogicSig(program, args)
+        self.sigkey = None
+    
+    def dictify(self):
+        od = OrderedDict()
+        od["lsig"] = self.lsig.dictify()
+        if self.sigkey:
+            od["sigkey"] = self.sigkey
+        return od
+
+    @staticmethod
+    def undictify(d):
+        lsig = LogicSig.undictify(d["lsig"])
+        lsigAccount = LogicSigAccount(lsig.logic, lsig.args)
+        lsigAccount.lsig = lsig
+        if "sigkey" in d:
+            lsigAccount.sigkey = d["sigkey"]
+        return lsigAccount
+    
+    def is_delegated(self) -> bool:
+        """
+        Check if this LogicSigAccount has been delegated to another account with
+        a signature.
+
+        Returns:
+            bool: True if and only if this is a delegated LogicSigAccount.
+        """
+        return bool(self.lsig.sig or self.lsig.msig)
+
+    def verify(self) -> bool:
+        """
+        Verifies the LogicSig's program and signatures.
+
+        Returns:
+            bool: True if and only if the LogicSig program and signatures are
+                valid.
+        """
+        addr = self.address()
+        return self.lsig.verify(encoding.decode_address(addr))
+
+    def address(self) -> str:
+        """
+        Get the address of this LogicSigAccount.
+
+        If the LogicSig is delegated to another account, this will return the
+        address of that account.
+
+        If the LogicSig is not delegated to another account, this will return an
+        escrow address that is the hash of the LogicSig's program code.
+        """
+        if self.lsig.sig and self.lsig.msig:
+            raise error.LogicSigOverspecifiedSignature
+
+        if self.lsig.sig:
+            if not self.sigkey:
+                raise error.LogicSigSigningKeyMissing
+            return encoding.encode_address(self.sigkey)
+
+        if self.lsig.msig:
+            return self.lsig.msig.address()
+
+        return self.lsig.address()
+
+    def sign_multisig(self, multisig: Multisig, private_key: str) -> None:
+        """
+        Turns this LogicSigAccount into a delegated LogicSig.
+        
+        This type of LogicSig has the authority to sign transactions on behalf
+        of another account, called the delegating account. Use this function if
+        the delegating account is a multisig account.
+
+        Args:
+            multisig (Multisig): The multisig delegating account
+            private_key (str): The private key of one of the members of the
+                delegating multisig account. Use `append_to_multisig` to add
+                additional signatures from other members.
+
+        Raises:
+            InvalidSecretKeyError: if no matching private key in multisig
+                object
+            LogicSigOverspecifiedSignature: if this LogicSigAccount has already
+                been signed with a single private key.
+        """
+        self.lsig.sign(private_key, multisig)
+
+    def append_to_multisig(self, private_key: str) -> None:
+        """
+        Adds an additional signature from a member of the delegating multisig
+        account.
+
+        Args:
+            private_key (str): The private key of one of the members of the
+                delegating multisig account.
+
+        Raises:
+            InvalidSecretKeyError: if no matching private key in multisig
+                object
+        """
+        self.lsig.append_to_multisig(private_key)
+    
+    def sign(self, private_key: str) -> None:
+        """
+        Turns this LogicSigAccount into a delegated LogicSig.
+        
+        This type of LogicSig has the authority to sign transactions on behalf
+        of another account, called the delegating account. If the delegating
+        account is a multisig account, use `sign_multisig` instead.
+
+        Args:
+            private_key (str): The private key of the delegating account.
+        
+        Raises:
+            LogicSigOverspecifiedSignature: if this LogicSigAccount has already
+                been signed by a multisig account.
+        """
+        self.lsig.sign(private_key)
+        public_key = base64.b64decode(bytes(private_key, "utf-8"))
+        public_key = public_key[constants.key_len_bytes:]
+        self.sigkey = public_key
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, LogicSigAccount):
+            return False
+        return (self.lsig == other.lsig and
+                self.sigkey == other.sigkey)
 
 class LogicSigTransaction:
     """
@@ -2013,27 +2187,51 @@ class LogicSigTransaction:
 
     Arguments:
         transaction (Transaction)
-        lsig (LogicSig)
+        lsig (LogicSig or LogicSigAccount)
 
     Attributes:
         transaction (Transaction)
         lsig (LogicSig)
+        auth_addr (str, optional)
     """
 
-    def __init__(self, transaction, lsig):
+    def __init__(self, transaction: Transaction, lsig: Union[LogicSig, LogicSigAccount]) -> None:
         self.transaction = transaction
-        self.lsig = lsig
 
-    def verify(self):
+        if isinstance(lsig, LogicSigAccount):
+            lsigAddr = lsig.address()
+            self.lsig = lsig.lsig
+        else:
+            if lsig.sig:
+                # For a LogicSig with a non-multisig delegating account, we
+                # cannot derive the address of that account from only its
+                # signature, so assume the delegating account is the sender. If
+                # that's not the case, verify will fail.
+                lsigAddr = transaction.sender
+            elif lsig.msig:
+                lsigAddr = lsig.msig.address()
+            else:
+                lsigAddr = lsig.address()
+            self.lsig = lsig
+        
+        if transaction.sender != lsigAddr:
+            self.auth_addr = lsigAddr
+        else:
+            self.auth_addr = None
+
+    def verify(self) -> bool:
         """
-        Verify LogicSig against the transaction
+        Verify the LogicSig used to sign the transaction
 
         Returns:
-            bool: true if the signature is valid (the sender address matches\
-                the logic hash or the signature is valid against the sender\
-                address), false otherwise
+            bool: true if the signature is valid, false otherwise
         """
-        public_key = encoding.decode_address(self.transaction.sender)
+        if self.auth_addr:
+            addr_to_verify = self.auth_addr
+        else:
+            addr_to_verify = self.transaction.sender
+        
+        public_key = encoding.decode_address(addr_to_verify)
         return self.lsig.verify(public_key)
 
     def get_txid(self):
@@ -2049,6 +2247,8 @@ class LogicSigTransaction:
         od = OrderedDict()
         if self.lsig:
             od["lsig"] = self.lsig.dictify()
+        if self.auth_addr:
+            od["sgnr"] = encoding.decode_address(self.auth_addr)
         od["txn"] = self.transaction.dictify()
 
         return od
@@ -2058,17 +2258,26 @@ class LogicSigTransaction:
         lsig = None
         if "lsig" in d:
             lsig = LogicSig.undictify(d["lsig"])
+        auth_addr = None
+        if "sgnr" in d:
+            auth_addr = encoding.encode_address(d["sgnr"])
         txn = Transaction.undictify(d["txn"])
         lstx = LogicSigTransaction(txn, lsig)
+        lstx.auth_addr = auth_addr
         return lstx
 
     def __eq__(self, other):
-        if not isinstance(other, (
-                LogicSigTransaction,
-                transaction.LogicSigTransaction)):
-            return False
-        return (self.lsig == other.lsig and
+        if isinstance(other, transaction.LogicSigTransaction):
+            return (self.lsig == other.lsig and
+                self.auth_addr == None and
                 self.transaction == other.transaction)
+        
+        if isinstance(other, LogicSigTransaction):
+            return (self.lsig == other.lsig and
+                self.auth_addr == other.auth_addr and
+                self.transaction == other.transaction)
+
+        return False
 
 
 def write_to_file(txns, path, overwrite=True):
