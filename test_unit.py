@@ -405,7 +405,7 @@ class TestPaymentTransaction(unittest.TestCase):
             "TEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWma2V5cmVn")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
-    def test_serialize_onlinekeyreg(self):
+    def test_serialize_keyregonlinetxn(self):
         mn = (
             "awful drop leaf tennis indoor begin mandate discover uncle seven "
             "only coil atom any hospital uncover make any climb actor armed me"
@@ -435,7 +435,7 @@ class TestPaymentTransaction(unittest.TestCase):
                   "saMvre8MwFaXj6kav65I81of0TGMi6p3ZvdGVsc3TNJ38=")
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
-    def test_serialize_write_read_onlinekeyreg(self):
+    def test_serialize_write_read_keyregonlinetxn(self):
         mn = (
             "awful drop leaf tennis indoor begin mandate discover uncle seven "
             "only coil atom any hospital uncover make any climb actor armed me"
