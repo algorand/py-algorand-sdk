@@ -219,11 +219,18 @@ class Transaction:
                 args.update(KeyregNonparticipatingTxn._undictify(d))
                 txn = KeyregNonparticipatingTxn(**args)
             else:
-                if (d["votekey"] is None and
-                    d["selkey"] is None and
-                    d["votefst"] is None and
-                    d["votelst"] is None and
-                    d["votekd"] is None):
+                if ("votekey" not in d and
+                     "selkey" not in d and
+                     "votefst" not in d and
+                     "votelst" not in d and
+                     "votekd" not in d):
+                    args.update(KeyregOfflineTxn._undictify(d))
+                    txn = KeyregOfflineTxn(**args)
+                elif (  d["votekey"] is None and
+                        d["selkey"] is None and
+                        d["votefst"] is None and
+                        d["votelst"] is None and
+                        d["votekd"] is None):
                     args.update(KeyregOfflineTxn._undictify(d))
                     txn = KeyregOfflineTxn(**args)
                 else:
