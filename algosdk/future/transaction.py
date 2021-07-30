@@ -226,13 +226,6 @@ class Transaction:
                      "votekd" not in d):
                     args.update(KeyregOfflineTxn._undictify(d))
                     txn = KeyregOfflineTxn(**args)
-                elif (  d["votekey"] is None and
-                        d["selkey"] is None and
-                        d["votefst"] is None and
-                        d["votelst"] is None and
-                        d["votekd"] is None):
-                    args.update(KeyregOfflineTxn._undictify(d))
-                    txn = KeyregOfflineTxn(**args)
                 else:
                     args.update(KeyregOnlineTxn._undictify(d))
                     txn = KeyregOnlineTxn(**args)
@@ -440,14 +433,19 @@ class KeyregTxn(Transaction):
                            constants.min_txn_fee)
 
     def dictify(self):
-        d = {
-            "selkey": base64.b64decode(self.selkey) if self.selkey is not None else None,
-            "votefst": self.votefst,
-            "votekd": self.votekd,
-            "votekey": base64.b64decode(self.votepk) if self.votepk is not None else None,
-            "votelst": self.votelst,
-            "nonpart": self.nonpart
-        }
+        d = {}
+        if self.selkey is not None:
+            d["selkey"] = base64.b64decode(self.selkey)
+        if self.votefst is not None:
+            d["votefst"] = self.votefst
+        if self.votekd is not None:
+            d["votekd"] = self.votekd
+        if self.votepk is not None:
+            d["votekey"] = base64.b64decode(self.votepk)
+        if self.votelst is not None:
+            d["votelst"] = self.votelst
+        if self.nonpart is not None:
+            d["nonpart"] = self.nonpart
         d.update(super(KeyregTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
 
