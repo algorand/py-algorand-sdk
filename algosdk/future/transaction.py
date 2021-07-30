@@ -216,8 +216,20 @@ class Transaction:
             args.update(PaymentTxn._undictify(d))
             txn = PaymentTxn(**args)
         elif txn_type == constants.keyreg_txn:
-            args.update(KeyregTxn._undictify(d))
-            txn = KeyregTxn(**args)
+            if "nonpart" in d and d["nonpart"]:
+                args.update(KeyregNonparticipatingTxn._undictify(d))
+                txn = KeyregNonparticipatingTxn(**args)
+            else:
+                if ("votekey" not in d and
+                     "selkey" not in d and
+                     "votefst" not in d and
+                     "votelst" not in d and
+                     "votekd" not in d):
+                    args.update(KeyregOfflineTxn._undictify(d))
+                    txn = KeyregOfflineTxn(**args)
+                else:
+                    args.update(KeyregOnlineTxn._undictify(d))
+                    txn = KeyregOnlineTxn(**args)
         elif txn_type == constants.assetconfig_txn:
             args.update(AssetConfigTxn._undictify(d))
             txn = AssetConfigTxn(**args)
@@ -422,48 +434,23 @@ class KeyregTxn(Transaction):
                            constants.min_txn_fee)
 
     def dictify(self):
-        d = {
-            "selkey": base64.b64decode(self.selkey) if self.selkey is not None else None,
-            "votefst": self.votefst,
-            "votekd": self.votekd,
-            "votekey": base64.b64decode(self.votepk) if self.votepk is not None else None,
-            "votelst": self.votelst,
-            "nonpart": self.nonpart
-        }
+        d = {}
+        if self.selkey is not None:
+            d["selkey"] = base64.b64decode(self.selkey)
+        if self.votefst is not None:
+            d["votefst"] = self.votefst
+        if self.votekd is not None:
+            d["votekd"] = self.votekd
+        if self.votepk is not None:
+            d["votekey"] = base64.b64decode(self.votepk)
+        if self.votelst is not None:
+            d["votelst"] = self.votelst
+        if self.nonpart is not None:
+            d["nonpart"] = self.nonpart
         d.update(super(KeyregTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
 
         return od
-
-    @staticmethod
-    def _undictify(d):
-        votekey = None
-        selkey = None
-        votefst = None
-        votelst = None
-        votekd = None
-        nonpart = None
-
-        if "votekey" in d:
-            votekey = base64.b64encode(d["votekey"]).decode()
-        if "selkey" in d:
-            selkey = base64.b64encode(d["selkey"]).decode()
-        if "votefst" in d:
-            votefst = d["votefst"]
-        if "votelst" in d:
-            votelst = d["votelst"]
-        if "nonpart" in d:
-            nonpart = d["nonpart"]
-
-        args = {
-            "votekey": votekey,
-            "selkey": selkey,
-            "votefst": votefst,
-            "votelst": votelst,
-            "votekd": votekd,
-            "nonpart": nonpart
-        }
-        return args
 
     def __eq__(self, other):
         if not isinstance(other, (
@@ -475,7 +462,186 @@ class KeyregTxn(Transaction):
                 self.selkey == other.selkey and
                 self.votefst == other.votefst and
                 self.votelst == other.votelst and
-                self.votekd == other.votekd)
+                self.votekd == other.votekd and
+                self.nonpart == other.nonpart)
+
+
+class KeyregOnlineTxn(KeyregTxn):
+    """
+    Represents an online key registration transaction.
+    nonpart is implicitly False for this transaction.
+
+    Args:
+        sender (str): address of sender
+        sp (SuggestedParams): suggested params from algod
+        votekey (str): participation public key in base64
+        selkey (str): VRF public key in base64
+        votefst (int): first round to vote
+        votelst (int): last round to vote
+        votekd (int): vote key dilution
+        note (bytes, optional): arbitrary optional bytes
+        lease (byte[32], optional): specifies a lease, and no other transaction
+            with the same sender and lease can be confirmed in this
+            transaction's valid rounds
+        rekey_to (str, optional): additionally rekey the sender to this address
+
+    Attributes:
+        sender (str)
+        fee (int)
+        first_valid_round (int)
+        last_valid_round (int)
+        note (bytes)
+        genesis_id (str)
+        genesis_hash (str)
+        group(bytes)
+        votepk (str)
+        selkey (str)
+        votefst (int)
+        votelst (int)
+        votekd (int)
+        type (str)
+        lease (byte[32])
+        rekey_to (str)
+    """
+
+    def __init__(self, sender, sp, votekey, selkey, votefst,
+                 votelst, votekd, note=None,
+                 lease=None, rekey_to=None):
+        KeyregTxn.__init__(self, sender, sp, votekey, selkey, votefst, votelst,
+                           votekd, note, lease, rekey_to, nonpart=False)
+        self.votepk = votekey
+        self.selkey = selkey
+        self.votefst = votefst
+        self.votelst = votelst
+        self.votekd = votekd
+        if votekey is None:
+            raise error.KeyregOnlineTxnInitError("votekey")
+        if selkey is None:
+            raise error.KeyregOnlineTxnInitError("selkey")
+        if votefst is None:
+            raise error.KeyregOnlineTxnInitError("votefst")
+        if votelst is None:
+            raise error.KeyregOnlineTxnInitError("votelst")
+        if votekd is None:
+            raise error.KeyregOnlineTxnInitError("votekd")
+        if not sp.flat_fee:
+            self.fee = max(self.estimate_size() * self.fee,
+                           constants.min_txn_fee)
+
+    @staticmethod
+    def _undictify(d):
+        votekey = base64.b64encode(d["votekey"]).decode()
+        selkey = base64.b64encode(d["selkey"]).decode()
+        votefst = d["votefst"]
+        votelst = d["votelst"]
+        votekd = d["votekd"]
+        args = {
+            "votekey": votekey,
+            "selkey": selkey,
+            "votefst": votefst,
+            "votelst": votelst,
+            "votekd": votekd,
+        }
+        return args
+
+    def __eq__(self, other):
+        if not isinstance(other, KeyregOnlineTxn):
+            return False
+        return super(KeyregOnlineTxn, self).__eq__(other)
+
+
+class KeyregOfflineTxn(KeyregTxn):
+    """
+    Represents an offline key registration transaction.
+    nonpart is implicitly False for this transaction.
+
+    Args:
+        sender (str): address of sender
+        sp (SuggestedParams): suggested params from algod
+        note (bytes, optional): arbitrary optional bytes
+        lease (byte[32], optional): specifies a lease, and no other transaction
+            with the same sender and lease can be confirmed in this
+            transaction's valid rounds
+        rekey_to (str, optional): additionally rekey the sender to this address
+
+    Attributes:
+        sender (str)
+        fee (int)
+        first_valid_round (int)
+        last_valid_round (int)
+        note (bytes)
+        genesis_id (str)
+        genesis_hash (str)
+        group(bytes)
+        type (str)
+        lease (byte[32])
+        rekey_to (str)
+    """
+
+    def __init__(self, sender, sp, note=None, lease=None, rekey_to=None):
+        KeyregTxn.__init__(self, sender, sp, None, None, None, None, None,
+                           note=note, lease=lease, rekey_to=rekey_to,
+                           nonpart=False)
+        if not sp.flat_fee:
+            self.fee = max(self.estimate_size() * self.fee,
+                           constants.min_txn_fee)
+
+    @staticmethod
+    def _undictify(d):
+        args = {}
+        return args
+
+    def __eq__(self, other):
+        if not isinstance(other, KeyregOfflineTxn):
+            return False
+        return super(KeyregOfflineTxn, self).__eq__(other)
+
+
+class KeyregNonparticipatingTxn(KeyregTxn):
+    """
+    Represents a nonparticipating key registration transaction.
+    nonpart is implicitly True for this transaction.
+
+    Args:
+        sender (str): address of sender
+        sp (SuggestedParams): suggested params from algod
+        note (bytes, optional): arbitrary optional bytes
+        lease (byte[32], optional): specifies a lease, and no other transaction
+            with the same sender and lease can be confirmed in this
+            transaction's valid rounds
+        rekey_to (str, optional): additionally rekey the sender to this address
+
+    Attributes:
+        sender (str)
+        fee (int)
+        first_valid_round (int)
+        last_valid_round (int)
+        note (bytes)
+        genesis_id (str)
+        genesis_hash (str)
+        group(bytes)
+        type (str)
+        lease (byte[32])
+        rekey_to (str)
+    """
+
+    def __init__(self, sender, sp, note=None, lease=None, rekey_to=None):
+        KeyregTxn.__init__(self, sender, sp, None, None, None, None, None,
+                           note=note, lease=lease, rekey_to=rekey_to,
+                           nonpart=True)
+        if not sp.flat_fee:
+            self.fee = max(self.estimate_size() * self.fee,
+                           constants.min_txn_fee)
+
+    @staticmethod
+    def _undictify(d):
+        args = {}
+        return args
+
+    def __eq__(self, other):
+        if not isinstance(other, KeyregNonparticipatingTxn):
+            return False
+        return super(KeyregNonparticipatingTxn, self).__eq__(other)
 
 
 class AssetConfigTxn(Transaction):

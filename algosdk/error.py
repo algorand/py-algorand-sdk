@@ -150,6 +150,11 @@ class ZeroAddressError(Exception):
             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ")
 
 
+class KeyregOnlineTxnInitError(Exception):
+    def __init__(self, attr):
+        Exception.__init__(self, attr + " should not be None")
+
+
 class TemplateInputError(Exception):
     pass
 
