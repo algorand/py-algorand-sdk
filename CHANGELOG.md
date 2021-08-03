@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.7.0
+### Added
+
+- Add OnlineyKeyregTxn and OfflineKeyregTxn class and additional tests.
+- Signing support for rekeying to LogicSig/MultiSig account
+
+### Enhancements
+
+- Deprecate to_public_key and remove internal usage of to_public_key
+- Modified constants.py to match python.org PEP 8 style guidelines
+
+### Bug Fixes
+
+- Bugfix for newer Sphinx versions - m2r replaced with maintained m2r2
+- Fix typo in min/max balance indexer & make clearer
+- Merge Request headers in `algod.py`
+
 ## 1.6.0
 ### Added
 - Support for dynamic opcode accounting, backward jumps, loops, callsub, retsub
