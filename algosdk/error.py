@@ -20,9 +20,24 @@ class MergeKeysMismatchError(Exception):
         Exception.__init__(self, "multisig parameters do not match")
 
 
+class MergeAuthAddrMismatchError(Exception):
+    def __init__(self):
+        Exception.__init__(self, "multisig transaction auth addresses do not match")
+
+
 class DuplicateSigMismatchError(Exception):
     def __init__(self):
         Exception.__init__(self, "mismatched duplicate signatures in multisig")
+
+
+class LogicSigOverspecifiedSignature(Exception):
+    def __init__(self):
+        Exception.__init__(self, "LogicSig has too many signatures. At most one of sig or msig may be present")
+
+
+class LogicSigSigningKeyMissing(Exception):
+    def __init__(self):
+        Exception.__init__(self, "LogicSigAccount is missing signing key")
 
 
 class WrongAmountType(Exception):
@@ -133,6 +148,11 @@ class ZeroAddressError(Exception):
     def __init__(self):
         Exception.__init__(self, "For the zero address, please specify "
             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ")
+
+
+class KeyregOnlineTxnInitError(Exception):
+    def __init__(self, attr):
+        Exception.__init__(self, attr + " should not be None")
 
 
 class TemplateInputError(Exception):

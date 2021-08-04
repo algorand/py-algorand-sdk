@@ -4,7 +4,7 @@ import decimal
 import base64
 from nacl.signing import SigningKey, VerifyKey
 from nacl.exceptions import BadSignatureError
-
+from typing import Dict, Any
 
 def microalgos_to_algos(microalgos):
     """
@@ -70,3 +70,21 @@ def verify_bytes(message, signature, public_key):
         return True
     except BadSignatureError:
         return False
+
+def build_headers_from(kwarg_headers: Dict[str, Any], additional_headers: Dict[str, Any]):
+    """
+    Build correct headers for `AlgodClient.algod_request`.
+
+    Args:
+        kwarg_headers (Dict[str, Any]): headers passed through kwargs.
+        additional_headers (Dict[str, Any]): additional headers to pass to `AlgodClient.algod_request`
+
+    Returns:
+        Dict[str, any]: final version of headers dictionary to be used for `AlgodClient.algod_request`
+    """
+    if kwarg_headers:
+        kwarg_headers.update(additional_headers)
+    else:
+        kwarg_headers = additional_headers
+    
+    return kwarg_headers
