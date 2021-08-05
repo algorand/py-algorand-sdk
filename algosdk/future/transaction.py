@@ -75,7 +75,7 @@ class Transaction:
         """Confirm that a value is 32 bytes. If all zeros, or a falsy value, return None"""
         if not hash:
             return None
-        assert isinstance(hash, (bytes, bytearray)), f"{hash} is not bytes"
+        assert isinstance(hash, (bytes, bytearray)), "{} is not bytes".format(hash)
         if len(hash) != constants.hash_len:
             raise error.WrongHashLengthError
         if not any(hash):
@@ -266,7 +266,7 @@ class Transaction:
     @staticmethod
     def required(arg):
         if not arg:
-            raise ValueError(f"{arg} supplied as a required argument")
+            raise ValueError("{} supplied as a required argument".format(arg))
         return arg
 
     @staticmethod
@@ -1365,7 +1365,7 @@ class ApplicationCallTxn(Transaction):
         """Confirm the argument is a StateSchema, or false which is coerced to None"""
         if not schema or not schema.dictify():
             return None         # Coerce false/empty values to None, to help __eq__
-        assert isinstance(schema, StateSchema), f"{schema} is not a StateSchema"
+        assert isinstance(schema, StateSchema), "{} is not a StateSchema".format(schema)
         return schema
 
     @staticmethod
@@ -1373,7 +1373,7 @@ class ApplicationCallTxn(Transaction):
         """Confirm the argument is bytes-like, or false which is coerced to None"""
         if not teal:
             return None         # Coerce false values like "" to None, to help __eq__
-        assert isinstance(teal, (bytes, bytearray)), f"Program {teal} is not bytes"
+        assert isinstance(teal, (bytes, bytearray)), "Program {} is not bytes".format(teal)
         return teal
 
     @staticmethod
@@ -1387,7 +1387,7 @@ class ApplicationCallTxn(Transaction):
             if isinstance(e, int):
                 # Uses 8 bytes, big endian to match TEAL's btoi
                 return e.to_bytes(8, "big")  # raises for negative or too big
-            assert False, f"{e} is not bytes, str, or int"
+            assert False, "{} is not bytes, str, or int".format(e)
 
         if not lst:
             return None
