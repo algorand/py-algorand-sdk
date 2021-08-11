@@ -244,35 +244,6 @@ class AlgodClient:
         res = self.algod_request("GET", req, params=query, response_format=response_format, **kwargs)
         return res
 
-    def wait_for_confirmation(self, transaction_id, timeout=None, **kwargs):
-        """
-        Block until a pending transaction is confirmed by the network.
-
-        Args:
-            transaction_id (str): transaction ID
-            timeout (int, optional): The number of rounds to block for before
-                exiting with an Exception. If not supplied, there is no timeout.
-        """
-        last_round = self.status()['last-round'] 
-        current_round = last_round + 1
-
-        while True:
-            # Check that the `timeout` has not passed
-            if timeout is not None and current_round > last_round + timeout:
-                raise error.AlgodResponseError(f"Wait for transaction id {transaction_id} timed out")
-
-            tx_info = self.pending_transaction_info(transaction_id, **kwargs)
-
-            # The transaction has been confirmed
-            if 'confirmed-round' in tx_info:
-                return
-
-            # Wait until the block for the `current_round` is confirmed
-            self.status_after_block(current_round)
-
-            # Incremenent the `current_round`
-            current_round += 1
-
     def health(self, **kwargs):
         """Return null if the node is running."""
         req = "/health"

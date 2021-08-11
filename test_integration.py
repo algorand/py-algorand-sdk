@@ -168,7 +168,7 @@ class TestIntegration(unittest.TestCase):
         self.assertEqual(self.acl.pending_transaction_info(txid)["tx"], txid)
 
         # wait for transaction to send
-        self.acl.wait_for_confirmation(txid, 10)
+        transaction.wait_for_confirmation(self.acl, txid, 10)
 
         # get transaction info two different ways
         info_1 = self.acl.transactions_by_address(self.account_0, sp.first-2,
