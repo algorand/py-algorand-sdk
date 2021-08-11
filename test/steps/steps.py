@@ -771,7 +771,6 @@ def split_contract(context, ratn, ratd, min_pay):
     context.fund_amt = int(2*context.template.min_pay*(int(ratn)+int(ratd))/int(ratn))
 
 
-
 @when("I send the split transactions")
 def send_split(context):
     amt = context.fund_amt//2
@@ -794,7 +793,7 @@ def fund_contract(context):
     context.txn = transaction.PaymentTxn(context.accounts[0], context.params, context.template.get_address(), context.fund_amt)
     context.txn = context.wallet.sign_transaction(context.txn)
     context.acl.send_transaction(context.txn)
-    context.acl.wait_for_confirmation(context.txn.get_txid(), 10)
+    transaction.wait_for_confirmation(context.acl, context.txn.get_txid(), 10)
 
 
 @when("I claim the algos")
@@ -810,7 +809,6 @@ def periodic_pay_contract(context, wd_window, period):
     context.template = template.PeriodicPayment(context.accounts[1], 12345, int(wd_window),
                                                 int(period), 2000, int(context.params.last))
     context.fund_amt = 1000000
-
 
 
 @when("I claim the periodic payment")
