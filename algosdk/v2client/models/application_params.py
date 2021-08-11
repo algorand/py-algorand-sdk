@@ -3,6 +3,7 @@
 
 import pprint
 
+
 class ApplicationParams(object):
     """
     Attributes:
@@ -11,25 +12,34 @@ class ApplicationParams(object):
       attribute_map (dict): The key is attribute name
                             and the value is json key in definition.
     """
+
     openapi_types = {
-        'creator': 'str',
-        'approval_program': 'str',
-        'clear_state_program': 'str',
-        'local_state_schema': 'ApplicationStateSchema',
-        'global_state_schema': 'ApplicationStateSchema',
-        'global_state': 'list[TealKeyValue]'
+        "creator": "str",
+        "approval_program": "str",
+        "clear_state_program": "str",
+        "local_state_schema": "ApplicationStateSchema",
+        "global_state_schema": "ApplicationStateSchema",
+        "global_state": "list[TealKeyValue]",
     }
 
     attribute_map = {
-        'creator': 'creator',
-        'approval_program': 'approval-program',
-        'clear_state_program': 'clear-state-program',
-        'local_state_schema': 'local-state-schema',
-        'global_state_schema': 'global-state-schema',
-        'global_state': 'global-state'
+        "creator": "creator",
+        "approval_program": "approval-program",
+        "clear_state_program": "clear-state-program",
+        "local_state_schema": "local-state-schema",
+        "global_state_schema": "global-state-schema",
+        "global_state": "global-state",
     }
 
-    def __init__(self, creator=None, approval_program=None, clear_state_program=None, local_state_schema=None, global_state_schema=None, global_state=None):  # noqa: E501
+    def __init__(
+        self,
+        creator=None,
+        approval_program=None,
+        clear_state_program=None,
+        local_state_schema=None,
+        global_state_schema=None,
+        global_state=None,
+    ):  # noqa: E501
         """ApplicationParams - a model defined in OpenAPI"""  # noqa: E501
 
         self._creator = None
@@ -190,19 +200,23 @@ class ApplicationParams(object):
         for attr, oas_attr in self.attribute_map.items():
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[oas_attr] = list(map(
-                    lambda x: x.dictify() \
-                    if hasattr(x, "dictify") else x,
-                    value
-                ))
+                result[oas_attr] = list(
+                    map(
+                        lambda x: x.dictify() if hasattr(x, "dictify") else x,
+                        value,
+                    )
+                )
             elif hasattr(value, "dictify"):
                 result[oas_attr] = value.dictify()
             elif isinstance(value, dict):
-                result[oas_attr] = dict(map(
-                    lambda item: (item[0], item[1].dictify())
-                    if hasattr(item[1], "dictify") else item,
-                    value.items()
-                ))
+                result[oas_attr] = dict(
+                    map(
+                        lambda item: (item[0], item[1].dictify())
+                        if hasattr(item[1], "dictify")
+                        else item,
+                        value.items(),
+                    )
+                )
             else:
                 result[oas_attr] = value
 

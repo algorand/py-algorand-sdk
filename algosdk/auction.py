@@ -24,8 +24,9 @@ class Bid:
 
     """
 
-    def __init__(self, bidder, bid_currency, max_price, bid_id, auction_key,
-                 auction_id):
+    def __init__(
+        self, bidder, bid_currency, max_price, bid_id, auction_key, auction_id
+    ):
         self.bidder = bidder
         self.bid_currency = bid_currency
         self.max_price = max_price
@@ -40,7 +41,7 @@ class Bid:
             "bidder": encoding.decode_address(self.bidder),
             "cur": self.bid_currency,
             "id": self.bid_id,
-            "price": self.max_price
+            "price": self.max_price,
         }
         return d
 
@@ -57,7 +58,7 @@ class Bid:
         temp = encoding.msgpack_encode(self)
         to_sign = constants.bid_prefix + base64.b64decode(temp)
         private_key = base64.b64decode(private_key)
-        signing_key = SigningKey(private_key[:constants.key_len_bytes])
+        signing_key = SigningKey(private_key[: constants.key_len_bytes])
         signed = signing_key.sign(to_sign)
         sig = signed.signature
         signed = SignedBid(self, base64.b64encode(sig).decode())
@@ -65,18 +66,26 @@ class Bid:
 
     @staticmethod
     def undictify(d):
-        return Bid(encoding.encode_address(d["bidder"]), d["cur"], d["price"],
-                   d["id"], encoding.encode_address(d["auc"]), d["aid"])
+        return Bid(
+            encoding.encode_address(d["bidder"]),
+            d["cur"],
+            d["price"],
+            d["id"],
+            encoding.encode_address(d["auc"]),
+            d["aid"],
+        )
 
     def __eq__(self, other):
         if not isinstance(other, Bid):
             return False
-        return (self.bidder == other.bidder and
-                self.bid_currency == other.bid_currency and
-                self.max_price == other.max_price and
-                self.bid_id == other.bid_id and
-                self.auction_key == other.auction_key and
-                self.auction_id == other.auction_id)
+        return (
+            self.bidder == other.bidder
+            and self.bid_currency == other.bid_currency
+            and self.max_price == other.max_price
+            and self.bid_id == other.bid_id
+            and self.auction_key == other.auction_key
+            and self.auction_id == other.auction_id
+        )
 
 
 class SignedBid:
@@ -99,20 +108,20 @@ class SignedBid:
     def dictify(self):
         d = {
             "bid": self.bid.dictify(),
-            "sig": base64.b64decode(self.signature)
+            "sig": base64.b64decode(self.signature),
         }
         return d
 
     @staticmethod
     def undictify(d):
-        return SignedBid(Bid.undictify(d["bid"]),
-                         base64.b64encode(d["sig"]).decode())
+        return SignedBid(
+            Bid.undictify(d["bid"]), base64.b64encode(d["sig"]).decode()
+        )
 
     def __eq__(self, other):
         if not isinstance(other, SignedBid):
             return False
-        return (self.bid == other.bid and
-                self.signature == other.signature)
+        return self.bid == other.bid and self.signature == other.signature
 
 
 class NoteField:
@@ -134,10 +143,7 @@ class NoteField:
         self.note_field_type = note_field_type
 
     def dictify(self):
-        d = {
-            "b": self.signed_bid.dictify(),
-            "t": self.note_field_type
-        }
+        d = {"b": self.signed_bid.dictify(), "t": self.note_field_type}
         return d
 
     @staticmethod
@@ -147,5 +153,7 @@ class NoteField:
     def __eq__(self, other):
         if not isinstance(other, NoteField):
             return False
-        return (self.signed_bid == other.signed_bid and
-                self.note_field_type == other.note_field_type)
+        return (
+            self.signed_bid == other.signed_bid
+            and self.note_field_type == other.note_field_type
+        )

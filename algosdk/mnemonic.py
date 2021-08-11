@@ -17,7 +17,7 @@ for i, word in enumerate(wordlist.word_list_raw().split("\n")):
     for length in range(4, len(word)):
         assert word[:length] not in word_to_index
         word_to_index[word[:length]] = i
-    word_to_index[word] = i     # in case word is less than four letters long
+    word_to_index[word] = i  # in case word is less than four letters long
 
 
 def from_master_derivation_key(key):
@@ -60,7 +60,7 @@ def from_private_key(key):
         str: mnemonic
     """
     key = base64.b64decode(key)
-    return _from_key(key[:constants.key_len_bytes])
+    return _from_key(key[: constants.key_len_bytes])
 
 
 def to_private_key(mnemonic):
@@ -90,9 +90,11 @@ def to_public_key(mnemonic):
     Returns:
         str: public key in base32
     """
-    warnings.warn("to_public_key returns the Algorand address and will be "
-                  "deprecated, use account.address_from_private_key instead",
-                  DeprecationWarning)
+    warnings.warn(
+        "to_public_key returns the Algorand address and will be "
+        "deprecated, use account.address_from_private_key instead",
+        DeprecationWarning,
+    )
     key_bytes = _to_key(mnemonic)
     key = signing.SigningKey(key_bytes)
     return encoding.encode_address(key.verify_key.encode())
@@ -132,14 +134,14 @@ def _to_key(mnemonic):
     try:
         m_checksum = word_to_index[mnemonic[-1]]
         mnemonic = _from_words(mnemonic[:-1])
-    except KeyError:            # We used to return ValueError, so keep it
+    except KeyError:  # We used to return ValueError, so keep it
         raise ValueError(mnemonic)
     m_bytes = _to_bytes(mnemonic)
-    if not m_bytes[-1:len(m_bytes)] == b'\x00':
+    if not m_bytes[-1 : len(m_bytes)] == b"\x00":
         raise error.WrongChecksumError
-    chksum = _checksum(m_bytes[:constants.key_len_bytes])
+    chksum = _checksum(m_bytes[: constants.key_len_bytes])
     if chksum == m_checksum:
-        return m_bytes[:constants.key_len_bytes]
+        return m_bytes[: constants.key_len_bytes]
     else:
         raise error.WrongChecksumError
 

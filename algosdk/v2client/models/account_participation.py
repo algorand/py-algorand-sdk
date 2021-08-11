@@ -3,6 +3,7 @@
 
 import pprint
 
+
 class AccountParticipation(object):
     """
     Attributes:
@@ -11,23 +12,31 @@ class AccountParticipation(object):
       attribute_map (dict): The key is attribute name
                             and the value is json key in definition.
     """
+
     openapi_types = {
-        'selection_participation_key': 'str',
-        'vote_first_valid': 'int',
-        'vote_key_dilution': 'int',
-        'vote_last_valid': 'int',
-        'vote_participation_key': 'str'
+        "selection_participation_key": "str",
+        "vote_first_valid": "int",
+        "vote_key_dilution": "int",
+        "vote_last_valid": "int",
+        "vote_participation_key": "str",
     }
 
     attribute_map = {
-        'selection_participation_key': 'selection-participation-key',
-        'vote_first_valid': 'vote-first-valid',
-        'vote_key_dilution': 'vote-key-dilution',
-        'vote_last_valid': 'vote-last-valid',
-        'vote_participation_key': 'vote-participation-key'
+        "selection_participation_key": "selection-participation-key",
+        "vote_first_valid": "vote-first-valid",
+        "vote_key_dilution": "vote-key-dilution",
+        "vote_last_valid": "vote-last-valid",
+        "vote_participation_key": "vote-participation-key",
     }
 
-    def __init__(self, selection_participation_key=None, vote_first_valid=None, vote_key_dilution=None, vote_last_valid=None, vote_participation_key=None):  # noqa: E501
+    def __init__(
+        self,
+        selection_participation_key=None,
+        vote_first_valid=None,
+        vote_key_dilution=None,
+        vote_last_valid=None,
+        vote_participation_key=None,
+    ):  # noqa: E501
         """AccountParticipation - a model defined in OpenAPI"""  # noqa: E501
 
         self._selection_participation_key = None
@@ -164,19 +173,23 @@ class AccountParticipation(object):
         for attr, oas_attr in self.attribute_map.items():
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[oas_attr] = list(map(
-                    lambda x: x.dictify() \
-                    if hasattr(x, "dictify") else x,
-                    value
-                ))
+                result[oas_attr] = list(
+                    map(
+                        lambda x: x.dictify() if hasattr(x, "dictify") else x,
+                        value,
+                    )
+                )
             elif hasattr(value, "dictify"):
                 result[oas_attr] = value.dictify()
             elif isinstance(value, dict):
-                result[oas_attr] = dict(map(
-                    lambda item: (item[0], item[1].dictify())
-                    if hasattr(item[1], "dictify") else item,
-                    value.items()
-                ))
+                result[oas_attr] = dict(
+                    map(
+                        lambda item: (item[0], item[1].dictify())
+                        if hasattr(item[1], "dictify")
+                        else item,
+                        value.items(),
+                    )
+                )
             else:
                 result[oas_attr] = value
 
