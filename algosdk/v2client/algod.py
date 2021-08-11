@@ -75,8 +75,8 @@ class AlgodClient:
             code = e.code
             e = e.read().decode("utf-8")
             try:
-                raise error.AlgodHTTPError(json.loads(e)["message"], code)
-            except:
+                e = json.loads(e)["message"]
+            finally:
                 raise error.AlgodHTTPError(e, code)
         if response_format == "json":
             try:
