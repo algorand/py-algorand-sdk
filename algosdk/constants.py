@@ -1,89 +1,127 @@
 """
 Contains useful constants.
 """
-
-kmd_auth_header = "X-KMD-API-Token"
+KMD_AUTH_HEADER = "X-KMD-API-Token"
 """str: header key for kmd requests"""
-algod_auth_header = "X-Algo-API-Token"
+ALGOD_AUTH_HEADER = "X-Algo-API-Token"
 """str: header key for algod requests"""
-indexer_auth_header = "X-Indexer-API-Token"
+INDEXER_AUTH_HEADER = "X-Indexer-API-Token"
 """str: header key for indexer requests"""
-unversioned_paths = ["/health", "/versions", "/metrics", "/genesis"]
+UNVERSIONED_PATHS = ["/health", "/versions", "/metrics", "/genesis"]
 """str[]: paths that don't use the version path prefix"""
-no_auth = []
+NO_AUTH = []
 """str[]: requests that don't require authentication"""
 
 
 # transaction types
-payment_txn = "pay"
+PAYMENT_TXN = "pay"
 """str: indicates a payment transaction"""
-keyreg_txn = "keyreg"
+KEYREG_TXN = "keyreg"
 """str: indicates a key registration transaction"""
-assetconfig_txn = "acfg"
+ASSETCONFIG_TXN = "acfg"
 """str: indicates an asset configuration transaction"""
-assetfreeze_txn = "afrz"
+ASSETFREEZE_TXN = "afrz"
 """str: indicates an asset freeze transaction"""
-assettransfer_txn = "axfer"
+ASSETTRANSFER_TXN = "axfer"
 """str: indicates an asset transfer transaction"""
-appcall_txn = "appl"
+APPCALL_TXN = "appl"
 """str: indicates an app call transaction, allows creating, deleting, and interacting with an application"""
 
 # note field types
-note_field_type_deposit = "d"
+NOTE_FIELD_TYPE_DEPOSIT = "d"
 """str: indicates a signed deposit in NoteField"""
-note_field_type_bid = "b"
+NOTE_FIELD_TYPE_BID = "b"
 """str: indicates a signed bid in NoteField"""
-note_field_type_settlement = "s"
+NOTE_FIELD_TYPE_SETTLEMENT = "s"
 """str: indicates a signed settlement in NoteField"""
-note_field_type_params = "p"
+NOTE_FIELD_TYPE_PARAMS = "p"
 """str: indicates signed params in NoteField"""
 
 # prefixes
-txid_prefix = b"TX"
+TXID_PREFIX = b"TX"
 """bytes: transaction prefix when signing"""
-tgid_prefix = b"TG"
+TGID_PREFIX = b"TG"
 """bytes: transaction group prefix when computing the group ID"""
-bid_prefix = b"aB"
+BID_PREFIX = b"aB"
 """bytes: bid prefix when signing"""
-bytes_prefix = b"MX"
+BYTES_PREFIX = b"MX"
 """bytes: bytes prefix when signing"""
-msig_addr_prefix = "MultisigAddr"
+MSIG_ADDR_PREFIX = "MultisigAddr"
 """str: prefix for multisig addresses"""
-logic_prefix = b"Program"
+LOGIC_PREFIX = b"Program"
 """bytes: program (logic) prefix when signing"""
-logic_data_prefix = b"ProgData"
+LOGIC_DATA_PREFIX = b"ProgData"
 """bytes: program (logic) data prefix when signing"""
 
 
-hash_len = 32
+HASH_LEN = 32
 """int: how long various hash-like fields should be"""
-check_sum_len_bytes = 4
+CHECK_SUM_LEN_BYTES = 4
 """int: how long checksums should be"""
-key_len_bytes = 32
+KEN_LEN_BYTES = 32
 """int: how long addresses are in bytes"""
-address_len = 58
+ADDRESS_LEN = 58
 """int: how long addresses are in base32, including the checksum"""
-mnemonic_len = 25
+MNEMONIC_LEN = 25
 """int: how long mnemonic phrases are"""
-min_txn_fee = 1000
+MIN_TXN_FEE = 1000
 """int: minimum transaction fee"""
-microalgos_to_algos_ratio = 1000000
+MICROALGOS_TO_ALGOS_RATIO = 1000000
 """int: how many microalgos per algo"""
-metadata_length = 32
+METADATA_LENGTH = 32
 """int: length of asset metadata"""
-note_max_length = 1024
+NOTE_MAX_LENGTH = 1024
 """int: maximum length of note field"""
-lease_length = 32
+LEASE_LENGTH = 32
 """int: byte length of leases"""
-multisig_account_limit = 255
+MULTISIG_ACCOUNT_LIMIT = 255
 """int: maximum number of addresses in a multisig account"""
-tx_group_limit = 16
+TX_GROUP_LIMIT = 16
 """int: maximum number of transaction in a transaction group"""
-max_asset_decimals = 19
+MAX_ASSET_DECIMALS = 19
 """int: maximum value for decimals in assets"""
 
 # logic sig related
-logic_sig_max_cost = 20000
+LOGIC_SIG_MAX_COST = 20000
 """int: max execution cost of a teal program"""
-logic_sig_max_size = 1000
+LOGIC_SIG_MAX_SIZE = 1000
 """int: max size of a teal program and its arguments in bytes"""
+
+#for backward compatibility:
+kmd_auth_header = KMD_AUTH_HEADER 
+algod_auth_header = ALGOD_AUTH_HEADER 
+indexer_auth_header = INDEXER_AUTH_HEADER 
+unversioned_paths = UNVERSIONED_PATHS 
+no_auth = NO_AUTH 
+payment_txn = PAYMENT_TXN 
+keyreg_txn = KEYREG_TXN 
+assetconfig_txn = ASSETCONFIG_TXN 
+assetfreeze_txn = ASSETFREEZE_TXN 
+assettransfer_txn = ASSETTRANSFER_TXN 
+appcall_txn = APPCALL_TXN 
+note_field_type_deposit = NOTE_FIELD_TYPE_DEPOSIT
+note_field_type_bid = NOTE_FIELD_TYPE_BID
+note_field_type_settlement = NOTE_FIELD_TYPE_SETTLEMENT
+note_field_type_params = NOTE_FIELD_TYPE_PARAMS
+txid_prefix = TXID_PREFIX
+tgid_prefix = TGID_PREFIX
+bid_prefix = BID_PREFIX
+bytes_prefix = BYTES_PREFIX
+msig_addr_prefix = MSIG_ADDR_PREFIX
+logic_prefix = LOGIC_PREFIX
+logic_data_prefix = LOGIC_DATA_PREFIX
+hash_len = HASH_LEN
+check_sum_len_bytes = CHECK_SUM_LEN_BYTES
+key_len_bytes = KEN_LEN_BYTES
+address_len = ADDRESS_LEN
+mnemonic_len = MNEMONIC_LEN
+min_txn_fee = MIN_TXN_FEE
+microalgos_to_algos_ratio = MICROALGOS_TO_ALGOS_RATIO
+metadata_length = METADATA_LENGTH
+note_max_length = NOTE_MAX_LENGTH
+lease_length = LEASE_LENGTH
+multisig_account_limit = MULTISIG_ACCOUNT_LIMIT
+tx_group_limit = TX_GROUP_LIMIT
+max_asset_decimals = MAX_ASSET_DECIMALS
+logic_sig_max_cost = LOGIC_SIG_MAX_COST
+logic_sig_max_size = LOGIC_SIG_MAX_SIZE

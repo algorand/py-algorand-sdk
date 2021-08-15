@@ -73,7 +73,9 @@ def future_msgpack_decode(enc):
     if "msig" in decoded:
         return future.transaction.MultisigTransaction.undictify(decoded)
     if "lsig" in decoded:
-        return future.transaction.LogicSigTransaction.undictify(decoded)
+        if "txn" in decoded:
+            return future.transaction.LogicSigTransaction.undictify(decoded)
+        return future.transaction.LogicSigAccount.undictify(decoded)
     if "sig" in decoded:
         return future.transaction.SignedTransaction.undictify(decoded)
     if "txn" in decoded:
