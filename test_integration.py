@@ -513,6 +513,7 @@ class TestIntegration(unittest.TestCase):
             send = self.acl.send_transactions([stxn1])
             self.assertEqual(send, txn.get_txid())
         except error.AlgodHTTPError as ex:
+            self.assertNotIn('{"message"', str(ex))
             self.assertIn(
                 "TransactionPool.Remember: transaction groups not supported",
                 str(ex),
