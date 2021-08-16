@@ -72,8 +72,8 @@ class IndexerClient:
         except urllib.error.HTTPError as e:
             e = e.read().decode("utf-8")
             try:
-                raise error.IndexerHTTPError(json.loads(e)["message"])
-            except:
+                e = json.loads(e)["message"]
+            finally:
                 raise error.IndexerHTTPError(e)
         response_dict = json.loads(resp.read().decode("utf-8"))
 
