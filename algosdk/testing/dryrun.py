@@ -7,23 +7,32 @@ from typing import List, Union
 from algosdk.constants import payment_txn, appcall_txn
 from algosdk.future import transaction
 from algosdk.encoding import encode_address, msgpack_encode
-from algosdk.v2client.models import DryrunRequest, DryrunSource, \
-    Application, ApplicationParams, ApplicationStateSchema, Account, \
-    TealKeyValue
+from algosdk.v2client.models import (
+    DryrunRequest,
+    DryrunSource,
+    Application,
+    ApplicationParams,
+    ApplicationStateSchema,
+    Account,
+    TealKeyValue,
+)
 
 
 ZERO_ADDRESS = encode_address(bytes(32))
 PRINTABLE = frozenset(string.printable)
 
+
 @dataclass
 class LSig:
     """Logic Sig program parameters"""
+
     args: List[bytes] = None
 
 
 @dataclass
 class App:
     """Application program parameters"""
+
     creator: str = ZERO_ADDRESS
     round: int = None
     app_idx: int = 0
@@ -40,7 +49,15 @@ class DryrunTestCaseMixin:
     Expects self.algo_client to be initialized in TestCase.setUp
     """
 
-    def assertPass(self, prog_drr_txns, lsig=None, app=None, sender=ZERO_ADDRESS, txn_index=None, msg=None):
+    def assertPass(
+        self,
+        prog_drr_txns,
+        lsig=None,
+        app=None,
+        sender=ZERO_ADDRESS,
+        txn_index=None,
+        msg=None,
+    ):
         """
         Asserts that all programs pass.
         By default it uses logic sig mode with args passed in lsig object.
@@ -58,9 +75,25 @@ class DryrunTestCaseMixin:
             TypeError: program is not bytes or str
         """
 
-        self.assertStatus(prog_drr_txns, "PASS", lsig=lsig, app=app, sender=sender, txn_index=txn_index, msg=msg)
+        self.assertStatus(
+            prog_drr_txns,
+            "PASS",
+            lsig=lsig,
+            app=app,
+            sender=sender,
+            txn_index=txn_index,
+            msg=msg,
+        )
 
-    def assertReject(self, prog_drr_txns, lsig=None, app=None, sender=ZERO_ADDRESS, txn_index=None, msg=None):
+    def assertReject(
+        self,
+        prog_drr_txns,
+        lsig=None,
+        app=None,
+        sender=ZERO_ADDRESS,
+        txn_index=None,
+        msg=None,
+    ):
         """
         Asserts any program is rejected.
         By default it uses logic sig mode with args passed in lsig object.
@@ -78,9 +111,26 @@ class DryrunTestCaseMixin:
             TypeError: program is not bytes or str
         """
 
-        self.assertStatus(prog_drr_txns, "REJECT", lsig=lsig, app=app, sender=sender, txn_index=txn_index, msg=msg)
+        self.assertStatus(
+            prog_drr_txns,
+            "REJECT",
+            lsig=lsig,
+            app=app,
+            sender=sender,
+            txn_index=txn_index,
+            msg=msg,
+        )
 
-    def assertStatus(self, prog_drr_txns, status, lsig=None, app=None, sender=ZERO_ADDRESS, txn_index=None, msg=None):
+    def assertStatus(
+        self,
+        prog_drr_txns,
+        status,
+        lsig=None,
+        app=None,
+        sender=ZERO_ADDRESS,
+        txn_index=None,
+        msg=None,
+    ):
         """
         Asserts that program completes with the status.
         By default it uses logic sig mode with args passed in lsig object.
@@ -100,8 +150,12 @@ class DryrunTestCaseMixin:
         """
         txns_res = self._checked_request(prog_drr_txns, lsig, app, sender)
 
-        if txn_index is not None and (txn_index < 0 or txn_index >= len(txns_res)):
-            self._fail(f"txn index {txn_index} is out of range [0, {len(txns_res)})")
+        if txn_index is not None and (
+            txn_index < 0 or txn_index >= len(txns_res)
+        ):
+            self._fail(
+                f"txn index {txn_index} is out of range [0, {len(txns_res)})"
+            )
 
         assert_all = True
         all_msgs = []
@@ -114,13 +168,17 @@ class DryrunTestCaseMixin:
                 continue
 
             msgs = []
-            if "logic-sig-messages" in txn_res and \
-                    txn_res["logic-sig-messages"] is not None and \
-                    len(txn_res["logic-sig-messages"]) > 0:
+            if (
+                "logic-sig-messages" in txn_res
+                and txn_res["logic-sig-messages"] is not None
+                and len(txn_res["logic-sig-messages"]) > 0
+            ):
                 msgs = txn_res["logic-sig-messages"]
-            elif "app-call-messages" in txn_res and \
-                    txn_res["app-call-messages"] is not None and \
-                    len(txn_res["app-call-messages"]) > 0:
+            elif (
+                "app-call-messages" in txn_res
+                and txn_res["app-call-messages"] is not None
+                and len(txn_res["app-call-messages"]) > 0
+            ):
                 msgs = txn_res["app-call-messages"]
             else:
                 self._fail("no messages from dryrun")
@@ -131,7 +189,15 @@ class DryrunTestCaseMixin:
         if not assert_all:
             self.assertIn(status, all_msgs, msg=msg)
 
-    def assertNoError(self, prog_drr_txns, lsig=None, app=None, sender=ZERO_ADDRESS, txn_index=None, msg=None):
+    def assertNoError(
+        self,
+        prog_drr_txns,
+        lsig=None,
+        app=None,
+        sender=ZERO_ADDRESS,
+        txn_index=None,
+        msg=None,
+    ):
         """
         Asserts that there are no errors.
         for example, compilation errors or application state initialization errors.
@@ -153,7 +219,16 @@ class DryrunTestCaseMixin:
         error = Helper.find_error(drr, txn_index=txn_index)
         self.assertFalse(error, msg)
 
-    def assertError(self, prog_drr_txns, pattern=None, lsig=None, app=None, sender=ZERO_ADDRESS, txn_index=None, msg=None):
+    def assertError(
+        self,
+        prog_drr_txns,
+        pattern=None,
+        lsig=None,
+        app=None,
+        sender=ZERO_ADDRESS,
+        txn_index=None,
+        msg=None,
+    ):
         """
         Asserts that there are no errors.
         for example, compilation errors or application state initialization errors.
@@ -178,7 +253,15 @@ class DryrunTestCaseMixin:
         if pattern is not None:
             self.assertIn(pattern, error)
 
-    def assertGlobalStateContains(self, prog_drr_txns, delta_value, app=None, sender=ZERO_ADDRESS, txn_index=None, msg=None):
+    def assertGlobalStateContains(
+        self,
+        prog_drr_txns,
+        delta_value,
+        app=None,
+        sender=ZERO_ADDRESS,
+        txn_index=None,
+        msg=None,
+    ):
         """
         Asserts that execution of the program has this global delta value
 
@@ -191,9 +274,15 @@ class DryrunTestCaseMixin:
             TypeError: program is not bytes or str
         """
 
-        txns_res = self._checked_request(prog_drr_txns, lsig=None, app=app, sender=sender)
-        if txn_index is not None and (txn_index < 0 or txn_index >= len(txns_res)):
-            self._fail(f"txn index {txn_index} is out of range [0, {len(txns_res)})")
+        txns_res = self._checked_request(
+            prog_drr_txns, lsig=None, app=app, sender=sender
+        )
+        if txn_index is not None and (
+            txn_index < 0 or txn_index >= len(txns_res)
+        ):
+            self._fail(
+                f"txn index {txn_index} is out of range [0, {len(txns_res)})"
+            )
 
         found = False
         all_global_deltas = []
@@ -201,13 +290,21 @@ class DryrunTestCaseMixin:
             # skip if txn_index is set
             if txn_index is not None and idx != txn_index:
                 continue
-            if "global-delta" in txn_res and \
-                    txn_res["global-delta"] is not None and \
-                    len(txn_res["global-delta"]) > 0:
+            if (
+                "global-delta" in txn_res
+                and txn_res["global-delta"] is not None
+                and len(txn_res["global-delta"]) > 0
+            ):
 
-                found = Helper.find_delta_value(txn_res["global-delta"], delta_value)
+                found = Helper.find_delta_value(
+                    txn_res["global-delta"], delta_value
+                )
                 if not found and idx == txn_index:
-                    msg = msg if msg is not None else f"{delta_value} not found in {txn_res['global-delta']}"
+                    msg = (
+                        msg
+                        if msg is not None
+                        else f"{delta_value} not found in {txn_res['global-delta']}"
+                    )
                     self._fail(msg)
                 if found:
                     break
@@ -216,11 +313,23 @@ class DryrunTestCaseMixin:
                 self._fail("no global state from dryrun")
 
         if not found:
-            msg = msg if msg is not None else f"{delta_value} not found in any of {all_global_deltas}"
+            msg = (
+                msg
+                if msg is not None
+                else f"{delta_value} not found in any of {all_global_deltas}"
+            )
             self._fail(msg)
 
-
-    def assertLocalStateContains(self, prog_drr_txns, addr, delta_value, app=None, sender=ZERO_ADDRESS, txn_index=None, msg=None):
+    def assertLocalStateContains(
+        self,
+        prog_drr_txns,
+        addr,
+        delta_value,
+        app=None,
+        sender=ZERO_ADDRESS,
+        txn_index=None,
+        msg=None,
+    ):
         """
         Asserts that execution of the program has this global delta value
 
@@ -234,9 +343,15 @@ class DryrunTestCaseMixin:
             TypeError: program is not bytes or str
         """
 
-        txns_res = self._checked_request(prog_drr_txns, lsig=None, app=app, sender=sender)
-        if txn_index is not None and (txn_index < 0 or txn_index >= len(txns_res)):
-            self._fail(f"txn index {txn_index} is out of range [0, {len(txns_res)})")
+        txns_res = self._checked_request(
+            prog_drr_txns, lsig=None, app=app, sender=sender
+        )
+        if txn_index is not None and (
+            txn_index < 0 or txn_index >= len(txns_res)
+        ):
+            self._fail(
+                f"txn index {txn_index} is out of range [0, {len(txns_res)})"
+            )
 
         found = False
         all_local_deltas = []
@@ -244,31 +359,47 @@ class DryrunTestCaseMixin:
             # skip if txn_index is set
             if txn_index is not None and idx != txn_index:
                 continue
-            if "local-deltas" in txn_res and \
-                    txn_res["local-deltas"] is not None and \
-                    len(txn_res["local-deltas"]) > 0:
+            if (
+                "local-deltas" in txn_res
+                and txn_res["local-deltas"] is not None
+                and len(txn_res["local-deltas"]) > 0
+            ):
 
                 for local_delta in txn_res["local-deltas"]:
                     addr_found = False
                     if local_delta["address"] == addr:
                         addr_found = True
-                        found = Helper.find_delta_value(local_delta["delta"], delta_value)
+                        found = Helper.find_delta_value(
+                            local_delta["delta"], delta_value
+                        )
                         if not found and idx == txn_index:
-                            msg = msg if msg is not None else f"{delta_value} not found in {local_delta['delta']}"
+                            msg = (
+                                msg
+                                if msg is not None
+                                else f"{delta_value} not found in {local_delta['delta']}"
+                            )
                             self._fail(msg)
                         if found:
                             break
                         all_local_deltas.extend(local_delta["delta"])
                 if not addr_found and idx == txn_index:
-                    self._fail(f"no address {addr} in local states from dryrun")
+                    self._fail(
+                        f"no address {addr} in local states from dryrun"
+                    )
             elif idx == txn_index:
                 self._fail("no local states from dryrun")
 
         if not found:
-            msg = msg if msg is not None else f"{delta_value} not found in any of {all_local_deltas}"
+            msg = (
+                msg
+                if msg is not None
+                else f"{delta_value} not found in any of {all_local_deltas}"
+            )
             self._fail(msg)
 
-    def dryrun_request(self, program, lsig=None, app=None, sender=ZERO_ADDRESS):
+    def dryrun_request(
+        self, program, lsig=None, app=None, sender=ZERO_ADDRESS
+    ):
         """
         Helper function for creation DryrunRequest and making the REST request
         from program source or compiled bytes
@@ -322,13 +453,16 @@ class DryrunTestCaseMixin:
                         apps.extend(acc.created_apps)
 
         drr = DryrunRequest(
-            txns=txns, accounts=accounts, round=rnd, apps=apps,
+            txns=txns,
+            accounts=accounts,
+            round=rnd,
+            apps=apps,
         )
         return self.algo_client.dryrun(drr)
 
     @staticmethod
     def default_address():
-        """ Helper function returning default zero addr"""
+        """Helper function returning default zero addr"""
         return ZERO_ADDRESS
 
     def _dryrun_request(self, prog_drr_txns, lsig, app, sender):
@@ -343,7 +477,9 @@ class DryrunTestCaseMixin:
             drr = self.dryrun_request(prog_drr_txns, lsig, app, sender)
         return drr
 
-    def _checked_request(self, prog_drr_txns, lsig=None, app=None, sender=ZERO_ADDRESS):
+    def _checked_request(
+        self, prog_drr_txns, lsig=None, app=None, sender=ZERO_ADDRESS
+    ):
         """
         Helper function to make a dryrun request and perform basic validation
         """
@@ -367,7 +503,9 @@ class Helper:
     """Utility functions for dryrun"""
 
     @classmethod
-    def build_dryrun_request(cls, program, lsig=None, app=None, sender=ZERO_ADDRESS):
+    def build_dryrun_request(
+        cls, program, lsig=None, app=None, sender=ZERO_ADDRESS
+    ):
         """
         Helper function for creation DryrunRequest object from a program.
         By default it uses logic sig mode
@@ -409,9 +547,11 @@ class Helper:
                 accounts = []
                 for acc in app.accounts:
                     if isinstance(acc, str):
-                        accounts.append(Account(
-                            address=acc,
-                        ))
+                        accounts.append(
+                            Account(
+                                address=acc,
+                            )
+                        )
                     else:
                         accounts.append(acc)
                 app.accounts = accounts
@@ -445,7 +585,9 @@ class Helper:
             else:
                 txns = [cls._build_logicsig_txn(program, txn, lsig)]
         elif isinstance(program, str):
-            source = DryrunSource(field_name=run_mode, source=program, txn_index=0)
+            source = DryrunSource(
+                field_name=run_mode, source=program, txn_index=0
+            )
             if run_mode != "lsig":
                 txns = [cls._build_appcall_signed_txn(txn, app)]
                 application = cls.sample_app(sender, app)
@@ -461,7 +603,10 @@ class Helper:
             raise TypeError("program must be bytes or str")
 
         return DryrunRequest(
-            txns=txns, sources=sources, apps=apps, accounts=accounts,
+            txns=txns,
+            sources=sources,
+            apps=apps,
+            accounts=accounts,
             round=rnd,
         )
 
@@ -472,7 +617,7 @@ class Helper:
         """
         # replacing program with an empty one is OK since it set by source
         # LogicSig does not like None/invalid programs because of validation
-        program = program if isinstance(program, bytes) else b'\x01'
+        program = program if isinstance(program, bytes) else b"\x01"
         logicsig = transaction.LogicSig(program, lsig.args)
         return transaction.LogicSigTransaction(txn, logicsig)
 
@@ -493,9 +638,13 @@ class Helper:
         """
         Helper function for creation Transaction for dryrun
         """
-        sp = transaction.SuggestedParams(int(1000), int(1), int(100), "", flat_fee=True)
+        sp = transaction.SuggestedParams(
+            int(1000), int(1), int(100), "", flat_fee=True
+        )
         if txn_type == payment_txn:
-            txn = transaction.Transaction(sender, sp, None, None, payment_txn, None)
+            txn = transaction.Transaction(
+                sender, sp, None, None, payment_txn, None
+            )
         elif txn_type == appcall_txn:
             txn = transaction.ApplicationCallTxn(sender, sp, 0, 0)
         else:
@@ -520,7 +669,7 @@ class Helper:
             creator=creator,
             local_state_schema=ApplicationStateSchema(64, 64),
             global_state_schema=ApplicationStateSchema(64, 64),
-            global_state = app.global_state
+            global_state=app.global_state,
         )
 
         if app.on_complete == transaction.OnComplete.ClearStateOC:
@@ -543,11 +692,11 @@ class Helper:
                 if chr(b) not in PRINTABLE:
                     all_print = False
             if all_print:
-                return "\"" + value.decode("utf8") + "\""
+                return '"' + value.decode("utf8") + '"'
             else:
                 if len(value) == 32:  # address? hash?
                     return f"{encode_address(value)} ({value.hex()})"
-                elif len(value) < 16: # most likely bin number
+                elif len(value) < 16:  # most likely bin number
                     return "0x" + value.hex()
                 return value.hex()
         except UnicodeDecodeError:
@@ -572,7 +721,7 @@ class Helper:
         if "txns" not in drr or not isinstance(drr["txns"], list):
             return
 
-        for idx, txn_res in enumerate(drr['txns']):
+        for idx, txn_res in enumerate(drr["txns"]):
             msgs = []
             trace = []
             try:
@@ -602,7 +751,6 @@ class Helper:
                         result += f" error: {item['error']}"
                     print(result)
 
-
     @staticmethod
     def find_error(drr, txn_index=None):
         """
@@ -614,7 +762,9 @@ class Helper:
         except (KeyError, TypeError):
             pass
         if "txns" in drr and isinstance(drr["txns"], list):
-            if txn_index is not None and (txn_index < 0 or txn_index >= len(drr["txns"])):
+            if txn_index is not None and (
+                txn_index < 0 or txn_index >= len(drr["txns"])
+            ):
                 return f"txn index {txn_index} is out of range [0, {len(drr['txns'])})"
 
             for idx, txn_res in enumerate(drr["txns"]):
@@ -641,7 +791,9 @@ class Helper:
             value = value.encode("utf-8")
         return dict(
             action=1,  # set bytes
-            bytes=base64.b64encode(value).decode("utf-8")  # b64 input to string
+            bytes=base64.b64encode(value).decode(
+                "utf-8"
+            ),  # b64 input to string
         )
 
     @staticmethod
@@ -652,11 +804,11 @@ class Helper:
                 if delta["key"] == delta_value["key"]:
                     value = delta["value"]
                     if value["action"] == delta_value["value"]["action"]:
-                        if 'uint' in delta_value["value"]:
+                        if "uint" in delta_value["value"]:
                             if delta_value["value"]["uint"] == value["uint"]:
                                 found = True
                                 break
-                        elif 'bytes' in delta_value["value"]:
+                        elif "bytes" in delta_value["value"]:
                             if delta_value["value"]["bytes"] == value["bytes"]:
                                 found = True
                                 break

@@ -3,6 +3,7 @@ language: python
 python:
   - "3.7"
 script:
+  - black --check .
   - set -e
   - if [ -n "$DOCKER_PASSWORD" ]; then echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin ; fi
   - python3 test_unit.py

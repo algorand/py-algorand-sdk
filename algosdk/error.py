@@ -1,7 +1,8 @@
 class BadTxnSenderError(Exception):
     def __init__(self):
-        Exception.__init__(self, "transaction sender does not match multisig "
-                                 "parameters")
+        Exception.__init__(
+            self, "transaction sender does not match multisig parameters"
+        )
 
 
 class InvalidThresholdError(Exception):
@@ -11,8 +12,9 @@ class InvalidThresholdError(Exception):
 
 class InvalidSecretKeyError(Exception):
     def __init__(self):
-        Exception.__init__(self, "secret key has no corresponding public key "
-                                 "in multisig")
+        Exception.__init__(
+            self, "secret key has no corresponding public key in multisig"
+        )
 
 
 class MergeKeysMismatchError(Exception):
@@ -22,7 +24,9 @@ class MergeKeysMismatchError(Exception):
 
 class MergeAuthAddrMismatchError(Exception):
     def __init__(self):
-        Exception.__init__(self, "multisig transaction auth addresses do not match")
+        Exception.__init__(
+            self, "multisig transaction auth addresses do not match"
+        )
 
 
 class DuplicateSigMismatchError(Exception):
@@ -32,7 +36,10 @@ class DuplicateSigMismatchError(Exception):
 
 class LogicSigOverspecifiedSignature(Exception):
     def __init__(self):
-        Exception.__init__(self, "LogicSig has too many signatures. At most one of sig or msig may be present")
+        Exception.__init__(
+            self,
+            "LogicSig has too many signatures. At most one of sig or msig may be present",
+        )
 
 
 class LogicSigSigningKeyMissing(Exception):
@@ -89,7 +96,7 @@ class WrongLeaseLengthError(Exception):
 
 class WrongNoteType(Exception):
     def __init(self):
-        Exception.__init__(self, "note must be of type \"bytes\"")
+        Exception.__init__(self, 'note must be of type "bytes"')
 
 
 class WrongNoteLength(Exception):
@@ -104,39 +111,52 @@ class InvalidProgram(Exception):
 
 class TransactionGroupSizeError(Exception):
     def __init__(self):
-        Exception.__init__(self, "transaction groups are limited to 16 "
-                                 "transactions")
+        Exception.__init__(
+            self, "transaction groups are limited to 16 transactions"
+        )
 
 
 class MultisigAccountSizeError(Exception):
     def __init__(self):
-        Exception.__init__(self, "multisig accounts are limited to 256 "
-                                 "addresses")
+        Exception.__init__(
+            self, "multisig accounts are limited to 256 addresses"
+        )
 
 
 class OutOfRangeDecimalsError(Exception):
     def __init__(self):
-        Exception.__init__(self, "decimals must be between 0 and 19, "
-                                 "inclusive")
+        Exception.__init__(
+            self, "decimals must be between 0 and 19, inclusive"
+        )
 
 
 class EmptyAddressError(Exception):
     def __init__(self):
-        Exception.__init__(self, "manager, freeze, reserve, and clawback "
-                                 "should not be empty unless "
-                                 "strict_empty_address_check is set to False")
+        Exception.__init__(
+            self,
+            "manager, freeze, reserve, and clawback "
+            "should not be empty unless "
+            "strict_empty_address_check is set to False",
+        )
 
 
 class WrongContractError(Exception):
     def __init__(self, contract_type):
-        Exception.__init__(self, "Wrong contract provided; a "
-                           + contract_type + " contract is needed")
+        Exception.__init__(
+            self,
+            "Wrong contract provided; a "
+            + contract_type
+            + " contract is needed",
+        )
 
 
 class OverspecifiedRoundError(Exception):
     def __init__(self, contract_type):
-        Exception.__init__(self, "Two arguments were given for the round "
-                                 "or block number; please only give one")
+        Exception.__init__(
+            self,
+            "Two arguments were given for the round "
+            "or block number; please only give one",
+        )
 
 
 class UnderspecifiedRoundError(Exception):
@@ -146,8 +166,11 @@ class UnderspecifiedRoundError(Exception):
 
 class ZeroAddressError(Exception):
     def __init__(self):
-        Exception.__init__(self, "For the zero address, please specify "
-            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ")
+        Exception.__init__(
+            self,
+            "For the zero address, please specify "
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+        )
 
 
 class KeyregOnlineTxnInitError(Exception):

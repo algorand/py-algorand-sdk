@@ -3,6 +3,7 @@
 
 import pprint
 
+
 class Account(object):
     """
     Attributes:
@@ -11,45 +12,64 @@ class Account(object):
       attribute_map (dict): The key is attribute name
                             and the value is json key in definition.
     """
+
     openapi_types = {
-        'address': 'str',
-        'amount': 'int',
-        'amount_without_pending_rewards': 'int',
-        'apps_local_state': 'list[ApplicationLocalState]',
-        'apps_total_schema': 'ApplicationStateSchema',
-        'assets': 'list[AssetHolding]',
-        'created_apps': 'list[Application]',
-        'created_assets': 'list[Asset]',
-        'participation': 'AccountParticipation',
-        'pending_rewards': 'int',
-        'reward_base': 'int',
-        'rewards': 'int',
-        'round': 'int',
-        'status': 'str',
-        'sig_type': 'str',
-        'auth_addr': 'str'
+        "address": "str",
+        "amount": "int",
+        "amount_without_pending_rewards": "int",
+        "apps_local_state": "list[ApplicationLocalState]",
+        "apps_total_schema": "ApplicationStateSchema",
+        "assets": "list[AssetHolding]",
+        "created_apps": "list[Application]",
+        "created_assets": "list[Asset]",
+        "participation": "AccountParticipation",
+        "pending_rewards": "int",
+        "reward_base": "int",
+        "rewards": "int",
+        "round": "int",
+        "status": "str",
+        "sig_type": "str",
+        "auth_addr": "str",
     }
 
     attribute_map = {
-        'address': 'address',
-        'amount': 'amount',
-        'amount_without_pending_rewards': 'amount-without-pending-rewards',
-        'apps_local_state': 'apps-local-state',
-        'apps_total_schema': 'apps-total-schema',
-        'assets': 'assets',
-        'created_apps': 'created-apps',
-        'created_assets': 'created-assets',
-        'participation': 'participation',
-        'pending_rewards': 'pending-rewards',
-        'reward_base': 'reward-base',
-        'rewards': 'rewards',
-        'round': 'round',
-        'status': 'status',
-        'sig_type': 'sig-type',
-        'auth_addr': 'auth-addr'
+        "address": "address",
+        "amount": "amount",
+        "amount_without_pending_rewards": "amount-without-pending-rewards",
+        "apps_local_state": "apps-local-state",
+        "apps_total_schema": "apps-total-schema",
+        "assets": "assets",
+        "created_apps": "created-apps",
+        "created_assets": "created-assets",
+        "participation": "participation",
+        "pending_rewards": "pending-rewards",
+        "reward_base": "reward-base",
+        "rewards": "rewards",
+        "round": "round",
+        "status": "status",
+        "sig_type": "sig-type",
+        "auth_addr": "auth-addr",
     }
 
-    def __init__(self, address=None, amount=None, amount_without_pending_rewards=None, apps_local_state=None, apps_total_schema=None, assets=None, created_apps=None, created_assets=None, participation=None, pending_rewards=None, reward_base=None, rewards=None, round=None, status=None, sig_type=None, auth_addr=None):  # noqa: E501
+    def __init__(
+        self,
+        address=None,
+        amount=None,
+        amount_without_pending_rewards=None,
+        apps_local_state=None,
+        apps_total_schema=None,
+        assets=None,
+        created_apps=None,
+        created_assets=None,
+        participation=None,
+        pending_rewards=None,
+        reward_base=None,
+        rewards=None,
+        round=None,
+        status=None,
+        sig_type=None,
+        auth_addr=None,
+    ):  # noqa: E501
         """Account - a model defined in OpenAPI"""  # noqa: E501
 
         self._address = None
@@ -436,8 +456,9 @@ class Account(object):
         allowed_values = ["sig", "msig", "lsig"]  # noqa: E501
         if sig_type not in allowed_values:  # noqa: E501
             raise ValueError(
-                "Invalid value for `sig_type` ({0}), must be one of {1}"  # noqa: E501
-                .format(sig_type, allowed_values)
+                "Invalid value for `sig_type` ({0}), must be one of {1}".format(  # noqa: E501
+                    sig_type, allowed_values
+                )
             )
 
         self._sig_type = sig_type
@@ -472,19 +493,23 @@ class Account(object):
         for attr, oas_attr in self.attribute_map.items():
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[oas_attr] = list(map(
-                    lambda x: x.dictify() \
-                    if hasattr(x, "dictify") else x,
-                    value
-                ))
+                result[oas_attr] = list(
+                    map(
+                        lambda x: x.dictify() if hasattr(x, "dictify") else x,
+                        value,
+                    )
+                )
             elif hasattr(value, "dictify"):
                 result[oas_attr] = value.dictify()
             elif isinstance(value, dict):
-                result[oas_attr] = dict(map(
-                    lambda item: (item[0], item[1].dictify())
-                    if hasattr(item[1], "dictify") else item,
-                    value.items()
-                ))
+                result[oas_attr] = dict(
+                    map(
+                        lambda item: (item[0], item[1].dictify())
+                        if hasattr(item[1], "dictify")
+                        else item,
+                        value.items(),
+                    )
+                )
             else:
                 result[oas_attr] = value
 

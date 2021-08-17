@@ -23,8 +23,14 @@ class Wallet:
         handle (str)
     """
 
-    def __init__(self, wallet_name, wallet_pswd, kmd_client,
-                 driver_name="sqlite", mdk=None):
+    def __init__(
+        self,
+        wallet_name,
+        wallet_pswd,
+        kmd_client,
+        driver_name="sqlite",
+        mdk=None,
+    ):
         self.name = wallet_name
         self.pswd = wallet_pswd
         self.kcl = kmd_client
@@ -35,8 +41,9 @@ class Wallet:
             if w["name"] == self.name:
                 self.id = w["id"]
         if not self.id:
-            w = self.kcl.create_wallet(self.name, self.pswd, driver_name,
-                                       master_deriv_key=mdk)
+            w = self.kcl.create_wallet(
+                self.name, self.pswd, driver_name, master_deriv_key=mdk
+            )
             self.id = w["id"]
         self.handle = self.kcl.init_wallet_handle(self.id, self.pswd)
 
@@ -222,8 +229,9 @@ class Wallet:
             MultisigTransaction: multisig transaction with added signature
         """
         self.automate_handle()
-        return self.kcl.sign_multisig_transaction(self.handle, self.pswd,
-                                                  public_key, mtx)
+        return self.kcl.sign_multisig_transaction(
+            self.handle, self.pswd, public_key, mtx
+        )
 
     def automate_handle(self):
         """

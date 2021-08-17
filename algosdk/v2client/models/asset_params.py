@@ -3,6 +3,7 @@
 
 import pprint
 
+
 class AssetParams(object):
     """
     Attributes:
@@ -11,37 +12,52 @@ class AssetParams(object):
       attribute_map (dict): The key is attribute name
                             and the value is json key in definition.
     """
+
     openapi_types = {
-        'clawback': 'str',
-        'creator': 'str',
-        'decimals': 'int',
-        'default_frozen': 'bool',
-        'freeze': 'str',
-        'manager': 'str',
-        'metadata_hash': 'str',
-        'name': 'str',
-        'reserve': 'str',
-        'total': 'int',
-        'unit_name': 'str',
-        'url': 'str'
+        "clawback": "str",
+        "creator": "str",
+        "decimals": "int",
+        "default_frozen": "bool",
+        "freeze": "str",
+        "manager": "str",
+        "metadata_hash": "str",
+        "name": "str",
+        "reserve": "str",
+        "total": "int",
+        "unit_name": "str",
+        "url": "str",
     }
 
     attribute_map = {
-        'clawback': 'clawback',
-        'creator': 'creator',
-        'decimals': 'decimals',
-        'default_frozen': 'default-frozen',
-        'freeze': 'freeze',
-        'manager': 'manager',
-        'metadata_hash': 'metadata-hash',
-        'name': 'name',
-        'reserve': 'reserve',
-        'total': 'total',
-        'unit_name': 'unit-name',
-        'url': 'url'
+        "clawback": "clawback",
+        "creator": "creator",
+        "decimals": "decimals",
+        "default_frozen": "default-frozen",
+        "freeze": "freeze",
+        "manager": "manager",
+        "metadata_hash": "metadata-hash",
+        "name": "name",
+        "reserve": "reserve",
+        "total": "total",
+        "unit_name": "unit-name",
+        "url": "url",
     }
 
-    def __init__(self, clawback=None, creator=None, decimals=None, default_frozen=None, freeze=None, manager=None, metadata_hash=None, name=None, reserve=None, total=None, unit_name=None, url=None):  # noqa: E501
+    def __init__(
+        self,
+        clawback=None,
+        creator=None,
+        decimals=None,
+        default_frozen=None,
+        freeze=None,
+        manager=None,
+        metadata_hash=None,
+        name=None,
+        reserve=None,
+        total=None,
+        unit_name=None,
+        url=None,
+    ):  # noqa: E501
         """AssetParams - a model defined in OpenAPI"""  # noqa: E501
 
         self._clawback = None
@@ -362,19 +378,23 @@ class AssetParams(object):
         for attr, oas_attr in self.attribute_map.items():
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[oas_attr] = list(map(
-                    lambda x: x.dictify() \
-                    if hasattr(x, "dictify") else x,
-                    value
-                ))
+                result[oas_attr] = list(
+                    map(
+                        lambda x: x.dictify() if hasattr(x, "dictify") else x,
+                        value,
+                    )
+                )
             elif hasattr(value, "dictify"):
                 result[oas_attr] = value.dictify()
             elif isinstance(value, dict):
-                result[oas_attr] = dict(map(
-                    lambda item: (item[0], item[1].dictify())
-                    if hasattr(item[1], "dictify") else item,
-                    value.items()
-                ))
+                result[oas_attr] = dict(
+                    map(
+                        lambda item: (item[0], item[1].dictify())
+                        if hasattr(item[1], "dictify")
+                        else item,
+                        value.items(),
+                    )
+                )
             else:
                 result[oas_attr] = value
 

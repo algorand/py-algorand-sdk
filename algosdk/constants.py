@@ -87,18 +87,18 @@ LOGIC_SIG_MAX_COST = 20000
 LOGIC_SIG_MAX_SIZE = 1000
 """int: max size of a teal program and its arguments in bytes"""
 
-#for backward compatibility:
-kmd_auth_header = KMD_AUTH_HEADER 
-algod_auth_header = ALGOD_AUTH_HEADER 
-indexer_auth_header = INDEXER_AUTH_HEADER 
-unversioned_paths = UNVERSIONED_PATHS 
-no_auth = NO_AUTH 
-payment_txn = PAYMENT_TXN 
-keyreg_txn = KEYREG_TXN 
-assetconfig_txn = ASSETCONFIG_TXN 
-assetfreeze_txn = ASSETFREEZE_TXN 
-assettransfer_txn = ASSETTRANSFER_TXN 
-appcall_txn = APPCALL_TXN 
+# for backward compatibility:
+kmd_auth_header = KMD_AUTH_HEADER
+algod_auth_header = ALGOD_AUTH_HEADER
+indexer_auth_header = INDEXER_AUTH_HEADER
+unversioned_paths = UNVERSIONED_PATHS
+no_auth = NO_AUTH
+payment_txn = PAYMENT_TXN
+keyreg_txn = KEYREG_TXN
+assetconfig_txn = ASSETCONFIG_TXN
+assetfreeze_txn = ASSETFREEZE_TXN
+assettransfer_txn = ASSETTRANSFER_TXN
+appcall_txn = APPCALL_TXN
 note_field_type_deposit = NOTE_FIELD_TYPE_DEPOSIT
 note_field_type_bid = NOTE_FIELD_TYPE_BID
 note_field_type_settlement = NOTE_FIELD_TYPE_SETTLEMENT

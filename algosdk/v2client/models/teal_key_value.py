@@ -3,6 +3,7 @@
 
 import pprint
 
+
 class TealKeyValue(object):
     """
     Attributes:
@@ -11,15 +12,10 @@ class TealKeyValue(object):
       attribute_map (dict): The key is attribute name
                             and the value is json key in definition.
     """
-    openapi_types = {
-        'key': 'str',
-        'value': 'TealValue'
-    }
 
-    attribute_map = {
-        'key': 'key',
-        'value': 'value'
-    }
+    openapi_types = {"key": "str", "value": "TealValue"}
+
+    attribute_map = {"key": "key", "value": "value"}
 
     def __init__(self, key=None, value=None):  # noqa: E501
         """TealKeyValue - a model defined in OpenAPI"""  # noqa: E501
@@ -79,19 +75,23 @@ class TealKeyValue(object):
         for attr, oas_attr in self.attribute_map.items():
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[oas_attr] = list(map(
-                    lambda x: x.dictify() \
-                    if hasattr(x, "dictify") else x,
-                    value
-                ))
+                result[oas_attr] = list(
+                    map(
+                        lambda x: x.dictify() if hasattr(x, "dictify") else x,
+                        value,
+                    )
+                )
             elif hasattr(value, "dictify"):
                 result[oas_attr] = value.dictify()
             elif isinstance(value, dict):
-                result[oas_attr] = dict(map(
-                    lambda item: (item[0], item[1].dictify())
-                    if hasattr(item[1], "dictify") else item,
-                    value.items()
-                ))
+                result[oas_attr] = dict(
+                    map(
+                        lambda item: (item[0], item[1].dictify())
+                        if hasattr(item[1], "dictify")
+                        else item,
+                        value.items(),
+                    )
+                )
             else:
                 result[oas_attr] = value
 

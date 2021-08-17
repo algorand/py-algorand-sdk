@@ -13,6 +13,7 @@ a file named 'environment.py in this directory. Otherwise all of this would
 be in the v2_steps.py file.
 """
 
+
 def encode_bytes(d):
     if isinstance(d, dict):
         for k, v in d.items():
@@ -52,14 +53,16 @@ class PathsHandler(http.server.SimpleHTTPRequestHandler):
         m = bytes(m, "ascii")
         self.wfile.write(m)
 
+
 def get_status_to_use():
-            f = open("test/features/resources/mock_response_status", "r")
-            status = f.read()
-            f.close()
-            #overwrite to default 200 so that tests that don't write above file operate properly
-            with open("test/features/resources/mock_response_status", "w") as f:
-                f.write('200')
-            return int(status)
+    f = open("test/features/resources/mock_response_status", "r")
+    status = f.read()
+    f.close()
+    # overwrite to default 200 so that tests that don't write above file operate properly
+    with open("test/features/resources/mock_response_status", "w") as f:
+        f.write("200")
+    return int(status)
+
 
 class FileHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
@@ -82,12 +85,13 @@ class FileHandler(http.server.SimpleHTTPRequestHandler):
             s = f.read()
             f.close()
             if "base64" in mock_response_path:
-                s = encode_bytes(msgpack.unpackb(base64.b64decode(s), raw=False))
+                s = encode_bytes(
+                    msgpack.unpackb(base64.b64decode(s), raw=False)
+                )
                 self.wfile.write(bytes(json.dumps(s), "ascii"))
             else:
                 s = bytes(s, "ascii")
                 self.wfile.write(s)
-
 
     def do_POST(self):
         self.send_response(200)
@@ -108,14 +112,18 @@ def before_all(context):
     socketserver.TCPServer.allow_reuse_address = True
     context.path_server = socketserver.TCPServer(("", 0), PathsHandler)
     _, context.path_server_port = context.path_server.server_address
-    context.path_thread = threading.Thread(target=context.path_server.serve_forever)
+    context.path_thread = threading.Thread(
+        target=context.path_server.serve_forever
+    )
     context.path_thread.start()
 
     # Install route server
     socketserver.TCPServer.allow_reuse_address = True
     context.response_server = socketserver.TCPServer(("", 0), FileHandler)
     _, context.response_server_port = context.response_server.server_address
-    context.response_thread = threading.Thread(target=context.response_server.serve_forever)
+    context.response_thread = threading.Thread(
+        target=context.response_server.serve_forever
+    )
     context.response_thread.start()
 
 
