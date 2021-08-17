@@ -3,7 +3,7 @@
 from algosdk import account
 from algosdk.future import transaction
 
-# his transaction must be sent from the account specified as the freeze manager for the asset
+# this transaction must be sent from the account specified as the freeze manager for the asset
 freeze_private_key, freeze_address = account.generate_account()
 
 fee_per_byte = 10

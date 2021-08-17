@@ -4,10 +4,8 @@ from algosdk import account, algod
 from algosdk.future import transaction
 import tokens
 
-(
-    sender_private_key,
-    sender,
-) = account.generate_account()  # this should be the current account
+# this should be the current account
+sender_private_key, sender = account.generate_account()
 rekey_private_key, rekey_address = account.generate_account()
 receiver = sender
 amount = 0

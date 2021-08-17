@@ -1,7 +1,7 @@
 class BadTxnSenderError(Exception):
     def __init__(self):
         Exception.__init__(
-            self, "transaction sender does not match multisig " "parameters"
+            self, "transaction sender does not match multisig parameters"
         )
 
 
@@ -13,7 +13,7 @@ class InvalidThresholdError(Exception):
 class InvalidSecretKeyError(Exception):
     def __init__(self):
         Exception.__init__(
-            self, "secret key has no corresponding public key " "in multisig"
+            self, "secret key has no corresponding public key in multisig"
         )
 
 
@@ -112,21 +112,21 @@ class InvalidProgram(Exception):
 class TransactionGroupSizeError(Exception):
     def __init__(self):
         Exception.__init__(
-            self, "transaction groups are limited to 16 " "transactions"
+            self, "transaction groups are limited to 16 transactions"
         )
 
 
 class MultisigAccountSizeError(Exception):
     def __init__(self):
         Exception.__init__(
-            self, "multisig accounts are limited to 256 " "addresses"
+            self, "multisig accounts are limited to 256 addresses"
         )
 
 
 class OutOfRangeDecimalsError(Exception):
     def __init__(self):
         Exception.__init__(
-            self, "decimals must be between 0 and 19, " "inclusive"
+            self, "decimals must be between 0 and 19, inclusive"
         )
 
 

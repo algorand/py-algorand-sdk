@@ -3,32 +3,16 @@
 from algosdk import account
 from algosdk.future import transaction
 
-(
-    manager_private_key,
-    manager_address,
-) = (
-    account.generate_account()
-)  # this transaction must be sent from the manager's account
-(
-    _,
-    new_freeze,
-) = (
-    account.generate_account()
-)  # account that can freeze other accounts for this asset
-(
-    _,
-    new_manager,
-) = account.generate_account()  # account able to update asset configuration
-(
-    _,
-    new_clawback,
-) = (
-    account.generate_account()
-)  # account allowed to take this asset from any other account
-(
-    _,
-    new_reserve,
-) = account.generate_account()  # account that holds reserves for this asset
+# this transaction must be sent from the manager's account
+manager_private_key, manager_address = account.generate_account()
+# account that can freeze other accounts for this asset
+_, new_freeze = account.generate_account()
+# account able to update asset configuration
+_, new_manager = account.generate_account()
+# account allowed to take this asset from any other account
+_, new_clawback = account.generate_account()
+# account that holds reserves for this asset
+_, new_reserve = account.generate_account()
 
 fee_per_byte = 10
 first_valid_round = 1000
