@@ -31,8 +31,9 @@ class IndexerClient:
         self.indexer_address = indexer_address
         self.headers = headers
 
-    def indexer_request(self, method, requrl, params=None, data=None,
-                        headers=None):
+    def indexer_request(
+        self, method, requrl, params=None, data=None, headers=None
+    ):
         """
         Execute a given request.
 
@@ -55,31 +56,36 @@ class IndexerClient:
             header.update(headers)
 
         if (requrl not in constants.no_auth) and self.indexer_token:
-            header.update({
-                constants.indexer_auth_header: self.indexer_token
-            })
+            header.update({constants.indexer_auth_header: self.indexer_token})
 
         if requrl not in constants.unversioned_paths:
             requrl = api_version_path_prefix + requrl
         if params:
             requrl = requrl + "?" + parse.urlencode(params)
 
-        req = Request(self.indexer_address+requrl, headers=header, method=method,
-                      data=data)
+        req = Request(
+            self.indexer_address + requrl,
+            headers=header,
+            method=method,
+            data=data,
+        )
 
         try:
             resp = urlopen(req)
         except urllib.error.HTTPError as e:
             e = e.read().decode("utf-8")
             try:
-                raise error.IndexerHTTPError(json.loads(e)["message"])
-            except:
+                e = json.loads(e)["message"]
+            finally:
                 raise error.IndexerHTTPError(e)
         response_dict = json.loads(resp.read().decode("utf-8"))
 
         def recursively_sort_dict(dictionary):
-            return {k: recursively_sort_dict(v) if isinstance(v, dict) else v
-                    for k, v in sorted(dictionary.items())}
+            return {
+                k: recursively_sort_dict(v) if isinstance(v, dict) else v
+                for k, v in sorted(dictionary.items())
+            }
+
         return recursively_sort_dict(response_dict)
 
     def health(self, **kwargs):
@@ -88,9 +94,19 @@ class IndexerClient:
         return self.indexer_request("GET", req, **kwargs)
 
     def accounts(
-        self, asset_id=None, limit=None, next_page=None, min_balance=None,
-        max_balance=None, block=None, auth_addr=None, application_id=None,
-        round_num=None, include_all=False, **kwargs):
+        self,
+        asset_id=None,
+        limit=None,
+        next_page=None,
+        min_balance=None,
+        max_balance=None,
+        block=None,
+        auth_addr=None,
+        application_id=None,
+        round_num=None,
+        include_all=False,
+        **kwargs
+    ):
         """
         Return accounts that match the search; microalgos are the default
         currency unless asset_id is specified, in which case the asset will
@@ -142,8 +158,18 @@ class IndexerClient:
             query["include-all"] = include_all
         return self.indexer_request("GET", req, query, **kwargs)
 
-    def asset_balances(self, asset_id, limit=None, next_page=None, min_balance=None,
-        max_balance=None, block=None, round_num=None, include_all=False, **kwargs):
+    def asset_balances(
+        self,
+        asset_id,
+        limit=None,
+        next_page=None,
+        min_balance=None,
+        max_balance=None,
+        block=None,
+        round_num=None,
+        include_all=False,
+        **kwargs
+    ):
         """
         Return accounts that hold the asset; microalgos are the default
         currency unless asset_id is specified, in which case the asset will
@@ -200,8 +226,9 @@ class IndexerClient:
 
         return self.indexer_request("GET", req, **kwargs)
 
-    def account_info(self, address, block=None, round_num=None,
-        include_all=False, **kwargs):
+    def account_info(
+        self, address, block=None, round_num=None, include_all=False, **kwargs
+    ):
         """
         Return account information.
 
@@ -235,12 +262,29 @@ class IndexerClient:
         return self.indexer_request("GET", req, **kwargs)
 
     def search_transactions(
-        self, limit=None, next_page=None, note_prefix=None, txn_type=None,
-        sig_type=None, txid=None, block=None, min_round=None, max_round=None,
-        asset_id=None, start_time=None, end_time=None, min_amount=None,
-        max_amount=None, address=None, address_role=None,
-        exclude_close_to=False, application_id=None, rekey_to=False,
-        round_num=None, **kwargs):
+        self,
+        limit=None,
+        next_page=None,
+        note_prefix=None,
+        txn_type=None,
+        sig_type=None,
+        txid=None,
+        block=None,
+        min_round=None,
+        max_round=None,
+        asset_id=None,
+        start_time=None,
+        end_time=None,
+        min_amount=None,
+        max_amount=None,
+        address=None,
+        address_role=None,
+        exclude_close_to=False,
+        application_id=None,
+        rekey_to=False,
+        round_num=None,
+        **kwargs
+    ):
         """
         Return a list of transactions satisfying the conditions.
 
@@ -332,11 +376,26 @@ class IndexerClient:
         return self.indexer_request("GET", req, query, **kwargs)
 
     def search_transactions_by_address(
-        self, address, limit=None, next_page=None, note_prefix=None,
-        txn_type=None, sig_type=None, txid=None, block=None, min_round=None,
-        max_round=None, asset_id=None, start_time=None, end_time=None,
-        min_amount=None, max_amount=None, rekey_to=False, round_num=None,
-        **kwargs):
+        self,
+        address,
+        limit=None,
+        next_page=None,
+        note_prefix=None,
+        txn_type=None,
+        sig_type=None,
+        txid=None,
+        block=None,
+        min_round=None,
+        max_round=None,
+        asset_id=None,
+        start_time=None,
+        end_time=None,
+        min_amount=None,
+        max_amount=None,
+        rekey_to=False,
+        round_num=None,
+        **kwargs
+    ):
         """
         Return a list of transactions satisfying the conditions for the address.
 
@@ -409,11 +468,29 @@ class IndexerClient:
 
         return self.indexer_request("GET", req, query, **kwargs)
 
-    def search_asset_transactions(self, asset_id, limit=None, next_page=None, note_prefix=None,
-        txn_type=None, sig_type=None, txid=None, block=None, min_round=None,
-        max_round=None, address=None, start_time=None, end_time=None,
-        min_amount=None, max_amount=None, address_role=None,
-        exclude_close_to=False, rekey_to=False, round_num=None, **kwargs):
+    def search_asset_transactions(
+        self,
+        asset_id,
+        limit=None,
+        next_page=None,
+        note_prefix=None,
+        txn_type=None,
+        sig_type=None,
+        txid=None,
+        block=None,
+        min_round=None,
+        max_round=None,
+        address=None,
+        start_time=None,
+        end_time=None,
+        min_amount=None,
+        max_amount=None,
+        address_role=None,
+        exclude_close_to=False,
+        rekey_to=False,
+        round_num=None,
+        **kwargs
+    ):
         """
         Return a list of transactions satisfying the conditions for the address.
 
@@ -499,8 +576,16 @@ class IndexerClient:
         return self.indexer_request("GET", req, query, **kwargs)
 
     def search_assets(
-        self, limit=None, next_page=None, creator=None, name=None, unit=None,
-        asset_id=None, include_all=False, **kwargs):
+        self,
+        limit=None,
+        next_page=None,
+        creator=None,
+        name=None,
+        unit=None,
+        asset_id=None,
+        include_all=False,
+        **kwargs
+    ):
         """
         Return assets that satisfy the conditions.
 
@@ -554,8 +639,14 @@ class IndexerClient:
             query["include-all"] = include_all
         return self.indexer_request("GET", req, query, **kwargs)
 
-    def applications(self, application_id, round=None, round_num=None,
-        include_all=False, **kwargs):
+    def applications(
+        self,
+        application_id,
+        round=None,
+        round_num=None,
+        include_all=False,
+        **kwargs
+    ):
         """
         Return applications that satisfy the conditions.
 
@@ -577,8 +668,15 @@ class IndexerClient:
         return self.indexer_request("GET", req, query, **kwargs)
 
     def search_applications(
-            self, application_id=None, round=None, limit=None, next_page=None,
-            round_num=None, include_all=False, **kwargs):
+        self,
+        application_id=None,
+        round=None,
+        limit=None,
+        next_page=None,
+        round_num=None,
+        include_all=False,
+        **kwargs
+    ):
         """
         Return applications that satisfy the conditions.
 
@@ -607,7 +705,7 @@ class IndexerClient:
 
         return self.indexer_request("GET", req, query, **kwargs)
 
-    
+
 def _specify_round(query, block, round_num):
     """
     Set the round number in the query dictionary from either 'block' or

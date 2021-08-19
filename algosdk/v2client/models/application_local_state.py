@@ -3,6 +3,7 @@
 
 import pprint
 
+
 class ApplicationLocalState(object):
     """
     Attributes:
@@ -11,17 +12,14 @@ class ApplicationLocalState(object):
       attribute_map (dict): The key is attribute name
                             and the value is json key in definition.
     """
+
     openapi_types = {
-        'id': 'int',
-        'schema': 'ApplicationStateSchema',
-        'key_value': 'list[TealKeyValue]'
+        "id": "int",
+        "schema": "ApplicationStateSchema",
+        "key_value": "list[TealKeyValue]",
     }
 
-    attribute_map = {
-        'id': 'id',
-        'schema': 'schema',
-        'key_value': 'key-value'
-    }
+    attribute_map = {"id": "id", "schema": "schema", "key_value": "key-value"}
 
     def __init__(self, id=None, schema=None, key_value=None):  # noqa: E501
         """ApplicationLocalState - a model defined in OpenAPI"""  # noqa: E501
@@ -108,19 +106,23 @@ class ApplicationLocalState(object):
         for attr, oas_attr in self.attribute_map.items():
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[oas_attr] = list(map(
-                    lambda x: x.dictify() \
-                    if hasattr(x, "dictify") else x,
-                    value
-                ))
+                result[oas_attr] = list(
+                    map(
+                        lambda x: x.dictify() if hasattr(x, "dictify") else x,
+                        value,
+                    )
+                )
             elif hasattr(value, "dictify"):
                 result[oas_attr] = value.dictify()
             elif isinstance(value, dict):
-                result[oas_attr] = dict(map(
-                    lambda item: (item[0], item[1].dictify())
-                    if hasattr(item[1], "dictify") else item,
-                    value.items()
-                ))
+                result[oas_attr] = dict(
+                    map(
+                        lambda item: (item[0], item[1].dictify())
+                        if hasattr(item[1], "dictify")
+                        else item,
+                        value.items(),
+                    )
+                )
             else:
                 result[oas_attr] = value
 

@@ -48,24 +48,30 @@ class TestIntegration(unittest.TestCase):
         account_1 = self.kcl.generate_key(handle, False)
 
         # get self.account_0 private key
-        private_key_0 = self.kcl.export_key(handle, wallet_pswd,
-                                            self.account_0)
+        private_key_0 = self.kcl.export_key(
+            handle, wallet_pswd, self.account_0
+        )
 
         # create bid
-        bid = auction.Bid(self.account_0, 10000, 260,
-                          "bid_id", account_1, "auc_id")
+        bid = auction.Bid(
+            self.account_0, 10000, 260, "bid_id", account_1, "auc_id"
+        )
         sb = bid.sign(private_key_0)
         nf = auction.NoteField(sb, constants.note_field_type_bid)
 
         # get suggested parameters and fee
-        gh = self.acl.versions()['genesis_hash_b64']
-        rnd = int(self.acl.status()['lastRound'])
+        gh = self.acl.versions()["genesis_hash_b64"]
+        rnd = int(self.acl.status()["lastRound"])
         sp = transaction.SuggestedParams(0, rnd, rnd + 100, gh)
 
         # create transaction
-        txn = transaction.PaymentTxn(self.account_0, sp,
-                                     account_1, 100000, note=base64.b64decode(
-                                        encoding.msgpack_encode(nf)))
+        txn = transaction.PaymentTxn(
+            self.account_0,
+            sp,
+            account_1,
+            100000,
+            note=base64.b64decode(encoding.msgpack_encode(nf)),
+        )
 
         # sign transaction with account
         signed_account = txn.sign(private_key_0)
@@ -78,8 +84,12 @@ class TestIntegration(unittest.TestCase):
 
     def test_handle(self):
         # create wallet; should raise error since wallet already exists
-        self.assertRaises(error.KMDHTTPError, self.kcl.create_wallet,
-                          wallet_name, wallet_pswd)
+        self.assertRaises(
+            error.KMDHTTPError,
+            self.kcl.create_wallet,
+            wallet_name,
+            wallet_pswd,
+        )
 
         # get the wallet ID
         wallets = self.kcl.list_wallets()
@@ -90,13 +100,20 @@ class TestIntegration(unittest.TestCase):
                 wallet_id = w["id"]
 
         # rename wallet
-        self.assertEqual(wallet_name + "newname", self.kcl.rename_wallet(
-                         wallet_id, wallet_pswd,
-                         wallet_name + "newname")["name"])
+        self.assertEqual(
+            wallet_name + "newname",
+            self.kcl.rename_wallet(
+                wallet_id, wallet_pswd, wallet_name + "newname"
+            )["name"],
+        )
 
         # change it back
-        self.assertEqual(wallet_name, self.kcl.rename_wallet(wallet_id,
-                         wallet_pswd, wallet_name)["name"])
+        self.assertEqual(
+            wallet_name,
+            self.kcl.rename_wallet(wallet_id, wallet_pswd, wallet_name)[
+                "name"
+            ],
+        )
 
         # get a new handle for the wallet
         handle = self.kcl.init_wallet_handle(wallet_id, wallet_pswd)
@@ -138,27 +155,29 @@ class TestIntegration(unittest.TestCase):
         account_2 = self.kcl.generate_key(handle, False)
 
         # get suggested parameters and fee
-        gh = self.acl.versions()['genesis_hash_b64']
-        rnd = int(self.acl.status()['lastRound'])
+        gh = self.acl.versions()["genesis_hash_b64"]
+        rnd = int(self.acl.status()["lastRound"])
         sp = transaction.SuggestedParams(0, rnd, rnd + 100, gh)
 
         # create transaction
-        txn = transaction.PaymentTxn(self.account_0, sp,
-                                     account_1, 100000)
+        txn = transaction.PaymentTxn(self.account_0, sp, account_1, 100000)
 
         # sign transaction with kmd
         signed_kmd = self.kcl.sign_transaction(handle, wallet_pswd, txn)
 
         # get self.account_0 private key
-        private_key_0 = self.kcl.export_key(handle, wallet_pswd,
-                                            self.account_0)
+        private_key_0 = self.kcl.export_key(
+            handle, wallet_pswd, self.account_0
+        )
         # sign transaction with account
         signed_account = txn.sign(private_key_0)
         txid = txn.get_txid()
 
         # check that signing both ways results in the same thing
-        self.assertEqual(encoding.msgpack_encode(signed_account),
-                         encoding.msgpack_encode(signed_kmd))
+        self.assertEqual(
+            encoding.msgpack_encode(signed_account),
+            encoding.msgpack_encode(signed_kmd),
+        )
 
         # send the transaction
         send = self.acl.send_transaction(signed_account)
@@ -171,8 +190,9 @@ class TestIntegration(unittest.TestCase):
         transaction.wait_for_confirmation(self.acl, txid, 10)
 
         # get transaction info two different ways
-        info_1 = self.acl.transactions_by_address(self.account_0, sp.first-2,
-                                                  sp.first+2)
+        info_1 = self.acl.transactions_by_address(
+            self.account_0, sp.first - 2, sp.first + 2
+        )
         info_2 = self.acl.transaction_info(self.account_0, txid)
         self.assertIn("transactions", info_1)
         self.assertIn("type", info_2)
@@ -203,14 +223,13 @@ class TestIntegration(unittest.TestCase):
         private_key_2 = self.kcl.export_key(handle, wallet_pswd, account_2)
 
         # get suggested parameters and fee
-        gh = self.acl.versions()['genesis_hash_b64']
-        rnd = int(self.acl.status()['lastRound'])
+        gh = self.acl.versions()["genesis_hash_b64"]
+        rnd = int(self.acl.status()["lastRound"])
         sp = transaction.SuggestedParams(0, rnd, rnd + 100, gh)
 
         # create multisig account and transaction
         msig = transaction.Multisig(1, 2, [account_1, account_2])
-        txn = transaction.PaymentTxn(msig.address(), sp,
-                                     self.account_0, 1000)
+        txn = transaction.PaymentTxn(msig.address(), sp, self.account_0, 1000)
 
         # check that the multisig account is valid
         msig.validate()
@@ -226,10 +245,12 @@ class TestIntegration(unittest.TestCase):
         mtx = transaction.MultisigTransaction(txn, msig)
 
         # sign using kmd
-        msig_1 = self.kcl.sign_multisig_transaction(handle, wallet_pswd,
-                                                    account_1, mtx)
-        signed_kmd = self.kcl.sign_multisig_transaction(handle, wallet_pswd,
-                                                        account_2, msig_1)
+        msig_1 = self.kcl.sign_multisig_transaction(
+            handle, wallet_pswd, account_1, mtx
+        )
+        signed_kmd = self.kcl.sign_multisig_transaction(
+            handle, wallet_pswd, account_2, msig_1
+        )
 
         # sign offline
         mtx1 = transaction.MultisigTransaction(txn, msig)
@@ -239,8 +260,10 @@ class TestIntegration(unittest.TestCase):
         signed_account = transaction.MultisigTransaction.merge([mtx1, mtx2])
 
         # check that they are the same
-        self.assertEqual(encoding.msgpack_encode(signed_account),
-                         encoding.msgpack_encode(signed_kmd))
+        self.assertEqual(
+            encoding.msgpack_encode(signed_account),
+            encoding.msgpack_encode(signed_kmd),
+        )
 
         # delete accounts
         del_1 = self.kcl.delete_key(handle, wallet_pswd, account_1)
@@ -303,13 +326,12 @@ class TestIntegration(unittest.TestCase):
         private_key_2 = w.export_key(account_2)
 
         # get suggested parameters and fee
-        gh = self.acl.versions()['genesis_hash_b64']
-        rnd = int(self.acl.status()['lastRound'])
+        gh = self.acl.versions()["genesis_hash_b64"]
+        rnd = int(self.acl.status()["lastRound"])
         sp = transaction.SuggestedParams(0, rnd, rnd + 100, gh)
 
         # create transaction
-        txn = transaction.PaymentTxn(self.account_0, sp,
-                                     account_1, 100000)
+        txn = transaction.PaymentTxn(self.account_0, sp, account_1, 100000)
 
         # sign transaction with wallet
         signed_kmd = w.sign_transaction(txn)
@@ -321,13 +343,14 @@ class TestIntegration(unittest.TestCase):
         signed_account = txn.sign(private_key_0)
 
         # check that signing both ways results in the same thing
-        self.assertEqual(encoding.msgpack_encode(signed_account),
-                         encoding.msgpack_encode(signed_kmd))
+        self.assertEqual(
+            encoding.msgpack_encode(signed_account),
+            encoding.msgpack_encode(signed_kmd),
+        )
 
         # create multisig account and transaction
         msig = transaction.Multisig(1, 2, [account_1, account_2])
-        txn = transaction.PaymentTxn(msig.address(), sp,
-                                     self.account_0, 1000)
+        txn = transaction.PaymentTxn(msig.address(), sp, self.account_0, 1000)
 
         # import multisig account
         msig_address = w.import_multisig(msig)
@@ -355,8 +378,10 @@ class TestIntegration(unittest.TestCase):
         signed_account = transaction.MultisigTransaction.merge([mtx1, mtx2])
 
         # check that they are the same
-        self.assertEqual(encoding.msgpack_encode(signed_account),
-                         encoding.msgpack_encode(signed_kmd))
+        self.assertEqual(
+            encoding.msgpack_encode(signed_account),
+            encoding.msgpack_encode(signed_kmd),
+        )
 
         # delete accounts
         del_1 = w.delete_key(account_1)
@@ -381,13 +406,12 @@ class TestIntegration(unittest.TestCase):
 
     def test_file_read_write(self):
         # get suggested parameters and fee
-        gh = self.acl.versions()['genesis_hash_b64']
-        rnd = int(self.acl.status()['lastRound'])
+        gh = self.acl.versions()["genesis_hash_b64"]
+        rnd = int(self.acl.status()["lastRound"])
         sp = transaction.SuggestedParams(0, rnd, rnd + 100, gh)
 
         # create transaction
-        txn = transaction.PaymentTxn(self.account_0, sp,
-                                     self.account_0, 1000)
+        txn = transaction.PaymentTxn(self.account_0, sp, self.account_0, 1000)
 
         # get private key
         w = wallet.Wallet(wallet_name, wallet_pswd, self.kcl)
@@ -404,10 +428,12 @@ class TestIntegration(unittest.TestCase):
         txns = transaction.retrieve_from_file(dir_path + "/raw.tx")
 
         # check that the transactions are still the same
-        self.assertEqual(encoding.msgpack_encode(txn),
-                         encoding.msgpack_encode(txns[0]))
-        self.assertEqual(encoding.msgpack_encode(stx),
-                         encoding.msgpack_encode(txns[1]))
+        self.assertEqual(
+            encoding.msgpack_encode(txn), encoding.msgpack_encode(txns[0])
+        )
+        self.assertEqual(
+            encoding.msgpack_encode(stx), encoding.msgpack_encode(txns[1])
+        )
 
         # delete the file
         os.remove("raw.tx")
@@ -419,7 +445,7 @@ class TestIntegration(unittest.TestCase):
     def test_status_after_block(self):
         last_round = self.acl.status()["lastRound"]
         curr_round = self.acl.status_after_block(last_round)["lastRound"]
-        self.assertEqual(last_round+1, curr_round)
+        self.assertEqual(last_round + 1, curr_round)
 
     def test_pending_transactions(self):
         result = self.acl.pending_transactions(0)
@@ -458,17 +484,17 @@ class TestIntegration(unittest.TestCase):
         handle = self.kcl.init_wallet_handle(wallet_id, wallet_pswd)
 
         # get private key
-        private_key_0 = self.kcl.export_key(handle, wallet_pswd,
-                                            self.account_0)
+        private_key_0 = self.kcl.export_key(
+            handle, wallet_pswd, self.account_0
+        )
 
         # get suggested parameters and fee
-        gh = self.acl.versions()['genesis_hash_b64']
-        rnd = int(self.acl.status()['lastRound'])
+        gh = self.acl.versions()["genesis_hash_b64"]
+        rnd = int(self.acl.status()["lastRound"])
         sp = transaction.SuggestedParams(0, rnd, rnd + 100, gh)
 
         # create transaction
-        txn = transaction.PaymentTxn(self.account_0, sp,
-                                     self.account_0, 1000)
+        txn = transaction.PaymentTxn(self.account_0, sp, self.account_0, 1000)
 
         # calculate group id
         gid = transaction.calculate_group_id([txn])
@@ -479,23 +505,27 @@ class TestIntegration(unittest.TestCase):
         # sign using transaction call
         stxn2 = txn.sign(private_key_0)
         # check that they are the same
-        self.assertEqual(encoding.msgpack_encode(stxn1),
-                         encoding.msgpack_encode(stxn2))
+        self.assertEqual(
+            encoding.msgpack_encode(stxn1), encoding.msgpack_encode(stxn2)
+        )
 
         try:
             send = self.acl.send_transactions([stxn1])
             self.assertEqual(send, txn.get_txid())
         except error.AlgodHTTPError as ex:
+            self.assertNotIn('{"message"', str(ex))
             self.assertIn(
                 "TransactionPool.Remember: transaction groups not supported",
-                str(ex))
+                str(ex),
+            )
 
 
 if __name__ == "__main__":
     to_run = [TestIntegration]
     loader = unittest.TestLoader()
-    suites = [loader.loadTestsFromTestCase(test_class)
-              for test_class in to_run]
+    suites = [
+        loader.loadTestsFromTestCase(test_class) for test_class in to_run
+    ]
     suite = unittest.TestSuite(suites)
     runner = unittest.TextTestRunner(verbosity=2)
     results = runner.run(suite)

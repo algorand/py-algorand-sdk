@@ -3,6 +3,7 @@
 
 import pprint
 
+
 class DryrunRequest(object):
     """
     Attributes:
@@ -11,27 +12,37 @@ class DryrunRequest(object):
       attribute_map (dict): The key is attribute name
                             and the value is json key in definition.
     """
+
     openapi_types = {
-        'txns': 'list[str]',
-        'accounts': 'list[Account]',
-        'apps': 'list[Application]',
-        'protocol_version': 'str',
-        'round': 'int',
-        'latest_timestamp': 'int',
-        'sources': 'list[DryrunSource]'
+        "txns": "list[str]",
+        "accounts": "list[Account]",
+        "apps": "list[Application]",
+        "protocol_version": "str",
+        "round": "int",
+        "latest_timestamp": "int",
+        "sources": "list[DryrunSource]",
     }
 
     attribute_map = {
-        'txns': 'txns',
-        'accounts': 'accounts',
-        'apps': 'apps',
-        'protocol_version': 'protocol-version',
-        'round': 'round',
-        'latest_timestamp': 'latest-timestamp',
-        'sources': 'sources'
+        "txns": "txns",
+        "accounts": "accounts",
+        "apps": "apps",
+        "protocol_version": "protocol-version",
+        "round": "round",
+        "latest_timestamp": "latest-timestamp",
+        "sources": "sources",
     }
 
-    def __init__(self, txns=None, accounts=None, apps=None, protocol_version=None, round=None, latest_timestamp=None, sources=None):  # noqa: E501
+    def __init__(
+        self,
+        txns=None,
+        accounts=None,
+        apps=None,
+        protocol_version=None,
+        round=None,
+        latest_timestamp=None,
+        sources=None,
+    ):  # noqa: E501
         """DryrunRequest - a model defined in OpenAPI"""  # noqa: E501
 
         self._txns = None
@@ -210,19 +221,23 @@ class DryrunRequest(object):
         for attr, oas_attr in self.attribute_map.items():
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[oas_attr] = list(map(
-                    lambda x: x.dictify() \
-                    if hasattr(x, "dictify") else x,
-                    value
-                ))
+                result[oas_attr] = list(
+                    map(
+                        lambda x: x.dictify() if hasattr(x, "dictify") else x,
+                        value,
+                    )
+                )
             elif hasattr(value, "dictify"):
                 result[oas_attr] = value.dictify()
             elif isinstance(value, dict):
-                result[oas_attr] = dict(map(
-                    lambda item: (item[0], item[1].dictify())
-                    if hasattr(item[1], "dictify") else item,
-                    value.items()
-                ))
+                result[oas_attr] = dict(
+                    map(
+                        lambda item: (item[0], item[1].dictify())
+                        if hasattr(item[1], "dictify")
+                        else item,
+                        value.items(),
+                    )
+                )
             else:
                 result[oas_attr] = value
 
