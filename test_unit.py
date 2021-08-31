@@ -3337,7 +3337,6 @@ if __name__ == "__main__":
         TestLogicSig,
         TestLogicSigAccount,
         TestLogicSigTransaction,
-        TestTemplate,
         TestDryrun,
     ]
     loader = unittest.TestLoader()
