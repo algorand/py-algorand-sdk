@@ -3009,28 +3009,28 @@ def assign_group_id(txns, address=None):
             result.append(tx)
     return result
 
-def wait_for_confirmation(algod_client, transaction_id, timeout=None, **kwargs):
+def wait_for_confirmation(algod_client, txid, wait_rounds=0, **kwargs):
     """
     Block until a pending transaction is confirmed by the network.
 
     Args:
-        transaction_id (str): transaction ID
-        timeout (int, optional): The number of rounds to block for before
+        txid (str): transaction ID
+        wait_rounds (int, optional): The number of rounds to block for before
             exiting with an Exception. If not supplied, there is no timeout.
     """
     last_round = algod_client.status()['last-round'] 
     current_round = last_round + 1
 
     while True:
-        # Check that the `timeout` has not passed
-        if timeout is not None and current_round > last_round + timeout:
-            raise error.AlgodResponseError(f"Wait for transaction id {transaction_id} timed out")
+        # Check that the `wait_rounds` has not passed
+        if wait_rounds != 0 and current_round > last_round + wait_rounds:
+            raise error.ConfirmationTimeoutError(f"Wait for transaction id {txid} timed out")
 
-        tx_info = algod_client.pending_transaction_info(transaction_id, **kwargs)
+        tx_info = algod_client.pending_transaction_info(txid, **kwargs)
 
         # The transaction has been confirmed
         if 'confirmed-round' in tx_info:
-            return
+            return tx_info
 
         # Wait until the block for the `current_round` is confirmed
         algod_client.status_after_block(current_round)

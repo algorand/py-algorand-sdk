@@ -374,15 +374,15 @@ class AlgodClient:
         req = "/genesis"
         return self.algod_request("GET", req, **kwargs)
     
-    def proof(self, round_num, transaction_id, **kwargs):
+    def proof(self, round_num, txid, **kwargs):
         """
         Get the proof for a given transaction in a round.
 
         Args:
             round_num (int): The round in which the transaction appears.
-            transaction_id (str): The transaction ID for which to generate a proof.
+            txid (str): The transaction ID for which to generate a proof.
         """
-        req = "/blocks/{}/transactions/{}/proof".format(round_num, transaction_id)
+        req = "/blocks/{}/transactions/{}/proof".format(round_num, txid)
         return self.algod_request("GET", req, **kwargs)
 
 
