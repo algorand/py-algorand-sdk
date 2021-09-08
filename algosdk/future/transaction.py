@@ -3023,7 +3023,7 @@ def wait_for_confirmation(algod_client, txid, wait_rounds=0, **kwargs):
 
     while True:
         # Check that the `wait_rounds` has not passed
-        if wait_rounds != 0 and current_round > last_round + wait_rounds:
+        if wait_rounds > 0 and current_round > last_round + wait_rounds:
             raise error.ConfirmationTimeoutError(f"Wait for transaction id {txid} timed out")
 
         tx_info = algod_client.pending_transaction_info(txid, **kwargs)
