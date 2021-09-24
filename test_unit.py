@@ -9,6 +9,7 @@ from unittest.mock import Mock
 from nacl.signing import SigningKey
 
 from algosdk import (
+    abi,
     account,
     constants,
     encoding,
@@ -3570,23 +3571,203 @@ class TestDryrun(dryrun.DryrunTestCaseMixin, unittest.TestCase):
             )
 
 
+class TestABIType(unittest.TestCase):
+    def setUp(self):
+        # self.abi_type = abi.Type()
+        pass
+
+    def test_make_type_valid(self):
+        # Test for uint
+        for uint_index in range(8, 513, 8):
+            uint_type = abi.Type.make_uint_type(uint_index)
+            self.assertEqual(str(uint_type), f"uint{uint_index}")
+            type_from_string = abi.Type.type_from_string(str(uint_type))
+            self.assertEqual(uint_type, type_from_string)
+
+        # Test for ufixed
+        for size_index in range(8, 513, 8):
+            for precision_index in range(1, 161):
+                ufixed_type = abi.Type.make_ufixed_type(
+                    size_index, precision_index
+                )
+                self.assertEqual(
+                    str(ufixed_type), f"ufixed{size_index}x{precision_index}"
+                )
+                type_from_string = abi.Type.type_from_string(str(ufixed_type))
+                self.assertEqual(ufixed_type, type_from_string)
+
+        test_cases = [
+            # Test for byte/bool/address/strings
+            (abi.Type.make_byte_type(), f"byte"),
+            (abi.Type.make_bool_type(), f"bool"),
+            (abi.Type.make_address_type(), f"address"),
+            (abi.Type.make_string_type(), f"string"),
+            # Test for dynamic array type
+            (
+                abi.Type.make_dynamic_array_type(abi.Type.make_uint_type(32)),
+                f"uint32[]",
+            ),
+            (
+                abi.Type.make_dynamic_array_type(
+                    abi.Type.make_dynamic_array_type(abi.Type.make_byte_type())
+                ),
+                f"byte[][]",
+            ),
+            (
+                abi.Type.make_dynamic_array_type(
+                    abi.Type.make_ufixed_type(256, 64)
+                ),
+                f"ufixed256x64[]",
+            ),
+            # Test for static array type
+            (
+                abi.Type.make_static_array_type(
+                    abi.Type.make_ufixed_type(128, 10), 100
+                ),
+                f"ufixed128x10[100]",
+            ),
+            (
+                abi.Type.make_static_array_type(
+                    abi.Type.make_static_array_type(
+                        abi.Type.make_bool_type(), 256
+                    ),
+                    100,
+                ),
+                f"bool[256][100]",
+            ),
+            # Test for tuple
+            (abi.Type.make_tuple_type([]), f"()"),
+            (
+                abi.Type.make_tuple_type(
+                    [
+                        abi.Type.make_uint_type(16),
+                        abi.Type.make_tuple_type(
+                            [
+                                abi.Type.make_byte_type(),
+                                abi.Type.make_static_array_type(
+                                    abi.Type.make_address_type(), 10
+                                ),
+                            ]
+                        ),
+                    ]
+                ),
+                f"(uint16,(byte,address[10]))",
+            ),
+            (
+                abi.Type.make_tuple_type(
+                    [
+                        abi.Type.make_ufixed_type(256, 16),
+                        abi.Type.make_tuple_type(
+                            [
+                                abi.Type.make_tuple_type(
+                                    [
+                                        abi.Type.make_string_type(),
+                                    ]
+                                ),
+                                abi.Type.make_bool_type(),
+                                abi.Type.make_tuple_type(
+                                    [
+                                        abi.Type.make_address_type(),
+                                        abi.Type.make_uint_type(8),
+                                    ]
+                                ),
+                            ]
+                        ),
+                    ]
+                ),
+                f"(ufixed256x16,((string),bool,(address,uint8)))",
+            ),
+        ]
+        for test_case in test_cases:
+            self.assertEqual(str(test_case[0]), test_case[1])
+            self.assertEqual(
+                test_case[0], abi.Type.type_from_string(test_case[1])
+            )
+
+    def test_make_type_invalid(self):
+        # Test for invalid uint
+        invalid_type_sizes = (-1, 0, 9, 513, 1024)
+        for i in invalid_type_sizes:
+            with self.assertRaises(error.ABITypeError) as e:
+                abi.Type.make_uint_type(i)
+            self.assertIn(f"unsupported uint bitSize: {i}", str(e.exception))
+        with self.assertRaises(TypeError) as e:
+            abi.Type.make_uint_type()
+
+        # Test for invalid ufixed
+        invalid_precisions = (-1, 0, 161)
+        for i in invalid_type_sizes:
+            with self.assertRaises(error.ABITypeError) as e:
+                abi.Type.make_ufixed_type(i, 1)
+            self.assertIn(f"unsupported ufixed bitSize: {i}", str(e.exception))
+        for j in invalid_precisions:
+            with self.assertRaises(error.ABITypeError) as e:
+                abi.Type.make_ufixed_type(8, j)
+            self.assertIn(
+                f"unsupported ufixed precision: {j}", str(e.exception)
+            )
+
+    def test_type_from_string_invalid(self):
+        test_cases = (
+            # uint
+            "uint123x345",
+            # "uint 128",
+            # "uint8 ",
+            "uint!8",
+            "uint[32]",
+            "uint-893",
+            "uint#120\\",
+            # ufixed
+            "ufixed000000000016x0000010",
+            "ufixed123x345",
+            "ufixed 128 x 100",
+            "ufixed64x10 ",
+            "ufixed!8x2 ",
+            "ufixed[32]x16",
+            "ufixed-64x+100",
+            "ufixed16x+12",
+            # dynamic array
+            # "uint256 []",
+            "byte[] ",
+            "[][][]",
+            "stuff[]",
+            # static array
+            "ufixed32x10[0]",
+            "byte[10 ]",
+            "uint64[0x21]",
+            # tuple
+            "(ufixed128x10))",
+            "(,uint128,byte[])",
+            "(address,ufixed64x5,)",
+            "(byte[16],somethingwrong)",
+            "(                )",
+            "((uint32)",
+            "(byte,,byte)",
+            "((byte),,(byte))",
+        )
+        for test_case in test_cases:
+            with self.assertRaises(error.ABITypeError) as e:
+                abi.Type.type_from_string(test_case)
+
+
 if __name__ == "__main__":
     to_run = [
-        TestPaymentTransaction,
-        TestAssetConfigConveniences,
-        TestAssetTransferConveniences,
-        TestApplicationTransactions,
-        TestMnemonic,
-        TestAddress,
-        TestMultisig,
-        TestMsgpack,
-        TestSignBytes,
-        TestLogic,
-        TestLogicSig,
-        TestLogicSigAccount,
-        TestLogicSigTransaction,
-        TestTemplate,
-        TestDryrun,
+        # TestPaymentTransaction,
+        # TestAssetConfigConveniences,
+        # TestAssetTransferConveniences,
+        # TestApplicationTransactions,
+        # TestMnemonic,
+        # TestAddress,
+        # TestMultisig,
+        # TestMsgpack,
+        # TestSignBytes,
+        # TestLogic,
+        # TestLogicSig,
+        # TestLogicSigAccount,
+        # TestLogicSigTransaction,
+        # TestTemplate,
+        # TestDryrun,
+        TestABIType,
     ]
     loader = unittest.TestLoader()
     suites = [
