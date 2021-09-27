@@ -268,7 +268,7 @@ def teal_sign_from_program(private_key, data, program):
     return teal_sign(private_key, data, address(program))
 
 
-def get_application_address(appID):
+def get_application_address(appID: int) -> str:
     """
     Return the escrow address of an application.
 
