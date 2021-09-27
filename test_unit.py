@@ -1237,6 +1237,12 @@ class TestApplicationTransactions(unittest.TestCase):
     lschema = transaction.StateSchema(1, 2)
     gschema = transaction.StateSchema(3, 4)
 
+    def test_application_address(self):
+        appID = 77
+        expected = "PCYUFPA2ZTOYWTP43MX2MOX2OWAIAXUDNC2WFCXAGMRUZ3DYD6BWFDL5YM"
+        actual = logic.get_application_address(appID)
+        self.assertEqual(actual, expected)
+
     def test_application_call(self):
         params = transaction.SuggestedParams(0, 1, 100, self.genesis)
         for oc in transaction.OnComplete:
