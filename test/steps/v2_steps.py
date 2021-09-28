@@ -858,6 +858,23 @@ def lookup_application(context, app_id):
     context.response = context.icl.applications(int(app_id))
 
 
+@when(
+    'we make a LookupApplicationLogsByID call with applicationID {app_id} limit {limit} minRound {min_round} maxRound {max_round} nextToken "{next_token:MaybeString}" sender "{sender:MaybeString}" and txID "{txid:MaybeString}"'
+)
+def lookup_application_logs(
+    context, app_id, limit, min_round, max_round, next_token, sender, txid
+):
+    context.response = context.icl.application_logs(
+        int(app_id),
+        limit=int(limit),
+        min_round=int(min_round),
+        max_round=int(max_round),
+        next_page=next_token,
+        sender_addr=sender,
+        txid=txid,
+    )
+
+
 @when("we make a SearchForApplications call with applicationID {app_id}")
 def search_application(context, app_id):
     context.response = context.icl.search_applications(int(app_id))
