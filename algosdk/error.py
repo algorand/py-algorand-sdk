@@ -208,3 +208,8 @@ class IndexerHTTPError(Exception):
 class ABITypeError(Exception):
     def __init__(self, msg):
         super().__init__(msg)
+
+
+class ABIValueError(Exception):
+    def __init__(self, msg):
+        super().__init__(msg)

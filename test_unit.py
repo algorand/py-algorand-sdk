@@ -3710,9 +3710,8 @@ class TestABIType(unittest.TestCase):
     def test_type_from_string_invalid(self):
         test_cases = (
             # uint
+            # Whitespaces are allowed, e.g. "uint8 " or "uint 8" can be parsed
             "uint123x345",
-            # "uint 128",
-            # "uint8 ",
             "uint!8",
             "uint[32]",
             "uint-893",
@@ -3727,7 +3726,6 @@ class TestABIType(unittest.TestCase):
             "ufixed-64x+100",
             "ufixed16x+12",
             # dynamic array
-            # "uint256 []",
             "byte[] ",
             "[][][]",
             "stuff[]",
@@ -3749,24 +3747,103 @@ class TestABIType(unittest.TestCase):
             with self.assertRaises(error.ABITypeError) as e:
                 abi.Type.type_from_string(test_case)
 
+    def test_is_dynamic(self):
+        test_cases = [
+            (abi.Type.make_uint_type(32), False),
+            (abi.Type.make_ufixed_type(16, 10), False),
+            (abi.Type.make_byte_type(), False),
+            (abi.Type.make_bool_type(), False),
+            (abi.Type.make_address_type(), False),
+            (abi.Type.make_string_type(), True),
+            (
+                abi.Type.make_dynamic_array_type(
+                    abi.Type.make_dynamic_array_type(abi.Type.make_byte_type())
+                ),
+                True,
+            ),
+            # Test tuple child types
+            (abi.Type.type_from_string("(string[100])"), False),
+            (abi.Type.type_from_string("(address,bool,uint256)"), False),
+            (abi.Type.type_from_string("(uint8,(byte[10]))"), False),
+            (abi.Type.type_from_string("(string,uint256)"), True),
+            (
+                abi.Type.type_from_string(
+                    "(bool,(ufixed16x10[],(byte,address)))"
+                ),
+                True,
+            ),
+            (
+                abi.Type.type_from_string(
+                    "(bool,(uint256,(byte,address,string)))"
+                ),
+                True,
+            ),
+        ]
+        for test_case in test_cases:
+            self.assertEqual(abi.Type.is_dynamic(test_case[0]), test_case[1])
+
+    def test_byte_len(self):
+        test_cases = [
+            (abi.Type.make_address_type(), 32),
+            (abi.Type.make_byte_type(), 1),
+            (abi.Type.make_bool_type(), 1),
+            (abi.Type.make_uint_type(64), 8),
+            (abi.Type.make_ufixed_type(256, 50), 32),
+            (abi.Type.type_from_string("bool[81]"), 11),
+            (abi.Type.type_from_string("bool[80]"), 10),
+            (abi.Type.type_from_string("bool[88]"), 11),
+            (abi.Type.type_from_string("address[5]"), 160),
+            (abi.Type.type_from_string("uint16[20]"), 40),
+            (abi.Type.type_from_string("ufixed64x20[10]"), 80),
+            (abi.Type.type_from_string(f"(address,byte,ufixed16x20)"), 35),
+            (
+                abi.Type.type_from_string(
+                    f"((bool,address[10]),(bool,bool,bool),uint8[20])"
+                ),
+                342,
+            ),
+            (abi.Type.type_from_string(f"(bool,bool)"), 1),
+            (abi.Type.type_from_string(f"({'bool,'*6}uint8)"), 2),
+            (
+                abi.Type.type_from_string(
+                    f"({'bool,'*10}uint8,{'bool,'*10}byte)"
+                ),
+                6,
+            ),
+        ]
+        for test_case in test_cases:
+            self.assertEqual((test_case[0]).byte_len(), test_case[1])
+
+    def test_byte_len_invalid(self):
+        test_cases = (
+            abi.Type.make_string_type(),
+            abi.Type.make_dynamic_array_type(
+                abi.Type.make_ufixed_type(16, 64)
+            ),
+        )
+
+        for test_case in test_cases:
+            with self.assertRaises(error.ABITypeError) as e:
+                test_case.byte_len()
+
 
 if __name__ == "__main__":
     to_run = [
-        # TestPaymentTransaction,
-        # TestAssetConfigConveniences,
-        # TestAssetTransferConveniences,
-        # TestApplicationTransactions,
-        # TestMnemonic,
-        # TestAddress,
-        # TestMultisig,
-        # TestMsgpack,
-        # TestSignBytes,
-        # TestLogic,
-        # TestLogicSig,
-        # TestLogicSigAccount,
-        # TestLogicSigTransaction,
-        # TestTemplate,
-        # TestDryrun,
+        TestPaymentTransaction,
+        TestAssetConfigConveniences,
+        TestAssetTransferConveniences,
+        TestApplicationTransactions,
+        TestMnemonic,
+        TestAddress,
+        TestMultisig,
+        TestMsgpack,
+        TestSignBytes,
+        TestLogic,
+        TestLogicSig,
+        TestLogicSigAccount,
+        TestLogicSigTransaction,
+        TestTemplate,
+        TestDryrun,
         TestABIType,
     ]
     loader = unittest.TestLoader()
