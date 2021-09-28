@@ -1,2 +1,2 @@
 .
-black
+black==21.9b0
