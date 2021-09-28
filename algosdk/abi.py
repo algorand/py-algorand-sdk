@@ -342,6 +342,18 @@ class Type:
 
 
 class Value:
+    """
+    Represents an ABI Value for encoding.
+
+    Args:
+        abi_type (Type): the type object of the ABI value.
+        value (Union[int, bool, str, bytes, list]): the value to be encoded.
+
+    Attributes:
+        abi_type (Type)
+        value (Union[int, bool, str, bytes, list])
+    """
+
     def __init__(self, abi_type, val) -> None:
         self.abi_type = abi_type
         self.value = val
