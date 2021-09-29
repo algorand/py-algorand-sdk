@@ -1237,6 +1237,12 @@ class TestApplicationTransactions(unittest.TestCase):
     lschema = transaction.StateSchema(1, 2)
     gschema = transaction.StateSchema(3, 4)
 
+    def test_application_address(self):
+        appID = 77
+        expected = "PCYUFPA2ZTOYWTP43MX2MOX2OWAIAXUDNC2WFCXAGMRUZ3DYD6BWFDL5YM"
+        actual = logic.get_application_address(appID)
+        self.assertEqual(actual, expected)
+
     def test_application_call(self):
         params = transaction.SuggestedParams(0, 1, 100, self.genesis)
         for oc in transaction.OnComplete:
@@ -2252,6 +2258,30 @@ class TestLogic(unittest.TestCase):
 
         # loop
         program = b"\x04\x20\x04\x01\x02\x0a\x10\x22\x23\x0b\x49\x24\x0c\x40\xff\xf8\x25\x12"  # int 1; loop: int 2; *; dup; int 10; <; bnz loop; int 16; ==
+        self.assertTrue(logic.check_program(program, None))
+
+    def test_check_program_teal_5(self):
+        # check TEAL v5 opcodes
+        self.assertIsNotNone(
+            logic.spec, "Must be called after any of logic.check_program"
+        )
+        self.assertTrue(logic.spec["EvalMaxVersion"] >= 5)
+
+        # itxn ops
+        program = b"\x05\x20\x01\xc0\x84\x3d\xb1\x81\x01\xb2\x10\x22\xb2\x08\x31\x00\xb2\x07\xb3\xb4\x08\x22\x12"
+        # itxn_begin; int pay; itxn_field TypeEnum; int 1000000; itxn_field Amount; txn Sender; itxn_field Receiver; itxn_submit; itxn Amount; int 1000000; ==
+        self.assertTrue(logic.check_program(program, None))
+
+        # ECDSA ops
+        program = bytes.fromhex(
+            "058008746573746461746103802079bfa8245aeac0e714b7bd2b3252d03979e5e7a43cb039715a5f8109a7dd9ba180200753d317e54350d1d102289afbde3002add4529f10b9f7d3d223843985de62e0802103abfb5e6e331fb871e423f354e2bd78a384ef7cb07ac8bbf27d2dd1eca00e73c106000500"
+        )
+        # byte "testdata"; sha512_256; byte 0x79bfa8245aeac0e714b7bd2b3252d03979e5e7a43cb039715a5f8109a7dd9ba1; byte 0x0753d317e54350d1d102289afbde3002add4529f10b9f7d3d223843985de62e0; byte 0x03abfb5e6e331fb871e423f354e2bd78a384ef7cb07ac8bbf27d2dd1eca00e73c1; ecdsa_pk_decompress Secp256k1; ecdsa_verify Secp256k1
+        self.assertTrue(logic.check_program(program, None))
+
+        # cover, uncover, log
+        program = b"\x05\x80\x01\x61\x80\x01\x62\x80\x01\x63\x4e\x02\x4f\x02\x50\x50\xb0\x81\x01"
+        # byte "a"; byte "b"; byte "c"; cover 2; uncover 2; concat; concat; log; int 1
         self.assertTrue(logic.check_program(program, None))
 
 

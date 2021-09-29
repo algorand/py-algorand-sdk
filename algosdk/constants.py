@@ -52,6 +52,8 @@ LOGIC_PREFIX = b"Program"
 """bytes: program (logic) prefix when signing"""
 LOGIC_DATA_PREFIX = b"ProgData"
 """bytes: program (logic) data prefix when signing"""
+APPID_PREFIX = b"appID"
+"""bytes: application ID prefix when signing"""
 
 
 HASH_LEN = 32
