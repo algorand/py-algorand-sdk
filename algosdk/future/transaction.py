@@ -1048,7 +1048,7 @@ class AssetCreateTxn(AssetConfigTxn):
         metadata_hash=None,
         note=None,
         lease=None,
-        rekey_to=None
+        rekey_to=None,
     ):
         super().__init__(
             sender=sender,
@@ -1137,7 +1137,7 @@ class AssetUpdateTxn(AssetConfigTxn):
         clawback,
         note=None,
         lease=None,
-        rekey_to=None
+        rekey_to=None,
     ):
         super().__init__(
             sender=sender,
@@ -3009,6 +3009,7 @@ def assign_group_id(txns, address=None):
             result.append(tx)
     return result
 
+
 def wait_for_confirmation(algod_client, txid, wait_rounds=0, **kwargs):
     """
     Block until a pending transaction is confirmed by the network.
@@ -3018,18 +3019,20 @@ def wait_for_confirmation(algod_client, txid, wait_rounds=0, **kwargs):
         wait_rounds (int, optional): The number of rounds to block for before
             exiting with an Exception. If not supplied, there is no timeout.
     """
-    last_round = algod_client.status()['last-round'] 
+    last_round = algod_client.status()["last-round"]
     current_round = last_round + 1
 
     while True:
         # Check that the `wait_rounds` has not passed
         if wait_rounds > 0 and current_round > last_round + wait_rounds:
-            raise error.ConfirmationTimeoutError(f"Wait for transaction id {txid} timed out")
+            raise error.ConfirmationTimeoutError(
+                f"Wait for transaction id {txid} timed out"
+            )
 
         tx_info = algod_client.pending_transaction_info(txid, **kwargs)
 
         # The transaction has been confirmed
-        if 'confirmed-round' in tx_info:
+        if "confirmed-round" in tx_info:
             return tx_info
 
         # Wait until the block for the `current_round` is confirmed

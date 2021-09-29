@@ -373,7 +373,7 @@ class AlgodClient:
         """Returns the entire genesis file."""
         req = "/genesis"
         return self.algod_request("GET", req, **kwargs)
-    
+
     def proof(self, round_num, txid, **kwargs):
         """
         Get the proof for a given transaction in a round.

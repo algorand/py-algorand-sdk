@@ -960,6 +960,7 @@ def split_contract(context, ratn, ratd, min_pay):
         2 * context.template.min_pay * (int(ratn) + int(ratd)) / int(ratn)
     )
 
+
 @when("I send the split transactions")
 def send_split(context):
     amt = context.fund_amt // 2
