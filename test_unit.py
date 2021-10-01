@@ -2,6 +2,7 @@ import base64
 import copy
 import os
 import random
+import string
 import unittest
 import uuid
 from unittest.mock import Mock
@@ -9,7 +10,6 @@ from unittest.mock import Mock
 from nacl.signing import SigningKey
 
 from algosdk import (
-    abi,
     account,
     constants,
     encoding,
@@ -18,6 +18,18 @@ from algosdk import (
     mnemonic,
     util,
     wordlist,
+)
+from algosdk.abi.type import (
+    Type,
+    UintType,
+    UfixedType,
+    BoolType,
+    ByteType,
+    AddressType,
+    StringType,
+    ArrayDynamicType,
+    ArrayStaticType,
+    TupleType,
 )
 from algosdk.future import template, transaction
 from algosdk.testing import dryrun
@@ -3572,81 +3584,65 @@ class TestDryrun(dryrun.DryrunTestCaseMixin, unittest.TestCase):
 
 
 class TestABIType(unittest.TestCase):
-    def setUp(self):
-        # self.abi_type = abi.Type()
-        pass
-
     def test_make_type_valid(self):
         # Test for uint
         for uint_index in range(8, 513, 8):
-            uint_type = abi.Type.make_uint_type(uint_index)
+            uint_type = UintType(uint_index)
             self.assertEqual(str(uint_type), f"uint{uint_index}")
-            type_from_string = abi.Type.type_from_string(str(uint_type))
+            type_from_string = Type.type_from_string(str(uint_type))
             self.assertEqual(uint_type, type_from_string)
 
         # Test for ufixed
         for size_index in range(8, 513, 8):
             for precision_index in range(1, 161):
-                ufixed_type = abi.Type.make_ufixed_type(
-                    size_index, precision_index
-                )
+                ufixed_type = UfixedType(size_index, precision_index)
                 self.assertEqual(
                     str(ufixed_type), f"ufixed{size_index}x{precision_index}"
                 )
-                type_from_string = abi.Type.type_from_string(str(ufixed_type))
+                type_from_string = Type.type_from_string(str(ufixed_type))
                 self.assertEqual(ufixed_type, type_from_string)
 
         test_cases = [
             # Test for byte/bool/address/strings
-            (abi.Type.make_byte_type(), f"byte"),
-            (abi.Type.make_bool_type(), f"bool"),
-            (abi.Type.make_address_type(), f"address"),
-            (abi.Type.make_string_type(), f"string"),
+            (ByteType(), f"byte"),
+            (BoolType(), f"bool"),
+            (AddressType(), f"address"),
+            (StringType(), f"string"),
             # Test for dynamic array type
             (
-                abi.Type.make_dynamic_array_type(abi.Type.make_uint_type(32)),
+                ArrayDynamicType(UintType(32)),
                 f"uint32[]",
             ),
             (
-                abi.Type.make_dynamic_array_type(
-                    abi.Type.make_dynamic_array_type(abi.Type.make_byte_type())
-                ),
+                ArrayDynamicType(ArrayDynamicType(ByteType())),
                 f"byte[][]",
             ),
             (
-                abi.Type.make_dynamic_array_type(
-                    abi.Type.make_ufixed_type(256, 64)
-                ),
+                ArrayDynamicType(UfixedType(256, 64)),
                 f"ufixed256x64[]",
             ),
             # Test for static array type
             (
-                abi.Type.make_static_array_type(
-                    abi.Type.make_ufixed_type(128, 10), 100
-                ),
+                ArrayStaticType(UfixedType(128, 10), 100),
                 f"ufixed128x10[100]",
             ),
             (
-                abi.Type.make_static_array_type(
-                    abi.Type.make_static_array_type(
-                        abi.Type.make_bool_type(), 256
-                    ),
+                ArrayStaticType(
+                    ArrayStaticType(BoolType(), 256),
                     100,
                 ),
                 f"bool[256][100]",
             ),
             # Test for tuple
-            (abi.Type.make_tuple_type([]), f"()"),
+            (TupleType([]), f"()"),
             (
-                abi.Type.make_tuple_type(
+                TupleType(
                     [
-                        abi.Type.make_uint_type(16),
-                        abi.Type.make_tuple_type(
+                        UintType(16),
+                        TupleType(
                             [
-                                abi.Type.make_byte_type(),
-                                abi.Type.make_static_array_type(
-                                    abi.Type.make_address_type(), 10
-                                ),
+                                ByteType(),
+                                ArrayStaticType(AddressType(), 10),
                             ]
                         ),
                     ]
@@ -3654,21 +3650,21 @@ class TestABIType(unittest.TestCase):
                 f"(uint16,(byte,address[10]))",
             ),
             (
-                abi.Type.make_tuple_type(
+                TupleType(
                     [
-                        abi.Type.make_ufixed_type(256, 16),
-                        abi.Type.make_tuple_type(
+                        UfixedType(256, 16),
+                        TupleType(
                             [
-                                abi.Type.make_tuple_type(
+                                TupleType(
                                     [
-                                        abi.Type.make_string_type(),
+                                        StringType(),
                                     ]
                                 ),
-                                abi.Type.make_bool_type(),
-                                abi.Type.make_tuple_type(
+                                BoolType(),
+                                TupleType(
                                     [
-                                        abi.Type.make_address_type(),
-                                        abi.Type.make_uint_type(8),
+                                        AddressType(),
+                                        UintType(8),
                                     ]
                                 ),
                             ]
@@ -3680,29 +3676,27 @@ class TestABIType(unittest.TestCase):
         ]
         for test_case in test_cases:
             self.assertEqual(str(test_case[0]), test_case[1])
-            self.assertEqual(
-                test_case[0], abi.Type.type_from_string(test_case[1])
-            )
+            self.assertEqual(test_case[0], Type.type_from_string(test_case[1]))
 
     def test_make_type_invalid(self):
         # Test for invalid uint
-        invalid_type_sizes = (-1, 0, 9, 513, 1024)
+        invalid_type_sizes = [-1, 0, 9, 513, 1024]
         for i in invalid_type_sizes:
             with self.assertRaises(error.ABITypeError) as e:
-                abi.Type.make_uint_type(i)
+                UintType(i)
             self.assertIn(f"unsupported uint bitSize: {i}", str(e.exception))
         with self.assertRaises(TypeError) as e:
-            abi.Type.make_uint_type()
+            UintType()
 
         # Test for invalid ufixed
-        invalid_precisions = (-1, 0, 161)
+        invalid_precisions = [-1, 0, 161]
         for i in invalid_type_sizes:
             with self.assertRaises(error.ABITypeError) as e:
-                abi.Type.make_ufixed_type(i, 1)
+                UfixedType(i, 1)
             self.assertIn(f"unsupported ufixed bitSize: {i}", str(e.exception))
         for j in invalid_precisions:
             with self.assertRaises(error.ABITypeError) as e:
-                abi.Type.make_ufixed_type(8, j)
+                UfixedType(8, j)
             self.assertIn(
                 f"unsupported ufixed precision: {j}", str(e.exception)
             )
@@ -3710,7 +3704,8 @@ class TestABIType(unittest.TestCase):
     def test_type_from_string_invalid(self):
         test_cases = (
             # uint
-            # Whitespaces are allowed, e.g. "uint8 " or "uint 8" can be parsed
+            "uint 8",
+            "uint8 ",
             "uint123x345",
             "uint!8",
             "uint[32]",
@@ -3745,86 +3740,295 @@ class TestABIType(unittest.TestCase):
         )
         for test_case in test_cases:
             with self.assertRaises(error.ABITypeError) as e:
-                abi.Type.type_from_string(test_case)
+                Type.type_from_string(test_case)
 
     def test_is_dynamic(self):
         test_cases = [
-            (abi.Type.make_uint_type(32), False),
-            (abi.Type.make_ufixed_type(16, 10), False),
-            (abi.Type.make_byte_type(), False),
-            (abi.Type.make_bool_type(), False),
-            (abi.Type.make_address_type(), False),
-            (abi.Type.make_string_type(), True),
+            (UintType(32), False),
+            (UfixedType(16, 10), False),
+            (ByteType(), False),
+            (BoolType(), False),
+            (AddressType(), False),
+            (StringType(), True),
             (
-                abi.Type.make_dynamic_array_type(
-                    abi.Type.make_dynamic_array_type(abi.Type.make_byte_type())
-                ),
+                ArrayDynamicType(ArrayDynamicType(ByteType())),
                 True,
             ),
             # Test tuple child types
-            (abi.Type.type_from_string("(string[100])"), False),
-            (abi.Type.type_from_string("(address,bool,uint256)"), False),
-            (abi.Type.type_from_string("(uint8,(byte[10]))"), False),
-            (abi.Type.type_from_string("(string,uint256)"), True),
+            (Type.type_from_string("(string[100])"), False),
+            (Type.type_from_string("(address,bool,uint256)"), False),
+            (Type.type_from_string("(uint8,(byte[10]))"), False),
+            (Type.type_from_string("(string,uint256)"), True),
             (
-                abi.Type.type_from_string(
-                    "(bool,(ufixed16x10[],(byte,address)))"
-                ),
+                Type.type_from_string("(bool,(ufixed16x10[],(byte,address)))"),
                 True,
             ),
             (
-                abi.Type.type_from_string(
+                Type.type_from_string(
                     "(bool,(uint256,(byte,address,string)))"
                 ),
                 True,
             ),
         ]
         for test_case in test_cases:
-            self.assertEqual(abi.Type.is_dynamic(test_case[0]), test_case[1])
+            self.assertEqual(test_case[0].is_dynamic(), test_case[1])
 
     def test_byte_len(self):
         test_cases = [
-            (abi.Type.make_address_type(), 32),
-            (abi.Type.make_byte_type(), 1),
-            (abi.Type.make_bool_type(), 1),
-            (abi.Type.make_uint_type(64), 8),
-            (abi.Type.make_ufixed_type(256, 50), 32),
-            (abi.Type.type_from_string("bool[81]"), 11),
-            (abi.Type.type_from_string("bool[80]"), 10),
-            (abi.Type.type_from_string("bool[88]"), 11),
-            (abi.Type.type_from_string("address[5]"), 160),
-            (abi.Type.type_from_string("uint16[20]"), 40),
-            (abi.Type.type_from_string("ufixed64x20[10]"), 80),
-            (abi.Type.type_from_string(f"(address,byte,ufixed16x20)"), 35),
+            (AddressType(), 32),
+            (ByteType(), 1),
+            (BoolType(), 1),
+            (UintType(64), 8),
+            (UfixedType(256, 50), 32),
+            (Type.type_from_string("bool[81]"), 11),
+            (Type.type_from_string("bool[80]"), 10),
+            (Type.type_from_string("bool[88]"), 11),
+            (Type.type_from_string("address[5]"), 160),
+            (Type.type_from_string("uint16[20]"), 40),
+            (Type.type_from_string("ufixed64x20[10]"), 80),
+            (Type.type_from_string(f"(address,byte,ufixed16x20)"), 35),
             (
-                abi.Type.type_from_string(
+                Type.type_from_string(
                     f"((bool,address[10]),(bool,bool,bool),uint8[20])"
                 ),
                 342,
             ),
-            (abi.Type.type_from_string(f"(bool,bool)"), 1),
-            (abi.Type.type_from_string(f"({'bool,'*6}uint8)"), 2),
+            (Type.type_from_string(f"(bool,bool)"), 1),
+            (Type.type_from_string(f"({'bool,'*6}uint8)"), 2),
             (
-                abi.Type.type_from_string(
-                    f"({'bool,'*10}uint8,{'bool,'*10}byte)"
-                ),
+                Type.type_from_string(f"({'bool,'*10}uint8,{'bool,'*10}byte)"),
                 6,
             ),
         ]
         for test_case in test_cases:
-            self.assertEqual((test_case[0]).byte_len(), test_case[1])
+            self.assertEqual(test_case[0].byte_len(), test_case[1])
 
     def test_byte_len_invalid(self):
         test_cases = (
-            abi.Type.make_string_type(),
-            abi.Type.make_dynamic_array_type(
-                abi.Type.make_ufixed_type(16, 64)
-            ),
+            StringType(),
+            ArrayDynamicType(UfixedType(16, 64)),
         )
 
         for test_case in test_cases:
             with self.assertRaises(error.ABITypeError) as e:
                 test_case.byte_len()
+
+
+class TestABIEncoding(unittest.TestCase):
+    def test_uint_encoding(self):
+        uint_test_values = [0, 1, 10, 100, 254]
+        for uint_size in range(8, 513, 8):
+            for val in uint_test_values:
+                actual_uint = UintType(uint_size)
+                actual = actual_uint.encode(val)
+                self.assertEqual(len(actual), actual_uint.bit_size)
+
+                expected = val.to_bytes(uint_size, byteorder="big")
+                self.assertEqual(actual, expected)
+            # Test for the upper limit of each bit size
+            val = 2 ** uint_size - 1
+            actual_uint = UintType(uint_size)
+            actual = actual_uint.encode(val)
+            self.assertEqual(len(actual), actual_uint.bit_size)
+
+            expected = val.to_bytes(uint_size, byteorder="big")
+            self.assertEqual(actual, expected)
+
+            # Test bad values
+            with self.assertRaises(error.ABIEncodingError) as e:
+                UintType(uint_size).encode(-1)
+            with self.assertRaises(error.ABIEncodingError) as e:
+                UintType(uint_size).encode(2 ** uint_size)
+
+    def test_ufixed_encoding(self):
+        ufixed_test_values = [0, 1, 10, 100, 254]
+        for ufixed_size in range(8, 513, 8):
+            for precision in range(1, 161):
+                for val in ufixed_test_values:
+                    actual_ufixed = UfixedType(ufixed_size, precision)
+                    actual = actual_ufixed.encode(val)
+                    self.assertEqual(len(actual), actual_ufixed.bit_size)
+
+                    expected = val.to_bytes(ufixed_size, byteorder="big")
+                    self.assertEqual(actual, expected)
+            # Test for the upper limit of each bit size
+            val = 2 ** ufixed_size - 1
+            actual_ufixed = UfixedType(ufixed_size, precision)
+            actual = actual_ufixed.encode(val)
+            self.assertEqual(len(actual), actual_ufixed.bit_size)
+
+            expected = val.to_bytes(ufixed_size, byteorder="big")
+            self.assertEqual(actual, expected)
+
+            # Test bad values
+            with self.assertRaises(error.ABIEncodingError) as e:
+                UfixedType(ufixed_size, 10).encode(-1)
+            with self.assertRaises(error.ABIEncodingError) as e:
+                UfixedType(ufixed_size, 10).encode(2 ** ufixed_size)
+
+    def test_bool_encoding(self):
+        actual = BoolType().encode(True)
+        expected = bytes.fromhex("80")
+        self.assertEqual(actual, expected)
+
+        actual = BoolType().encode(False)
+        expected = bytes.fromhex("00")
+        self.assertEqual(actual, expected)
+
+        with self.assertRaises(error.ABIEncodingError) as e:
+            ByteType().encode("1")
+
+    def test_byte_encoding(self):
+        for i in range(255):
+            # Pass in an int type to encode
+            actual = ByteType().encode(i)
+            expected = i.to_bytes(1, byteorder="big")
+            self.assertEqual(actual, expected)
+
+            # Try passing in a bytes type value to encode
+            actual = ByteType().encode(expected)
+            self.assertEqual(actual, expected)
+
+        # Try to encode a bad byte
+        with self.assertRaises(error.ABIEncodingError) as e:
+            ByteType().encode(256)
+        with self.assertRaises(error.ABIEncodingError) as e:
+            ByteType().encode(-1)
+        with self.assertRaises(error.ABIEncodingError) as e:
+            ByteType().encode((256).to_bytes(2, byteorder="big"))
+
+    def test_address_encoding(self):
+        for _ in range(100):
+            # Generate 100 random addresses as strings and as 32-byte public keys
+            random_addr_str = account.generate_account()[1]
+            actual_val = AddressType()
+            actual = actual_val.encode(random_addr_str)
+
+            expected = encoding.decode_address(random_addr_str)
+            self.assertEqual(actual, expected)
+
+            actual = actual_val.encode(expected)
+            self.assertEqual(actual, expected)
+
+    def test_string_encoding(self):
+        # Test *some* valid combinations of UTF-8 characters
+        chars = string.ascii_letters + string.digits + string.punctuation
+        for _ in range(1000):
+            test_case = "".join(
+                random.choice(chars) for i in range(random.randint(0, 1000))
+            )
+            str_value = StringType()
+            str_len = len(test_case).to_bytes(2, byteorder="big")
+            expected = str_len + bytes(test_case, "utf-8")
+            actual = str_value.encode(test_case)
+
+            self.assertEqual(actual, expected)
+
+    def test_array_static_encoding(self):
+        test_cases = [
+            (
+                ArrayStaticType(BoolType(), 3),
+                [True, True, False],
+                bytes.fromhex("C0"),
+            ),
+            (
+                ArrayStaticType(BoolType(), 2),
+                [False, True],
+                bytes.fromhex("40"),
+            ),
+            (
+                ArrayStaticType(BoolType(), 8),
+                [False, True, False, False, False, False, False, False],
+                bytes.fromhex("40"),
+            ),
+            (
+                ArrayStaticType(BoolType(), 8),
+                [True, True, True, True, True, True, True, True],
+                bytes.fromhex("FF"),
+            ),
+            (
+                ArrayStaticType(BoolType(), 9),
+                [True, False, False, True, False, False, True, False, True],
+                bytes.fromhex("92 80"),
+            ),
+        ]
+
+        for test_case in test_cases:
+            actual = test_case[0].encode(test_case[1])
+            expected = test_case[2]
+            self.assertEqual(actual, expected)
+
+        with self.assertRaises(error.ABIEncodingError) as e:
+            ArrayStaticType(BoolType(), 3).encode([True, False])
+
+        with self.assertRaises(error.ABIEncodingError) as e:
+            ArrayStaticType(AddressType(), 2).encode([True, False])
+
+    def test_array_dynamic_encoding(self):
+        test_cases = [
+            (
+                ArrayDynamicType(BoolType()),
+                [],
+                bytes.fromhex("00 00"),
+            ),
+            (
+                ArrayDynamicType(BoolType()),
+                [True, True, False],
+                bytes.fromhex("00 03 C0"),
+            ),
+            (
+                ArrayDynamicType(BoolType()),
+                [False, True, False, False, False, False, False, False],
+                bytes.fromhex("00 08 40"),
+            ),
+            (
+                ArrayDynamicType(BoolType()),
+                [True, False, False, True, False, False, True, False, True],
+                bytes.fromhex("00 09 92 80"),
+            ),
+        ]
+
+        for test_case in test_cases:
+            actual = test_case[0].encode(test_case[1])
+            expected = test_case[2]
+            self.assertEqual(actual, expected)
+
+        with self.assertRaises(error.ABIEncodingError) as e:
+            ArrayDynamicType(AddressType()).encode([True, False])
+
+    def test_tuple_encoding(self):
+        test_cases = [
+            (
+                Type.type_from_string("()"),
+                [[]],
+                bytes.fromhex(""),
+            ),
+            (
+                Type.type_from_string("(bool[3])"),
+                [[True, True, False]],
+                bytes.fromhex("C0"),
+            ),
+            (
+                Type.type_from_string("(bool[])"),
+                [[True, True, False]],
+                bytes.fromhex("00 02 00 03 C0"),
+            ),
+            (
+                Type.type_from_string("(bool[2],bool[])"),
+                [[True, True], [True, True]],
+                bytes.fromhex("C0 00 03 00 02 C0"),
+            ),
+            (
+                Type.type_from_string("(bool[],bool[])"),
+                [[], []],
+                bytes.fromhex("00 04 00 06 00 00 00 00"),
+            ),
+        ]
+
+        for test_case in test_cases:
+            actual = test_case[0].encode(test_case[1])
+            expected = test_case[2]
+            self.assertEqual(actual, expected)
 
 
 if __name__ == "__main__":
@@ -3845,6 +4049,7 @@ if __name__ == "__main__":
         TestTemplate,
         TestDryrun,
         TestABIType,
+        TestABIEncoding,
     ]
     loader = unittest.TestLoader()
     suites = [
