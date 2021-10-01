@@ -94,80 +94,6 @@ class Type:
         """
         pass
 
-    @staticmethod
-    def type_from_string(s):
-        """
-        Convert a valid ABI string to a corresponding ABI type.
-        """
-        if s.endswith("[]"):
-            array_arg_type = Type.type_from_string(s[:-2])
-            return ArrayDynamicType(array_arg_type)
-        elif s.endswith("]"):
-            static_array_regex = "^([a-z\d\[\](),]+)\[([1-9][\d]*)]$"
-            matches = re.search(static_array_regex, s)
-            try:
-                static_length = int(matches.group(2))
-                array_type = Type.type_from_string(matches.group(1))
-                return ArrayStaticType(array_type, static_length)
-            except Exception as e:
-                raise error.ABITypeError(
-                    "malformed static array string: {}".format(s)
-                ) from e
-        elif s.startswith("uint"):
-            try:
-                if not s[4:].isdecimal():
-                    raise error.ABITypeError(
-                        "uint string does not contain a valid size: {}".format(
-                            s
-                        )
-                    )
-                type_size = int(s[4:])
-                return UintType(type_size)
-            except Exception as e:
-                raise error.ABITypeError(
-                    "malformed uint string: {}".format(s)
-                ) from e
-        elif s == "byte":
-            return ByteType()
-        elif s.startswith("ufixed"):
-            ufixed_regex = "^ufixed([1-9][\d]*)x([1-9][\d]*)$"
-            matches = re.search(ufixed_regex, s)
-            try:
-                bit_size = int(matches.group(1))
-                precision = int(matches.group(2))
-                return UfixedType(bit_size, precision)
-            except Exception as e:
-                raise error.ABITypeError(
-                    "malformed ufixed string: {}".format(s)
-                ) from e
-        elif s == "bool":
-            return BoolType()
-        elif s == "address":
-            return AddressType()
-        elif s == "string":
-            return StringType()
-        elif len(s) >= 2 and s[0] == "(" and s[-1] == ")":
-            # Recursively parse parentheses from a tuple string
-            tuples = TupleType.parse_tuple(s[1:-1])
-            tuple_list = []
-            for tup in tuples:
-                if isinstance(tup, str):
-                    tt = Type.type_from_string(str(tup))
-                    tuple_list.append(tt)
-                elif isinstance(tup, list):
-                    tts = list(map(lambda t_: Type.type_from_string(t_), tup))
-                    tuple_list.append(tts)
-                else:
-                    raise error.ABITypeError(
-                        "cannot convert {} to an ABI type".format(tup)
-                    )
-
-            return TupleType(tuple_list)
-        else:
-            raise error.ABITypeError(
-                "cannot convert {} to an ABI type".format(s)
-            )
-
 
 class UintType(Type):
     """
@@ -413,7 +339,7 @@ class ArrayStaticType(Type):
     def is_dynamic(self):
         return any(child.is_dynamic() for child in self.child_types)
 
-    def to_tuple(self):
+    def _to_tuple(self):
         child_type_array = list()
         for _ in range(self.static_length):
             child_type_array.append(self.child_type)
@@ -426,7 +352,7 @@ class ArrayStaticType(Type):
                     len(value_array)
                 )
             )
-        converted_tuple = self.to_tuple()
+        converted_tuple = self._to_tuple()
         return converted_tuple.encode(value_array)
 
     def decode(self):
@@ -455,7 +381,7 @@ class AddressType(Type):
     def is_dynamic(self):
         return False
 
-    def to_tuple(self):
+    def _to_tuple(self):
         child_type_array = list()
         for _ in range(self.byte_len()):
             child_type_array.append(ByteType())
@@ -477,7 +403,7 @@ class AddressType(Type):
             raise error.ABIEncodingError(
                 "cannot encode the following public key: {}".format(value)
             )
-        converted_tuple = self.to_tuple()
+        converted_tuple = self._to_tuple()
         return converted_tuple.encode(value)
 
     def decode(self):
@@ -523,12 +449,12 @@ class ArrayDynamicType(Type):
     def is_dynamic(self):
         return True
 
-    def to_tuple(self, value):
+    def _to_tuple(self, value):
         child_type_array = [self.child_type] * len(value)
         return TupleType(child_type_array)
 
     def encode(self, value):
-        converted_tuple = self.to_tuple(value)
+        converted_tuple = self._to_tuple(value)
         length_to_encode = len(converted_tuple.child_types).to_bytes(
             2, byteorder="big"
         )
@@ -563,7 +489,7 @@ class StringType(Type):
     def is_dynamic(self):
         return True
 
-    def to_tuple(self, string_val):
+    def _to_tuple(self, string_val):
         child_type_array = list()
         value_array = list()
         string_bytes = bytes(string_val, "utf-8")
@@ -574,7 +500,7 @@ class StringType(Type):
         return (TupleType(child_type_array), value_array)
 
     def encode(self, string_val):
-        converted_tuple, value = self.to_tuple(string_val)
+        converted_tuple, value = self._to_tuple(string_val)
         length_to_encode = len(converted_tuple.child_types).to_bytes(
             2, byteorder="big"
         )
@@ -625,7 +551,7 @@ class TupleType(Type):
         i = 0
         while i < len(self.child_types):
             if self.child_types[i].abi_type_id == BaseType.Bool:
-                after = TupleType.find_bool(self.child_types, i, 1)
+                after = TupleType._find_bool(self.child_types, i, 1)
                 i += after
                 bool_num = after + 1
                 size += bool_num // 8
@@ -637,8 +563,11 @@ class TupleType(Type):
             i += 1
         return size
 
+    def is_dynamic(self):
+        return any(child.is_dynamic() for child in self.child_types)
+
     @staticmethod
-    def find_bool(type_list, index, delta):
+    def _find_bool(type_list, index, delta):
         """
         Helper function to find consecutive booleans from current index in a tuple.
         """
@@ -657,11 +586,8 @@ class TupleType(Type):
                 break
         return until
 
-    def is_dynamic(self):
-        return any(child.is_dynamic() for child in self.child_types)
-
     @staticmethod
-    def parse_tuple(s):
+    def _parse_tuple(s):
         """
         Given a tuple string, parses one layer of the tuple and returns tokens as a list.
         i.e. 'x,(y,(z))' -> ['x', '(y,(z))']
@@ -702,7 +628,8 @@ class TupleType(Type):
             raise error.ABITypeError("parenthesis mismatch: {}".format(s))
         return tuple_strs
 
-    def compress_multiple_bool(value_list):
+    @staticmethod
+    def _compress_multiple_bool(value_list):
         """
         Compress consecutive boolean values into a byte for a Tuple/Array.
         """
@@ -740,18 +667,14 @@ class TupleType(Type):
             element = tuple_elements[i]
             if element.is_dynamic():
                 # Head is not pre-determined for dynamic types; store a placeholder for now
-                head_placeholder = bytes.fromhex("00")
                 heads.append(None)
                 is_dynamic_index[i] = True
-                # if element.abi_type_id in (BaseType.ArrayDynamic, BaseType.Tuple):
-                #     tail_encoding = element.encode(values)
-                # else:
                 tail_encoding = element.encode(values[i])
                 tails.append(tail_encoding)
             else:
                 if element.abi_type_id == BaseType.Bool:
-                    before = self.find_bool(self.child_types, i, -1)
-                    after = self.find_bool(self.child_types, i, 1)
+                    before = TupleType._find_bool(self.child_types, i, -1)
+                    after = TupleType._find_bool(self.child_types, i, 1)
 
                     # Pack bytes to heads and tails
                     if before % 8 != 0:
@@ -759,16 +682,13 @@ class TupleType(Type):
                             "expected before index should have number of bool mod 8 equal 0"
                         )
                     after = min(7, after)
-                    compressed_int = TupleType.compress_multiple_bool(
+                    compressed_int = TupleType._compress_multiple_bool(
                         values[i : i + after + 1]
                     )
                     # For converting one byte, the byteorder should not matter
                     heads.append((compressed_int).to_bytes(1, byteorder="big"))
                     i += after
                 else:
-                    # if element.abi_type_id in (BaseType.ArrayDynamic, BaseType.ArrayStatic, BaseType.Tuple):
-                    #     encoded_tuple_element = element.encode(values)
-                    # else:
                     encoded_tuple_element = element.encode(values[i])
                     heads.append(encoded_tuple_element)
                 is_dynamic_index[i] = False
@@ -808,3 +728,73 @@ class TupleType(Type):
 
     def decode(self):
         pass
+
+
+def type_from_string(s):
+    """
+    Convert a valid ABI string to a corresponding ABI type.
+    """
+    if s.endswith("[]"):
+        array_arg_type = type_from_string(s[:-2])
+        return ArrayDynamicType(array_arg_type)
+    elif s.endswith("]"):
+        static_array_regex = "^([a-z\d\[\](),]+)\[([1-9][\d]*)]$"
+        matches = re.search(static_array_regex, s)
+        try:
+            static_length = int(matches.group(2))
+            array_type = type_from_string(matches.group(1))
+            return ArrayStaticType(array_type, static_length)
+        except Exception as e:
+            raise error.ABITypeError(
+                "malformed static array string: {}".format(s)
+            ) from e
+    elif s.startswith("uint"):
+        try:
+            if not s[4:].isdecimal():
+                raise error.ABITypeError(
+                    "uint string does not contain a valid size: {}".format(s)
+                )
+            type_size = int(s[4:])
+            return UintType(type_size)
+        except Exception as e:
+            raise error.ABITypeError(
+                "malformed uint string: {}".format(s)
+            ) from e
+    elif s == "byte":
+        return ByteType()
+    elif s.startswith("ufixed"):
+        ufixed_regex = "^ufixed([1-9][\d]*)x([1-9][\d]*)$"
+        matches = re.search(ufixed_regex, s)
+        try:
+            bit_size = int(matches.group(1))
+            precision = int(matches.group(2))
+            return UfixedType(bit_size, precision)
+        except Exception as e:
+            raise error.ABITypeError(
+                "malformed ufixed string: {}".format(s)
+            ) from e
+    elif s == "bool":
+        return BoolType()
+    elif s == "address":
+        return AddressType()
+    elif s == "string":
+        return StringType()
+    elif len(s) >= 2 and s[0] == "(" and s[-1] == ")":
+        # Recursively parse parentheses from a tuple string
+        tuples = TupleType._parse_tuple(s[1:-1])
+        tuple_list = []
+        for tup in tuples:
+            if isinstance(tup, str):
+                tt = type_from_string(str(tup))
+                tuple_list.append(tt)
+            elif isinstance(tup, list):
+                tts = list(map(lambda t_: type_from_string(t_), tup))
+                tuple_list.append(tts)
+            else:
+                raise error.ABITypeError(
+                    "cannot convert {} to an ABI type".format(tup)
+                )
+
+        return TupleType(tuple_list)
+    else:
+        raise error.ABITypeError("cannot convert {} to an ABI type".format(s))

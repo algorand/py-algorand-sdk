@@ -20,7 +20,7 @@ from algosdk import (
     wordlist,
 )
 from algosdk.abi.type import (
-    Type,
+    type_from_string,
     UintType,
     UfixedType,
     BoolType,
@@ -3589,8 +3589,8 @@ class TestABIType(unittest.TestCase):
         for uint_index in range(8, 513, 8):
             uint_type = UintType(uint_index)
             self.assertEqual(str(uint_type), f"uint{uint_index}")
-            type_from_string = Type.type_from_string(str(uint_type))
-            self.assertEqual(uint_type, type_from_string)
+            actual = type_from_string(str(uint_type))
+            self.assertEqual(uint_type, actual)
 
         # Test for ufixed
         for size_index in range(8, 513, 8):
@@ -3599,8 +3599,8 @@ class TestABIType(unittest.TestCase):
                 self.assertEqual(
                     str(ufixed_type), f"ufixed{size_index}x{precision_index}"
                 )
-                type_from_string = Type.type_from_string(str(ufixed_type))
-                self.assertEqual(ufixed_type, type_from_string)
+                actual = type_from_string(str(ufixed_type))
+                self.assertEqual(ufixed_type, actual)
 
         test_cases = [
             # Test for byte/bool/address/strings
@@ -3676,7 +3676,7 @@ class TestABIType(unittest.TestCase):
         ]
         for test_case in test_cases:
             self.assertEqual(str(test_case[0]), test_case[1])
-            self.assertEqual(test_case[0], Type.type_from_string(test_case[1]))
+            self.assertEqual(test_case[0], type_from_string(test_case[1]))
 
     def test_make_type_invalid(self):
         # Test for invalid uint
@@ -3740,7 +3740,7 @@ class TestABIType(unittest.TestCase):
         )
         for test_case in test_cases:
             with self.assertRaises(error.ABITypeError) as e:
-                Type.type_from_string(test_case)
+                type_from_string(test_case)
 
     def test_is_dynamic(self):
         test_cases = [
@@ -3755,18 +3755,16 @@ class TestABIType(unittest.TestCase):
                 True,
             ),
             # Test tuple child types
-            (Type.type_from_string("(string[100])"), False),
-            (Type.type_from_string("(address,bool,uint256)"), False),
-            (Type.type_from_string("(uint8,(byte[10]))"), False),
-            (Type.type_from_string("(string,uint256)"), True),
+            (type_from_string("(string[100])"), False),
+            (type_from_string("(address,bool,uint256)"), False),
+            (type_from_string("(uint8,(byte[10]))"), False),
+            (type_from_string("(string,uint256)"), True),
             (
-                Type.type_from_string("(bool,(ufixed16x10[],(byte,address)))"),
+                type_from_string("(bool,(ufixed16x10[],(byte,address)))"),
                 True,
             ),
             (
-                Type.type_from_string(
-                    "(bool,(uint256,(byte,address,string)))"
-                ),
+                type_from_string("(bool,(uint256,(byte,address,string)))"),
                 True,
             ),
         ]
@@ -3780,23 +3778,23 @@ class TestABIType(unittest.TestCase):
             (BoolType(), 1),
             (UintType(64), 8),
             (UfixedType(256, 50), 32),
-            (Type.type_from_string("bool[81]"), 11),
-            (Type.type_from_string("bool[80]"), 10),
-            (Type.type_from_string("bool[88]"), 11),
-            (Type.type_from_string("address[5]"), 160),
-            (Type.type_from_string("uint16[20]"), 40),
-            (Type.type_from_string("ufixed64x20[10]"), 80),
-            (Type.type_from_string(f"(address,byte,ufixed16x20)"), 35),
+            (type_from_string("bool[81]"), 11),
+            (type_from_string("bool[80]"), 10),
+            (type_from_string("bool[88]"), 11),
+            (type_from_string("address[5]"), 160),
+            (type_from_string("uint16[20]"), 40),
+            (type_from_string("ufixed64x20[10]"), 80),
+            (type_from_string(f"(address,byte,ufixed16x20)"), 35),
             (
-                Type.type_from_string(
+                type_from_string(
                     f"((bool,address[10]),(bool,bool,bool),uint8[20])"
                 ),
                 342,
             ),
-            (Type.type_from_string(f"(bool,bool)"), 1),
-            (Type.type_from_string(f"({'bool,'*6}uint8)"), 2),
+            (type_from_string(f"(bool,bool)"), 1),
+            (type_from_string(f"({'bool,'*6}uint8)"), 2),
             (
-                Type.type_from_string(f"({'bool,'*10}uint8,{'bool,'*10}byte)"),
+                type_from_string(f"({'bool,'*10}uint8,{'bool,'*10}byte)"),
                 6,
             ),
         ]
@@ -3999,27 +3997,27 @@ class TestABIEncoding(unittest.TestCase):
     def test_tuple_encoding(self):
         test_cases = [
             (
-                Type.type_from_string("()"),
+                type_from_string("()"),
                 [[]],
                 bytes.fromhex(""),
             ),
             (
-                Type.type_from_string("(bool[3])"),
+                type_from_string("(bool[3])"),
                 [[True, True, False]],
                 bytes.fromhex("C0"),
             ),
             (
-                Type.type_from_string("(bool[])"),
+                type_from_string("(bool[])"),
                 [[True, True, False]],
                 bytes.fromhex("00 02 00 03 C0"),
             ),
             (
-                Type.type_from_string("(bool[2],bool[])"),
+                type_from_string("(bool[2],bool[])"),
                 [[True, True], [True, True]],
                 bytes.fromhex("C0 00 03 00 02 C0"),
             ),
             (
-                Type.type_from_string("(bool[],bool[])"),
+                type_from_string("(bool[],bool[])"),
                 [[], []],
                 bytes.fromhex("00 04 00 06 00 00 00 00"),
             ),
