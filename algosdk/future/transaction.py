@@ -3015,6 +3015,7 @@ def wait_for_confirmation(algod_client, txid, wait_rounds=0, **kwargs):
     Block until a pending transaction is confirmed by the network.
 
     Args:
+        algod_client (algod.AlgodClient): Instance of the `algod` client
         txid (str): transaction ID
         wait_rounds (int, optional): The number of rounds to block for before
             exiting with an Exception. If not supplied, there is no timeout.
