@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 import math
 import re
 
@@ -20,7 +20,7 @@ class BaseType(IntEnum):
     Tuple = 8
 
 
-class Type:
+class Type(ABC):
     """
     Represents an ABI Type for encoding.
 
@@ -60,9 +60,11 @@ class Type:
         self.precision = precision
         self.static_length = static_length
 
+    @abstractmethod
     def __str__(self):
         pass
 
+    @abstractmethod
     def __eq__(self, other) -> bool:
         pass
 
@@ -90,7 +92,7 @@ class Type:
     @abstractmethod
     def decode(self):
         """
-        Deserialize the ABI value into a byte string using ABI encoding rules.
+        Deserialize the ABI type and value from a byte string using ABI encoding rules.
         """
         pass
 
@@ -146,10 +148,20 @@ class UintType(Type):
                     value, self.bit_size
                 )
             )
-        return (value).to_bytes(self.bit_size, byteorder="big")
+        return (value).to_bytes(self.bit_size // 8, byteorder="big")
 
-    def decode(self):
-        pass
+    def decode(self, value_string):
+        if (
+            not isinstance(value_string, bytes)
+            or len(value_string) != self.bit_size // 8
+        ):
+            raise error.ABIEncodingError(
+                "value string must be in bytes and correspond to a uint{}: {}".format(
+                    self.bit_size, value_string
+                )
+            )
+        # Convert bytes into an unsigned integer
+        return int.from_bytes(value_string, byteorder="big", signed=False)
 
 
 class ByteType(Type):
@@ -255,10 +267,20 @@ class UfixedType(Type):
                     value, self.bit_size
                 )
             )
-        return (value).to_bytes(self.bit_size, byteorder="big")
+        return (value).to_bytes(self.bit_size // 8, byteorder="big")
 
-    def decode(self):
-        pass
+    def decode(self, value_string):
+        if (
+            not isinstance(value_string, bytes)
+            or len(value_string) != self.bit_size // 8
+        ):
+            raise error.ABIEncodingError(
+                "value string must be in bytes and correspond to a ufixed{}x{}: {}".format(
+                    self.bit_size, self.precision, value_string
+                )
+            )
+        # Convert bytes into an unsigned integer numerator
+        return int.from_bytes(value_string, byteorder="big", signed=False)
 
 
 class BoolType(Type):

@@ -3819,17 +3819,16 @@ class TestABIEncoding(unittest.TestCase):
             for val in uint_test_values:
                 actual_uint = UintType(uint_size)
                 actual = actual_uint.encode(val)
-                self.assertEqual(len(actual), actual_uint.bit_size)
-
-                expected = val.to_bytes(uint_size, byteorder="big")
+                self.assertEqual(len(actual), actual_uint.bit_size // 8)
+                expected = val.to_bytes(uint_size // 8, byteorder="big")
                 self.assertEqual(actual, expected)
             # Test for the upper limit of each bit size
             val = 2 ** uint_size - 1
             actual_uint = UintType(uint_size)
             actual = actual_uint.encode(val)
-            self.assertEqual(len(actual), actual_uint.bit_size)
+            self.assertEqual(len(actual), actual_uint.bit_size // 8)
 
-            expected = val.to_bytes(uint_size, byteorder="big")
+            expected = val.to_bytes(uint_size // 8, byteorder="big")
             self.assertEqual(actual, expected)
 
             # Test bad values
@@ -3838,6 +3837,29 @@ class TestABIEncoding(unittest.TestCase):
             with self.assertRaises(error.ABIEncodingError) as e:
                 UintType(uint_size).encode(2 ** uint_size)
 
+    def test_uint_decoding(self):
+        uint_test_values = [0, 1, 10, 100, 254]
+        for uint_size in range(8, 513, 8):
+            for val in uint_test_values:
+                uint_type = UintType(uint_size)
+                encoded_uint = uint_type.encode(val)
+                actual = uint_type.decode(encoded_uint)
+                expected = val
+                self.assertEqual(actual, expected)
+            # Test for the upper limit of each bit size
+            val = 2 ** uint_size - 1
+            uint_type = UintType(uint_size)
+            encoded_uint = uint_type.encode(val)
+            actual = uint_type.decode(encoded_uint)
+            expected = val
+            self.assertEqual(actual, expected)
+
+            # Test bad values
+            with self.assertRaises(error.ABIEncodingError) as e:
+                x = UintType(uint_size).decode("ZZZZ")
+            with self.assertRaises(error.ABIEncodingError) as e:
+                UintType(uint_size).decode(b"\xFF" * (uint_size // 8 + 1))
+
     def test_ufixed_encoding(self):
         ufixed_test_values = [0, 1, 10, 100, 254]
         for ufixed_size in range(8, 513, 8):
@@ -3845,17 +3867,17 @@ class TestABIEncoding(unittest.TestCase):
                 for val in ufixed_test_values:
                     actual_ufixed = UfixedType(ufixed_size, precision)
                     actual = actual_ufixed.encode(val)
-                    self.assertEqual(len(actual), actual_ufixed.bit_size)
+                    self.assertEqual(len(actual), actual_ufixed.bit_size // 8)
 
-                    expected = val.to_bytes(ufixed_size, byteorder="big")
+                    expected = val.to_bytes(ufixed_size // 8, byteorder="big")
                     self.assertEqual(actual, expected)
             # Test for the upper limit of each bit size
             val = 2 ** ufixed_size - 1
             actual_ufixed = UfixedType(ufixed_size, precision)
             actual = actual_ufixed.encode(val)
-            self.assertEqual(len(actual), actual_ufixed.bit_size)
+            self.assertEqual(len(actual), actual_ufixed.bit_size // 8)
 
-            expected = val.to_bytes(ufixed_size, byteorder="big")
+            expected = val.to_bytes(ufixed_size // 8, byteorder="big")
             self.assertEqual(actual, expected)
 
             # Test bad values
@@ -3863,6 +3885,32 @@ class TestABIEncoding(unittest.TestCase):
                 UfixedType(ufixed_size, 10).encode(-1)
             with self.assertRaises(error.ABIEncodingError) as e:
                 UfixedType(ufixed_size, 10).encode(2 ** ufixed_size)
+
+    def test_ufixed_decoding(self):
+        ufixed_test_values = [0, 1, 10, 100, 254]
+        for ufixed_size in range(8, 513, 8):
+            for precision in range(1, 161):
+                for val in ufixed_test_values:
+                    ufixed_type = UfixedType(ufixed_size, precision)
+                    encoded_ufixed = ufixed_type.encode(val)
+                    actual = ufixed_type.decode(encoded_ufixed)
+                    expected = val
+                    self.assertEqual(actual, expected)
+            # Test for the upper limit of each bit size
+            val = 2 ** ufixed_size - 1
+            ufixed_type = UfixedType(ufixed_size, precision)
+            encoded_ufixed = ufixed_type.encode(val)
+            actual = ufixed_type.decode(encoded_ufixed)
+            expected = val
+            self.assertEqual(actual, expected)
+
+            # Test bad values
+            with self.assertRaises(error.ABIEncodingError) as e:
+                x = UfixedType(ufixed_size, 10).decode("ZZZZ")
+            with self.assertRaises(error.ABIEncodingError) as e:
+                UfixedType(ufixed_size, 10).decode(
+                    b"\xFF" * (ufixed_size // 8 + 1)
+                )
 
     def test_bool_encoding(self):
         actual = BoolType().encode(True)
