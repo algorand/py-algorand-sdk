@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.8.0
+### Added
+
+- Add wait_for_confirmation() to AlgodClient (#214)
+- Support AVM 1.0 (#236)
+
+### Bug Fixes
+- Fix JSON decoding in AlgodHTTPError (#223)
+
 ## 1.7.0
 ### Added
 
