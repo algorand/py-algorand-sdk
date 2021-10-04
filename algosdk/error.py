@@ -203,3 +203,7 @@ class AlgodResponseError(Exception):
 
 class IndexerHTTPError(Exception):
     pass
+
+
+class ConfirmationTimeoutError(Exception):
+    pass

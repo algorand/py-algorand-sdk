@@ -1833,7 +1833,7 @@ def create_transient_and_fund(context, transient_fund_amount):
     )
     signed_payment = context.wallet.sign_transaction(payment)
     context.app_acl.send_transaction(signed_payment)
-    context.app_acl.status_after_block(sp.first + 2)
+    transaction.wait_for_confirmation(context.app_acl, payment.get_txid(), 10)
 
 
 @step(
