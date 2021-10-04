@@ -3,6 +3,7 @@
 
 import pprint
 
+
 class AssetHolding(object):
     """
     Attributes:
@@ -11,21 +12,24 @@ class AssetHolding(object):
       attribute_map (dict): The key is attribute name
                             and the value is json key in definition.
     """
+
     openapi_types = {
-        'amount': 'int',
-        'asset_id': 'int',
-        'creator': 'str',
-        'is_frozen': 'bool'
+        "amount": "int",
+        "asset_id": "int",
+        "creator": "str",
+        "is_frozen": "bool",
     }
 
     attribute_map = {
-        'amount': 'amount',
-        'asset_id': 'asset-id',
-        'creator': 'creator',
-        'is_frozen': 'is-frozen'
+        "amount": "amount",
+        "asset_id": "asset-id",
+        "creator": "creator",
+        "is_frozen": "is-frozen",
     }
 
-    def __init__(self, amount=None, asset_id=None, creator=None, is_frozen=None):  # noqa: E501
+    def __init__(
+        self, amount=None, asset_id=None, creator=None, is_frozen=None
+    ):  # noqa: E501
         """AssetHolding - a model defined in OpenAPI"""  # noqa: E501
 
         self._amount = None
@@ -137,19 +141,23 @@ class AssetHolding(object):
         for attr, oas_attr in self.attribute_map.items():
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[oas_attr] = list(map(
-                    lambda x: x.dictify() \
-                    if hasattr(x, "dictify") else x,
-                    value
-                ))
+                result[oas_attr] = list(
+                    map(
+                        lambda x: x.dictify() if hasattr(x, "dictify") else x,
+                        value,
+                    )
+                )
             elif hasattr(value, "dictify"):
                 result[oas_attr] = value.dictify()
             elif isinstance(value, dict):
-                result[oas_attr] = dict(map(
-                    lambda item: (item[0], item[1].dictify())
-                    if hasattr(item[1], "dictify") else item,
-                    value.items()
-                ))
+                result[oas_attr] = dict(
+                    map(
+                        lambda item: (item[0], item[1].dictify())
+                        if hasattr(item[1], "dictify")
+                        else item,
+                        value.items(),
+                    )
+                )
             else:
                 result[oas_attr] = value
 

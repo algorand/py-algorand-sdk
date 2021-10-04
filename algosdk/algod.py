@@ -34,8 +34,15 @@ class AlgodClient:
         self.algod_address = algod_address
         self.headers = headers
 
-    def algod_request(self, method, requrl, params=None, data=None,
-                      headers=None, raw_response=False):
+    def algod_request(
+        self,
+        method,
+        requrl,
+        params=None,
+        data=None,
+        headers=None,
+        raw_response=False,
+    ):
         """
         Execute a given request.
 
@@ -59,17 +66,19 @@ class AlgodClient:
             header.update(headers)
 
         if requrl not in constants.no_auth:
-            header.update({
-                constants.algod_auth_header: self.algod_token
-            })
+            header.update({constants.algod_auth_header: self.algod_token})
 
         if requrl not in constants.unversioned_paths:
             requrl = api_version_path_prefix + requrl
         if params:
             requrl = requrl + "?" + parse.urlencode(params)
 
-        req = Request(self.algod_address+requrl, headers=header, method=method,
-                      data=data)
+        req = Request(
+            self.algod_address + requrl,
+            headers=header,
+            method=method,
+            data=data,
+        )
 
         try:
             resp = urlopen(req)
@@ -106,8 +115,10 @@ class AlgodClient:
         """
         if block_num is None and round_num is None:
             raise error.UnderspecifiedRoundError
-        req = "/status/wait-for-block-after/" + _specify_round_string(block_num, round_num)
-        
+        req = "/status/wait-for-block-after/" + _specify_round_string(
+            block_num, round_num
+        )
+
         return self.algod_request("GET", req, **kwargs)
 
     def pending_transactions(self, max_txns=0, **kwargs):
@@ -132,9 +143,16 @@ class AlgodClient:
         req = "/ledger/supply"
         return self.algod_request("GET", req, **kwargs)
 
-    def transactions_by_address(self, address, first=None, last=None,
-                                limit=None, from_date=None, to_date=None,
-                                **kwargs):
+    def transactions_by_address(
+        self,
+        address,
+        first=None,
+        last=None,
+        limit=None,
+        from_date=None,
+        to_date=None,
+        **kwargs
+    ):
         """
         Return transactions for an address. If indexer is not enabled, you can
         search by date and you do not have to specify first and last rounds.
@@ -255,7 +273,8 @@ class AlgodClient:
             res["lastRound"] + 1000,
             res["genesishashb64"],
             res["genesisID"],
-            False)
+            False,
+        )
 
     def send_raw_transaction(self, txn, headers=None, **kwargs):
         """
@@ -271,10 +290,12 @@ class AlgodClient:
         """
         tx_headers = dict(headers) if headers is not None else {}
         if all(map(lambda x: x.lower() != "content-type", [*tx_headers])):
-            tx_headers['Content-Type'] = 'application/x-binary'
+            tx_headers["Content-Type"] = "application/x-binary"
         txn = base64.b64decode(txn)
         req = "/transactions"
-        return self.algod_request("POST", req, data=txn, headers=tx_headers, **kwargs)["txId"]
+        return self.algod_request(
+            "POST", req, data=txn, headers=tx_headers, **kwargs
+        )["txId"]
 
     def send_transaction(self, txn, **kwargs):
         """
@@ -287,8 +308,9 @@ class AlgodClient:
         Returns:
             str: transaction ID
         """
-        return self.send_raw_transaction(encoding.msgpack_encode(txn),
-                                         **kwargs)
+        return self.send_raw_transaction(
+            encoding.msgpack_encode(txn), **kwargs
+        )
 
     def send_transactions(self, txns, **kwargs):
         """
@@ -306,8 +328,9 @@ class AlgodClient:
         for txn in txns:
             serialized.append(base64.b64decode(encoding.msgpack_encode(txn)))
 
-        return self.send_raw_transaction(base64.b64encode(
-                                         b''.join(serialized)), **kwargs)
+        return self.send_raw_transaction(
+            base64.b64encode(b"".join(serialized)), **kwargs
+        )
 
     def block_info(self, round=None, round_num=None, **kwargs):
         """
@@ -322,7 +345,7 @@ class AlgodClient:
         if round is None and round_num is None:
             raise error.UnderspecifiedRoundError
         req = "/block/" + _specify_round_string(round, round_num)
-        
+
         return self.algod_request("GET", req, **kwargs)
 
     def block_raw(self, round=None, round_num=None, **kwargs):
@@ -339,10 +362,14 @@ class AlgodClient:
             raise error.UnderspecifiedRoundError
         req = "/block/" + _specify_round_string(round, round_num)
         query = {"raw": 1}
-        kwargs['raw_response'] = True
+        kwargs["raw_response"] = True
         response = self.algod_request("GET", req, query, **kwargs)
-        block_type = 'application/x-algorand-block-v1'
+        block_type = "application/x-algorand-block-v1"
         content_type = response.info().get_content_type()
         if content_type != block_type:
-            raise Exception('expected "Content-Type: {}" but got {!r}'.format(block_type, content_type))
+            raise Exception(
+                'expected "Content-Type: {}" but got {!r}'.format(
+                    block_type, content_type
+                )
+            )
         return msgpack.loads(response.read())

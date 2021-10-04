@@ -63,8 +63,8 @@ def read_program(program, args=None):
 
     if opcodes is None:
         opcodes = dict()
-        for op in spec['Ops']:
-            opcodes[op['Opcode']] = op
+        for op in spec["Ops"]:
+            opcodes[op["Opcode"]] = op
 
     ints = []
     bytearrays = []
@@ -74,22 +74,22 @@ def read_program(program, args=None):
         if op is None:
             raise error.InvalidProgram("invalid instruction")
 
-        cost += op['Cost']
-        size = op['Size']
+        cost += op["Cost"]
+        size = op["Size"]
         if size == 0:
-            if op['Opcode'] == intcblock_opcode:
+            if op["Opcode"] == intcblock_opcode:
                 size_inc, found_ints = read_int_const_block(program, pc)
                 ints += found_ints
                 size += size_inc
-            elif op['Opcode'] == bytecblock_opcode:
+            elif op["Opcode"] == bytecblock_opcode:
                 size_inc, found_bytearrays = read_byte_const_block(program, pc)
                 bytearrays += found_bytearrays
                 size += size_inc
-            elif op['Opcode'] == pushint_opcode:
+            elif op["Opcode"] == pushint_opcode:
                 size_inc, found_int = read_push_int_block(program, pc)
                 ints.append(found_int)
                 size += size_inc
-            elif op['Opcode'] == pushbytes_opcode:
+            elif op["Opcode"] == pushbytes_opcode:
                 size_inc, found_bytearray = read_push_byte_block(program, pc)
                 bytearrays.append(found_bytearray)
                 size += size_inc
@@ -98,8 +98,10 @@ def read_program(program, args=None):
         pc += size
 
     # costs calculated dynamically starting in v4
-    if version < 4 and cost >= constants.logic_sig_max_cost : 
-        raise error.InvalidProgram("program too costly for Teal version < 4. consider using v4.")
+    if version < 4 and cost >= constants.logic_sig_max_cost:
+        raise error.InvalidProgram(
+            "program too costly for Teal version < 4. consider using v4."
+        )
 
     return True, ints, bytearrays
 
@@ -112,18 +114,20 @@ def check_int_const_block(program, pc):
 def read_int_const_block(program, pc):
     size = 1
     ints = []
-    num_ints, bytes_used = parse_uvarint(program[pc + size:])
+    num_ints, bytes_used = parse_uvarint(program[pc + size :])
     if bytes_used <= 0:
         raise error.InvalidProgram(
-            "could not decode int const block size at pc=%d" % (pc + size))
+            "could not decode int const block size at pc=%d" % (pc + size)
+        )
     size += bytes_used
     for i in range(0, num_ints):
         if pc + size >= len(program):
             raise error.InvalidProgram("intcblock ran past end of program")
-        num, bytes_used = parse_uvarint(program[pc + size:])
+        num, bytes_used = parse_uvarint(program[pc + size :])
         if bytes_used <= 0:
             raise error.InvalidProgram(
-                "could not decode int const[%d] at pc=%d" % (i, pc + size))
+                "could not decode int const[%d] at pc=%d" % (i, pc + size)
+            )
         ints.append(num)
         size += bytes_used
     return size, ints
@@ -137,54 +141,63 @@ def check_byte_const_block(program, pc):
 def read_byte_const_block(program, pc):
     size = 1
     bytearrays = []
-    num_ints, bytes_used = parse_uvarint(program[pc + size:])
+    num_ints, bytes_used = parse_uvarint(program[pc + size :])
     if bytes_used <= 0:
         raise error.InvalidProgram(
-            "could not decode []byte const block size at pc=%d" % (pc + size))
+            "could not decode []byte const block size at pc=%d" % (pc + size)
+        )
     size += bytes_used
     for i in range(0, num_ints):
         if pc + size >= len(program):
             raise error.InvalidProgram("bytecblock ran past end of program")
-        item_len, bytes_used = parse_uvarint(program[pc + size:])
+        item_len, bytes_used = parse_uvarint(program[pc + size :])
         if bytes_used <= 0:
             raise error.InvalidProgram(
-                "could not decode []byte const[%d] at pc=%d" % (i, pc + size))
+                "could not decode []byte const[%d] at pc=%d" % (i, pc + size)
+            )
         size += bytes_used
         if pc + size + item_len > len(program):
             raise error.InvalidProgram("bytecblock ran past end of program")
-        bytearrays.append(program[pc+size:pc+size+item_len])
+        bytearrays.append(program[pc + size : pc + size + item_len])
         size += item_len
     return size, bytearrays
+
 
 def check_push_int_block(program, pc):
     size, _ = read_push_int_block(program, pc)
     return size
 
+
 def read_push_int_block(program, pc):
     size = 1
-    single_int, bytes_used = parse_uvarint(program[pc + size:])
+    single_int, bytes_used = parse_uvarint(program[pc + size :])
     if bytes_used <= 0:
         raise error.InvalidProgram(
-            "could not decode push int const at pc=%d" % (pc + size))
+            "could not decode push int const at pc=%d" % (pc + size)
+        )
     size += bytes_used
     return size, single_int
+
 
 def check_push_byte_block(program, pc):
     size, _ = read_push_byte_block(program, pc)
     return size
 
+
 def read_push_byte_block(program, pc):
     size = 1
-    item_len, bytes_used = parse_uvarint(program[pc + size:])
+    item_len, bytes_used = parse_uvarint(program[pc + size :])
     if bytes_used <= 0:
         raise error.InvalidProgram(
-            "could not decode push []byte const size at pc=%d" % (pc + size))
+            "could not decode push []byte const size at pc=%d" % (pc + size)
+        )
     size += bytes_used
     if pc + size + item_len > len(program):
         raise error.InvalidProgram("pushbytes ran past end of program")
-    single_bytearray = program[pc+size:pc+size+item_len]
+    single_bytearray = program[pc + size : pc + size + item_len]
     size += item_len
     return size, single_bytearray
+
 
 def parse_uvarint(buf):
     x = 0
@@ -194,7 +207,7 @@ def parse_uvarint(buf):
             if i > 9 or i == 9 and b > 1:
                 return 0, -(i + 1)
             return x | int(b) << s, i + 1
-        x |= int(b & 0x7f) << s
+        x |= int(b & 0x7F) << s
         s += 7
 
     return 0, 0
@@ -228,9 +241,13 @@ def teal_sign(private_key, data, contract_addr):
         bytes: signature
     """
     private_key = base64.b64decode(private_key)
-    signing_key = SigningKey(private_key[:constants.key_len_bytes])
+    signing_key = SigningKey(private_key[: constants.key_len_bytes])
 
-    to_sign = constants.logic_data_prefix + encoding.decode_address(contract_addr) + data
+    to_sign = (
+        constants.logic_data_prefix
+        + encoding.decode_address(contract_addr)
+        + data
+    )
     signed = signing_key.sign(to_sign)
     return signed.signature
 
@@ -249,3 +266,18 @@ def teal_sign_from_program(private_key, data, program):
     """
 
     return teal_sign(private_key, data, address(program))
+
+
+def get_application_address(appID: int) -> str:
+    """
+    Return the escrow address of an application.
+
+    Args:
+        appID (int): The ID of the application.
+
+    Returns:
+        str: The address corresponding to that application's escrow account.
+    """
+    to_sign = constants.APPID_PREFIX + appID.to_bytes(8, "big")
+    checksum = encoding.checksum(to_sign)
+    return encoding.encode_address(checksum)

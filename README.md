@@ -1,5 +1,8 @@
 # py-algorand-sdk
-[![Build Status](https://travis-ci.com/algorand/py-algorand-sdk.svg?branch=master)](https://travis-ci.com/algorand/py-algorand-sdk) [![PyPI version](https://badge.fury.io/py/py-algorand-sdk.svg)](https://badge.fury.io/py/py-algorand-sdk) [![Documentation Status](https://readthedocs.org/projects/py-algorand-sdk/badge/?version=latest&style=flat)](https://py-algorand-sdk.readthedocs.io/en/latest)
+[![Build Status](https://travis-ci.com/algorand/py-algorand-sdk.svg?branch=master)](https://travis-ci.com/algorand/py-algorand-sdk) 
+[![PyPI version](https://badge.fury.io/py/py-algorand-sdk.svg)](https://badge.fury.io/py/py-algorand-sdk) 
+[![Documentation Status](https://readthedocs.org/projects/py-algorand-sdk/badge/?version=latest&style=flat)](https://py-algorand-sdk.readthedocs.io/en/latest) 
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 A python library for interacting with the Algorand network.
 

@@ -14,4 +14,4 @@ kcl = kmd.KMDClient(tokens.kmd_token, tokens.kmd_address)
 kcl.create_wallet("wallet_name", "wallet_password", master_deriv_key=mdk)
 
 # list wallets; you should see the new wallet here
-print(kcl.list_wallets()) 
+print(kcl.list_wallets())

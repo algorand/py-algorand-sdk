@@ -91,6 +91,7 @@ def future_msgpack_decode(enc):
     if "auc" in decoded:
         return auction.Bid.undictify(decoded)
 
+
 def msgpack_decode(enc):
     """
     Decode a msgpack encoded object from a string.
@@ -168,8 +169,8 @@ def decode_address(addr):
     if not len(addr) == constants.address_len:
         raise error.WrongKeyLengthError
     decoded = base64.b32decode(_correct_padding(addr))
-    addr = decoded[:-constants.check_sum_len_bytes]
-    expected_checksum = decoded[-constants.check_sum_len_bytes:]
+    addr = decoded[: -constants.check_sum_len_bytes]
+    expected_checksum = decoded[-constants.check_sum_len_bytes :]
     chksum = _checksum(addr)
 
     if chksum == expected_checksum:
@@ -194,7 +195,7 @@ def encode_address(addr_bytes):
     if not len(addr_bytes) == constants.key_len_bytes:
         raise error.WrongKeyBytesLengthError
     chksum = _checksum(addr_bytes)
-    addr = base64.b32encode(addr_bytes+chksum)
+    addr = base64.b32encode(addr_bytes + chksum)
     return _undo_padding(addr.decode())
 
 
@@ -208,13 +209,13 @@ def _checksum(addr):
     Returns:
         bytes: checksum of the address
     """
-    return checksum(addr)[-constants.check_sum_len_bytes:]
+    return checksum(addr)[-constants.check_sum_len_bytes :]
 
 
 def _correct_padding(a):
     if len(a) % 8 == 0:
         return a
-    return a + "="*(8-len(a) % 8)
+    return a + "=" * (8 - len(a) % 8)
 
 
 def _undo_padding(a):

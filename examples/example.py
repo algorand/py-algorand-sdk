@@ -30,8 +30,9 @@ for w in wallets:
         break
 
 # get a handle for the existing wallet
-existing_handle = kcl.init_wallet_handle(existing_wallet_id,
-                                         existing_wallet_pswd)
+existing_handle = kcl.init_wallet_handle(
+    existing_wallet_id, existing_wallet_pswd
+)
 print("Got the wallet's handle: " + existing_handle)
 
 # new wallet to create
@@ -90,12 +91,14 @@ txn = transaction.PaymentTxn(existing_account, sp, address_1, amount)
 print("Encoded transaction:", encoding.msgpack_encode(txn), "\n")
 
 # sign transaction with kmd
-signed_with_kmd = kcl.sign_transaction(existing_handle,
-                                       existing_wallet_pswd, txn)
+signed_with_kmd = kcl.sign_transaction(
+    existing_handle, existing_wallet_pswd, txn
+)
 
 # get the private key for the existing account
-private_key = kcl.export_key(existing_handle, existing_wallet_pswd,
-                             existing_account)
+private_key = kcl.export_key(
+    existing_handle, existing_wallet_pswd, existing_account
+)
 
 # sign transaction offline
 signed_offline = txn.sign(private_key)

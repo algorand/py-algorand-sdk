@@ -43,8 +43,16 @@ class Split(Template):
     """
 
     def __init__(
-            self, owner: str, receiver_1: str, receiver_2: str, rat_1: int,
-            rat_2: int, expiry_round: int, min_pay: int, max_fee: int):
+        self,
+        owner: str,
+        receiver_1: str,
+        receiver_2: str,
+        rat_1: int,
+        rat_2: int,
+        expiry_round: int,
+        min_pay: int,
+        max_fee: int,
+    ):
         self.owner = owner
         self.receiver_1 = receiver_1
         self.receiver_2 = receiver_2
@@ -63,18 +71,27 @@ class Split(Template):
             "aoZHPQ3Zg8zZB/BZ1oDgt77LGo5np3rbto3/gloTyB40AS2H3I72YCbDk4hKpm7J7"
             "NnFy2Xrt39TJG0ORFg+zEQIhIxASMMEDIEJBJAABkxCSgSMQcyAxIQMQglEhAxAiE"
             "EDRAiQAAuMwAAMwEAEjEJMgMSEDMABykSEDMBByoSEDMACCEFCzMBCCEGCxIQMwAI"
-            "IQcPEBA=")
+            "IQcPEBA="
+        )
         orig = base64.b64decode(orig)
         offsets = [4, 7, 8, 9, 10, 14, 47, 80]
-        values = [self.max_fee, self.expiry_round, self.rat_2,
-                  self.rat_1, self.min_pay, self.owner,
-                  self.receiver_1, self.receiver_2]
+        values = [
+            self.max_fee,
+            self.expiry_round,
+            self.rat_2,
+            self.rat_1,
+            self.min_pay,
+            self.owner,
+            self.receiver_1,
+            self.receiver_2,
+        ]
         types = [int, int, int, int, int, "address", "address", "address"]
         return inject(orig, offsets, values, types)
 
     @staticmethod
     def get_split_funds_transaction(
-            contract, amount: int, fee: int, first_valid, last_valid, gh):
+        contract, amount: int, fee: int, first_valid, last_valid, gh
+    ):
         """
         Return a group transactions array which transfers funds according to
         the contract's ratio.
@@ -109,18 +126,25 @@ class Split(Template):
             amt_2 = amount - amt_1
         else:
             raise error.TemplateInputError(
-                "the specified amount cannot be split into two " +
-                "parts with the ratio " + str(rat_1) + "/" + str(rat_2))
+                "the specified amount cannot be split into two "
+                + "parts with the ratio "
+                + str(rat_1)
+                + "/"
+                + str(rat_2)
+            )
 
         if amt_1 < min_pay:
             raise error.TemplateInputError(
                 "the amount paid to receiver_1 must be greater than "
-                + str(min_pay))
+                + str(min_pay)
+            )
 
         txn_1 = transaction.PaymentTxn(
-            address, fee, first_valid, last_valid, gh, receiver_1, amt_1)
+            address, fee, first_valid, last_valid, gh, receiver_1, amt_1
+        )
         txn_2 = transaction.PaymentTxn(
-            address, fee, first_valid, last_valid, gh, receiver_2, amt_2)
+            address, fee, first_valid, last_valid, gh, receiver_2, amt_2
+        )
 
         transaction.assign_group_id([txn_1, txn_2])
 
@@ -132,7 +156,8 @@ class Split(Template):
         if txn_1.fee > max_fee or txn_2.fee > max_fee:
             raise error.TemplateInputError(
                 "the transaction fee should not be greater than "
-                + str(max_fee))
+                + str(max_fee)
+            )
 
         return [stx_1, stx_2]
 
@@ -161,8 +186,16 @@ class HTLC(Template):
         max_fee (int): the maximum fee that can be paid to the network by the
             account
     """
-    def __init__(self, owner: str, receiver: str, hash_function: str,
-                 hash_image: str, expiry_round: int, max_fee: int):
+
+    def __init__(
+        self,
+        owner: str,
+        receiver: str,
+        hash_function: str,
+        hash_image: str,
+        expiry_round: int,
+        max_fee: int,
+    ):
         self.owner = owner
         self.receiver = receiver
         self.hash_function = hash_function
@@ -174,9 +207,11 @@ class HTLC(Template):
         """
         Return a byte array to be used in LogicSig.
         """
-        orig = ("ASAEBQEABiYDIP68oLsUSlpOp7Q4pGgayA5soQW8tgf8VlMlyVaV9qITAQ" +
-                "Yg5pqWHm8tX3rIZgeSZVK+mCNe0zNjyoiRi7nJOKkVtvkxASIOMRAjEhAx" +
-                "BzIDEhAxCCQSEDEJKBItASkSEDEJKhIxAiUNEBEQ")
+        orig = (
+            "ASAEBQEABiYDIP68oLsUSlpOp7Q4pGgayA5soQW8tgf8VlMlyVaV9qITAQ"
+            + "Yg5pqWHm8tX3rIZgeSZVK+mCNe0zNjyoiRi7nJOKkVtvkxASIOMRAjEhAx"
+            + "BzIDEhAxCCQSEDEJKBItASkSEDEJKhIxAiUNEBEQ"
+        )
         orig = base64.b64decode(orig)
         hash_inject = 0
         if self.hash_function == "sha256":
@@ -184,8 +219,14 @@ class HTLC(Template):
         elif self.hash_function == "keccak256":
             hash_inject = 2
         offsets = [3, 6, 10, 42, 45, 102]
-        values = [self.max_fee, self.expiry_round, self.receiver,
-                  self.hash_image, self.owner, hash_inject]
+        values = [
+            self.max_fee,
+            self.expiry_round,
+            self.receiver,
+            self.hash_image,
+            self.owner,
+            hash_inject,
+        ]
         types = [int, int, "address", "base64", "address", int]
         return inject(orig, offsets, values, types)
 
@@ -220,29 +261,40 @@ class HTLC(Template):
             if hash_image.digest() != expected_hash_image:
                 raise error.TemplateInputError(
                     "the hash of the preimage does not match the expected "
-                    "hash image using hash function sha256")
+                    "hash image using hash function sha256"
+                )
         elif hash_function == 2:
             hash_image = keccak.new(digest_bits=256)
             hash_image.update(base64.b64decode(preimage))
             if hash_image.digest() != expected_hash_image:
                 raise error.TemplateInputError(
                     "the hash of the preimage does not match the expected "
-                    "hash image using hash function keccak256")
+                    "hash image using hash function keccak256"
+                )
         else:
             raise error.TemplateInputError(
-                "an invalid hash function was provided in the contract")
+                "an invalid hash function was provided in the contract"
+            )
 
         receiver = encoding.encode_address(bytearrays[0])
 
         lsig = transaction.LogicSig(contract, [base64.b64decode(preimage)])
         txn = transaction.PaymentTxn(
-            logic.address(contract), fee, first_valid, last_valid, gh, None, 0,
-            close_remainder_to=receiver)
+            logic.address(contract),
+            fee,
+            first_valid,
+            last_valid,
+            gh,
+            None,
+            0,
+            close_remainder_to=receiver,
+        )
 
         if txn.fee > max_fee:
             raise error.TemplateInputError(
                 "the transaction fee should not be greater than "
-                + str(max_fee))
+                + str(max_fee)
+            )
 
         ltxn = transaction.LogicSigTransaction(txn, lsig)
         return ltxn
@@ -263,10 +315,18 @@ class DynamicFee(Template):
         close_remainder_address (str, optional): the address that recieves the
             remainder
     """
-    def __init__(self, receiver: str, amount: int, first_valid: int,
-                 last_valid: int = None, close_remainder_address: str = None):
-        self.lease_value = bytes([random.randint(0, 255) for x in range(
-                                 constants.lease_length)])
+
+    def __init__(
+        self,
+        receiver: str,
+        amount: int,
+        first_valid: int,
+        last_valid: int = None,
+        close_remainder_address: str = None,
+    ):
+        self.lease_value = bytes(
+            [random.randint(0, 255) for x in range(constants.lease_length)]
+        )
 
         self.last_valid = last_valid
         if last_valid is None:
@@ -281,18 +341,25 @@ class DynamicFee(Template):
         """
         Return a byte array to be used in LogicSig.
         """
-        orig = ("ASAFAgEFBgcmAyD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJclWlfaiEy" +
-                "DmmpYeby1feshmB5JlUr6YI17TM2PKiJGLuck4qRW2+QEGMgQiEjMAECMS" +
-                "EDMABzEAEhAzAAgxARIQMRYjEhAxECMSEDEHKBIQMQkpEhAxCCQSEDECJR" +
-                "IQMQQhBBIQMQYqEhA=")
+        orig = (
+            "ASAFAgEFBgcmAyD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJclWlfaiEy"
+            + "DmmpYeby1feshmB5JlUr6YI17TM2PKiJGLuck4qRW2+QEGMgQiEjMAECMS"
+            + "EDMABzEAEhAzAAgxARIQMRYjEhAxECMSEDEHKBIQMQkpEhAxCCQSEDECJR"
+            + "IQMQQhBBIQMQYqEhA="
+        )
         orig = base64.b64decode(orig)
         offsets = [5, 6, 7, 11, 44, 76]
         close = self.close_remainder_address
         if close is None:
             close = encoding.encode_address(bytes(32))
-        values = [self.amount, self.first_valid, self.last_valid,
-                  self.receiver, close,
-                  base64.b64encode(self.lease_value)]
+        values = [
+            self.amount,
+            self.first_valid,
+            self.last_valid,
+            self.receiver,
+            close,
+            base64.b64encode(self.lease_value),
+        ]
         types = [int, int, int, "address", "address", "base64"]
         return inject(orig, offsets, values, types)
 
@@ -311,13 +378,20 @@ class DynamicFee(Template):
             fee (int): fee per byte, for both transactions
         """
         txn.fee = fee
-        txn.fee = max(constants.min_txn_fee, fee*txn.estimate_size())
+        txn.fee = max(constants.min_txn_fee, fee * txn.estimate_size())
 
         # reimbursement transaction
         address = account.address_from_private_key(private_key)
-        txn_2 = transaction.PaymentTxn(address, fee, txn.first_valid_round,
-                                       txn.last_valid_round, txn.genesis_hash,
-                                       txn.sender, txn.fee, lease=txn.lease)
+        txn_2 = transaction.PaymentTxn(
+            address,
+            fee,
+            txn.first_valid_round,
+            txn.last_valid_round,
+            txn.genesis_hash,
+            txn.sender,
+            txn.fee,
+            lease=txn.lease,
+        )
 
         transaction.assign_group_id([txn_2, txn])
 
@@ -341,9 +415,16 @@ class DynamicFee(Template):
 
         # main transaction
         txn = transaction.PaymentTxn(
-            sender, 0, self.first_valid, self.last_valid, gh, self.receiver,
-            self.amount, lease=self.lease_value,
-            close_remainder_to=self.close_remainder_address)
+            sender,
+            0,
+            self.first_valid,
+            self.last_valid,
+            gh,
+            self.receiver,
+            self.amount,
+            lease=self.lease_value,
+            close_remainder_to=self.close_remainder_address,
+        )
         lsig = transaction.LogicSig(self.get_program())
         lsig.sign(private_key)
 
@@ -367,10 +448,19 @@ class PeriodicPayment(Template):
         timeout (int): a round in which the receiver can withdraw the rest of
             the funds after
     """
-    def __init__(self, receiver: str, amount: int, withdrawing_window: int,
-                 period: int, max_fee: int, timeout: int):
-        self.lease_value = bytes([random.randint(0, 255) for x in range(
-                                 constants.lease_length)])
+
+    def __init__(
+        self,
+        receiver: str,
+        amount: int,
+        withdrawing_window: int,
+        period: int,
+        max_fee: int,
+        timeout: int,
+    ):
+        self.lease_value = bytes(
+            [random.randint(0, 255) for x in range(constants.lease_length)]
+        )
         self.receiver = receiver
         self.amount = amount
         self.withdrawing_window = withdrawing_window
@@ -382,14 +472,22 @@ class PeriodicPayment(Template):
         """
         Return a byte array to be used in LogicSig.
         """
-        orig = ("ASAHAQoLAAwNDiYCAQYg/ryguxRKWk6ntDikaBrIDmyhBby2B/xWUyXJVp" +
-                "X2ohMxECISMQEjDhAxAiQYJRIQMQQhBDECCBIQMQYoEhAxCTIDEjEHKRIQ" +
-                "MQghBRIQMQkpEjEHMgMSEDECIQYNEDEIJRIQERA=")
+        orig = (
+            "ASAHAQoLAAwNDiYCAQYg/ryguxRKWk6ntDikaBrIDmyhBby2B/xWUyXJVp"
+            + "X2ohMxECISMQEjDhAxAiQYJRIQMQQhBDECCBIQMQYoEhAxCTIDEjEHKRIQ"
+            + "MQghBRIQMQkpEjEHMgMSEDECIQYNEDEIJRIQERA="
+        )
         orig = base64.b64decode(orig)
         offsets = [4, 5, 7, 8, 9, 12, 15]
-        values = [self.max_fee, self.period, self.withdrawing_window,
-                  self.amount, self.timeout, base64.b64encode(
-                      self.lease_value), self.receiver]
+        values = [
+            self.max_fee,
+            self.period,
+            self.withdrawing_window,
+            self.amount,
+            self.timeout,
+            base64.b64encode(self.lease_value),
+            self.receiver,
+        ]
         types = [int, int, int, int, int, "base64", "address"]
         return inject(orig, offsets, values, types)
 
@@ -419,15 +517,24 @@ class PeriodicPayment(Template):
 
         if first_valid % period != 0:
             raise error.TemplateInputError(
-                "first_valid must be divisible by the period")
+                "first_valid must be divisible by the period"
+            )
         txn = transaction.PaymentTxn(
-            address, fee, first_valid, first_valid + withdrawing_window, gh,
-            receiver, amount, lease=lease_value)
+            address,
+            fee,
+            first_valid,
+            first_valid + withdrawing_window,
+            gh,
+            receiver,
+            amount,
+            lease=lease_value,
+        )
 
         if txn.fee > max_fee:
             raise error.TemplateInputError(
                 "the transaction fee should not be greater than "
-                + str(max_fee))
+                + str(max_fee)
+            )
 
         lsig = transaction.LogicSig(contract)
         stx = transaction.LogicSigTransaction(txn, lsig)
@@ -451,8 +558,17 @@ class LimitOrder(Template):
             account
         min_trade (int): the minimum amount (of Algos) to be traded away
     """
-    def __init__(self, owner: str, asset_id: int, ratn: int, ratd: int,
-                 expiry_round: int, max_fee: int, min_trade: int):
+
+    def __init__(
+        self,
+        owner: str,
+        asset_id: int,
+        ratn: int,
+        ratd: int,
+        expiry_round: int,
+        max_fee: int,
+        min_trade: int,
+    ):
         self.owner = owner
         self.ratn = ratn
         self.ratd = ratd
@@ -465,22 +581,38 @@ class LimitOrder(Template):
         """
         Return a byte array to be used in LogicSig.
         """
-        orig = ("ASAKAAEFAgYEBwgJHSYBIJKvkYTkEzwJf2arzJOxERsSogG9nQzKPkpIoc" +
-                "4TzPTFMRYiEjEQIxIQMQEkDhAyBCMSQABVMgQlEjEIIQQNEDEJMgMSEDMB" +
-                "ECEFEhAzAREhBhIQMwEUKBIQMwETMgMSEDMBEiEHHTUCNQExCCEIHTUENQ" +
-                "M0ATQDDUAAJDQBNAMSNAI0BA8QQAAWADEJKBIxAiEJDRAxBzIDEhAxCCIS" +
-                "EBA=")
+        orig = (
+            "ASAKAAEFAgYEBwgJHSYBIJKvkYTkEzwJf2arzJOxERsSogG9nQzKPkpIoc"
+            + "4TzPTFMRYiEjEQIxIQMQEkDhAyBCMSQABVMgQlEjEIIQQNEDEJMgMSEDMB"
+            + "ECEFEhAzAREhBhIQMwEUKBIQMwETMgMSEDMBEiEHHTUCNQExCCEIHTUENQ"
+            + "M0ATQDDUAAJDQBNAMSNAI0BA8QQAAWADEJKBIxAiEJDRAxBzIDEhAxCCIS"
+            + "EBA="
+        )
         orig = base64.b64decode(orig)
         offsets = [5, 7, 9, 10, 11, 12, 16]
-        values = [self.max_fee, self.min_trade, self.asset_id, self.ratd,
-                  self.ratn, self.expiry_round, self.owner]
+        values = [
+            self.max_fee,
+            self.min_trade,
+            self.asset_id,
+            self.ratd,
+            self.ratn,
+            self.expiry_round,
+            self.owner,
+        ]
         types = [int, int, int, int, int, int, "address"]
         return inject(orig, offsets, values, types)
 
     @staticmethod
     def get_swap_assets_transactions(
-            contract: bytes, asset_amount: int, microalgo_amount: int,
-            private_key: str, first_valid, last_valid, gh, fee):
+        contract: bytes,
+        asset_amount: int,
+        microalgo_amount: int,
+        private_key: str,
+        first_valid,
+        last_valid,
+        gh,
+        fee,
+    ):
         """
         Return a group transactions array which transfer funds according to
         the contract's ratio.
@@ -500,8 +632,9 @@ class LimitOrder(Template):
         _, ints, bytearrays = logic.read_program(contract)
         if not (len(ints) == 10 and len(bytearrays) == 1):
             raise error.WrongContractError(
-                "Wrong contract provided; a limit order contract" +
-                " is needed")
+                "Wrong contract provided; a limit order contract"
+                + " is needed"
+            )
         min_trade = ints[4]
         asset_id = ints[6]
         ratn = ints[8]
@@ -511,27 +644,43 @@ class LimitOrder(Template):
 
         if microalgo_amount < min_trade:
             raise error.TemplateInputError(
-                "At least " + str(min_trade) +
-                " microalgos must be requested")
+                "At least " + str(min_trade) + " microalgos must be requested"
+            )
 
-        if asset_amount*ratd < microalgo_amount*ratn:
+        if asset_amount * ratd < microalgo_amount * ratn:
             raise error.TemplateInputError(
                 "The exchange ratio of assets to microalgos must be at least "
-                + str(ratn) + " / " + str(ratd))
+                + str(ratn)
+                + " / "
+                + str(ratd)
+            )
 
         txn_1 = transaction.PaymentTxn(
-            address, fee, first_valid, last_valid, gh,
+            address,
+            fee,
+            first_valid,
+            last_valid,
+            gh,
             account.address_from_private_key(private_key),
-            int(microalgo_amount))
+            int(microalgo_amount),
+        )
 
         txn_2 = transaction.AssetTransferTxn(
-            account.address_from_private_key(private_key), fee,
-            first_valid, last_valid, gh, owner, asset_amount, asset_id)
+            account.address_from_private_key(private_key),
+            fee,
+            first_valid,
+            last_valid,
+            gh,
+            owner,
+            asset_amount,
+            asset_id,
+        )
 
         if txn_1.fee > max_fee or txn_2.fee > max_fee:
             raise error.TemplateInputError(
                 "the transaction fee should not be greater than "
-                + str(max_fee))
+                + str(max_fee)
+            )
 
         transaction.assign_group_id([txn_1, txn_2])
 
@@ -560,7 +709,7 @@ def inject(orig, offsets, values, values_types):
     res = orig[:]
 
     def replace(arr, new_val, offset, place_holder_length):
-        return arr[:offset] + new_val + arr[offset+place_holder_length:]
+        return arr[:offset] + new_val + arr[offset + place_holder_length :]
 
     for i in range(len(offsets)):
         val = values[i]
