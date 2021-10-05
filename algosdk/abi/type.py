@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
+from logging import currentframe
 import math
 import re
 
 from enum import IntEnum
+from sys import byteorder
 
 from algosdk import encoding
 from .. import error
@@ -199,8 +201,14 @@ class ByteType(Type):
             )
         return value.to_bytes(1, byteorder="big")
 
-    def decode(self):
-        pass
+    def decode(self, byte_string):
+        if not isinstance(byte_string, bytes) or len(byte_string) != 1:
+            raise error.ABIEncodingError(
+                "value string must be in bytes and correspond to a byte: {}".format(
+                    byte_string
+                )
+            )
+        return int.from_bytes(byte_string, byteorder="big", signed=False)
 
 
 class UfixedType(Type):
@@ -312,8 +320,21 @@ class BoolType(Type):
             return bytes.fromhex("80")
         return bytes.fromhex("00")
 
-    def decode(self):
-        pass
+    def decode(self, bool_string):
+        if not isinstance(bool_string, bytes) or len(bool_string) != 1:
+            raise error.ABIEncodingError(
+                "value string must be in bytes and correspond to a bool: {}".format(
+                    bool_string
+                )
+            )
+        if bool_string.hex() == "80":
+            return True
+        elif bool_string.hex() == "00":
+            return False
+        else:
+            raise error.ABIEncodingError(
+                "boolean value could not be decoded: {}".format(bool_string)
+            )
 
 
 class ArrayStaticType(Type):
@@ -328,14 +349,12 @@ class ArrayStaticType(Type):
     Attributes:
         type_id (BaseType)
         child_type (Type)
-        child_types (list)
         static_length (int)
     """
 
     def __init__(self, arg_type, array_len) -> None:
         self.abi_type_id = BaseType.ArrayStatic
         self.child_type = arg_type
-        self.child_types = list()
         self.static_length = array_len
 
     def __eq__(self, other) -> bool:
@@ -344,7 +363,6 @@ class ArrayStaticType(Type):
         return (
             self.abi_type_id == other.abi_type_id
             and self.child_type == other.child_type
-            and self.child_types == other.child_types
             and self.static_length == other.static_length
         )
 
@@ -359,12 +377,10 @@ class ArrayStaticType(Type):
         return self.static_length * element_byte_length
 
     def is_dynamic(self):
-        return any(child.is_dynamic() for child in self.child_types)
+        return self.child_type.is_dynamic()
 
     def _to_tuple(self):
-        child_type_array = list()
-        for _ in range(self.static_length):
-            child_type_array.append(self.child_type)
+        child_type_array = [self.child_type] * self.static_length
         return TupleType(child_type_array)
 
     def encode(self, value_array):
@@ -377,8 +393,9 @@ class ArrayStaticType(Type):
         converted_tuple = self._to_tuple()
         return converted_tuple.encode(value_array)
 
-    def decode(self):
-        pass
+    def decode(self, array_bytes):
+        converted_tuple = self._to_tuple()
+        return converted_tuple.decode(array_bytes)
 
 
 class AddressType(Type):
@@ -428,8 +445,20 @@ class AddressType(Type):
         converted_tuple = self._to_tuple()
         return converted_tuple.encode(value)
 
-    def decode(self):
-        pass
+    def decode(self, addr_string):
+        if (
+            not (
+                isinstance(addr_string, bytearray)
+                or isinstance(addr_string, bytes)
+            )
+            or len(addr_string) != 32
+        ):
+            raise error.ABIEncodingError(
+                "value string must be in bytes and correspond to a byte[32]: {}".format(
+                    addr_string
+                )
+            )
+        return addr_string
 
 
 class ArrayDynamicType(Type):
@@ -438,18 +467,16 @@ class ArrayDynamicType(Type):
 
     Args:
         type_id (BaseType): type of ABI argument, as defined by the BaseType class above.
-        child_type (Type): the type of the child_types array.
+        child_type (Type): the type of the dynamic array.
 
     Attributes:
         type_id (BaseType)
         child_type (Type)
-        child_types (list)
     """
 
     def __init__(self, arg_type) -> None:
         self.abi_type_id = BaseType.ArrayDynamic
         self.child_type = arg_type
-        self.child_types = list()
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, ArrayDynamicType):
@@ -457,7 +484,6 @@ class ArrayDynamicType(Type):
         return (
             self.abi_type_id == other.abi_type_id
             and self.child_type == other.child_type
-            and self.child_types == other.child_types
         )
 
     def __str__(self):
@@ -471,20 +497,34 @@ class ArrayDynamicType(Type):
     def is_dynamic(self):
         return True
 
-    def _to_tuple(self, value):
-        child_type_array = [self.child_type] * len(value)
+    def _to_tuple(self, length):
+        child_type_array = [self.child_type] * length
         return TupleType(child_type_array)
 
     def encode(self, value):
-        converted_tuple = self._to_tuple(value)
+        converted_tuple = self._to_tuple(len(value))
         length_to_encode = len(converted_tuple.child_types).to_bytes(
             2, byteorder="big"
         )
         encoded = converted_tuple.encode(value)
         return bytearray(length_to_encode) + encoded
 
-    def decode(self):
-        pass
+    def decode(self, array_bytes):
+        length_byte_size = (
+            2  # We use 2 bytes to encode the length of a dynamic element
+        )
+        if len(array_bytes) < length_byte_size:
+            raise error.ABIEncodingError(
+                "dynamic array is too short to be decoded: {}".format(
+                    len(array_bytes)
+                )
+            )
+
+        byte_length = int.from_bytes(
+            array_bytes[:length_byte_size], byteorder="big"
+        )
+        converted_tuple = self._to_tuple(byte_length)
+        return converted_tuple.decode(array_bytes[length_byte_size:])
 
 
 class StringType(Type):
@@ -529,8 +569,26 @@ class StringType(Type):
         encoded = converted_tuple.encode(value)
         return length_to_encode + encoded
 
-    def decode(self):
-        pass
+    def decode(self, byte_string):
+        length_byte_size = (
+            2  # We use 2 bytes to encode the length of a dynamic element
+        )
+        if len(byte_string) < length_byte_size:
+            raise error.ABIEncodingError(
+                "string is too short to be decoded: {}".format(
+                    len(byte_string)
+                )
+            )
+        byte_length = int.from_bytes(
+            byte_string[:length_byte_size], byteorder="big"
+        )
+        if len(byte_string[length_byte_size:]) != byte_length:
+            raise error.ABIEncodingError(
+                "string length byte does not match actual length of string: {} != {}".format(
+                    len(byte_string[length_byte_size:]), byte_length
+                )
+            )
+        return (byte_string[length_byte_size:]).decode("utf-8")
 
 
 class TupleType(Type):
@@ -675,16 +733,15 @@ class TupleType(Type):
                 )
             )
         tuple_elements = self.child_types
-        if len(self.child_types) != len(tuple_elements):
-            raise error.ABIEncodingError(
-                "number of tuple elements do not match length of child types array"
-            )
 
         # Create a head/tail component and use it to concat bytes later
         heads = list()
         tails = list()
         is_dynamic_index = dict()
         i = 0
+        length_byte_size = (
+            2  # We use 2 bytes to encode the length of a dynamic element
+        )
         while i < len(tuple_elements):
             element = tuple_elements[i]
             if element.is_dynamic():
@@ -723,8 +780,8 @@ class TupleType(Type):
             if head_element:
                 head_length += len(head_element)
             else:
-                # Placeholder for a 2 byte length
-                head_length += 2
+                # Placeholder for a 2 byte length encoding
+                head_length += length_byte_size
 
         # Correctly encode dynamic types and replace placeholder
         tail_curr_length = 0
@@ -735,7 +792,9 @@ class TupleType(Type):
                     raise error.ABIEncodingError(
                         "byte length {} exceeds 2^16".format(head_value)
                     )
-                heads[i] = head_value.to_bytes(2, byteorder="big")
+                heads[i] = head_value.to_bytes(
+                    length_byte_size, byteorder="big"
+                )
             if tails[i]:
                 tail_curr_length += len(tails[i])
 
@@ -748,8 +807,116 @@ class TupleType(Type):
                 encoded += tail
         return encoded
 
-    def decode(self):
-        pass
+    def decode(self, tuple_string):
+        if not (
+            isinstance(tuple_string, bytes)
+            or isinstance(tuple_string, bytearray)
+        ):
+            raise error.ABIEncodingError(
+                "value string must be in bytes: {}".format(tuple_string)
+            )
+        tuple_elements = self.child_types
+        dynamic_segments = (
+            list()
+        )  # Store the start and end of a dynamic element
+        value_partitions = list()
+        i = 0
+        array_index = 0
+        length_byte_size = (
+            2  # We use 2 bytes to encode the length of a dynamic element
+        )
+
+        while i < len(tuple_elements):
+            element = tuple_elements[i]
+            if element.is_dynamic():
+                if len(tuple_string[array_index:]) < length_byte_size:
+                    raise error.ABIEncodingError(
+                        "malformed value: dynamically typed values must contain a two-byte length specifier"
+                    )
+                # Decode the size of the dynamic element
+                dynamic_index = int.from_bytes(
+                    tuple_string[array_index : array_index + length_byte_size],
+                    byteorder="big",
+                    signed=False,
+                )
+                if len(dynamic_segments) > 0:
+                    dynamic_segments[len(dynamic_segments) - 1][
+                        1
+                    ] = dynamic_index
+                    # Check that the right side of segment is greater than the left side
+                    assert (
+                        dynamic_index
+                        > dynamic_segments[len(dynamic_segments) - 1][0]
+                    )
+                # Since we do not know where the current dynamic element ends, put a placeholder and update later
+                dynamic_segments.append([dynamic_index, -1])
+                value_partitions.append(None)
+                array_index += length_byte_size
+            else:
+                if element.abi_type_id == BaseType.Bool:
+                    before = TupleType._find_bool(self.child_types, i, -1)
+                    after = TupleType._find_bool(self.child_types, i, 1)
+
+                    if before % 8 != 0:
+                        raise error.ABIEncodingError(
+                            "expected before index should have number of bool mod 8 equal 0"
+                        )
+                    after = min(7, after)
+                    # Parse bool values into multiple byte strings
+                    for bool_i in range(after + 1):
+                        mask = 128 >> bool_i
+                        bit = int.from_bytes(
+                            tuple_string[array_index : array_index + 1],
+                            byteorder="big",
+                        )
+                        if mask & bit:
+                            value_partitions.append(bytes.fromhex("80"))
+                        else:
+                            value_partitions.append(bytes.fromhex("00"))
+                    i += after
+                    array_index += 1
+                else:
+                    curr_len = element.byte_len()
+                    value_partitions.append(
+                        tuple_string[array_index : array_index + curr_len]
+                    )
+                    array_index += curr_len
+            if (
+                array_index >= len(tuple_string)
+                and i != len(tuple_elements) - 1
+            ):
+                raise error.ABIEncodingError(
+                    "input string is not long enough to be decoded: {}".format(
+                        tuple_string
+                    )
+                )
+            i += 1
+
+        if len(dynamic_segments) > 0:
+            dynamic_segments[len(dynamic_segments) - 1][1] = len(tuple_string)
+            array_index = len(tuple_string)
+        if array_index < len(tuple_string):
+            raise error.ABIEncodingError(
+                "input string was not fully consumed: {}".format(tuple_string)
+            )
+
+        # Check dynamic element partitions
+        segment_index = 0
+        for i, element in enumerate(tuple_elements):
+            if element.is_dynamic():
+                value_partitions[i] = tuple_string[
+                    dynamic_segments[segment_index][0] : dynamic_segments[
+                        segment_index
+                    ][1]
+                ]
+                segment_index += 1
+
+        # Decode individual tuple elements
+        values = list()
+        for i, element in enumerate(tuple_elements):
+            val = element.decode(value_partitions[i])
+            values.append(val)
+        return values
 
 
 def type_from_string(s):
