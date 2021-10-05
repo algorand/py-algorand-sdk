@@ -1,10 +1,8 @@
 from abc import ABC, abstractmethod
-from logging import currentframe
 import math
 import re
 
 from enum import IntEnum
-from sys import byteorder
 
 from algosdk import encoding
 from .. import error
@@ -154,7 +152,10 @@ class UintType(Type):
 
     def decode(self, value_string):
         if (
-            not isinstance(value_string, bytes)
+            not (
+                isinstance(value_string, bytes)
+                or isinstance(value_string, bytearray)
+            )
             or len(value_string) != self.bit_size // 8
         ):
             raise error.ABIEncodingError(
@@ -202,7 +203,13 @@ class ByteType(Type):
         return value.to_bytes(1, byteorder="big")
 
     def decode(self, byte_string):
-        if not isinstance(byte_string, bytes) or len(byte_string) != 1:
+        if (
+            not (
+                isinstance(byte_string, bytes)
+                or isinstance(byte_string, bytearray)
+            )
+            or len(byte_string) != 1
+        ):
             raise error.ABIEncodingError(
                 "value string must be in bytes and correspond to a byte: {}".format(
                     byte_string
@@ -268,7 +275,6 @@ class UfixedType(Type):
 
     def encode(self, value):
         assert isinstance(value, int)
-        assert isinstance(value, int)
         if value >= (2 ** self.bit_size) or value < 0:
             raise error.ABIEncodingError(
                 "value {} is negative or is too big to fit in size {}".format(
@@ -279,7 +285,10 @@ class UfixedType(Type):
 
     def decode(self, value_string):
         if (
-            not isinstance(value_string, bytes)
+            not (
+                isinstance(value_string, bytes)
+                or isinstance(value_string, bytearray)
+            )
             or len(value_string) != self.bit_size // 8
         ):
             raise error.ABIEncodingError(
@@ -321,7 +330,13 @@ class BoolType(Type):
         return bytes.fromhex("00")
 
     def decode(self, bool_string):
-        if not isinstance(bool_string, bytes) or len(bool_string) != 1:
+        if (
+            not (
+                isinstance(bool_string, bytes)
+                or isinstance(bool_string, bytearray)
+            )
+            or len(bool_string) != 1
+        ):
             raise error.ABIEncodingError(
                 "value string must be in bytes and correspond to a bool: {}".format(
                     bool_string
@@ -394,6 +409,13 @@ class ArrayStaticType(Type):
         return converted_tuple.encode(value_array)
 
     def decode(self, array_bytes):
+        if not (
+            isinstance(array_bytes, bytearray)
+            or isinstance(array_bytes, bytes)
+        ):
+            raise error.ABIEncodingError(
+                "value to be decoded must be in bytes: {}".format(array_bytes)
+            )
         converted_tuple = self._to_tuple()
         return converted_tuple.decode(array_bytes)
 
@@ -454,7 +476,7 @@ class AddressType(Type):
             or len(addr_string) != 32
         ):
             raise error.ABIEncodingError(
-                "value string must be in bytes and correspond to a byte[32]: {}".format(
+                "address string must be in bytes and correspond to a byte[32]: {}".format(
                     addr_string
                 )
             )
@@ -513,6 +535,13 @@ class ArrayDynamicType(Type):
         length_byte_size = (
             2  # We use 2 bytes to encode the length of a dynamic element
         )
+        if not (
+            isinstance(array_bytes, bytearray)
+            or isinstance(array_bytes, bytes)
+        ):
+            raise error.ABIEncodingError(
+                "value to be decoded must be in bytes: {}".format(array_bytes)
+            )
         if len(array_bytes) < length_byte_size:
             raise error.ABIEncodingError(
                 "dynamic array is too short to be decoded: {}".format(
@@ -573,6 +602,13 @@ class StringType(Type):
         length_byte_size = (
             2  # We use 2 bytes to encode the length of a dynamic element
         )
+        if not (
+            isinstance(byte_string, bytearray)
+            or isinstance(byte_string, bytes)
+        ):
+            raise error.ABIEncodingError(
+                "value to be decoded must be in bytes: {}".format(byte_string)
+            )
         if len(byte_string) < length_byte_size:
             raise error.ABIEncodingError(
                 "string is too short to be decoded: {}".format(
@@ -737,7 +773,7 @@ class TupleType(Type):
         # Create a head/tail component and use it to concat bytes later
         heads = list()
         tails = list()
-        is_dynamic_index = dict()
+        is_dynamic_index = list()
         i = 0
         length_byte_size = (
             2  # We use 2 bytes to encode the length of a dynamic element
@@ -747,7 +783,7 @@ class TupleType(Type):
             if element.is_dynamic():
                 # Head is not pre-determined for dynamic types; store a placeholder for now
                 heads.append(None)
-                is_dynamic_index[i] = True
+                is_dynamic_index.append(True)
                 tail_encoding = element.encode(values[i])
                 tails.append(tail_encoding)
             else:
@@ -770,7 +806,7 @@ class TupleType(Type):
                 else:
                     encoded_tuple_element = element.encode(values[i])
                     heads.append(encoded_tuple_element)
-                is_dynamic_index[i] = False
+                is_dynamic_index.append(False)
                 tails.append(None)
             i += 1
 
@@ -786,7 +822,7 @@ class TupleType(Type):
         # Correctly encode dynamic types and replace placeholder
         tail_curr_length = 0
         for i in range(len(heads)):
-            if i in is_dynamic_index and is_dynamic_index[i]:
+            if is_dynamic_index[i]:
                 head_value = head_length + tail_curr_length
                 if head_value >= 2 ** 16:
                     raise error.ABIEncodingError(
@@ -801,7 +837,8 @@ class TupleType(Type):
         # Concatenate bytes
         encoded = bytearray()
         for head in heads:
-            encoded += head
+            if head:
+                encoded += head
         for tail in tails:
             if tail:
                 encoded += tail

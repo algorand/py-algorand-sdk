@@ -4037,6 +4037,13 @@ class TestABIEncoding(unittest.TestCase):
                 [True, False, False, True, False, False, True, False, True],
                 bytes.fromhex("92 80"),
             ),
+            (
+                ArrayStaticType(UintType(64), 3),
+                [1, 2, 3],
+                bytes.fromhex(
+                    "00 00 00 00 00 00 00 01 00 00 00 00 00 00 00 02 00 00 00 00 00 00 00 03"
+                ),
+            ),
         ]
 
         for test_case in test_cases:
@@ -4118,6 +4125,11 @@ class TestABIEncoding(unittest.TestCase):
                 type_from_string("(bool[],bool[])"),
                 [[], []],
                 bytes.fromhex("00 04 00 06 00 00 00 00"),
+            ),
+            (
+                type_from_string("(string,bool,bool,bool,bool,string)"),
+                ["AB", True, False, True, False, "DE"],
+                bytes.fromhex("00 05 A0 00 09 00 02 41 42 00 02 44 45"),
             ),
         ]
 
