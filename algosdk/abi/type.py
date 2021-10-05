@@ -1014,7 +1014,7 @@ def type_from_string(s):
                 tt = type_from_string(str(tup))
                 tuple_list.append(tt)
             elif isinstance(tup, list):
-                tts = list(map(lambda t_: type_from_string(t_), tup))
+                tts = [type_from_string(t_) for t_ in tup]
                 tuple_list.append(tts)
             else:
                 raise error.ABITypeError(
