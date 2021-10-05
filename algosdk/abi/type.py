@@ -1011,7 +1011,7 @@ def type_from_string(s):
         tuple_list = []
         for tup in tuples:
             if isinstance(tup, str):
-                tt = type_from_string(str(tup))
+                tt = type_from_string(tup)
                 tuple_list.append(tt)
             elif isinstance(tup, list):
                 tts = [type_from_string(t_) for t_ in tup]
