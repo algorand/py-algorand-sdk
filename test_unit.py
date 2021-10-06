@@ -19,7 +19,7 @@ from algosdk import (
     util,
     wordlist,
 )
-from algosdk.abi.type import (
+from algosdk.abi import (
     type_from_string,
     UintType,
     UfixedType,
