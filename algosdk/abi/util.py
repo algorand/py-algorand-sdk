@@ -12,6 +12,11 @@ from .tuple_type import TupleType
 from .. import error
 
 
+# Globals
+UFIXED_REGEX = r"^ufixed([1-9][\d]*)x([1-9][\d]*)$"
+STATIC_ARRAY_REGEX = r"^([a-z\d\[\](),]+)\[([1-9][\d]*)]$"
+
+
 def type_from_string(s):
     """
     Convert a valid ABI string to a corresponding ABI type.
@@ -20,8 +25,7 @@ def type_from_string(s):
         array_arg_type = type_from_string(s[:-2])
         return ArrayDynamicType(array_arg_type)
     elif s.endswith("]"):
-        static_array_regex = "^([a-z\d\[\](),]+)\[([1-9][\d]*)]$"
-        matches = re.search(static_array_regex, s)
+        matches = re.search(STATIC_ARRAY_REGEX, s)
         try:
             static_length = int(matches.group(2))
             array_type = type_from_string(matches.group(1))
@@ -45,8 +49,7 @@ def type_from_string(s):
     elif s == "byte":
         return ByteType()
     elif s.startswith("ufixed"):
-        ufixed_regex = "^ufixed([1-9][\d]*)x([1-9][\d]*)$"
-        matches = re.search(ufixed_regex, s)
+        matches = re.search(UFIXED_REGEX, s)
         try:
             bit_size = int(matches.group(1))
             precision = int(matches.group(2))

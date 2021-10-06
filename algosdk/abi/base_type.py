@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
 from enum import IntEnum
 
+# Globals
+ABI_LENGTH_SIZE = 2  # We use 2 bytes to encode the length of a dynamic element
+
 
 class BaseType(IntEnum):
     Uint = 0
@@ -20,39 +23,16 @@ class Type(ABC):
 
     Args:
         type_id (BaseType): type of ABI argument, as defined by the BaseType class above.
-        child_type (Type, optional): the type of the child_types array.
-        child_types (list, optional): list of types of the children for a tuple.
-        bit_size (int, optional): size of a uint/ufixed type, e.g. for a uint8, the bit_size is 8.
-        precision (int, optional): number of precision for a ufixed type.
-        static_length (int, optional): index of the asset
 
     Attributes:
         type_id (BaseType)
-        child_type (Type)
-        child_types (list)
-        bit_size (int)
-        precision (int)
-        static_length (int)
     """
 
     def __init__(
         self,
         type_id,
-        child_type=None,
-        child_types=None,
-        bit_size=None,
-        precision=None,
-        static_length=None,
     ) -> None:
         self.abi_type_id = type_id
-        self.child_type = child_type  # Used for arrays
-        if not child_types:
-            self.child_types = list()
-        else:
-            self.child_types = child_types  # Used for tuples
-        self.bit_size = bit_size
-        self.precision = precision
-        self.static_length = static_length
 
     @abstractmethod
     def __str__(self):
@@ -77,14 +57,14 @@ class Type(ABC):
         pass
 
     @abstractmethod
-    def encode(self):
+    def encode(self, value):
         """
         Serialize the ABI value into a byte string using ABI encoding rules.
         """
         pass
 
     @abstractmethod
-    def decode(self):
+    def decode(self, value_string):
         """
         Deserialize the ABI type and value from a byte string using ABI encoding rules.
         """

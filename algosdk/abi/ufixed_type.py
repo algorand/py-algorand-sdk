@@ -35,7 +35,7 @@ class UfixedType(Type):
             raise error.ABITypeError(
                 "unsupported ufixed precision: {}".format(type_precision)
             )
-        self.abi_type_id = BaseType.Ufixed
+        super().__init__(BaseType.Ufixed)
         self.bit_size = type_size
         self.precision = type_precision
 
@@ -49,7 +49,7 @@ class UfixedType(Type):
         )
 
     def __str__(self):
-        return "ufixed{}x{}".format(str(self.bit_size), str(self.precision))
+        return "ufixed{}x{}".format(self.bit_size, self.precision)
 
     def byte_len(self):
         return self.bit_size // 8
@@ -65,7 +65,7 @@ class UfixedType(Type):
                     value, self.bit_size
                 )
             )
-        return (value).to_bytes(self.bit_size // 8, byteorder="big")
+        return value.to_bytes(self.bit_size // 8, byteorder="big")
 
     def decode(self, value_string):
         if (

@@ -3682,6 +3682,22 @@ class TestABIType(unittest.TestCase):
             (
                 TupleType(
                     [
+                        UintType(256),
+                        TupleType(
+                            [
+                                ByteType(),
+                                ArrayStaticType(AddressType(), 10),
+                            ]
+                        ),
+                        TupleType([]),
+                        BoolType(),
+                    ]
+                ),
+                f"(uint256,(byte,address[10]),(),bool)",
+            ),
+            (
+                TupleType(
+                    [
                         UfixedType(256, 16),
                         TupleType(
                             [
@@ -3947,7 +3963,7 @@ class TestABIEncoding(unittest.TestCase):
         for i in range(255):
             # Pass in an int type to encode
             actual = ByteType().encode(i)
-            expected = i.to_bytes(1, byteorder="big")
+            expected = bytes([i])
             self.assertEqual(actual, expected)
 
             # Try passing in a bytes type value to encode
@@ -3977,7 +3993,6 @@ class TestABIEncoding(unittest.TestCase):
             random_addr_str = account.generate_account()[1]
             addr_type = AddressType()
             actual = addr_type.encode(random_addr_str)
-
             expected = encoding.decode_address(random_addr_str)
             self.assertEqual(actual, expected)
 
@@ -3986,6 +4001,7 @@ class TestABIEncoding(unittest.TestCase):
 
             # Test decoding
             actual = addr_type.decode(actual)
+            expected = random_addr_str
             self.assertEqual(actual, expected)
 
     def test_string_encoding(self):
@@ -4015,22 +4031,22 @@ class TestABIEncoding(unittest.TestCase):
             (
                 ArrayStaticType(BoolType(), 3),
                 [True, True, False],
-                bytes.fromhex("C0"),
+                bytes([0b11000000]),
             ),
             (
                 ArrayStaticType(BoolType(), 2),
                 [False, True],
-                bytes.fromhex("40"),
+                bytes([0b01000000]),
             ),
             (
                 ArrayStaticType(BoolType(), 8),
                 [False, True, False, False, False, False, False, False],
-                bytes.fromhex("40"),
+                bytes([0b01000000]),
             ),
             (
                 ArrayStaticType(BoolType(), 8),
                 [True, True, True, True, True, True, True, True],
-                bytes.fromhex("FF"),
+                bytes([0b11111111]),
             ),
             (
                 ArrayStaticType(BoolType(), 9),
@@ -4109,7 +4125,7 @@ class TestABIEncoding(unittest.TestCase):
             (
                 type_from_string("(bool[3])"),
                 [[True, True, False]],
-                bytes.fromhex("C0"),
+                bytes([0b11000000]),
             ),
             (
                 type_from_string("(bool[])"),

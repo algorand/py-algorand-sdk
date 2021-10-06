@@ -21,7 +21,7 @@ class ArrayStaticType(Type):
     """
 
     def __init__(self, arg_type, array_len) -> None:
-        self.abi_type_id = BaseType.ArrayStatic
+        super().__init__(BaseType.ArrayStatic)
         self.child_type = arg_type
         self.static_length = array_len
 
@@ -35,7 +35,7 @@ class ArrayStaticType(Type):
         )
 
     def __str__(self):
-        return "{}[{}]".format(str(self.child_type), str(self.static_length))
+        return "{}[{}]".format(self.child_type, self.static_length)
 
     def byte_len(self):
         if self.child_type.abi_type_id == BaseType.Bool:

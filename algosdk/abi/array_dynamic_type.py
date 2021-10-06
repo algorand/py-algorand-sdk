@@ -1,4 +1,4 @@
-from .base_type import BaseType, Type
+from .base_type import ABI_LENGTH_SIZE, BaseType, Type
 from .tuple_type import TupleType
 from .. import error
 
@@ -17,7 +17,7 @@ class ArrayDynamicType(Type):
     """
 
     def __init__(self, arg_type) -> None:
-        self.abi_type_id = BaseType.ArrayDynamic
+        super().__init__(BaseType.ArrayDynamic)
         self.child_type = arg_type
 
     def __eq__(self, other) -> bool:
@@ -29,7 +29,7 @@ class ArrayDynamicType(Type):
         )
 
     def __str__(self):
-        return "{}[]".format(str(self.child_type))
+        return "{}[]".format(self.child_type)
 
     def byte_len(self):
         raise error.ABITypeError(
@@ -39,12 +39,12 @@ class ArrayDynamicType(Type):
     def is_dynamic(self):
         return True
 
-    def _to_tuple(self, length):
+    def _to_tuple_type(self, length):
         child_type_array = [self.child_type] * length
         return TupleType(child_type_array)
 
     def encode(self, value):
-        converted_tuple = self._to_tuple(len(value))
+        converted_tuple = self._to_tuple_type(len(value))
         length_to_encode = len(converted_tuple.child_types).to_bytes(
             2, byteorder="big"
         )
@@ -52,9 +52,6 @@ class ArrayDynamicType(Type):
         return bytearray(length_to_encode) + encoded
 
     def decode(self, array_bytes):
-        length_byte_size = (
-            2  # We use 2 bytes to encode the length of a dynamic element
-        )
         if not (
             isinstance(array_bytes, bytearray)
             or isinstance(array_bytes, bytes)
@@ -62,7 +59,7 @@ class ArrayDynamicType(Type):
             raise error.ABIEncodingError(
                 "value to be decoded must be in bytes: {}".format(array_bytes)
             )
-        if len(array_bytes) < length_byte_size:
+        if len(array_bytes) < ABI_LENGTH_SIZE:
             raise error.ABIEncodingError(
                 "dynamic array is too short to be decoded: {}".format(
                     len(array_bytes)
@@ -70,7 +67,7 @@ class ArrayDynamicType(Type):
             )
 
         byte_length = int.from_bytes(
-            array_bytes[:length_byte_size], byteorder="big"
+            array_bytes[:ABI_LENGTH_SIZE], byteorder="big"
         )
-        converted_tuple = self._to_tuple(byte_length)
-        return converted_tuple.decode(array_bytes[length_byte_size:])
+        converted_tuple = self._to_tuple_type(byte_length)
+        return converted_tuple.decode(array_bytes[ABI_LENGTH_SIZE:])

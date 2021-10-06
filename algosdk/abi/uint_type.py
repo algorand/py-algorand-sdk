@@ -25,7 +25,7 @@ class UintType(Type):
             raise error.ABITypeError(
                 "unsupported uint bitSize: {}".format(type_size)
             )
-        self.abi_type_id = BaseType.Uint
+        super().__init__(BaseType.Uint)
         self.bit_size = type_size
 
     def __eq__(self, other) -> bool:
@@ -37,7 +37,7 @@ class UintType(Type):
         )
 
     def __str__(self):
-        return "uint{}".format(str(self.bit_size))
+        return "uint{}".format(self.bit_size)
 
     def byte_len(self):
         return self.bit_size // 8
@@ -53,7 +53,7 @@ class UintType(Type):
                     value, self.bit_size
                 )
             )
-        return (value).to_bytes(self.bit_size // 8, byteorder="big")
+        return value.to_bytes(self.bit_size // 8, byteorder="big")
 
     def decode(self, value_string):
         if (

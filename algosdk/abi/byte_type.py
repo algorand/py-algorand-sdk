@@ -8,7 +8,7 @@ class ByteType(Type):
     """
 
     def __init__(self) -> None:
-        self.abi_type_id = BaseType.Byte
+        super().__init__(BaseType.Byte)
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, ByteType):
@@ -35,7 +35,7 @@ class ByteType(Type):
             raise error.ABIEncodingError(
                 "value {} cannot be encoded into a byte".format(value)
             )
-        return value.to_bytes(1, byteorder="big")
+        return bytes([value])
 
     def decode(self, byte_string):
         if (
@@ -50,4 +50,4 @@ class ByteType(Type):
                     byte_string
                 )
             )
-        return int.from_bytes(byte_string, byteorder="big", signed=False)
+        return byte_string[0]

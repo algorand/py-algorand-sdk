@@ -1,4 +1,4 @@
-from .base_type import BaseType, Type
+from .base_type import ABI_LENGTH_SIZE, BaseType, Type
 from .. import error
 
 
@@ -21,7 +21,7 @@ class TupleType(Type):
             raise error.ABITypeError(
                 "tuple args cannot exceed a uint16: {}".format(len(arg_types))
             )
-        self.abi_type_id = BaseType.Tuple
+        super().__init__(BaseType.Tuple)
         self.child_types = arg_types
         self.static_length = len(arg_types)
 
@@ -110,9 +110,8 @@ class TupleType(Type):
                 # If the comma is at depth 0, put the word as a new token.
                 if depth == 0:
                     word = word[:-1]
-                    if word:
-                        tuple_strs.append(word)
-                        word = ""
+                    tuple_strs.append(word)
+                    word = ""
         if word:
             tuple_strs.append(word)
         if depth != 0:
@@ -139,7 +138,7 @@ class TupleType(Type):
     def encode(self, values):
         if len(self.child_types) >= (2 ** 16):
             raise error.ABIEncodingError(
-                "length of tuple array exceeds 2^16: {}".format(
+                "length of tuple array should not exceed a uint16: {}".format(
                     len(self.child_types)
                 )
             )
@@ -150,14 +149,11 @@ class TupleType(Type):
         tails = list()
         is_dynamic_index = list()
         i = 0
-        length_byte_size = (
-            2  # We use 2 bytes to encode the length of a dynamic element
-        )
         while i < len(tuple_elements):
             element = tuple_elements[i]
             if element.is_dynamic():
                 # Head is not pre-determined for dynamic types; store a placeholder for now
-                heads.append(None)
+                heads.append(b"")
                 is_dynamic_index.append(True)
                 tail_encoding = element.encode(values[i])
                 tails.append(tail_encoding)
@@ -176,23 +172,24 @@ class TupleType(Type):
                         values[i : i + after + 1]
                     )
                     # For converting one byte, the byteorder should not matter
-                    heads.append((compressed_int).to_bytes(1, byteorder="big"))
+                    heads.append(bytes([compressed_int]))
                     i += after
                 else:
                     encoded_tuple_element = element.encode(values[i])
                     heads.append(encoded_tuple_element)
                 is_dynamic_index.append(False)
-                tails.append(None)
+                tails.append(b"")
             i += 1
 
         # Adjust heads for dynamic types
         head_length = 0
         for head_element in heads:
+            # If the element is not a placeholder, append the length of the element
             if head_element:
                 head_length += len(head_element)
             else:
                 # Placeholder for a 2 byte length encoding
-                head_length += length_byte_size
+                head_length += ABI_LENGTH_SIZE
 
         # Correctly encode dynamic types and replace placeholder
         tail_curr_length = 0
@@ -201,23 +198,18 @@ class TupleType(Type):
                 head_value = head_length + tail_curr_length
                 if head_value >= 2 ** 16:
                     raise error.ABIEncodingError(
-                        "byte length {} exceeds 2^16".format(head_value)
+                        "byte length {} should not exceed a uint16".format(
+                            head_value
+                        )
                     )
                 heads[i] = head_value.to_bytes(
-                    length_byte_size, byteorder="big"
+                    ABI_LENGTH_SIZE, byteorder="big"
                 )
             if tails[i]:
                 tail_curr_length += len(tails[i])
 
         # Concatenate bytes
-        encoded = bytearray()
-        for head in heads:
-            if head:
-                encoded += head
-        for tail in tails:
-            if tail:
-                encoded += tail
-        return encoded
+        return b"".join(heads) + b"".join(tails)
 
     def decode(self, tuple_string):
         if not (
@@ -234,20 +226,20 @@ class TupleType(Type):
         value_partitions = list()
         i = 0
         array_index = 0
-        length_byte_size = (
+        ABI_LENGTH_SIZE = (
             2  # We use 2 bytes to encode the length of a dynamic element
         )
 
         while i < len(tuple_elements):
             element = tuple_elements[i]
             if element.is_dynamic():
-                if len(tuple_string[array_index:]) < length_byte_size:
+                if len(tuple_string[array_index:]) < ABI_LENGTH_SIZE:
                     raise error.ABIEncodingError(
                         "malformed value: dynamically typed values must contain a two-byte length specifier"
                     )
                 # Decode the size of the dynamic element
                 dynamic_index = int.from_bytes(
-                    tuple_string[array_index : array_index + length_byte_size],
+                    tuple_string[array_index : array_index + ABI_LENGTH_SIZE],
                     byteorder="big",
                     signed=False,
                 )
@@ -263,7 +255,7 @@ class TupleType(Type):
                 # Since we do not know where the current dynamic element ends, put a placeholder and update later
                 dynamic_segments.append([dynamic_index, -1])
                 value_partitions.append(None)
-                array_index += length_byte_size
+                array_index += ABI_LENGTH_SIZE
             else:
                 if element.abi_type_id == BaseType.Bool:
                     before = TupleType._find_bool(self.child_types, i, -1)
@@ -282,9 +274,9 @@ class TupleType(Type):
                             byteorder="big",
                         )
                         if mask & bit:
-                            value_partitions.append(bytes.fromhex("80"))
+                            value_partitions.append(b"\x80")
                         else:
-                            value_partitions.append(bytes.fromhex("00"))
+                            value_partitions.append(b"\x00")
                     i += after
                     array_index += 1
                 else:
@@ -316,11 +308,8 @@ class TupleType(Type):
         segment_index = 0
         for i, element in enumerate(tuple_elements):
             if element.is_dynamic():
-                value_partitions[i] = tuple_string[
-                    dynamic_segments[segment_index][0] : dynamic_segments[
-                        segment_index
-                    ][1]
-                ]
+                segment_start, segment_end = dynamic_segments[segment_index]
+                value_partitions[i] = tuple_string[segment_start:segment_end]
                 segment_index += 1
 
         # Decode individual tuple elements

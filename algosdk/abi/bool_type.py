@@ -8,7 +8,7 @@ class BoolType(Type):
     """
 
     def __init__(self) -> None:
-        self.abi_type_id = BaseType.Bool
+        super().__init__(BaseType.Bool)
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, BoolType):
@@ -28,8 +28,8 @@ class BoolType(Type):
         assert isinstance(value, bool)
         if value:
             # True value is encoded as having a 1 on the most significant bit (0x80)
-            return bytes.fromhex("80")
-        return bytes.fromhex("00")
+            return b"\x80"
+        return b"\x00"
 
     def decode(self, bool_string):
         if (

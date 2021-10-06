@@ -1,4 +1,4 @@
-from .base_type import BaseType, Type
+from .base_type import ABI_LENGTH_SIZE, BaseType, Type
 from .byte_type import ByteType
 from .tuple_type import TupleType
 from .. import error
@@ -10,7 +10,7 @@ class StringType(Type):
     """
 
     def __init__(self) -> None:
-        self.abi_type_id = BaseType.String
+        super().__init__(BaseType.String)
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, StringType):
@@ -31,11 +31,11 @@ class StringType(Type):
     def _to_tuple_type(self, string_val):
         child_type_array = list()
         value_array = list()
-        string_bytes = bytes(string_val, "utf-8")
+        string_bytes = string_val.encode("utf-8")
 
         for val in string_bytes:
             child_type_array.append(ByteType())
-            value_array.append((val.to_bytes(1, byteorder="big")))
+            value_array.append(bytes([val]))
         return (TupleType(child_type_array), value_array)
 
     def encode(self, string_val):
@@ -47,9 +47,6 @@ class StringType(Type):
         return length_to_encode + encoded
 
     def decode(self, byte_string):
-        length_byte_size = (
-            2  # We use 2 bytes to encode the length of a dynamic element
-        )
         if not (
             isinstance(byte_string, bytearray)
             or isinstance(byte_string, bytes)
@@ -57,19 +54,19 @@ class StringType(Type):
             raise error.ABIEncodingError(
                 "value to be decoded must be in bytes: {}".format(byte_string)
             )
-        if len(byte_string) < length_byte_size:
+        if len(byte_string) < ABI_LENGTH_SIZE:
             raise error.ABIEncodingError(
                 "string is too short to be decoded: {}".format(
                     len(byte_string)
                 )
             )
         byte_length = int.from_bytes(
-            byte_string[:length_byte_size], byteorder="big"
+            byte_string[:ABI_LENGTH_SIZE], byteorder="big"
         )
-        if len(byte_string[length_byte_size:]) != byte_length:
+        if len(byte_string[ABI_LENGTH_SIZE:]) != byte_length:
             raise error.ABIEncodingError(
                 "string length byte does not match actual length of string: {} != {}".format(
-                    len(byte_string[length_byte_size:]), byte_length
+                    len(byte_string[ABI_LENGTH_SIZE:]), byte_length
                 )
             )
-        return (byte_string[length_byte_size:]).decode("utf-8")
+        return (byte_string[ABI_LENGTH_SIZE:]).decode("utf-8")

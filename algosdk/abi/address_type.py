@@ -12,7 +12,7 @@ class AddressType(Type):
     """
 
     def __init__(self) -> None:
-        self.abi_type_id = BaseType.Address
+        super().__init__(BaseType.Address)
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, AddressType):
@@ -28,7 +28,7 @@ class AddressType(Type):
     def is_dynamic(self):
         return False
 
-    def _to_tuple(self):
+    def _to_tuple_type(self):
         child_type_array = list()
         for _ in range(self.byte_len()):
             child_type_array.append(ByteType())
@@ -45,12 +45,15 @@ class AddressType(Type):
             except Exception as e:
                 raise error.ABIEncodingError(
                     "cannot encode the following address: {}".format(value)
-                )
-        elif not isinstance(value, bytes) or len(value) != 32:
+                ) from e
+        elif (
+            not (isinstance(value, bytes) or isinstance(value, bytearray))
+            or len(value) != 32
+        ):
             raise error.ABIEncodingError(
                 "cannot encode the following public key: {}".format(value)
             )
-        converted_tuple = self._to_tuple()
+        converted_tuple = self._to_tuple_type()
         return converted_tuple.encode(value)
 
     def decode(self, addr_string):
@@ -66,4 +69,5 @@ class AddressType(Type):
                     addr_string
                 )
             )
-        return addr_string
+        # Return the base32 encoded address string
+        return encoding.encode_address(addr_string)
