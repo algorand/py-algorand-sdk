@@ -68,10 +68,13 @@ class UfixedType(Type):
         Returns:
             bytes: encoded bytes of the ufixed numerator
         """
-        assert isinstance(value, int)
-        if value >= (2 ** self.bit_size) or value < 0:
+        if (
+            not isinstance(value, int)
+            or value >= (2 ** self.bit_size)
+            or value < 0
+        ):
             raise error.ABIEncodingError(
-                "value {} is negative or is too big to fit in size {}".format(
+                "value {} is not a non-negative int or is too big to fit in size {}".format(
                     value, self.bit_size
                 )
             )

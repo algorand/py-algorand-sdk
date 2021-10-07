@@ -55,7 +55,6 @@ class UintType(Type):
         Returns:
             bytes: encoded bytes of the uint value
         """
-        assert isinstance(value, int)
         if (
             not isinstance(value, int)
             or value >= (2 ** self.bit_size)
