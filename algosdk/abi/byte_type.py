@@ -1,4 +1,4 @@
-from .base_type import BaseType, Type
+from .base_type import Type
 from .. import error
 
 
@@ -8,12 +8,12 @@ class ByteType(Type):
     """
 
     def __init__(self) -> None:
-        super().__init__(BaseType.Byte)
+        super().__init__()
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, ByteType):
             return False
-        return self.abi_type_id == other.abi_type_id
+        return True
 
     def __str__(self):
         return "byte"

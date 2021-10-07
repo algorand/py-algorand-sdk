@@ -1,4 +1,4 @@
-from .base_type import ABI_LENGTH_SIZE, BaseType, Type
+from .base_type import ABI_LENGTH_SIZE, Type
 from .. import error
 
 
@@ -8,19 +8,19 @@ class StringType(Type):
     """
 
     def __init__(self) -> None:
-        super().__init__(BaseType.String)
+        super().__init__()
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, StringType):
             return False
-        return self.abi_type_id == other.abi_type_id
+        return True
 
     def __str__(self):
         return "string"
 
     def byte_len(self):
         raise error.ABITypeError(
-            "cannot get length of a dynamic type: {}".format(self.abi_type_id)
+            "cannot get length of a dynamic type: {}".format(self)
         )
 
     def is_dynamic(self):

@@ -1,4 +1,5 @@
-from .base_type import ABI_LENGTH_SIZE, BaseType, Type
+from .base_type import ABI_LENGTH_SIZE, Type
+from .bool_type import BoolType
 from .. import error
 
 
@@ -7,11 +8,9 @@ class TupleType(Type):
     Represents a Tuple ABI Type for encoding.
 
     Args:
-        type_id (BaseType): type of ABI argument, as defined by the BaseType class above.
         child_type (Type): the type of the child_types array.
 
     Attributes:
-        type_id (BaseType)
         child_types (list)
         static_length (int)
     """
@@ -21,7 +20,7 @@ class TupleType(Type):
             raise error.ABITypeError(
                 "tuple args cannot exceed a uint16: {}".format(len(arg_types))
             )
-        super().__init__(BaseType.Tuple)
+        super().__init__()
         self.child_types = arg_types
         self.static_length = len(arg_types)
 
@@ -29,8 +28,7 @@ class TupleType(Type):
         if not isinstance(other, TupleType):
             return False
         return (
-            self.abi_type_id == other.abi_type_id
-            and self.child_types == other.child_types
+            self.child_types == other.child_types
             and self.static_length == other.static_length
         )
 
@@ -41,7 +39,7 @@ class TupleType(Type):
         size = 0
         i = 0
         while i < len(self.child_types):
-            if self.child_types[i].abi_type_id == BaseType.Bool:
+            if isinstance(self.child_types[i], BoolType):
                 after = TupleType._find_bool(self.child_types, i, 1)
                 i += after
                 bool_num = after + 1
@@ -65,7 +63,7 @@ class TupleType(Type):
         until = 0
         while True:
             curr = index + delta * until
-            if type_list[curr].abi_type_id == BaseType.Bool:
+            if isinstance(type_list[curr], BoolType):
                 if curr != len(type_list) - 1 and delta > 0:
                     until += 1
                 elif curr > 0 and delta < 0:
@@ -168,7 +166,7 @@ class TupleType(Type):
                 tail_encoding = element.encode(values[i])
                 tails.append(tail_encoding)
             else:
-                if element.abi_type_id == BaseType.Bool:
+                if isinstance(element, BoolType):
                     before = TupleType._find_bool(self.child_types, i, -1)
                     after = TupleType._find_bool(self.child_types, i, 1)
 
@@ -273,7 +271,7 @@ class TupleType(Type):
                 value_partitions.append(None)
                 array_index += ABI_LENGTH_SIZE
             else:
-                if element.abi_type_id == BaseType.Bool:
+                if isinstance(element, BoolType):
                     before = TupleType._find_bool(self.child_types, i, -1)
                     after = TupleType._find_bool(self.child_types, i, 1)
 

@@ -1,4 +1,4 @@
-from .base_type import BaseType, Type
+from .base_type import Type
 from .. import error
 
 
@@ -7,12 +7,10 @@ class UfixedType(Type):
     Represents an Ufixed ABI Type for encoding.
 
     Args:
-        type_id (BaseType): type of ABI argument, as defined by the BaseType class above.
         bit_size (int, optional): size of a ufixed type.
         precision (int, optional): number of precision for a ufixed type.
 
     Attributes:
-        type_id (BaseType)
         bit_size (int)
         precision (int)
     """
@@ -35,7 +33,7 @@ class UfixedType(Type):
             raise error.ABITypeError(
                 "unsupported ufixed precision: {}".format(type_precision)
             )
-        super().__init__(BaseType.Ufixed)
+        super().__init__()
         self.bit_size = type_size
         self.precision = type_precision
 
@@ -43,8 +41,7 @@ class UfixedType(Type):
         if not isinstance(other, UfixedType):
             return False
         return (
-            self.abi_type_id == other.abi_type_id
-            and self.bit_size == other.bit_size
+            self.bit_size == other.bit_size
             and self.precision == other.precision
         )
 

@@ -1,6 +1,8 @@
 import math
 
-from .base_type import BaseType, Type
+from .base_type import Type
+from .bool_type import BoolType
+from .byte_type import ByteType
 from .tuple_type import TupleType
 from .. import error
 
@@ -10,18 +12,16 @@ class ArrayStaticType(Type):
     Represents a ArrayStatic ABI Type for encoding.
 
     Args:
-        type_id (BaseType): type of ABI argument, as defined by the BaseType class above.
         child_type (Type): the type of the child_types array.
         static_length (int): index of the asset
 
     Attributes:
-        type_id (BaseType)
         child_type (Type)
         static_length (int)
     """
 
     def __init__(self, arg_type, array_len) -> None:
-        super().__init__(BaseType.ArrayStatic)
+        super().__init__()
         self.child_type = arg_type
         self.static_length = array_len
 
@@ -29,8 +29,7 @@ class ArrayStaticType(Type):
         if not isinstance(other, ArrayStaticType):
             return False
         return (
-            self.abi_type_id == other.abi_type_id
-            and self.child_type == other.child_type
+            self.child_type == other.child_type
             and self.static_length == other.static_length
         )
 
@@ -38,7 +37,7 @@ class ArrayStaticType(Type):
         return "{}[{}]".format(self.child_type, self.static_length)
 
     def byte_len(self):
-        if self.child_type.abi_type_id == BaseType.Bool:
+        if isinstance(self.child_type, BoolType):
             # 8 Boolean values can be encoded into 1 byte
             return math.ceil(self.static_length / 8)
         element_byte_length = self.child_type.byte_len()
@@ -73,7 +72,7 @@ class ArrayStaticType(Type):
         if (
             isinstance(value_array, bytes)
             or isinstance(value_array, bytearray)
-        ) and self.child_type.abi_type_id != BaseType.Byte:
+        ) and not isinstance(self.child_type, ByteType):
             raise error.ABIEncodingError(
                 "cannot pass in bytes when the type of the array is not ByteType: {}".format(
                     value_array

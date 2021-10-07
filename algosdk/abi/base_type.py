@@ -5,34 +5,15 @@ from enum import IntEnum
 ABI_LENGTH_SIZE = 2  # We use 2 bytes to encode the length of a dynamic element
 
 
-class BaseType(IntEnum):
-    Uint = 0
-    Byte = 1
-    Ufixed = 2
-    Bool = 3
-    ArrayStatic = 4
-    Address = 5
-    ArrayDynamic = 6
-    String = 7
-    Tuple = 8
-
-
 class Type(ABC):
     """
     Represents an ABI Type for encoding.
-
-    Args:
-        type_id (BaseType): type of ABI argument, as defined by the BaseType class above.
-
-    Attributes:
-        type_id (BaseType)
     """
 
     def __init__(
         self,
-        type_id,
     ) -> None:
-        self.abi_type_id = type_id
+        pass
 
     @abstractmethod
     def __str__(self):

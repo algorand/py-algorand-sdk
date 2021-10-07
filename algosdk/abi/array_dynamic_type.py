@@ -1,4 +1,5 @@
-from .base_type import ABI_LENGTH_SIZE, BaseType, Type
+from .base_type import ABI_LENGTH_SIZE, Type
+from .byte_type import ByteType
 from .tuple_type import TupleType
 from .. import error
 
@@ -8,32 +9,27 @@ class ArrayDynamicType(Type):
     Represents a ArrayDynamic ABI Type for encoding.
 
     Args:
-        type_id (BaseType): type of ABI argument, as defined by the BaseType class above.
         child_type (Type): the type of the dynamic array.
 
     Attributes:
-        type_id (BaseType)
         child_type (Type)
     """
 
     def __init__(self, arg_type) -> None:
-        super().__init__(BaseType.ArrayDynamic)
+        super().__init__()
         self.child_type = arg_type
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, ArrayDynamicType):
             return False
-        return (
-            self.abi_type_id == other.abi_type_id
-            and self.child_type == other.child_type
-        )
+        return self.child_type == other.child_type
 
     def __str__(self):
         return "{}[]".format(self.child_type)
 
     def byte_len(self):
         raise error.ABITypeError(
-            "cannot get length of a dynamic type: {}".format(self.abi_type_id)
+            "cannot get length of a dynamic type: {}".format(self)
         )
 
     def is_dynamic(self):
@@ -58,7 +54,7 @@ class ArrayDynamicType(Type):
         if (
             isinstance(value_array, bytes)
             or isinstance(value_array, bytearray)
-        ) and self.child_type.abi_type_id != BaseType.Byte:
+        ) and not isinstance(self.child_type, ByteType):
             raise error.ABIEncodingError(
                 "cannot pass in bytes when the type of the array is not ByteType: {}".format(
                     value_array

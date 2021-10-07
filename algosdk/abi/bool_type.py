@@ -1,4 +1,4 @@
-from .base_type import BaseType, Type
+from .base_type import Type
 from .. import error
 
 
@@ -8,12 +8,12 @@ class BoolType(Type):
     """
 
     def __init__(self) -> None:
-        super().__init__(BaseType.Bool)
+        super().__init__()
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, BoolType):
             return False
-        return self.abi_type_id == other.abi_type_id
+        return True
 
     def __str__(self):
         return "bool"

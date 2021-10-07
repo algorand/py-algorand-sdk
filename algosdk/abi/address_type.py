@@ -1,4 +1,4 @@
-from .base_type import BaseType, Type
+from .base_type import Type
 from .byte_type import ByteType
 from .tuple_type import TupleType
 from .. import error
@@ -12,12 +12,12 @@ class AddressType(Type):
     """
 
     def __init__(self) -> None:
-        super().__init__(BaseType.Address)
+        super().__init__()
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, AddressType):
             return False
-        return self.abi_type_id == other.abi_type_id
+        return True
 
     def __str__(self):
         return "address"

@@ -1,4 +1,4 @@
-from .base_type import BaseType, Type
+from .base_type import Type
 from .. import error
 
 
@@ -7,11 +7,9 @@ class UintType(Type):
     Represents an Uint ABI Type for encoding.
 
     Args:
-        type_id (BaseType): type of ABI argument, as defined by the BaseType class above.
         bit_size (int, optional): size of a uint type, e.g. for a uint8, the bit_size is 8.
 
     Attributes:
-        type_id (BaseType)
         bit_size (int)
     """
 
@@ -25,16 +23,13 @@ class UintType(Type):
             raise error.ABITypeError(
                 "unsupported uint bitSize: {}".format(type_size)
             )
-        super().__init__(BaseType.Uint)
+        super().__init__()
         self.bit_size = type_size
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, UintType):
             return False
-        return (
-            self.abi_type_id == other.abi_type_id
-            and self.bit_size == other.bit_size
-        )
+        return self.bit_size == other.bit_size
 
     def __str__(self):
         return "uint{}".format(self.bit_size)
