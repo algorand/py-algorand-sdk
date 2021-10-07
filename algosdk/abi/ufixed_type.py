@@ -58,6 +58,16 @@ class UfixedType(Type):
         return False
 
     def encode(self, value):
+        """
+        Encodes a value into a Ufixed ABI type bytestring. The precision denotes
+        the denominator and the value denotes the numerator.
+
+        Args:
+            value (int): ufixed numerator value in uint to be encoded
+
+        Returns:
+            bytes: encoded bytes of the ufixed numerator
+        """
         assert isinstance(value, int)
         if value >= (2 ** self.bit_size) or value < 0:
             raise error.ABIEncodingError(
@@ -68,6 +78,15 @@ class UfixedType(Type):
         return value.to_bytes(self.bit_size // 8, byteorder="big")
 
     def decode(self, value_string):
+        """
+        Decodes a bytestring to a ufixed numerator.
+
+        Args:
+            value_string (bytes | bytearray): bytestring to be decoded
+
+        Returns:
+            int: ufixed numerator value from the encoded bytestring
+        """
         if (
             not (
                 isinstance(value_string, bytes)

@@ -136,6 +136,16 @@ class TupleType(Type):
         return result
 
     def encode(self, values):
+        """
+        Encodes a list of values into a TupleType ABI bytestring.
+
+        Args:
+            values (list): list of values to be encoded.
+            The length of the list cannot exceed a uint16.
+
+        Returns:
+            bytes: encoded bytes of the tuple
+        """
         if len(self.child_types) >= (2 ** 16):
             raise error.ABIEncodingError(
                 "length of tuple array should not exceed a uint16: {}".format(
@@ -212,6 +222,15 @@ class TupleType(Type):
         return b"".join(heads) + b"".join(tails)
 
     def decode(self, tuple_string):
+        """
+        Decodes a bytestring to a tuple list.
+
+        Args:
+            tuple_string (bytes | bytearray): bytestring to be decoded
+
+        Returns:
+            list: values from the encoded bytestring
+        """
         if not (
             isinstance(tuple_string, bytes)
             or isinstance(tuple_string, bytearray)
@@ -226,9 +245,6 @@ class TupleType(Type):
         value_partitions = list()
         i = 0
         array_index = 0
-        ABI_LENGTH_SIZE = (
-            2  # We use 2 bytes to encode the length of a dynamic element
-        )
 
         while i < len(tuple_elements):
             element = tuple_elements[i]

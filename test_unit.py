@@ -3966,10 +3966,6 @@ class TestABIEncoding(unittest.TestCase):
             expected = bytes([i])
             self.assertEqual(actual, expected)
 
-            # Try passing in a bytes type value to encode
-            actual = ByteType().encode(expected)
-            self.assertEqual(actual, expected)
-
             # Test decoding
             actual = ByteType().decode(actual)
             expected = i
@@ -4065,12 +4061,23 @@ class TestABIEncoding(unittest.TestCase):
         for test_case in test_cases:
             actual = test_case[0].encode(test_case[1])
             expected = test_case[2]
-            self.assertEqual(actual, expected)
+            self.assertEqual(bytes(actual), bytes(expected))
 
             # Test decoding
             actual = test_case[0].decode(actual)
             expected = test_case[1]
             self.assertEqual(actual, expected)
+
+        # Test if bytes can be passed into array
+        actual_bytes = b"\x05\x04\x03\x02\x01\x00"
+        actual = ArrayStaticType(ByteType(), 6).encode(actual_bytes)
+        expected = bytes([5, 4, 3, 2, 1, 0])
+        # self.assertEqual sometimes has problems with byte comparisons
+        assert actual == expected
+
+        actual = ArrayStaticType(ByteType(), 6).decode(expected)
+        expected = [5, 4, 3, 2, 1, 0]
+        assert actual == expected
 
         with self.assertRaises(error.ABIEncodingError) as e:
             ArrayStaticType(BoolType(), 3).encode([True, False])
@@ -4111,6 +4118,17 @@ class TestABIEncoding(unittest.TestCase):
             actual = test_case[0].decode(actual)
             expected = test_case[1]
             self.assertEqual(actual, expected)
+
+        # Test if bytes can be passed into array
+        actual_bytes = b"\x05\x04\x03\x02\x01\x00"
+        actual = ArrayDynamicType(ByteType()).encode(actual_bytes)
+        expected = bytes([0, 6, 5, 4, 3, 2, 1, 0])
+        # self.assertEqual sometimes has problems with byte comparisons
+        assert actual == expected
+
+        actual = ArrayDynamicType(ByteType()).decode(expected)
+        expected = [5, 4, 3, 2, 1, 0]
+        assert actual == expected
 
         with self.assertRaises(error.ABIEncodingError) as e:
             ArrayDynamicType(AddressType()).encode([True, False])

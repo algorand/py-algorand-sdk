@@ -25,6 +25,15 @@ class BoolType(Type):
         return False
 
     def encode(self, value):
+        """
+        Encode a boolean value
+
+        Args:
+            value (bool): value to be encoded
+
+        Returns:
+            bytes: encoded bytes (\x80 if True, \00 if False) of the boolean
+        """
         assert isinstance(value, bool)
         if value:
             # True value is encoded as having a 1 on the most significant bit (0x80)
@@ -32,6 +41,15 @@ class BoolType(Type):
         return b"\x00"
 
     def decode(self, bool_string):
+        """
+        Decodes a bytestring to a single boolean.
+
+        Args:
+            bool_string (bytes | bytearray): bytestring to be decoded that contains a single boolean, i.e. \x80 or \x00
+
+        Returns:
+            bool: boolean from the encoded bytestring
+        """
         if (
             not (
                 isinstance(bool_string, bytes)

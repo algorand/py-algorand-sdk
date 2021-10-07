@@ -36,7 +36,14 @@ class AddressType(Type):
 
     def encode(self, value):
         """
-        Encode an address string or a 32-byte public key
+        Encode an address string or a 32-byte public key into a Address ABI bytestring.
+
+        Args:
+            value (str | bytes): value to be encoded. It can be either a base32
+            address string or a 32-byte public key.
+
+        Returns:
+            bytes: encoded bytes of the uint8
         """
         # Check that the value is an address in string or the public key in bytes
         if isinstance(value, str):
@@ -53,10 +60,18 @@ class AddressType(Type):
             raise error.ABIEncodingError(
                 "cannot encode the following public key: {}".format(value)
             )
-        converted_tuple = self._to_tuple_type()
-        return converted_tuple.encode(value)
+        return bytearray(value)
 
     def decode(self, addr_string):
+        """
+        Decodes a bytestring to a base32 encoded address string.
+
+        Args:
+            addr_string (bytes | bytearray): bytestring to be decoded
+
+        Returns:
+            str: base32 encoded address from the encoded bytestring
+        """
         if (
             not (
                 isinstance(addr_string, bytearray)

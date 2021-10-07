@@ -27,10 +27,13 @@ class ByteType(Type):
     def encode(self, value):
         """
         Encode a single byte or a uint8
+
+        Args:
+            value (int): value to be encoded
+
+        Returns:
+            bytes: encoded bytes of the uint8
         """
-        # Enforce ByteType to only accept bytes or int values
-        if isinstance(value, bytes):
-            value = int.from_bytes(value, byteorder="big")
         if not isinstance(value, int) or value < 0 or value > 255:
             raise error.ABIEncodingError(
                 "value {} cannot be encoded into a byte".format(value)
@@ -38,6 +41,15 @@ class ByteType(Type):
         return bytes([value])
 
     def decode(self, byte_string):
+        """
+        Decodes a bytestring to a single byte.
+
+        Args:
+            byte_string (bytes | bytearray): bytestring to be decoded
+
+        Returns:
+            bytes: byte of the encoded bytestring
+        """
         if (
             not (
                 isinstance(byte_string, bytes)

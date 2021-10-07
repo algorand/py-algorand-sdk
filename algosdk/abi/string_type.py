@@ -28,25 +28,31 @@ class StringType(Type):
     def is_dynamic(self):
         return True
 
-    def _to_tuple_type(self, string_val):
-        child_type_array = list()
-        value_array = list()
-        string_bytes = string_val.encode("utf-8")
-
-        for val in string_bytes:
-            child_type_array.append(ByteType())
-            value_array.append(bytes([val]))
-        return (TupleType(child_type_array), value_array)
-
     def encode(self, string_val):
-        converted_tuple, value = self._to_tuple_type(string_val)
-        length_to_encode = len(converted_tuple.child_types).to_bytes(
-            2, byteorder="big"
-        )
-        encoded = converted_tuple.encode(value)
+        """
+        Encode a value into a String ABI bytestring.
+
+        Args:
+            value (str | bytes): value to be encoded. It can be either a base32
+            address string or a 32-byte public key.
+
+        Returns:
+            bytes: encoded bytes of the uint8
+        """
+        length_to_encode = len(string_val).to_bytes(2, byteorder="big")
+        encoded = string_val.encode("utf-8")
         return length_to_encode + encoded
 
     def decode(self, byte_string):
+        """
+        Decodes a bytestring to a string.
+
+        Args:
+            byte_string (bytes | bytearray): bytestring to be decoded
+
+        Returns:
+            str: string from the encoded bytestring
+        """
         if not (
             isinstance(byte_string, bytearray)
             or isinstance(byte_string, bytes)

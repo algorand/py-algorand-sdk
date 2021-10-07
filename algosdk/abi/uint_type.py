@@ -46,16 +46,38 @@ class UintType(Type):
         return False
 
     def encode(self, value):
+        """
+        Encodes a value into a Uint ABI type bytestring.
+
+        Args:
+            value (int): uint value to be encoded
+
+        Returns:
+            bytes: encoded bytes of the uint value
+        """
         assert isinstance(value, int)
-        if value >= (2 ** self.bit_size) or value < 0:
+        if (
+            not isinstance(value, int)
+            or value >= (2 ** self.bit_size)
+            or value < 0
+        ):
             raise error.ABIEncodingError(
-                "value {} is negative or is too big to fit in size {}".format(
+                "value {} is not a non-negative int or is too big to fit in size {}".format(
                     value, self.bit_size
                 )
             )
         return value.to_bytes(self.bit_size // 8, byteorder="big")
 
     def decode(self, value_string):
+        """
+        Decodes a bytestring to a uint.
+
+        Args:
+            value_string (bytes | bytearray): bytestring to be decoded
+
+        Returns:
+            int: uint value from the encoded bytestring
+        """
         if (
             not (
                 isinstance(value_string, bytes)
