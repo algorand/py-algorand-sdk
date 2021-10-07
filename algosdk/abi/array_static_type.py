@@ -1,8 +1,6 @@
 import math
-from unittest.mock import Base
 
 from .base_type import BaseType, Type
-from .byte_type import ByteType
 from .tuple_type import TupleType
 from .. import error
 
