@@ -4061,7 +4061,7 @@ class TestABIEncoding(unittest.TestCase):
         for test_case in test_cases:
             actual = test_case[0].encode(test_case[1])
             expected = test_case[2]
-            self.assertEqual(bytes(actual), bytes(expected))
+            self.assertEqual(actual, expected)
 
             # Test decoding
             actual = test_case[0].decode(actual)
