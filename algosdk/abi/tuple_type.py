@@ -12,7 +12,6 @@ class TupleType(Type):
 
     Attributes:
         child_types (list)
-        static_length (int)
     """
 
     def __init__(self, arg_types) -> None:
@@ -22,15 +21,11 @@ class TupleType(Type):
             )
         super().__init__()
         self.child_types = arg_types
-        self.static_length = len(arg_types)
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, TupleType):
             return False
-        return (
-            self.child_types == other.child_types
-            and self.static_length == other.static_length
-        )
+        return self.child_types == other.child_types
 
     def __str__(self):
         return "({})".format(",".join(str(t) for t in self.child_types))
