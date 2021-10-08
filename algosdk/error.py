@@ -207,3 +207,13 @@ class IndexerHTTPError(Exception):
 
 class ConfirmationTimeoutError(Exception):
     pass
+
+
+class ABITypeError(Exception):
+    def __init__(self, msg):
+        super().__init__(msg)
+
+
+class ABIEncodingError(Exception):
+    def __init__(self, msg):
+        super().__init__(msg)
