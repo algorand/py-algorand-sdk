@@ -13,7 +13,7 @@ class ArrayStaticType(Type):
 
     Args:
         child_type (Type): the type of the child_types array.
-        static_length (int): index of the asset
+        static_length (int): length of the static array.
 
     Attributes:
         child_type (Type)
@@ -21,6 +21,12 @@ class ArrayStaticType(Type):
     """
 
     def __init__(self, arg_type, array_len) -> None:
+        if array_len < 1:
+            raise error.ABITypeError(
+                "static array length must be a positive integer: {}".format(
+                    len(array_len)
+                )
+            )
         super().__init__()
         self.child_type = arg_type
         self.static_length = array_len

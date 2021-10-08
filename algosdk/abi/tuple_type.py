@@ -174,7 +174,6 @@ class TupleType(Type):
                     compressed_int = TupleType._compress_multiple_bool(
                         values[i : i + after + 1]
                     )
-                    # For converting one byte, the byteorder should not matter
                     heads.append(bytes([compressed_int]))
                     i += after
                 else:
@@ -208,28 +207,26 @@ class TupleType(Type):
                 heads[i] = head_value.to_bytes(
                     ABI_LENGTH_SIZE, byteorder="big"
                 )
-            if tails[i]:
-                tail_curr_length += len(tails[i])
+            tail_curr_length += len(tails[i])
 
         # Concatenate bytes
         return b"".join(heads) + b"".join(tails)
 
-    def decode(self, tuple_string):
+    def decode(self, bytestring):
         """
         Decodes a bytestring to a tuple list.
 
         Args:
-            tuple_string (bytes | bytearray): bytestring to be decoded
+            bytestring (bytes | bytearray): bytestring to be decoded
 
         Returns:
             list: values from the encoded bytestring
         """
         if not (
-            isinstance(tuple_string, bytes)
-            or isinstance(tuple_string, bytearray)
+            isinstance(bytestring, bytes) or isinstance(bytestring, bytearray)
         ):
             raise error.ABIEncodingError(
-                "value string must be in bytes: {}".format(tuple_string)
+                "value string must be in bytes: {}".format(bytestring)
             )
         tuple_elements = self.child_types
         dynamic_segments = (
@@ -242,20 +239,18 @@ class TupleType(Type):
         while i < len(tuple_elements):
             element = tuple_elements[i]
             if element.is_dynamic():
-                if len(tuple_string[array_index:]) < ABI_LENGTH_SIZE:
+                if len(bytestring[array_index:]) < ABI_LENGTH_SIZE:
                     raise error.ABIEncodingError(
                         "malformed value: dynamically typed values must contain a two-byte length specifier"
                     )
                 # Decode the size of the dynamic element
                 dynamic_index = int.from_bytes(
-                    tuple_string[array_index : array_index + ABI_LENGTH_SIZE],
+                    bytestring[array_index : array_index + ABI_LENGTH_SIZE],
                     byteorder="big",
                     signed=False,
                 )
                 if len(dynamic_segments) > 0:
-                    dynamic_segments[len(dynamic_segments) - 1][
-                        1
-                    ] = dynamic_index
+                    dynamic_segments[-1][1] = dynamic_index
                     # Check that the right side of segment is greater than the left side
                     assert (
                         dynamic_index
@@ -275,13 +270,13 @@ class TupleType(Type):
                             "expected before index should have number of bool mod 8 equal 0"
                         )
                     after = min(7, after)
+                    bit = int.from_bytes(
+                        bytestring[array_index : array_index + 1],
+                        byteorder="big",
+                    )
                     # Parse bool values into multiple byte strings
                     for bool_i in range(after + 1):
                         mask = 128 >> bool_i
-                        bit = int.from_bytes(
-                            tuple_string[array_index : array_index + 1],
-                            byteorder="big",
-                        )
                         if mask & bit:
                             value_partitions.append(b"\x80")
                         else:
@@ -291,26 +286,23 @@ class TupleType(Type):
                 else:
                     curr_len = element.byte_len()
                     value_partitions.append(
-                        tuple_string[array_index : array_index + curr_len]
+                        bytestring[array_index : array_index + curr_len]
                     )
                     array_index += curr_len
-            if (
-                array_index >= len(tuple_string)
-                and i != len(tuple_elements) - 1
-            ):
+            if array_index >= len(bytestring) and i != len(tuple_elements) - 1:
                 raise error.ABIEncodingError(
                     "input string is not long enough to be decoded: {}".format(
-                        tuple_string
+                        bytestring
                     )
                 )
             i += 1
 
         if len(dynamic_segments) > 0:
-            dynamic_segments[len(dynamic_segments) - 1][1] = len(tuple_string)
-            array_index = len(tuple_string)
-        if array_index < len(tuple_string):
+            dynamic_segments[len(dynamic_segments) - 1][1] = len(bytestring)
+            array_index = len(bytestring)
+        if array_index < len(bytestring):
             raise error.ABIEncodingError(
-                "input string was not fully consumed: {}".format(tuple_string)
+                "input string was not fully consumed: {}".format(bytestring)
             )
 
         # Check dynamic element partitions
@@ -318,7 +310,7 @@ class TupleType(Type):
         for i, element in enumerate(tuple_elements):
             if element.is_dynamic():
                 segment_start, segment_end = dynamic_segments[segment_index]
-                value_partitions[i] = tuple_string[segment_start:segment_end]
+                value_partitions[i] = bytestring[segment_start:segment_end]
                 segment_index += 1
 
         # Decode individual tuple elements

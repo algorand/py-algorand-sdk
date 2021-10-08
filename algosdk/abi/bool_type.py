@@ -32,7 +32,7 @@ class BoolType(Type):
             value (bool): value to be encoded
 
         Returns:
-            bytes: encoded bytes (\x80 if True, \00 if False) of the boolean
+            bytes: encoded bytes ("0x80" if True, "0x00" if False) of the boolean
         """
         assert isinstance(value, bool)
         if value:
@@ -40,33 +40,33 @@ class BoolType(Type):
             return b"\x80"
         return b"\x00"
 
-    def decode(self, bool_string):
+    def decode(self, bytestring):
         """
         Decodes a bytestring to a single boolean.
 
         Args:
-            bool_string (bytes | bytearray): bytestring to be decoded that contains a single boolean, i.e. \x80 or \x00
+            bytestring (bytes | bytearray): bytestring to be decoded that contains a single boolean, i.e. \x80 or \x00
 
         Returns:
             bool: boolean from the encoded bytestring
         """
         if (
             not (
-                isinstance(bool_string, bytes)
-                or isinstance(bool_string, bytearray)
+                isinstance(bytestring, bytes)
+                or isinstance(bytestring, bytearray)
             )
-            or len(bool_string) != 1
+            or len(bytestring) != 1
         ):
             raise error.ABIEncodingError(
                 "value string must be in bytes and correspond to a bool: {}".format(
-                    bool_string
+                    bytestring
                 )
             )
-        if bool_string.hex() == "80":
+        if bytestring == b"\x80":
             return True
-        elif bool_string.hex() == "00":
+        elif bytestring == b"\x00":
             return False
         else:
             raise error.ABIEncodingError(
-                "boolean value could not be decoded: {}".format(bool_string)
+                "boolean value could not be decoded: {}".format(bytestring)
             )

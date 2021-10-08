@@ -65,7 +65,7 @@ class ArrayDynamicType(Type):
             2, byteorder="big"
         )
         encoded = converted_tuple.encode(value_array)
-        return bytearray(length_to_encode) + encoded
+        return bytes(length_to_encode) + encoded
 
     def decode(self, array_bytes):
         """

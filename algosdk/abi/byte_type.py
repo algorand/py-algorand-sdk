@@ -40,26 +40,26 @@ class ByteType(Type):
             )
         return bytes([value])
 
-    def decode(self, byte_string):
+    def decode(self, bytestring):
         """
         Decodes a bytestring to a single byte.
 
         Args:
-            byte_string (bytes | bytearray): bytestring to be decoded
+            bytestring (bytes | bytearray): bytestring to be decoded
 
         Returns:
             bytes: byte of the encoded bytestring
         """
         if (
             not (
-                isinstance(byte_string, bytes)
-                or isinstance(byte_string, bytearray)
+                isinstance(bytestring, bytes)
+                or isinstance(bytestring, bytearray)
             )
-            or len(byte_string) != 1
+            or len(bytestring) != 1
         ):
             raise error.ABIEncodingError(
                 "value string must be in bytes and correspond to a byte: {}".format(
-                    byte_string
+                    bytestring
                 )
             )
-        return byte_string[0]
+        return bytestring[0]

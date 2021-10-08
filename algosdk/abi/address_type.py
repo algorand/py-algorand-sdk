@@ -43,7 +43,7 @@ class AddressType(Type):
             address string or a 32-byte public key.
 
         Returns:
-            bytes: encoded bytes of the uint8
+            bytes: encoded bytes of the address
         """
         # Check that the value is an address in string or the public key in bytes
         if isinstance(value, str):
@@ -60,29 +60,29 @@ class AddressType(Type):
             raise error.ABIEncodingError(
                 "cannot encode the following public key: {}".format(value)
             )
-        return bytearray(value)
+        return bytes(value)
 
-    def decode(self, addr_string):
+    def decode(self, bytestring):
         """
         Decodes a bytestring to a base32 encoded address string.
 
         Args:
-            addr_string (bytes | bytearray): bytestring to be decoded
+            bytestring (bytes | bytearray): bytestring to be decoded
 
         Returns:
             str: base32 encoded address from the encoded bytestring
         """
         if (
             not (
-                isinstance(addr_string, bytearray)
-                or isinstance(addr_string, bytes)
+                isinstance(bytestring, bytearray)
+                or isinstance(bytestring, bytes)
             )
-            or len(addr_string) != 32
+            or len(bytestring) != 32
         ):
             raise error.ABIEncodingError(
                 "address string must be in bytes and correspond to a byte[32]: {}".format(
-                    addr_string
+                    bytestring
                 )
             )
         # Return the base32 encoded address string
-        return encoding.encode_address(addr_string)
+        return encoding.encode_address(bytestring)

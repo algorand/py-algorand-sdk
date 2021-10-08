@@ -26,14 +26,14 @@ class Type(ABC):
     @abstractmethod
     def is_dynamic(self):
         """
-        Return whether the ABI type is
+        Return whether the ABI type is dynamic.
         """
         pass
 
     @abstractmethod
     def byte_len(self):
         """
-        Return the length is bytes of the ABI type.
+        Return the length in bytes of the ABI type.
         """
         pass
 

@@ -62,27 +62,27 @@ class UintType(Type):
             )
         return value.to_bytes(self.bit_size // 8, byteorder="big")
 
-    def decode(self, value_string):
+    def decode(self, bytestring):
         """
         Decodes a bytestring to a uint.
 
         Args:
-            value_string (bytes | bytearray): bytestring to be decoded
+            bytestring (bytes | bytearray): bytestring to be decoded
 
         Returns:
             int: uint value from the encoded bytestring
         """
         if (
             not (
-                isinstance(value_string, bytes)
-                or isinstance(value_string, bytearray)
+                isinstance(bytestring, bytes)
+                or isinstance(bytestring, bytearray)
             )
-            or len(value_string) != self.bit_size // 8
+            or len(bytestring) != self.bit_size // 8
         ):
             raise error.ABIEncodingError(
                 "value string must be in bytes and correspond to a uint{}: {}".format(
-                    self.bit_size, value_string
+                    self.bit_size, bytestring
                 )
             )
         # Convert bytes into an unsigned integer
-        return int.from_bytes(value_string, byteorder="big", signed=False)
+        return int.from_bytes(bytestring, byteorder="big", signed=False)
