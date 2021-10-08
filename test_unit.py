@@ -4138,7 +4138,7 @@ class TestABIEncoding(unittest.TestCase):
             (
                 type_from_string("()"),
                 [],
-                bytes.fromhex(""),
+                b"",
             ),
             (
                 type_from_string("(bool[3])"),

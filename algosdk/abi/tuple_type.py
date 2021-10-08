@@ -156,7 +156,7 @@ class TupleType(Type):
             element = tuple_elements[i]
             if element.is_dynamic():
                 # Head is not pre-determined for dynamic types; store a placeholder for now
-                heads.append(b"")
+                heads.append(b"\x00\x00")
                 is_dynamic_index.append(True)
                 tail_encoding = element.encode(values[i])
                 tails.append(tail_encoding)
@@ -187,11 +187,7 @@ class TupleType(Type):
         head_length = 0
         for head_element in heads:
             # If the element is not a placeholder, append the length of the element
-            if head_element:
-                head_length += len(head_element)
-            else:
-                # Placeholder for a 2 byte length encoding
-                head_length += ABI_LENGTH_SIZE
+            head_length += len(head_element)
 
         # Correctly encode dynamic types and replace placeholder
         tail_curr_length = 0
