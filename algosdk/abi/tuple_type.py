@@ -8,7 +8,7 @@ class TupleType(Type):
     Represents a Tuple ABI Type for encoding.
 
     Args:
-        child_type (Type): the type of the child_types array.
+        child_types (list): list of types in the tuple.
 
     Attributes:
         child_types (list)
