@@ -266,14 +266,14 @@ class TupleType(Type):
                             "expected before index should have number of bool mod 8 equal 0"
                         )
                     after = min(7, after)
-                    bit = int.from_bytes(
+                    bits = int.from_bytes(
                         bytestring[array_index : array_index + 1],
                         byteorder="big",
                     )
                     # Parse bool values into multiple byte strings
                     for bool_i in range(after + 1):
                         mask = 128 >> bool_i
-                        if mask & bit:
+                        if mask & bits:
                             value_partitions.append(b"\x80")
                         else:
                             value_partitions.append(b"\x00")

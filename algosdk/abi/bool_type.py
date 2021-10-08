@@ -45,7 +45,7 @@ class BoolType(Type):
         Decodes a bytestring to a single boolean.
 
         Args:
-            bytestring (bytes | bytearray): bytestring to be decoded that contains a single boolean, i.e. \x80 or \x00
+            bytestring (bytes | bytearray): bytestring to be decoded that contains a single boolean, i.e. "0x80" or "0x00"
 
         Returns:
             bool: boolean from the encoded bytestring
