@@ -416,23 +416,31 @@ class TestPaymentTransaction(unittest.TestCase):
         votefirst = 10000
         votelast = 10111
         votedilution = 11
+        sprfID = transaction.StateProofIDField(bytes(1), True).dictify()
 
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True
         )
         txn = transaction.KeyregTxn(
-            pk, sp, votepk, selpk, votefirst, votelast, votedilution
+            pk,
+            sp,
+            votepk,
+            selpk,
+            votefirst,
+            votelast,
+            votedilution,
+            state_proof_ID=sprfID,
         )
         signed_txn = txn.sign(sk)
 
         golden = (
-            "gqNzaWfEQEA8ANbrvTRxU9c8v6WERcEPw7D/HacRgg4vICa61vEof60Wwtx6KJKDy"
-            "vBuvViFeacLlngPY6vYCVP0DktTwQ2jdHhui6NmZWXNA+iiZnbOAATsD6JnaMQgSG"
-            "O1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOAATv96ZzZWxrZXnEIGz"
-            "4K7+GKID3HWlAMa7dUMrGGU1ckQLlDA+M0JgrvZZXo3NuZMQgCfvSdiwI+Gxa5r9t"
-            "16epAd5mdddQ4H6MXHaYZH224f2kdHlwZaZrZXlyZWendm90ZWZzdM0nEKZ2b3Rla"
-            "2QLp3ZvdGVrZXnEICr+0CO3IYtcumsaMvre8MwFaXj6kav65I81of0TGMi6p3ZvdG"
-            "Vsc3TNJ38="
+            "gqNzaWfEQPOGQ4ukf77LVIFJNIZOjYqsv6UgO7mZPXoB2iiHX5A7FF3xaT9WFPO9GI"
+            "pEbms2FU+2v6AuLjgEgsXEiDLkmAGjdHhujKVia3ByZoKhcsQBAKJ2csOjZmVlzQPo"
+            "omZ2zgAE7A+iZ2jEIEhjtRiks8hOyBDyLU8QgcsPcfBZp6wg3sYvf3DlCToiomx2zg"
+            "AE7/emc2Vsa2V5xCBs+Cu/hiiA9x1pQDGu3VDKxhlNXJEC5QwPjNCYK72WV6NzbmTE"
+            "IAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWma2V5cmVnp3ZvdG"
+            "Vmc3TNJxCmdm90ZWtkC6d2b3Rla2V5xCAq/tAjtyGLXLprGjL63vDMBWl4+pGr+uSP"
+            "NaH9ExjIuqd2b3RlbHN0zSd/"
         )
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
@@ -511,24 +519,30 @@ class TestPaymentTransaction(unittest.TestCase):
         votefirst = 10000
         votelast = 10111
         votedilution = 11
-
+        sprfID = transaction.StateProofIDField(bytes(1), True).dictify()
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True
         )
         txn = transaction.KeyregOnlineTxn(
-            pk, sp, votepk, selpk, votefirst, votelast, votedilution
+            pk,
+            sp,
+            votepk,
+            selpk,
+            votefirst,
+            votelast,
+            votedilution,
+            state_proof_ID=sprfID,
         )
         signed_txn = txn.sign(sk)
-
         golden = (
-            "gqNzaWfEQEA8ANbrvTRxU9c8v6WERcEPw7D/HacRgg4vICa61vEof60Wwtx"
-            "6KJKDyvBuvViFeacLlngPY6vYCVP0DktTwQ2jdHhui6NmZWXNA+iiZnbOAA"
-            "TsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOA"
-            "ATv96ZzZWxrZXnEIGz4K7+GKID3HWlAMa7dUMrGGU1ckQLlDA+M0JgrvZZX"
-            "o3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2kdHlwZaZ"
-            "rZXlyZWendm90ZWZzdM0nEKZ2b3Rla2QLp3ZvdGVrZXnEICr+0CO3IYtcum"
-            "saMvre8MwFaXj6kav65I81of0TGMi6p3ZvdGVsc3TNJ38="
-        )
+                "gqNzaWfEQPOGQ4ukf77LVIFJNIZOjYqsv6UgO7mZPXoB2iiHX5A7FF3xaT9WFPO9GI"
+                "pEbms2FU+2v6AuLjgEgsXEiDLkmAGjdHhujKVia3ByZoKhcsQBAKJ2csOjZmVlzQPo"
+                "omZ2zgAE7A+iZ2jEIEhjtRiks8hOyBDyLU8QgcsPcfBZp6wg3sYvf3DlCToiomx2zg"
+                "AE7/emc2Vsa2V5xCBs+Cu/hiiA9x1pQDGu3VDKxhlNXJEC5QwPjNCYK72WV6NzbmTE"
+                "IAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWma2V5cmVnp3ZvdG"
+                "Vmc3TNJxCmdm90ZWtkC6d2b3Rla2V5xCAq/tAjtyGLXLprGjL63vDMBWl4+pGr+uSP"
+                "NaH9ExjIuqd2b3RlbHN0zSd/"
+                )
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_serialize_write_read_keyregonlinetxn(self):
@@ -546,12 +560,19 @@ class TestPaymentTransaction(unittest.TestCase):
         votefirst = 10000
         votelast = 10111
         votedilution = 11
-
+        sprfID = transaction.StateProofIDField(bytes(1), True).dictify()
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True
         )
         txn = transaction.KeyregOnlineTxn(
-            pk, sp, votepk, selpk, votefirst, votelast, votedilution
+            pk,
+            sp,
+            votepk,
+            selpk,
+            votefirst,
+            votelast,
+            votedilution,
+            state_proof_ID=sprfID,
         )
         path = "/tmp/%s" % uuid.uuid4()
         transaction.write_to_file([txn], path)
@@ -574,13 +595,20 @@ class TestPaymentTransaction(unittest.TestCase):
         votefirst = 10000
         votelast = None
         votedilution = 11
-
+        sprfID = transaction.StateProofIDField(bytes(1), True).dictify()
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True
         )
         with self.assertRaises(error.KeyregOnlineTxnInitError) as cm:
             transaction.KeyregOnlineTxn(
-                pk, sp, votepk, selpk, votefirst, votelast, votedilution
+                pk,
+                sp,
+                votepk,
+                selpk,
+                votefirst,
+                votelast,
+                votedilution,
+                state_proof_ID=sprfID,
             )
         the_exception = cm.exception
         self.assertTrue("votelst" in the_exception.__repr__())

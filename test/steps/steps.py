@@ -723,6 +723,12 @@ def create_keyreg_txn(context):
         context.note,
     )
 
+@given("default V2 key registration transaction {type}")
+def default_v2_keyreg_txn(context, type):
+    context.params = context.acl.suggested_params_as_object()
+    context.pk = context.accounts[0]
+    context.txn = buildTxn(type,context.pk,context.params)
+    
 
 @when("I get recent transactions, limited by {cnt} transactions")
 def step_impl(context, cnt):
@@ -1187,3 +1193,25 @@ def fee_not_in_txn(context):
     else:
         stxn = context.mtx.dictify()
     assert "fee" not in stxn["txn"]
+
+def buildTxn(t,sender,params):
+    txn = None
+    if "online" in t:
+        votekey="9mr13Ri8rFepxN3ghIUrZNui6LqqM5hEzB45Rri5lkU="
+        selkey="dx717L3uOIIb/jr9OIyls1l5Ei00NFgRa380w7TnPr4="
+        votefst=0
+        votelst=2000
+        votekd=10
+        sprf = transaction.StateProofIDField(b'\x01' * 64,True).dictify()
+        txn = transaction.KeyregOnlineTxn(
+                sender,params, votekey,selkey,votefst,votelst,votekd, state_proof_ID=sprf
+            )
+    elif "offline" in t:
+        txn = transaction.KeyregOfflineTxn(
+                sender,params
+            )
+    elif "nonparticipation" in t:
+       txn = transaction.KeyregNonparticipatingTxn(
+                sender,params
+            )
+    return txn
