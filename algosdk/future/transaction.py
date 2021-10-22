@@ -305,10 +305,12 @@ class Transaction:
     def __str__(self):
         return str(self.__dict__)
 
+
 class StateProofIDField:
     def __init__(self, root, hasValidRoot):
         self.root = root
         self.hasValidRoot = hasValidRoot
+
     def dictify(self):
         d = {"r": self.root, "vr": self.hasValidRoot}
         return d
@@ -321,10 +323,8 @@ class StateProofIDField:
         if not isinstance(other, StateProofIDField):
             return False
         return (
-            self.root == other.root
-            and self.hasValidRoot == other.hasValidRoot
+            self.root == other.root and self.hasValidRoot == other.hasValidRoot
         )
-
 
 
 class PaymentTxn(Transaction):
@@ -495,7 +495,7 @@ class KeyregTxn(Transaction):
         self.votekd = votekd
         self.nonpart = nonpart
         self.state_proof_ID = state_proof_ID
-        
+
         if not sp.flat_fee:
             self.fee = max(
                 self.estimate_size() * self.fee, constants.min_txn_fee
@@ -637,14 +637,14 @@ class KeyregOnlineTxn(KeyregTxn):
         votelst = d["votelst"]
         votekd = d["votekd"]
         sprfID = d["bprfkey"]
-        
+
         args = {
             "votekey": votekey,
             "selkey": selkey,
             "votefst": votefst,
             "votelst": votelst,
             "votekd": votekd,
-            "state_proof_ID": sprfID
+            "state_proof_ID": sprfID,
         }
         return args
 

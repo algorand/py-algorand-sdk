@@ -535,14 +535,14 @@ class TestPaymentTransaction(unittest.TestCase):
         )
         signed_txn = txn.sign(sk)
         golden = (
-                "gqNzaWfEQPOGQ4ukf77LVIFJNIZOjYqsv6UgO7mZPXoB2iiHX5A7FF3xaT9WFPO9GI"
-                "pEbms2FU+2v6AuLjgEgsXEiDLkmAGjdHhujKVia3ByZoKhcsQBAKJ2csOjZmVlzQPo"
-                "omZ2zgAE7A+iZ2jEIEhjtRiks8hOyBDyLU8QgcsPcfBZp6wg3sYvf3DlCToiomx2zg"
-                "AE7/emc2Vsa2V5xCBs+Cu/hiiA9x1pQDGu3VDKxhlNXJEC5QwPjNCYK72WV6NzbmTE"
-                "IAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWma2V5cmVnp3ZvdG"
-                "Vmc3TNJxCmdm90ZWtkC6d2b3Rla2V5xCAq/tAjtyGLXLprGjL63vDMBWl4+pGr+uSP"
-                "NaH9ExjIuqd2b3RlbHN0zSd/"
-                )
+            "gqNzaWfEQPOGQ4ukf77LVIFJNIZOjYqsv6UgO7mZPXoB2iiHX5A7FF3xaT9WFPO9GI"
+            "pEbms2FU+2v6AuLjgEgsXEiDLkmAGjdHhujKVia3ByZoKhcsQBAKJ2csOjZmVlzQPo"
+            "omZ2zgAE7A+iZ2jEIEhjtRiks8hOyBDyLU8QgcsPcfBZp6wg3sYvf3DlCToiomx2zg"
+            "AE7/emc2Vsa2V5xCBs+Cu/hiiA9x1pQDGu3VDKxhlNXJEC5QwPjNCYK72WV6NzbmTE"
+            "IAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWma2V5cmVnp3ZvdG"
+            "Vmc3TNJxCmdm90ZWtkC6d2b3Rla2V5xCAq/tAjtyGLXLprGjL63vDMBWl4+pGr+uSP"
+            "NaH9ExjIuqd2b3RlbHN0zSd/"
+        )
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_serialize_write_read_keyregonlinetxn(self):
