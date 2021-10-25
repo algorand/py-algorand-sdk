@@ -416,7 +416,7 @@ class TestPaymentTransaction(unittest.TestCase):
         votefirst = 10000
         votelast = 10111
         votedilution = 11
-        sprfID = transaction.StateProofIDField(bytes(1), True).dictify()
+        sprfKey = transaction.StateProofPKField(bytes(1), True).dictify()
 
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True
@@ -519,7 +519,7 @@ class TestPaymentTransaction(unittest.TestCase):
         votefirst = 10000
         votelast = 10111
         votedilution = 11
-        sprfID = transaction.StateProofIDField(bytes(1), True).dictify()
+        sprfKey = transaction.StateProofPKField(bytes(1), True).dictify()
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True
         )
@@ -560,7 +560,7 @@ class TestPaymentTransaction(unittest.TestCase):
         votefirst = 10000
         votelast = 10111
         votedilution = 11
-        sprfID = transaction.StateProofIDField(bytes(1), True).dictify()
+        sprfKey = transaction.StateProofPKField(bytes(1), True).dictify()
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True
         )
@@ -595,7 +595,7 @@ class TestPaymentTransaction(unittest.TestCase):
         votefirst = 10000
         votelast = None
         votedilution = 11
-        sprfID = transaction.StateProofIDField(bytes(1), True).dictify()
+        sprfKey = transaction.StateProofPKField(bytes(1), True).dictify()
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True
         )

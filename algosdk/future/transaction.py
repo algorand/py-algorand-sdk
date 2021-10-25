@@ -306,7 +306,7 @@ class Transaction:
         return str(self.__dict__)
 
 
-class StateProofIDField:
+class StateProofPKField:
     def __init__(self, root, hasValidRoot):
         self.root = root
         self.hasValidRoot = hasValidRoot
@@ -317,10 +317,10 @@ class StateProofIDField:
 
     @staticmethod
     def undictify(d):
-        return StateProofIDField(d["r"], d["vr"])
+        return StateProofPKField(d["r"], d["vr"])
 
     def __eq__(self, other):
-        if not isinstance(other, StateProofIDField):
+        if not isinstance(other, StateProofPKField):
             return False
         return (
             self.root == other.root and self.hasValidRoot == other.hasValidRoot
@@ -447,7 +447,7 @@ class KeyregTxn(Transaction):
             transaction's valid rounds
         rekey_to (str, optional): additionally rekey the sender to this address
         nonpart (bool, optional): mark the account non-participating if true
-        stateproofID: state proof
+        StateProofPK: state proof
 
     Attributes:
         sender (str)
@@ -516,7 +516,7 @@ class KeyregTxn(Transaction):
         if self.nonpart is not None:
             d["nonpart"] = self.nonpart
         if self.state_proof_ID is not None:
-            d["bprfkey"] = self.state_proof_ID
+            d["sprfkey"] = self.state_proof_ID
         d.update(super(KeyregTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
 
@@ -636,7 +636,7 @@ class KeyregOnlineTxn(KeyregTxn):
         votefst = d["votefst"]
         votelst = d["votelst"]
         votekd = d["votekd"]
-        sprfID = d["bprfkey"]
+        sprfID = d["sprfkey"]
 
         args = {
             "votekey": votekey,

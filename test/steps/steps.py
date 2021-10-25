@@ -1204,7 +1204,7 @@ def buildTxn(t, sender, params):
         votefst = 0
         votelst = 2000
         votekd = 10
-        sprf = transaction.StateProofIDField(b"\x01" * 64, True).dictify()
+        sprf = transaction.StateProofPKField(b"\x01" * 64, True).dictify()
         txn = transaction.KeyregOnlineTxn(
             sender,
             params,
