@@ -1,0 +1,15 @@
+version: 2.1
+jobs:
+  build:
+    machine: 
+      image: "ubuntu-2004:202101-01"
+    steps:
+      - checkout
+      - run:
+          command: |
+            pip3 install -r requirements.txt
+            black --check .
+            set -e
+            python3 test_unit.py
+            make docker-test
+          no_output_timeout: 20m
