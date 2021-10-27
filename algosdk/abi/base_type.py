@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from enum import IntEnum
 
 # Globals
 ABI_LENGTH_SIZE = 2  # We use 2 bytes to encode the length of a dynamic element
