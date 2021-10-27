@@ -14,6 +14,7 @@ class Contract:
         self.app_id = app_id
         self.methods = methods
 
+    @staticmethod
     def from_json(resp):
         d = json.loads(resp)
         name = d["name"]
