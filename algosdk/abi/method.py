@@ -1,12 +1,9 @@
 import json
-import re
+
+from algosdk.abi.tuple_type import TupleType
 from .. import error
 
 from Cryptodome.Hash import SHA512
-
-
-# Globals
-PARENTHESES_REGEX = r"\(|\)|,"
 
 
 class Method:
@@ -52,15 +49,12 @@ class Method:
 
     @staticmethod
     def from_string(s):
-        # Split string into tokens around parentheses and commas.
+        # Split string into tokens around outer parentheses.
         # The first token should always be the name of the method,
+        # the second token should be the arguments as a tuple,
         # and the last token should be the return type (or void).
-        tokens = re.split(PARENTHESES_REGEX, s)
-        if len(tokens) < 3:
-            raise error.ABITypeError(
-                "ABI method string is malformed {}".format(s)
-            )
-        argument_list = [Argument(t) for t in tokens[1:-1]]
+        tokens = Method._parse_string(s)
+        argument_list = [Argument(t) for t in TupleType.parse_tuple(tokens[1])]
         return_type = Returns(tokens[-1])
         return Method(name=tokens[0], args=argument_list, returns=return_type)
 
@@ -73,6 +67,25 @@ class Method:
         )
         desc = d["desc"] if "desc" in d else None
         return Method(name=name, args=arg_list, returns=return_obj, desc=desc)
+
+    @staticmethod
+    def _parse_string(s):
+        stack = list()
+        out = list()
+        for i, char in enumerate(s):
+            if char == "(":
+                stack.append(i)
+            elif char == ")":
+                if len(stack) == 0:
+                    break
+                left_index = stack[-1]
+                stack.pop()
+                if len(stack) == 0:
+                    return (s[:left_index], s[left_index + 1 : i], s[i + 1 :])
+
+        raise error.ABITypeError(
+            "ABI method string has mismatched parentheses{}".format(s)
+        )
 
 
 class Argument:

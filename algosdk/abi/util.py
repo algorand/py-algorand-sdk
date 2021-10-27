@@ -66,7 +66,7 @@ def type_from_string(s):
         return StringType()
     elif len(s) >= 2 and s[0] == "(" and s[-1] == ")":
         # Recursively parse parentheses from a tuple string
-        tuples = TupleType._parse_tuple(s[1:-1])
+        tuples = TupleType.parse_tuple(s[1:-1])
         tuple_list = []
         for tup in tuples:
             if isinstance(tup, str):

@@ -71,7 +71,7 @@ class TupleType(Type):
         return until
 
     @staticmethod
-    def _parse_tuple(s):
+    def parse_tuple(s):
         """
         Given a tuple string, parses one layer of the tuple and returns tokens as a list.
         i.e. 'x,(y,(z))' -> ['x', '(y,(z))']
