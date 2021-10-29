@@ -1,7 +1,6 @@
 import json
 
-from .method import Method
-from .. import error
+from algosdk.abi.method import Method
 
 
 class Interface:
@@ -17,5 +16,6 @@ class Interface:
     def from_json(resp):
         d = json.loads(resp)
         name = d["name"]
+        # TODO: Should we check that method name does not begin with an underscore here?
         method_list = [Method.undictify(method) for method in d["methods"]]
         return Interface(name=name, methods=method_list)

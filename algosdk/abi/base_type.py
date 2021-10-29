@@ -44,7 +44,7 @@ class Type(ABC):
         pass
 
     @abstractmethod
-    def decode(self, value_string):
+    def decode(self, bytestring):
         """
         Deserialize the ABI type and value from a byte string using ABI encoding rules.
         """

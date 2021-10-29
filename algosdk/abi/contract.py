@@ -1,7 +1,6 @@
 import json
 
-from .method import Method
-from .. import error
+from algosdk.abi.method import Method
 
 
 class Contract:
