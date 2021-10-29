@@ -9,7 +9,7 @@ from algosdk import constants
 
 
 # Globals
-TRANSACTION_ARG = (
+TRANSACTION_ARGS = (
     constants.PAYMENT_TXN,
     constants.KEYREG_TXN,
     constants.ASSETCONFIG_TXN,
@@ -42,7 +42,7 @@ class Method:
         # add one for this method call itself.
         txn_count = 1
         for arg in self.args:
-            if arg.type in TRANSACTION_ARG:
+            if arg.type in TRANSACTION_ARGS:
                 txn_count += 1
         self.txn_calls = txn_count
 
@@ -127,7 +127,7 @@ class Argument:
     """
 
     def __init__(self, arg_type, name=None, desc=None) -> None:
-        if arg_type in TRANSACTION_ARG:
+        if arg_type in TRANSACTION_ARGS:
             self.type = arg_type
         else:
             # If the type cannot be parsed into an ABI type, it will error

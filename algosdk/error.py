@@ -217,3 +217,8 @@ class ABITypeError(Exception):
 class ABIEncodingError(Exception):
     def __init__(self, msg):
         super().__init__(msg)
+
+
+class AtomicTransactionComposerError(Exception):
+    def __init__(self, msg):
+        super().__init__(msg)
