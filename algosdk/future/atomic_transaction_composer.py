@@ -346,17 +346,6 @@ class AtomicTransactionResponse:
         self.tx_ids = tx_ids
         self.method_results = results
 
-    @staticmethod
-    def undictify(d):
-        confirmed_round = d["confirmed-round"]
-        results = d["logs"] if "logs" in d else None
-        method_results = []
-        return AtomicTransactionResponse(
-            confirmed_round=confirmed_round,
-            tx_ids=None,
-            results=method_results,
-        )
-
 
 def make_account_transaction_signer(private_key):
     """
