@@ -1,9 +1,10 @@
 import copy
 from enum import IntEnum
+import json
 
-from algosdk.future import transaction
 from algosdk import error
 from algosdk.abi import method
+from algosdk.future import transaction
 
 
 class AtomicTransactionComposerStatus(IntEnum):
@@ -36,6 +37,9 @@ class AtomicTransactionComposer:
         status (AtomicTransactionComposerStatus): IntEnum representing the current state of the composer
         txn_count (int): number of transactions in the group
         txn_list (list[TransactionWithSigner]): list of transactions with signers
+        signed_txns (list[SignedTransaction]): list of signed transactions
+        tx_ids (list[str]): list of individual transaction IDs in this atomic group
+        atomic_tx_id (str): transaction ID of this atomic group
     """
 
     MAX_GROUP_SIZE = 16
@@ -43,7 +47,11 @@ class AtomicTransactionComposer:
     def __init__(self) -> None:
         self.status = AtomicTransactionComposerStatus.BUILDING
         self.txn_count = 0
+        self.method_list = []
         self.txn_list = []
+        self.signed_txns = []
+        self.tx_ids = []
+        self.atomic_tx_id = None
 
     def get_status(self):
         """
@@ -162,6 +170,7 @@ class AtomicTransactionComposer:
                 encoded_arg = arg.encode(method_args[i])
                 app_args.append(encoded_arg)
         self.txn_count += method_call.get_txn_calls()
+        self.method_list.append(method_call)
 
         # Create a method call transaction
         method_txn = transaction.ApplicationCallTxn(
@@ -180,7 +189,6 @@ class AtomicTransactionComposer:
     def build_group(self):
         """
         Finalize the transaction group and returns the finalized transactions with signers.
-
         The composer's status will be at least BUILT after executing this method.
 
         Returns:
@@ -188,29 +196,142 @@ class AtomicTransactionComposer:
         """
         if self.status < AtomicTransactionComposerStatus.BUILT:
             self.status = AtomicTransactionComposerStatus.BUILT
+
+        # Get group transaction id
+        group_txns = [t.txn for t in self.txn_list]
+        group_id = transaction.calculate_group_id(group_txns)
+        for t in self.txn_list:
+            t.txn.group = group_id
+            self.tx_ids.append(t.txn.get_txid())
+
         return self.txn_list
 
     def gather_signatures(self):
-        pass
+        """
+        Obtain signatures for each transaction in this group. If signatures have already been obtained,
+        this method will return cached versions of the signatures.
+        The composer's status will be at least SIGNED after executing this method.
+        An error will be thrown if signing any of the transactions fails.
+
+        Returns:
+            list[SignedTransactions]: list of signed transactions
+        """
+        if self.status < AtomicTransactionComposerStatus.SIGNED:
+            self.build_group()
+            self.status = AtomicTransactionComposerStatus.SIGNED
+        if self.signed_txns:
+            # Return cached versions of the signatures
+            return self.signed_txns
+
+        for txn_with_signer in self.txn_list:
+            unsigned_txn = txn_with_signer.txn
+            stxn = txn_with_signer.signer.sign_txn(unsigned_txn)
+            self.signed_txns.append(stxn)
+        return self.signed_txns
 
     def submit(self, client):
-        pass
+        """
+        Send the transaction group to the network, but don't wait for it to be
+        committed to a block. An error will be thrown if submission fails.
+        The composer's status must be SUBMITTED or lower before calling this method.
+        If submission is successful, this composer's status will update to SUBMITTED.
+
+        Note: a group can only be submitted again if it fails.
+
+        Returns:
+            list[Transaction]: list of submitted transactions
+        """
+        if self.status <= AtomicTransactionComposerStatus.SUBMITTED:
+            self.build_group()
+            self.gather_signatures()
+            self.status = AtomicTransactionComposerStatus.SUBMITTED
+        else:
+            raise error.AtomicTransactionComposerError(
+                "AtomicTransactionComposerStatus must be submitted or lower to submit a group"
+            )
+
+        self.atomic_tx_id = client.send_transactions(self.signed_txns)
+
+        return self.tx_ids
 
     def execute(self, client):
-        pass
+        """
+        Send the transaction group to the network and wait until it's committed
+        to a block. An error will be thrown if submission or execution fails.
+        The composer's status must be SUBMITTED or lower before calling this method,
+        since execution is only allowed once. If submission is successful,
+        this composer's status will update to SUBMITTED.
+        If the execution is also successful, this composer's status will update to COMMITTED.
+
+        Note: a group can only be submitted again if it fails.
+
+        Returns:
+            AtomicTransactionResponse: Object with confirmed round for this transaction,
+                a list of txIDs of the submitted transactions, and an array of
+                results for each method call transaction in this group. If a
+                method has no return value (void), then the method results array
+                will contain None for that method's return value.
+        """
+        if self.status <= AtomicTransactionComposerStatus.SUBMITTED:
+            self.build_group()
+            self.gather_signatures()
+            self.status = AtomicTransactionComposerStatus.COMMITTED
+        else:
+            raise error.AtomicTransactionComposerError(
+                "AtomicTransactionComposerStatus must be submitted or lower to execute a group"
+            )
+
+        client.wait_for_confirmation(client, self.atomic_tx_id)
+
+        resp = client.pending_transaction_info(self.atomic_tx_id)
+        resp_dict = json.loads(resp)
+
+        confirmed_round = resp_dict["confirmed-round"]
+        tx_ids = self.tx_ids
+        results = resp_dict["logs"] if "logs" in resp_dict else None
+
+        method_results = []
+        for i, result in enumerate(results):
+            if self.method_list[i].Returns.type == "void":
+                method_results.append(None)
+            else:
+                return_value = self.method_list[i].Returns.type.decode(result)
+                method_results.append(return_value)
+
+        return AtomicTransactionResponse(
+            confirmed_round=confirmed_round,
+            tx_ids=tx_ids,
+            results=method_results,
+        )
 
 
 class TransactionSigner:
-    def __init__(self, private_key) -> None:
-        self.pk = private_key
+    """
+    Represents a function which can sign transactions from an atomic transaction group.
+
+    Args:
+        private_key (str): private key of signing account
+        msig (MultiSig, optional): multisig account information
+    """
+
+    def __init__(self, private_key, msig=None) -> None:
+        self.private_key = private_key
+        self.msig = msig
 
     def sign(self, txn_group, indexes):
         signed_txn = []
         for i in indexes:
             txn = txn_group[i]
             assert isinstance(txn, transaction.Transaction)
-            signed_txn.append(txn.sign(self.pk))
+            signed_txn.append(self.sign_txn(txn))
         return signed_txn
+
+    def sign_txn(self, txn):
+        if self.msig:
+            for sk in self.private_key:
+                txn.sign(sk)
+            return txn
+        return txn.sign(self.private_key)
 
 
 class TransactionWithSigner:
@@ -219,13 +340,33 @@ class TransactionWithSigner:
         self.signer = signer
 
 
-def make_basic_account_transaction_signer(private_key):
-    pass
+class AtomicTransactionResponse:
+    def __init__(self, confirmed_round, tx_ids=None, results=None) -> None:
+        self.confirmed_round = confirmed_round
+        self.tx_ids = tx_ids
+        self.method_results = results
+
+    @staticmethod
+    def undictify(d):
+        confirmed_round = d["confirmed-round"]
+        results = d["logs"] if "logs" in d else None
+        method_results = []
+        return AtomicTransactionResponse(
+            confirmed_round=confirmed_round,
+            tx_ids=None,
+            results=method_results,
+        )
 
 
-def make_logicsig_account_transaction_signer(private_key):
-    pass
+def make_account_transaction_signer(private_key):
+    """
+    Creates a TransactionSigner for a basic account or LogicSigAccount
+    """
+    return TransactionSigner(private_key)
 
 
 def make_multisig_account_transaction_signer(msig, sks):
-    pass
+    """
+    Creates a TransactionSigner for a MultiSig account
+    """
+    return TransactionSigner(private_key=sks, msig=msig)
