@@ -416,7 +416,7 @@ class TestPaymentTransaction(unittest.TestCase):
         votefirst = 10000
         votelast = 10111
         votedilution = 11
-        sprfKey = transaction.StateProofPKField(bytes(1), True).dictify()
+        sprfKey = "mYR0GVEObMTSNdsKM6RwYywHYPqVDqg3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk9w=="
 
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True
@@ -429,19 +429,21 @@ class TestPaymentTransaction(unittest.TestCase):
             votefirst,
             votelast,
             votedilution,
-            state_proof_ID=sprfID,
+            sprfkey=sprfKey,
         )
         signed_txn = txn.sign(sk)
 
         golden = (
-            "gqNzaWfEQPOGQ4ukf77LVIFJNIZOjYqsv6UgO7mZPXoB2iiHX5A7FF3xaT9WFPO9GI"
-            "pEbms2FU+2v6AuLjgEgsXEiDLkmAGjdHhujKVia3ByZoKhcsQBAKJ2csOjZmVlzQPo"
-            "omZ2zgAE7A+iZ2jEIEhjtRiks8hOyBDyLU8QgcsPcfBZp6wg3sYvf3DlCToiomx2zg"
-            "AE7/emc2Vsa2V5xCBs+Cu/hiiA9x1pQDGu3VDKxhlNXJEC5QwPjNCYK72WV6NzbmTE"
-            "IAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWma2V5cmVnp3ZvdG"
-            "Vmc3TNJxCmdm90ZWtkC6d2b3Rla2V5xCAq/tAjtyGLXLprGjL63vDMBWl4+pGr+uSP"
-            "NaH9ExjIuqd2b3RlbHN0zSd/"
+            "gqNzaWfEQDDDuwMXAJM2JISVLu0yjeLT5zf9d4p/TBiEr26zny/M72GfLpciu1jSRv"
+            "sM4zlp3V92Ix5/4iN52lhVwspabA2jdHhujKNmZWXNA+iiZnbOAATsD6JnaMQgSGO1"
+            "GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOAATv96ZzZWxrZXnEIGz4K7"
+            "+GKID3HWlAMa7dUMrGGU1ckQLlDA+M0JgrvZZXo3NuZMQgCfvSdiwI+Gxa5r9t16ep"
+            "Ad5mdddQ4H6MXHaYZH224f2nc3ByZmtlecRAmYR0GVEObMTSNdsKM6RwYywHYPqVDqg"
+            "3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk96R0eXBlpmtleX"
+            "JlZ6d2b3RlZnN0zScQpnZvdGVrZAundm90ZWtlecQgKv7QI7chi1y6axoy+t7wzAVpe"
+            "PqRq/rkjzWh/RMYyLqndm90ZWxzdM0nfw=="
         )
+        print(encoding.msgpack_encode(signed_txn))
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_serialize_keyreg_offline(self):
@@ -519,7 +521,7 @@ class TestPaymentTransaction(unittest.TestCase):
         votefirst = 10000
         votelast = 10111
         votedilution = 11
-        sprfKey = transaction.StateProofPKField(bytes(1), True).dictify()
+        sprfKey = "mYR0GVEObMTSNdsKM6RwYywHYPqVDqg3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk9w=="
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True
         )
@@ -531,17 +533,18 @@ class TestPaymentTransaction(unittest.TestCase):
             votefirst,
             votelast,
             votedilution,
-            state_proof_ID=sprfID,
+            sprfkey=sprfKey,
         )
         signed_txn = txn.sign(sk)
         golden = (
-            "gqNzaWfEQPOGQ4ukf77LVIFJNIZOjYqsv6UgO7mZPXoB2iiHX5A7FF3xaT9WFPO9GI"
-            "pEbms2FU+2v6AuLjgEgsXEiDLkmAGjdHhujKVia3ByZoKhcsQBAKJ2csOjZmVlzQPo"
-            "omZ2zgAE7A+iZ2jEIEhjtRiks8hOyBDyLU8QgcsPcfBZp6wg3sYvf3DlCToiomx2zg"
-            "AE7/emc2Vsa2V5xCBs+Cu/hiiA9x1pQDGu3VDKxhlNXJEC5QwPjNCYK72WV6NzbmTE"
-            "IAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWma2V5cmVnp3ZvdG"
-            "Vmc3TNJxCmdm90ZWtkC6d2b3Rla2V5xCAq/tAjtyGLXLprGjL63vDMBWl4+pGr+uSP"
-            "NaH9ExjIuqd2b3RlbHN0zSd/"
+            "gqNzaWfEQDDDuwMXAJM2JISVLu0yjeLT5zf9d4p/TBiEr26zny/M72GfLpciu1jSRv"
+            "sM4zlp3V92Ix5/4iN52lhVwspabA2jdHhujKNmZWXNA+iiZnbOAATsD6JnaMQgSGO1"
+            "GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOAATv96ZzZWxrZXnEIGz4K7"
+            "+GKID3HWlAMa7dUMrGGU1ckQLlDA+M0JgrvZZXo3NuZMQgCfvSdiwI+Gxa5r9t16ep"
+            "Ad5mdddQ4H6MXHaYZH224f2nc3ByZmtlecRAmYR0GVEObMTSNdsKM6RwYywHYPqVDqg"
+            "3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk96R0eXBlpmtleX"
+            "JlZ6d2b3RlZnN0zScQpnZvdGVrZAundm90ZWtlecQgKv7QI7chi1y6axoy+t7wzAVpe"
+            "PqRq/rkjzWh/RMYyLqndm90ZWxzdM0nfw=="
         )
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
@@ -560,7 +563,7 @@ class TestPaymentTransaction(unittest.TestCase):
         votefirst = 10000
         votelast = 10111
         votedilution = 11
-        sprfKey = transaction.StateProofPKField(bytes(1), True).dictify()
+        sprfKey = "mYR0GVEObMTSNdsKM6RwYywHYPqVDqg3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk9w=="
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True
         )
@@ -572,11 +575,13 @@ class TestPaymentTransaction(unittest.TestCase):
             votefirst,
             votelast,
             votedilution,
-            state_proof_ID=sprfID,
+            sprfkey=sprfKey,
         )
         path = "/tmp/%s" % uuid.uuid4()
         transaction.write_to_file([txn], path)
         txnr = transaction.retrieve_from_file(path)[0]
+        print("txn:",txn)
+        print("txnr:",txnr)
         os.remove(path)
         self.assertEqual(txn, txnr)
 
@@ -595,7 +600,7 @@ class TestPaymentTransaction(unittest.TestCase):
         votefirst = 10000
         votelast = None
         votedilution = 11
-        sprfKey = transaction.StateProofPKField(bytes(1), True).dictify()
+        sprfKey ="mYR0GVEObMTSNdsKM6RwYywHYPqVDqg3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk9w=="
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True
         )
@@ -608,7 +613,7 @@ class TestPaymentTransaction(unittest.TestCase):
                 votefirst,
                 votelast,
                 votedilution,
-                state_proof_ID=sprfID,
+                sprfkey=sprfKey,
             )
         the_exception = cm.exception
         self.assertTrue("votelst" in the_exception.__repr__())

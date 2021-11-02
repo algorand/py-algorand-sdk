@@ -1710,7 +1710,7 @@ def step_impl(
         int(vote_first),
         int(vote_last),
         int(key_dilution),
-        state_proof_ID=state_proof_pk,
+        sprfkey=state_proof_pk,
     )
 
 

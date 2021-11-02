@@ -1204,7 +1204,7 @@ def buildTxn(t, sender, params):
         votefst = 0
         votelst = 2000
         votekd = 10
-        sprf = transaction.StateProofPKField(b"\x01" * 64, True).dictify()
+        sprf = "mYR0GVEObMTSNdsKM6RwYywHYPqVDqg3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk9w=="
         txn = transaction.KeyregOnlineTxn(
             sender,
             params,
@@ -1213,7 +1213,7 @@ def buildTxn(t, sender, params):
             votefst,
             votelst,
             votekd,
-            state_proof_ID=sprf,
+            sprfkey=sprf,
         )
     elif "offline" in t:
         txn = transaction.KeyregOfflineTxn(sender, params)
