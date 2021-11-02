@@ -580,8 +580,8 @@ class TestPaymentTransaction(unittest.TestCase):
         path = "/tmp/%s" % uuid.uuid4()
         transaction.write_to_file([txn], path)
         txnr = transaction.retrieve_from_file(path)[0]
-        print("txn:",txn)
-        print("txnr:",txnr)
+        print("txn:", txn)
+        print("txnr:", txnr)
         os.remove(path)
         self.assertEqual(txn, txnr)
 
@@ -600,7 +600,7 @@ class TestPaymentTransaction(unittest.TestCase):
         votefirst = 10000
         votelast = None
         votedilution = 11
-        sprfKey ="mYR0GVEObMTSNdsKM6RwYywHYPqVDqg3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk9w=="
+        sprfKey = "mYR0GVEObMTSNdsKM6RwYywHYPqVDqg3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk9w=="
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True
         )

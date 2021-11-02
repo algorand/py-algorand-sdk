@@ -19,7 +19,7 @@ class AccountParticipation(object):
         "vote_key_dilution": "int",
         "vote_last_valid": "int",
         "vote_participation_key": "str",
-        "state-proof-key": "str"
+        "state-proof-key": "str",
     }
 
     attribute_map = {
@@ -28,8 +28,7 @@ class AccountParticipation(object):
         "vote_key_dilution": "vote-key-dilution",
         "vote_last_valid": "vote-last-valid",
         "vote_participation_key": "vote-participation-key",
-        "state-proof-key": "state-proof-key"
-
+        "state-proof-key": "state-proof-key",
     }
 
     def __init__(
@@ -39,7 +38,7 @@ class AccountParticipation(object):
         vote_key_dilution=None,
         vote_last_valid=None,
         vote_participation_key=None,
-        state_proof_key=None
+        state_proof_key=None,
     ):  # noqa: E501
         """AccountParticipation - a model defined in OpenAPI"""  # noqa: E501
 

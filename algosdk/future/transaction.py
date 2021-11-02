@@ -305,6 +305,7 @@ class Transaction:
     def __str__(self):
         return str(self.__dict__)
 
+
 class PaymentTxn(Transaction):
     """
     Represents a payment transaction.
@@ -495,7 +496,7 @@ class KeyregTxn(Transaction):
             d["nonpart"] = self.nonpart
         if self.sprfkey is not None:
             d["sprfkey"] = base64.b64decode(self.sprfkey)
-           
+
         d.update(super(KeyregTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
 
@@ -613,7 +614,7 @@ class KeyregOnlineTxn(KeyregTxn):
         votefst = d["votefst"]
         votelst = d["votelst"]
         votekd = d["votekd"]
-        if "sprfkey" in d: 
+        if "sprfkey" in d:
             sprfID = base64.b64encode(d["sprfkey"]).decode()
 
             args = {
