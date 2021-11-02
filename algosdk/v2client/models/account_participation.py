@@ -28,7 +28,7 @@ class AccountParticipation(object):
         "vote_key_dilution": "vote-key-dilution",
         "vote_last_valid": "vote-last-valid",
         "vote_participation_key": "vote-participation-key",
-        "state-proof-key": "state-proof-key",
+        "state_proof_key": "state-proof-key",
     }
 
     def __init__(
@@ -54,7 +54,7 @@ class AccountParticipation(object):
         self.vote_key_dilution = vote_key_dilution
         self.vote_last_valid = vote_last_valid
         self.vote_participation_key = vote_participation_key
-        self._state_proof_key = state_proof_key
+        self.state_proof_key = state_proof_key
 
     @property
     def selection_participation_key(self):
@@ -180,7 +180,7 @@ class AccountParticipation(object):
         :return: The state_proof_key of this AccountParticipation.  # noqa: E501
         :rtype: str
         """
-        return self._vote_participation_key
+        return self._state_proof_key
 
     @state_proof_key.setter
     def state_proof_key(self, state_proof_key):
