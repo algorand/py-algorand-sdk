@@ -1653,6 +1653,67 @@ def signing_account(context, address, mnemonic):
     context.signing_mnemonic = mnemonic
 
 
+@given(
+    'suggested transaction parameters fee {fee}, flat-fee "{flat_fee:MaybeBool}", first-valid {first_valid}, last-valid {last_valid}, genesis-hash "{genesis_hash}", genesis-id "{genesis_id}"'
+)
+def suggested_transaction_parameters(
+    context, fee, flat_fee, first_valid, last_valid, genesis_hash, genesis_id
+):
+    context.suggested_params = transaction.SuggestedParams(
+        fee=int(fee),
+        flat_fee=flat_fee,
+        first=int(first_valid),
+        last=int(last_valid),
+        gh=genesis_hash,
+        gen=genesis_id,
+    )
+
+
+@when(
+    'I build a keyreg transaction with sender "{sender}", nonparticipation "{nonpart:MaybeBool}", vote first {vote_first}, vote last {vote_last}, key dilution {key_dilution}, vote public key "{vote_pk:MaybeString}", selection public key "{selection_pk:MaybeString}", and state proof public key "{state_proof_pk:MaybeString}"'
+)
+def step_impl(
+    context,
+    sender,
+    nonpart,
+    vote_first,
+    vote_last,
+    key_dilution,
+    vote_pk,
+    selection_pk,
+    state_proof_pk,
+):
+    if nonpart:
+        context.transaction = transaction.KeyregNonparticipatingTxn(
+            sender, context.suggested_params
+        )
+        return
+
+    if len(vote_pk) == 0:
+        vote_pk = None
+    if len(selection_pk) == 0:
+        selection_pk = None
+    if len(state_proof_pk) == 0:
+        state_proof_pk = None
+
+    if vote_pk is None and selection_pk is None and state_proof_pk is None:
+        context.transaction = transaction.KeyregOfflineTxn(
+            sender, context.suggested_params
+        )
+        return
+
+    context.transaction = transaction.KeyregOnlineTxn(
+        sender,
+        context.suggested_params,
+        vote_pk,
+        selection_pk,
+        int(vote_first),
+        int(vote_last),
+        int(key_dilution),
+        state_proof_ID=state_proof_pk,
+    )
+
+
 def operation_string_to_enum(operation):
     if operation == "call":
         return transaction.OnComplete.NoOpOC
@@ -1802,7 +1863,14 @@ def sign_transaction_with_signing_account(context):
 @then('the base64 encoded signed transaction should equal "{golden}"')
 def compare_to_base64_golden(context, golden):
     actual_base64 = encoding.msgpack_encode(context.signed_transaction)
-    assert golden == actual_base64
+    assert golden == actual_base64, "actual is {}".format(actual_base64)
+
+
+@then("the decoded transaction should equal the original")
+def compare_to_original(context):
+    encoded = encoding.msgpack_encode(context.signed_transaction)
+    decoded = encoding.future_msgpack_decode(encoded)
+    assert decoded.transaction == context.transaction
 
 
 @given(
