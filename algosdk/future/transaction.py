@@ -616,14 +616,23 @@ class KeyregOnlineTxn(KeyregTxn):
         if "sprfkey" in d: 
             sprfID = base64.b64encode(d["sprfkey"]).decode()
 
-        args = {
-            "votekey": votekey,
-            "selkey": selkey,
-            "votefst": votefst,
-            "votelst": votelst,
-            "votekd": votekd,
-            "sprfkey": sprfID,
-        }
+            args = {
+                "votekey": votekey,
+                "selkey": selkey,
+                "votefst": votefst,
+                "votelst": votelst,
+                "votekd": votekd,
+                "sprfkey": sprfID,
+            }
+        else:
+            args = {
+                "votekey": votekey,
+                "selkey": selkey,
+                "votefst": votefst,
+                "votelst": votelst,
+                "votekd": votekd,
+            }
+
         return args
 
     def __eq__(self, other):
