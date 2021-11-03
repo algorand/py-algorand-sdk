@@ -373,3 +373,104 @@ class AlgodClient:
                 )
             )
         return msgpack.loads(response.read())
+
+    def block_raw_as_object(self, round=None, round_num=None, **kwargs):
+        """
+        Return decoded raw block as the network sees it.
+
+        Args:
+            round (int, optional): block number; deprecated, please use
+                round_num
+            round_num (int, optional): alias for round; specify only one of
+                these
+        """
+        if round is None and round_num is None:
+            raise error.UnderspecifiedRoundError
+        req = "/block/" + _specify_round_string(round, round_num)
+        query = {"raw": 1}
+        kwargs["raw_response"] = True
+        response = self.algod_request("GET", req, query, **kwargs)
+        block_type = "application/x-algorand-block-v1"
+        content_type = response.info().get_content_type()
+        if content_type != block_type:
+            raise Exception(
+                'expected "Content-Type: {}" but got {!r}'.format(
+                    block_type, content_type
+                )
+            )
+        return future.block.Block(msgpack.loads(response.read()))
+
+    def block_transactions(self, round=None, round_num=None, **kwargs):
+        """
+        Return transactions in a block.
+
+        Args:
+            round (int, optional): block number; deprecated, please use
+                round_num
+            round_num (int, optional): alias for round; specify only one of
+                these
+        """
+        if round is None and round_num is None:
+            raise error.UnderspecifiedRoundError
+        req = "/block/" + _specify_round_string(round, round_num) + "/txs"
+        return self.algod_request("GET", req, **kwargs)
+    
+    def block_transactions_as_object(self, round=None, round_num=None, **kwargs):
+        """
+        Return transactions in a block.
+
+        Args:
+            round (int, optional): block number; deprecated, please use
+                round_num
+            round_num (int, optional): alias for round; specify only one of
+                these
+        """
+        if round is None and round_num is None:
+            raise error.UnderspecifiedRoundError
+        req = "/block/" + _specify_round_string(round, round_num) + "/txs"
+        return [future.transaction.Transaction(tx) for tx in self.algod_request("GET", req, **kwargs)]
+
+    def block_height(self, round=None, round_num=None, **kwargs):
+        """
+        Return block height.
+
+        Args:
+            round (int, optional): block number; deprecated, please use
+                round_num
+            round_num (int, optional): alias for round; specify only one of
+                these
+        """
+        if round is None and round_num is None:
+            raise error.UnderspecifiedRoundError
+        req = "/block/" + _specify_round_string(round, round_num) + "/height"
+        return self.algod_request("GET", req, **kwargs)
+
+    def block_height_as_object(self, round=None, round_num=None, **kwargs):
+        """
+        Return block height.
+
+        Args:
+            round (int, optional): block number; deprecated, please use
+                round_num
+            round_num (int, optional): alias for round; specify only one of
+                these
+        """
+        if round is None and round_num is None:
+            raise error.UnderspecifiedRoundError
+        req = "/block/" + _specify_round_string(round, round_num) + "/height"
+        return future.block.BlockHeight(self.algod_request("GET", req, **kwargs))
+
+    def block_round(self, round=None, round_num=None, **kwargs):
+        """
+        Return block round.
+
+        Args:
+            round (int, optional): block number; deprecated, please use
+                round_num
+            round_num (int, optional): alias for round; specify only one of
+                these
+        """
+        if round is None and round_num is None:
+            raise error.UnderspecifiedRoundError
+        req = "/block/" + _specify_round_string(round, round_num) + "/round"
+        return self.algod_request("GET", req, **kwargs)
