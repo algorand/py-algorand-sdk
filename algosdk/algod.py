@@ -414,8 +414,10 @@ class AlgodClient:
             raise error.UnderspecifiedRoundError
         req = "/block/" + _specify_round_string(round, round_num) + "/txs"
         return self.algod_request("GET", req, **kwargs)
-    
-    def block_transactions_as_object(self, round=None, round_num=None, **kwargs):
+
+    def block_transactions_as_object(
+        self, round=None, round_num=None, **kwargs
+    ):
         """
         Return transactions in a block.
 
@@ -428,7 +430,10 @@ class AlgodClient:
         if round is None and round_num is None:
             raise error.UnderspecifiedRoundError
         req = "/block/" + _specify_round_string(round, round_num) + "/txs"
-        return [future.transaction.Transaction(tx) for tx in self.algod_request("GET", req, **kwargs)]
+        return [
+            future.transaction.Transaction(tx)
+            for tx in self.algod_request("GET", req, **kwargs)
+        ]
 
     def block_height(self, round=None, round_num=None, **kwargs):
         """
@@ -458,7 +463,9 @@ class AlgodClient:
         if round is None and round_num is None:
             raise error.UnderspecifiedRoundError
         req = "/block/" + _specify_round_string(round, round_num) + "/height"
-        return future.block.BlockHeight(self.algod_request("GET", req, **kwargs))
+        return future.block.BlockHeight(
+            self.algod_request("GET", req, **kwargs)
+        )
 
     def block_round(self, round=None, round_num=None, **kwargs):
         """
