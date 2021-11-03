@@ -4,6 +4,7 @@ import json
 
 from algosdk import error
 from algosdk.abi import method
+from algosdk.abi.tuple_type import TupleType
 from algosdk.future import transaction
 
 
@@ -35,23 +36,19 @@ class AtomicTransactionComposer:
 
     Args:
         status (AtomicTransactionComposerStatus): IntEnum representing the current state of the composer
-        txn_count (int): number of transactions in the group
         txn_list (list[TransactionWithSigner]): list of transactions with signers
         signed_txns (list[SignedTransaction]): list of signed transactions
         tx_ids (list[str]): list of individual transaction IDs in this atomic group
-        atomic_tx_id (str): transaction ID of this atomic group
     """
 
     MAX_GROUP_SIZE = 16
 
     def __init__(self) -> None:
         self.status = AtomicTransactionComposerStatus.BUILDING
-        self.txn_count = 0
         self.method_list = []
         self.txn_list = []
         self.signed_txns = []
         self.tx_ids = []
-        self.atomic_tx_id = None
 
     def get_status(self):
         """
@@ -63,7 +60,7 @@ class AtomicTransactionComposer:
         """
         Returns the number of transactions currently in this atomic group.
         """
-        return self.txn_count
+        return len(self.txn_list)
 
     def clone(self):
         """
@@ -86,16 +83,15 @@ class AtomicTransactionComposer:
         Args:
             txn_and_signer (TransactionWithSigner)
         """
-        if not self.status == AtomicTransactionComposerStatus.BUILDING:
+        if self.status != AtomicTransactionComposerStatus.BUILDING:
             raise error.AtomicTransactionComposerError(
                 "AtomicTransactionComposer must be in BUILDING state for a transaction to be added"
             )
-        if self.txn_count == self.MAX_GROUP_SIZE:
+        if len(self.txn_list) == self.MAX_GROUP_SIZE:
             raise error.AtomicTransactionComposerError(
                 "AtomicTransactionComposer cannot exceed MAX_GROUP_SIZE transactions"
             )
         self.txn_list.append(txn_and_signer)
-        self.txn_count += 1
 
     def add_method_call(
         self,
@@ -135,11 +131,14 @@ class AtomicTransactionComposer:
             rekey_to (str, optional): additionally rekey the sender to this address
 
         """
-        if not self.status == AtomicTransactionComposerStatus.BUILDING:
+        if self.status != AtomicTransactionComposerStatus.BUILDING:
             raise error.AtomicTransactionComposerError(
                 "AtomicTransactionComposer must be in BUILDING state for a transaction to be added"
             )
-        if self.txn_count + method_call.get_txn_calls() > self.MAX_GROUP_SIZE:
+        if (
+            len(self.txn_list) + method_call.get_txn_calls()
+            > self.MAX_GROUP_SIZE
+        ):
             raise error.AtomicTransactionComposerError(
                 "AtomicTransactionComposer cannot exceed MAX_GROUP_SIZE transactions"
             )
@@ -153,23 +152,37 @@ class AtomicTransactionComposer:
             )
 
         app_args = []
+        additional_args = (
+            []
+        )  # For more than 14 args, compact them into a tuple
+        additional_types = []
         # First app arg must be the selector of the method
         app_args.append(method_call.get_selector())
         # Iterate through the method arguments and either pack a transaction
         # or encode a ABI value.
         for i, arg in enumerate(method_call.args):
-            if arg in method.TRANSACTION_ARGS:
-                if not (method_args[i], TransactionWithSigner):
+            if arg.type in method.TRANSACTION_ARGS:
+                if not isinstance(method_args[i], TransactionWithSigner):
                     raise error.AtomicTransactionComposerError(
                         "expected TransactionWithSigner as method argument, but received: {}".format(
                             method_args[i]
                         )
                     )
                 self.txn_list.append(method_args[i])
+            elif len(app_args) > 14:
+                # Pack the remaining values as a tuple
+                additional_types.append(arg.type)
+                additional_args.append(method_args[i])
             else:
-                encoded_arg = arg.encode(method_args[i])
+                encoded_arg = arg.type.encode(method_args[i])
                 app_args.append(encoded_arg)
-        self.txn_count += method_call.get_txn_calls()
+
+        if len(app_args) > 14:
+            remainder_args = TupleType(additional_types).encode(
+                additional_args
+            )
+            app_args.append(remainder_args)
+
         self.method_list.append(method_call)
 
         # Create a method call transaction
@@ -194,8 +207,8 @@ class AtomicTransactionComposer:
         Returns:
             list[TransactionWithSigner]: list of transactions with signers
         """
-        if self.status < AtomicTransactionComposerStatus.BUILT:
-            self.status = AtomicTransactionComposerStatus.BUILT
+        if self.status >= AtomicTransactionComposerStatus.BUILT:
+            return self.txn_list
 
         # Get group transaction id
         group_txns = [t.txn for t in self.txn_list]
@@ -204,6 +217,7 @@ class AtomicTransactionComposer:
             t.txn.group = group_id
             self.tx_ids.append(t.txn.get_txid())
 
+        self.status = AtomicTransactionComposerStatus.BUILT
         return self.txn_list
 
     def gather_signatures(self):
@@ -216,17 +230,17 @@ class AtomicTransactionComposer:
         Returns:
             list[SignedTransactions]: list of signed transactions
         """
-        if self.status < AtomicTransactionComposerStatus.SIGNED:
-            self.build_group()
-            self.status = AtomicTransactionComposerStatus.SIGNED
-        if self.signed_txns:
+        if self.status >= AtomicTransactionComposerStatus.SIGNED:
             # Return cached versions of the signatures
             return self.signed_txns
 
-        for txn_with_signer in self.txn_list:
+        txn_list = self.build_group()
+        for txn_with_signer in txn_list:
             unsigned_txn = txn_with_signer.txn
             stxn = txn_with_signer.signer.sign_txn(unsigned_txn)
             self.signed_txns.append(stxn)
+
+        self.status = AtomicTransactionComposerStatus.SIGNED
         return self.signed_txns
 
     def submit(self, client):
@@ -244,14 +258,13 @@ class AtomicTransactionComposer:
         if self.status <= AtomicTransactionComposerStatus.SUBMITTED:
             self.build_group()
             self.gather_signatures()
-            self.status = AtomicTransactionComposerStatus.SUBMITTED
         else:
             raise error.AtomicTransactionComposerError(
                 "AtomicTransactionComposerStatus must be submitted or lower to submit a group"
             )
 
-        self.atomic_tx_id = client.send_transactions(self.signed_txns)
-
+        client.send_transactions(self.signed_txns)
+        self.status = AtomicTransactionComposerStatus.SUBMITTED
         return self.tx_ids
 
     def execute(self, client):
@@ -272,18 +285,15 @@ class AtomicTransactionComposer:
                 method has no return value (void), then the method results array
                 will contain None for that method's return value.
         """
-        if self.status <= AtomicTransactionComposerStatus.SUBMITTED:
-            self.build_group()
-            self.gather_signatures()
-            self.status = AtomicTransactionComposerStatus.COMMITTED
-        else:
+        if self.status > AtomicTransactionComposerStatus.SUBMITTED:
             raise error.AtomicTransactionComposerError(
                 "AtomicTransactionComposerStatus must be submitted or lower to execute a group"
             )
 
-        client.wait_for_confirmation(client, self.atomic_tx_id)
+        client.submit(client)
+        client.wait_for_confirmation(client, self.tx_ids[0])
 
-        resp = client.pending_transaction_info(self.atomic_tx_id)
+        resp = client.pending_transaction_info(self.tx_ids[0])
         resp_dict = json.loads(resp)
 
         confirmed_round = resp_dict["confirmed-round"]
@@ -297,6 +307,8 @@ class AtomicTransactionComposer:
             else:
                 return_value = self.method_list[i].Returns.type.decode(result)
                 method_results.append(return_value)
+
+        self.status = AtomicTransactionComposerStatus.COMMITTED
 
         return AtomicTransactionResponse(
             confirmed_round=confirmed_round,
