@@ -8,7 +8,6 @@ from algosdk import error
 from algosdk import constants
 
 
-# Globals
 TRANSACTION_ARGS = (
     constants.PAYMENT_TXN,
     constants.KEYREG_TXN,
@@ -27,11 +26,11 @@ class Method:
         name (string): name of the method
         args (list): list of Argument objects with type, name, and optional
         description
-        returns (Returns): a Returns object with a type and optional description
+        returns (Returns, optional): a Returns object with a type and optional description
         desc (string, optional): optional description of the method
     """
 
-    def __init__(self, name, args, returns, desc=None) -> None:
+    def __init__(self, name, args, returns=None, desc=None) -> None:
         self.name = name
         self.args = args
         self.desc = desc
@@ -70,6 +69,25 @@ class Method:
         return self.txn_calls
 
     @staticmethod
+    def _parse_string(s):
+        # Parses a method signature into three tokens, returned as a list:
+        # e.g. 'a(b,c)d' -> ['a', 'b,c', 'd']
+        stack = []
+        for i, char in enumerate(s):
+            if char == "(":
+                stack.append(i)
+            elif char == ")":
+                if not stack:
+                    break
+                left_index = stack.pop()
+                if not stack:
+                    return (s[:left_index], s[left_index + 1 : i], s[i + 1 :])
+
+        raise error.ABIEncodingError(
+            "ABI method string has mismatched parentheses: {}".format(s)
+        )
+
+    @staticmethod
     def from_json(resp):
         method_dict = json.loads(resp)
         return Method.undictify(method_dict)
@@ -85,6 +103,16 @@ class Method:
         return_type = Returns(tokens[-1])
         return Method(name=tokens[0], args=argument_list, returns=return_type)
 
+    def dictify(self):
+        d = {}
+        d["name"] = self.name
+        d["args"] = [arg.dictify() for arg in self.args]
+        if self.returns:
+            d["returns"] = self.returns.dictify()
+        if self.desc:
+            d["desc"] = self.desc
+        return d
+
     @staticmethod
     def undictify(d):
         name = d["name"]
@@ -95,33 +123,13 @@ class Method:
         desc = d["desc"] if "desc" in d else None
         return Method(name=name, args=arg_list, returns=return_obj, desc=desc)
 
-    @staticmethod
-    def _parse_string(s):
-        # Parses a method signature into three tokens, returned as a list:
-        # e.g. 'a(b,c)d' -> ['a', 'b,c', 'd']
-        stack = []
-        for i, char in enumerate(s):
-            if char == "(":
-                stack.append(i)
-            elif char == ")":
-                if not stack:
-                    break
-                left_index = stack[-1]
-                stack.pop()
-                if not stack:
-                    return (s[:left_index], s[left_index + 1 : i], s[i + 1 :])
-
-        raise error.ABIEncodingError(
-            "ABI method string has mismatched parentheses: {}".format(s)
-        )
-
 
 class Argument:
     """
     Represents an argument for a ABI method
 
     Args:
-        arg_type (string | Type): ABI type or transaction of the method argument
+        arg_type (string): ABI type or transaction string of the method argument
         name (string, optional): name of this method argument
         desc (string, optional): description of this method argument
     """
@@ -137,6 +145,15 @@ class Argument:
 
     def __str__(self):
         return str(self.type)
+
+    def dictify(self):
+        d = {}
+        d["type"] = str(self.type)
+        if self.name:
+            d["name"] = self.name
+        if self.desc:
+            d["desc"] = self.desc
+        return d
 
     @staticmethod
     def undictify(d):
@@ -166,6 +183,13 @@ class Returns:
 
     def __str__(self):
         return str(self.type)
+
+    def dictify(self):
+        d = {}
+        d["type"] = str(self.type)
+        if self.desc:
+            d["desc"] = self.desc
+        return d
 
     @staticmethod
     def undictify(d):
