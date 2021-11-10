@@ -1,9 +1,9 @@
-from .base_type import ABI_LENGTH_SIZE, Type
+from .base_type import ABI_LENGTH_SIZE, ABIType
 from .bool_type import BoolType
 from .. import error
 
 
-class TupleType(Type):
+class TupleType(ABIType):
     """
     Represents a Tuple ABI Type for encoding.
 

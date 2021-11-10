@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 ABI_LENGTH_SIZE = 2  # We use 2 bytes to encode the length of a dynamic element
 
 
-class Type(ABC):
+class ABIType(ABC):
     """
     Represents an ABI Type for encoding.
     """

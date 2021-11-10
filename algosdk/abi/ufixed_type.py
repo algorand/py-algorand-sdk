@@ -1,8 +1,8 @@
-from .base_type import Type
+from .base_type import ABIType
 from .. import error
 
 
-class UfixedType(Type):
+class UfixedType(ABIType):
     """
     Represents an Ufixed ABI Type for encoding.
 

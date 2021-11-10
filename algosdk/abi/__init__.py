@@ -1,6 +1,7 @@
 from .util import type_from_string
 from .uint_type import UintType
 from .ufixed_type import UfixedType
+from .base_type import ABIType
 from .bool_type import BoolType
 from .byte_type import ByteType
 from .address_type import AddressType

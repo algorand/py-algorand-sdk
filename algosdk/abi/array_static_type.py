@@ -1,13 +1,13 @@
 import math
 
-from .base_type import Type
+from .base_type import ABIType
 from .bool_type import BoolType
 from .byte_type import ByteType
 from .tuple_type import TupleType
 from .. import error
 
 
-class ArrayStaticType(Type):
+class ArrayStaticType(ABIType):
     """
     Represents a ArrayStatic ABI Type for encoding.
 
