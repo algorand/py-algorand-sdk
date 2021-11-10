@@ -7,6 +7,11 @@ from algosdk.abi import method
 from algosdk.abi.tuple_type import TupleType
 from algosdk.future import transaction
 
+import base64
+
+# The first four bytes of an ABI method call return must have this hash
+ABI_RETURN_HASH = "151f7c75"
+
 
 class AtomicTransactionComposerStatus(IntEnum):
     # BUILDING indicates that the atomic group is still under construction
@@ -45,7 +50,7 @@ class AtomicTransactionComposer:
 
     def __init__(self) -> None:
         self.status = AtomicTransactionComposerStatus.BUILDING
-        self.method_list = []
+        self.method_dict = {}
         self.txn_list = []
         self.signed_txns = []
         self.tx_ids = []
@@ -68,7 +73,11 @@ class AtomicTransactionComposer:
         The new composer's status will be BUILDING, so additional transactions
         may be added to it.
         """
-        cloned = copy.deepcopy(self)
+        cloned = AtomicTransactionComposer()
+        cloned.method_dict = copy.deepcopy(self.method_dict)
+        cloned.txn_list = copy.deepcopy(self.txn_list)
+        for t in cloned.txn_list:
+            t.txn.group = None
         cloned.status = AtomicTransactionComposerStatus.BUILDING
         return cloned
 
@@ -90,6 +99,10 @@ class AtomicTransactionComposer:
         if len(self.txn_list) == self.MAX_GROUP_SIZE:
             raise error.AtomicTransactionComposerError(
                 "AtomicTransactionComposer cannot exceed MAX_GROUP_SIZE transactions"
+            )
+        if not isinstance(txn_and_signer, TransactionWithSigner):
+            raise error.AtomicTransactionComposerError(
+                "expected TransactionWithSigner object to the AtomicTransactionComposer"
             )
         self.txn_list.append(txn_and_signer)
 
@@ -142,7 +155,7 @@ class AtomicTransactionComposer:
             raise error.AtomicTransactionComposerError(
                 "AtomicTransactionComposer cannot exceed MAX_GROUP_SIZE transactions"
             )
-        if len(method_call.args) != len(method_args):
+        if method_call.args and len(method_call.args) != len(method_args):
             raise error.AtomicTransactionComposerError(
                 "number of method arguments do not match the method signature"
             )
@@ -152,10 +165,10 @@ class AtomicTransactionComposer:
             )
 
         app_args = []
-        additional_args = (
-            []
-        )  # For more than 14 args, compact them into a tuple
+        # For more than 14 args, including the selector, compact them into a tuple
+        additional_args = []
         additional_types = []
+        txn_list = []
         # First app arg must be the selector of the method
         app_args.append(method_call.get_selector())
         # Iterate through the method arguments and either pack a transaction
@@ -168,7 +181,7 @@ class AtomicTransactionComposer:
                             method_args[i]
                         )
                     )
-                self.txn_list.append(method_args[i])
+                txn_list.append(method_args[i])
             elif len(app_args) > 14:
                 # Pack the remaining values as a tuple
                 additional_types.append(arg.type)
@@ -177,13 +190,11 @@ class AtomicTransactionComposer:
                 encoded_arg = arg.type.encode(method_args[i])
                 app_args.append(encoded_arg)
 
-        if len(app_args) > 14:
+        if additional_args:
             remainder_args = TupleType(additional_types).encode(
                 additional_args
             )
             app_args.append(remainder_args)
-
-        self.method_list.append(method_call)
 
         # Create a method call transaction
         method_txn = transaction.ApplicationCallTxn(
@@ -197,7 +208,10 @@ class AtomicTransactionComposer:
             rekey_to=rekey_to,
         )
         txn_with_signer = TransactionWithSigner(method_txn, signer)
-        self.txn_list.append(txn_with_signer)
+        txn_list.append(txn_with_signer)
+
+        self.txn_list += txn_list
+        self.method_dict[len(self.txn_list) - 1] = method_call
 
     def build_group(self):
         """
@@ -209,6 +223,10 @@ class AtomicTransactionComposer:
         """
         if self.status >= AtomicTransactionComposerStatus.BUILT:
             return self.txn_list
+        if not self.txn_list:
+            raise error.AtomicTransactionComposerError(
+                "no transactions to build for AtomicTransactionComposer"
+            )
 
         # Get group transaction id
         group_txns = [t.txn for t in self.txn_list]
@@ -234,13 +252,15 @@ class AtomicTransactionComposer:
             # Return cached versions of the signatures
             return self.signed_txns
 
+        stxn_list = []
         txn_list = self.build_group()
         for txn_with_signer in txn_list:
             unsigned_txn = txn_with_signer.txn
             stxn = txn_with_signer.signer.sign_txn(unsigned_txn)
-            self.signed_txns.append(stxn)
+            stxn_list.append(stxn)
 
         self.status = AtomicTransactionComposerStatus.SIGNED
+        self.signed_txns = stxn_list
         return self.signed_txns
 
     def submit(self, client):
@@ -256,7 +276,6 @@ class AtomicTransactionComposer:
             list[Transaction]: list of submitted transactions
         """
         if self.status <= AtomicTransactionComposerStatus.SUBMITTED:
-            self.build_group()
             self.gather_signatures()
         else:
             raise error.AtomicTransactionComposerError(
@@ -267,7 +286,7 @@ class AtomicTransactionComposer:
         self.status = AtomicTransactionComposerStatus.SUBMITTED
         return self.tx_ids
 
-    def execute(self, client):
+    def execute(self, client, wait_rounds):
         """
         Send the transaction group to the network and wait until it's committed
         to a block. An error will be thrown if submission or execution fails.
@@ -290,29 +309,68 @@ class AtomicTransactionComposer:
                 "AtomicTransactionComposerStatus must be submitted or lower to execute a group"
             )
 
-        client.submit(client)
-        client.wait_for_confirmation(client, self.tx_ids[0])
-
-        resp = client.pending_transaction_info(self.tx_ids[0])
-        resp_dict = json.loads(resp)
-
-        confirmed_round = resp_dict["confirmed-round"]
-        tx_ids = self.tx_ids
-        results = resp_dict["logs"] if "logs" in resp_dict else None
-
-        method_results = []
-        for i, result in enumerate(results):
-            if self.method_list[i].Returns.type == "void":
-                method_results.append(None)
-            else:
-                return_value = self.method_list[i].Returns.type.decode(result)
-                method_results.append(return_value)
-
+        self.submit(client)
+        transaction.wait_for_confirmation(client, self.tx_ids[0])
         self.status = AtomicTransactionComposerStatus.COMMITTED
 
+        confirmed_round = -1
+        method_results = []
+
+        for i, tx_id in enumerate(self.tx_ids):
+            if i not in self.method_dict:
+                continue
+            # Return is void
+            if self.method_dict[i].returns is None:
+                method_results.append(
+                    ABIResult(
+                        tx_id=tx_id,
+                        raw_value=None,
+                        return_value=None,
+                        decode_error=None,
+                    )
+                )
+                continue
+
+            # Parse log for ABI method return value
+            resp = client.pending_transaction_info(tx_id)
+            confirmed_round = resp["confirmed-round"]
+            logs = resp["logs"] if "logs" in resp else None
+            raw_value = None
+            return_value = None
+            decode_error = None
+            # Look for the last returned value in the log
+            for result in reversed(logs):
+                # Check that the first four bytes is the hash of "return"
+                result_bytes = base64.b64decode(result)
+                if result_bytes[:4] != bytes.fromhex(ABI_RETURN_HASH):
+                    continue
+                try:
+                    raw_value = result_bytes[4:]
+                    return_value = self.method_dict[i].returns.type.decode(
+                        raw_value
+                    )
+                    decode_error = None
+                except Exception as e:
+                    raw_value = None
+                    return_value = None
+                    decode_error = e
+                break
+
+            abi_result = ABIResult(
+                tx_id=tx_id,
+                raw_value=raw_value,
+                return_value=return_value,
+                decode_error=decode_error,
+            )
+            method_results.append(abi_result)
+
+        if confirmed_round < 0:
+            resp = client.pending_transaction_info(self.tx_ids[0])
+            confirmed_round = resp["confirmed-round"]
+        
         return AtomicTransactionResponse(
             confirmed_round=confirmed_round,
-            tx_ids=tx_ids,
+            tx_ids=self.tx_ids,
             results=method_results,
         )
 
@@ -352,22 +410,16 @@ class TransactionWithSigner:
         self.signer = signer
 
 
+class ABIResult:
+    def __init__(self, tx_id, raw_value, return_value, decode_error) -> None:
+        self.tx_id = tx_id
+        self.raw_value = raw_value
+        self.return_value = return_value
+        self.decode_error = decode_error
+
+
 class AtomicTransactionResponse:
-    def __init__(self, confirmed_round, tx_ids=None, results=None) -> None:
+    def __init__(self, confirmed_round, tx_ids, results) -> None:
         self.confirmed_round = confirmed_round
         self.tx_ids = tx_ids
-        self.method_results = results
-
-
-def make_account_transaction_signer(private_key):
-    """
-    Creates a TransactionSigner for a basic account or LogicSigAccount
-    """
-    return TransactionSigner(private_key)
-
-
-def make_multisig_account_transaction_signer(msig, sks):
-    """
-    Creates a TransactionSigner for a MultiSig account
-    """
-    return TransactionSigner(private_key=sks, msig=msig)
+        self.abi_results = results

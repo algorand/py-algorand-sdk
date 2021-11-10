@@ -15,8 +15,8 @@ from behave import (
     step,
 )  # pylint: disable=no-name-in-module
 
-from algosdk.future import transaction
-from algosdk import account, encoding, error, mnemonic
+from algosdk.future import transaction, atomic_transaction_composer
+from algosdk import abi, account, encoding, error, mnemonic
 from algosdk.v2client import *
 from algosdk.v2client.models import (
     DryrunRequest,
@@ -1653,6 +1653,27 @@ def signing_account(context, address, mnemonic):
     context.signing_mnemonic = mnemonic
 
 
+@given(
+    'suggested transaction parameters fee {fee}, flat-fee "{flat_fee:MaybeBool}", first-valid {first_valid}, last-valid {last_valid}, genesis-hash "{genesis_hash}", genesis-id "{genesis_id}"'
+)
+def suggested_transaction_parameters(
+    context, fee, flat_fee, first_valid, last_valid, genesis_hash, genesis_id
+):
+    context.suggested_params = transaction.SuggestedParams(
+        fee=int(fee),
+        flat_fee=flat_fee,
+        first=int(first_valid),
+        last=int(last_valid),
+        gh=genesis_hash,
+        gen=genesis_id,
+    )
+
+
+@given("suggested transaction parameters from the algod v2 client")
+def get_sp_from_algod(context):
+    context.suggested_params = context.app_acl.suggested_params()
+
+
 def operation_string_to_enum(operation):
     if operation == "call":
         return transaction.OnComplete.NoOpOC
@@ -1686,6 +1707,27 @@ def split_and_process_app_args(in_args):
         elif sub_arg[0] == "addr":
             app_args.append(encoding.decode_address(sub_arg[1]))
     return app_args
+
+
+@when(
+    'I build a payment transaction with sender "{sender:MaybeString}", receiver "{receiver:MaybeString}", amount {amount}, close remainder to "{close_remainder_to:MaybeString}"'
+)
+def build_payment_transaction(
+    context, sender, receiver, amount, close_remainder_to
+):
+    if sender == "transient":
+        sender = context.transient_pk
+    if receiver == "transient":
+        receiver = context.transient_pk
+    if not close_remainder_to:
+        close_remainder_to = None
+    context.transaction = transaction.PaymentTxn(
+        sender=sender,
+        sp=context.suggested_params,
+        receiver=receiver,
+        amt=int(amount),
+        # close_remainder_to=close_remainder_to,
+    )
 
 
 @when(
@@ -1799,10 +1841,25 @@ def sign_transaction_with_signing_account(context):
     context.signed_transaction = context.transaction.sign(private_key)
 
 
+@then('the base64 encoded signed transactions should equal "{goldens}"')
+def step_impl(context, goldens):
+    golden_strings = goldens.split(",")
+    for i, golden in enumerate(golden_strings):
+        actual_base64 = encoding.msgpack_encode(context.signed_transactions[i])
+        assert golden == actual_base64, "actual is {}".format(actual_base64)
+
+
 @then('the base64 encoded signed transaction should equal "{golden}"')
 def compare_to_base64_golden(context, golden):
     actual_base64 = encoding.msgpack_encode(context.signed_transaction)
-    assert golden == actual_base64
+    assert golden == actual_base64, "actual is {}".format(actual_base64)
+
+
+@then("the decoded transaction should equal the original")
+def compare_to_original(context):
+    encoded = encoding.msgpack_encode(context.signed_transaction)
+    decoded = encoding.future_msgpack_decode(encoded)
+    assert decoded.transaction == context.transaction
 
 
 @given(
@@ -1943,7 +2000,7 @@ def sign_submit_save_txid_with_error(context, error_string):
             signed_app_transaction
         )
     except Exception as e:
-        if error_string not in str(e):
+        if not error_string or error_string not in str(e):
             raise RuntimeError(
                 "error string "
                 + error_string
@@ -1957,17 +2014,34 @@ def wait_for_app_txn_confirm(context):
     sp = context.app_acl.suggested_params()
     last_round = sp.first
     context.app_acl.status_after_block(last_round + 2)
-    assert "type" in context.acl.transaction_info(
-        context.transient_pk, context.app_txid
-    )
-    assert "type" in context.acl.transaction_by_id(context.app_txid)
+    if hasattr(context, "acl"):
+        assert "type" in context.acl.transaction_info(
+            context.transient_pk, context.app_txid
+        )
+        assert "type" in context.acl.transaction_by_id(context.app_txid)
+    else:
+        transaction.wait_for_confirmation(
+            context.app_acl, context.app_txid, 10
+        )
 
 
 @given("I remember the new application ID.")
 def remember_app_id(context):
-    context.current_application_id = context.acl.pending_transaction_info(
-        context.app_txid
-    )["txresults"]["createdapp"]
+    if hasattr(context, "acl"):
+        context.current_application_id = context.acl.pending_transaction_info(
+            context.app_txid
+        )["txresults"]["createdapp"]
+    else:
+        context.current_application_id = (
+            context.app_acl.pending_transaction_info(context.app_txid)[
+                "application-index"
+            ]
+        )
+
+
+@given("an application id {app_id}")
+def set_app_id(context, app_id):
+    context.current_application_id = app_id
 
 
 @step(
@@ -2264,3 +2338,177 @@ def dryrun_test_case_local_state_assert_fail_step(
 
     ts.assertNoError(drr)
     ts.assertLocalStateContains(drr, account, dict(key=key, value=val))
+
+
+@given("a new AtomicTransactionComposer")
+def create_atomic_transaction_composer(context):
+    context.atomic_transaction_composer = (
+        atomic_transaction_composer.AtomicTransactionComposer()
+    )
+
+
+@when("I make a transaction signer for the transient account.")
+def create_transaction_signer(context):
+    private_key = context.transient_sk
+    context.transaction_signer = atomic_transaction_composer.TransactionSigner(
+        private_key
+    )
+
+
+@when('I build a method with signature "{method_signature}".')
+def build_abi_method(context, method_signature):
+    context.abi_method = abi.Method.from_string(method_signature)
+
+
+@when("I create a transaction with signer with the current transaction.")
+def create_transaction_with_signer(context):
+    context.transaction_with_signer = (
+        atomic_transaction_composer.TransactionWithSigner(
+            context.transaction, context.transaction_signer
+        )
+    )
+
+
+@when("I add the current transaction with signer to the composer.")
+def add_transaction_to_composer(context):
+    context.atomic_transaction_composer.add_transaction(
+        context.transaction_with_signer
+    )
+
+
+def split_and_process_abi_args(method, arg_string):
+    method_args = []
+    arg_tokens = arg_string.split(",")
+    arg_index = 0
+    for arg in method.args:
+        # Skip arg if it does not have a type
+        if isinstance(arg.type, abi.ABIType):
+            arg = arg.type.decode(base64.b64decode(arg_tokens[arg_index]))
+            method_args.append(arg)
+            arg_index += 1
+    return method_args
+
+
+@when(
+    'I prepare the method arguments with the app args "{method_args:MaybeString}".'
+)
+def prepare_abi_method_args(context, method_args):
+    if not method_args:
+        context.method_args = []
+    else:
+        context.method_args = split_and_process_abi_args(
+            context.abi_method, method_args
+        )
+
+
+@when(
+    'I prepare the method arguments with the current transaction with signer and the app args "{method_args:MaybeString}".'
+)
+def prepare_abi_method_args_with_transaction(context, method_args):
+    if not method_args:
+        context.method_args = []
+    else:
+        app_args = split_and_process_abi_args(context.abi_method, method_args)
+        context.method_args = [context.transaction_with_signer] + app_args
+
+
+@when(
+    'I add a method call with the transient account, the current application, suggested params, operation "{operation}", current transaction signer, current method arguments.'
+)
+def add_abi_method_call(context, operation):
+    context.atomic_transaction_composer.add_method_call(
+        app_id=context.current_application_id,
+        method_call=context.abi_method,
+        sender=context.transient_pk,
+        sp=context.suggested_params,
+        signer=context.transaction_signer,
+        method_args=context.method_args,
+        on_complete=operation_string_to_enum(operation),
+    )
+
+
+@when(
+    'I build the transaction group with the composer. If there is an error it is "".'
+)
+def build_atomic_transaction_group(context):
+    context.atomic_transaction_composer.build_group()
+
+
+def composer_status_string_to_enum(status):
+    if status == "BUILDING":
+        return (
+            atomic_transaction_composer.AtomicTransactionComposerStatus.BUILDING
+        )
+    elif status == "BUILT":
+        return (
+            atomic_transaction_composer.AtomicTransactionComposerStatus.BUILT
+        )
+    elif status == "SIGNED":
+        return (
+            atomic_transaction_composer.AtomicTransactionComposerStatus.SIGNED
+        )
+    elif status == "SUBMITTED":
+        return (
+            atomic_transaction_composer.AtomicTransactionComposerStatus.SUBMITTED
+        )
+    elif status == "COMMITTED":
+        return (
+            atomic_transaction_composer.AtomicTransactionComposerStatus.COMMITTED
+        )
+    else:
+        raise NotImplementedError(
+            "no AtomicTransactionComposerStatus enum for " + status
+        )
+
+
+@then('The composer should have a status of "{status}".')
+def check_atomic_transaction_composer_status(context, status):
+    assert (
+        context.atomic_transaction_composer.get_status()
+        == composer_status_string_to_enum(status)
+    )
+
+
+@then("I gather signatures with the composer.")
+def gather_signatures_composer(context):
+    context.signed_transactions = (
+        context.atomic_transaction_composer.gather_signatures()
+    )
+
+
+@then("I clone the composer.")
+def clone_atomic_transaction_composer(context):
+    context.atomic_transaction_composer = (
+        context.atomic_transaction_composer.clone()
+    )
+
+
+@then("I execute the current transaction group with the composer.")
+def execute_atomic_transaction_composer(context):
+    context.atomic_transaction_composer_return = (
+        context.atomic_transaction_composer.execute(context.app_acl, 10)
+    )
+
+
+@then('The app should have returned "{returns:MaybeString}" in the log.')
+def check_atomic_transaction_composer_response(context, returns):
+    if not returns:
+        expected_tokens = []
+    else:
+        expected_tokens = returns.split(",")
+    for i, expected in enumerate(
+        expected_tokens
+        
+    ):
+        result = context.atomic_transaction_composer_return.abi_results[i]
+        if not returns or not expected_tokens[i]:
+            assert result.return_value is None
+            assert result.decode_error is None
+            continue
+        expected_bytes = base64.b64decode(expected)[4:]
+        expected_value = context.abi_method.returns.type.decode(expected_bytes)
+        
+        assert expected_bytes == result.raw_value, "actual is {}".format(result.raw_value)
+        assert expected_value == result.return_value, "actual is {}".format(result.return_value)
+        assert result.decode_error is None
+
