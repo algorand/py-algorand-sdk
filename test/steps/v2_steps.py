@@ -2350,8 +2350,8 @@ def create_atomic_transaction_composer(context):
 @when("I make a transaction signer for the transient account.")
 def create_transaction_signer(context):
     private_key = context.transient_sk
-    context.transaction_signer = atomic_transaction_composer.TransactionSigner(
-        private_key
+    context.transaction_signer = (
+        atomic_transaction_composer.AccountTransactionSigner(private_key)
     )
 
 
@@ -2496,10 +2496,7 @@ def check_atomic_transaction_composer_response(context, returns):
         expected_tokens = []
     else:
         expected_tokens = returns.split(",")
-    for i, expected in enumerate(
-        expected_tokens
-        
-    ):
+    for i, expected in enumerate(expected_tokens):
         result = context.atomic_transaction_composer_return.abi_results[i]
         if not returns or not expected_tokens[i]:
             assert result.return_value is None
@@ -2507,8 +2504,11 @@ def check_atomic_transaction_composer_response(context, returns):
             continue
         expected_bytes = base64.b64decode(expected)[4:]
         expected_value = context.abi_method.returns.type.decode(expected_bytes)
-        
-        assert expected_bytes == result.raw_value, "actual is {}".format(result.raw_value)
-        assert expected_value == result.return_value, "actual is {}".format(result.return_value)
-        assert result.decode_error is None
 
+        assert expected_bytes == result.raw_value, "actual is {}".format(
+            result.raw_value
+        )
+        assert expected_value == result.return_value, "actual is {}".format(
+            result.return_value
+        )
+        assert result.decode_error is None

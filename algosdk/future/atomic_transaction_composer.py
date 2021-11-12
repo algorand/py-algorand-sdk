@@ -1,13 +1,12 @@
+from abc import ABC
+import base64
 import copy
 from enum import IntEnum
-import json
 
 from algosdk import error
 from algosdk.abi import method
 from algosdk.abi.tuple_type import TupleType
 from algosdk.future import transaction
-
-import base64
 
 # The first four bytes of an ABI method call return must have this hash
 ABI_RETURN_HASH = "151f7c75"
@@ -41,6 +40,7 @@ class AtomicTransactionComposer:
 
     Args:
         status (AtomicTransactionComposerStatus): IntEnum representing the current state of the composer
+        method_dict (dict): dictionary of an index in the transaction list to a Method object
         txn_list (list[TransactionWithSigner]): list of transactions with signers
         signed_txns (list[SignedTransaction]): list of signed transactions
         tx_ids (list[str]): list of individual transaction IDs in this atomic group
@@ -252,12 +252,21 @@ class AtomicTransactionComposer:
             # Return cached versions of the signatures
             return self.signed_txns
 
-        stxn_list = []
+        stxn_list = [None] * len(self.txn_list)
+        signer_indexes = {}  # Map a signer to a list of indices to sign
         txn_list = self.build_group()
-        for txn_with_signer in txn_list:
-            unsigned_txn = txn_with_signer.txn
-            stxn = txn_with_signer.signer.sign_txn(unsigned_txn)
-            stxn_list.append(stxn)
+        for i, txn_with_signer in enumerate(txn_list):
+            if txn_with_signer.signer not in signer_indexes:
+                signer_indexes[txn_with_signer.signer] = []
+            signer_indexes[txn_with_signer.signer].append(i)
+
+        # Sign then merge the signed transactions in order
+        txns = [t.txn for t in self.txn_list]
+        for signer, indexes in signer_indexes.items():
+            stxns = signer.sign(txns, indexes)
+            for i, stxn in enumerate(stxns):
+                index = indexes[i]
+                stxn_list[index] = stxn
 
         self.status = AtomicTransactionComposerStatus.SIGNED
         self.signed_txns = stxn_list
@@ -310,7 +319,7 @@ class AtomicTransactionComposer:
             )
 
         self.submit(client)
-        transaction.wait_for_confirmation(client, self.tx_ids[0])
+        transaction.wait_for_confirmation(client, self.tx_ids[0], wait_rounds)
         self.status = AtomicTransactionComposerStatus.COMMITTED
 
         confirmed_round = -1
@@ -367,7 +376,7 @@ class AtomicTransactionComposer:
         if confirmed_round < 0:
             resp = client.pending_transaction_info(self.tx_ids[0])
             confirmed_round = resp["confirmed-round"]
-        
+
         return AtomicTransactionResponse(
             confirmed_round=confirmed_round,
             tx_ids=self.tx_ids,
@@ -375,33 +384,95 @@ class AtomicTransactionComposer:
         )
 
 
-class TransactionSigner:
+class TransactionSigner(ABC):
     """
-    Represents a function which can sign transactions from an atomic transaction group.
+    Represents an object which can sign transactions from an atomic transaction group.
 
     Args:
         private_key (str): private key of signing account
         msig (MultiSig, optional): multisig account information
     """
 
-    def __init__(self, private_key, msig=None) -> None:
-        self.private_key = private_key
-        self.msig = msig
+    def __init__(self) -> None:
+        pass
 
     def sign(self, txn_group, indexes):
-        signed_txn = []
-        for i in indexes:
-            txn = txn_group[i]
-            assert isinstance(txn, transaction.Transaction)
-            signed_txn.append(self.sign_txn(txn))
-        return signed_txn
+        pass
 
-    def sign_txn(self, txn):
-        if self.msig:
-            for sk in self.private_key:
-                txn.sign(sk)
-            return txn
-        return txn.sign(self.private_key)
+
+class AccountTransactionSigner(TransactionSigner):
+    """
+    Represents a Transaction Signer for an account that can sign transactions from an
+    atomic transaction group.
+
+    Args:
+        private_key (str): private key of signing account
+    """
+
+    def __init__(self, private_key) -> None:
+        super().__init__()
+        self.private_key = private_key
+
+    def sign(self, txn_group, indexes):
+        """
+        Sign transactions in a transaction group given the indexes.
+
+        Returns an array of encoded signed transactions. The length of the
+        array will be the same as the length of indexesToSign, and each index i in the array
+        corresponds to the signed transaction from txnGroup[indexesToSign[i]].
+
+        Args:
+            txn_group (list[Transaction]): atomic group of transactions
+            indexes (list[int]): array of indexes in the atomic transaction group that should be signed
+        """
+        stxns = []
+        for i in indexes:
+            stxn = txn_group[i].sign(self.private_key)
+            stxns.append(stxn)
+        return stxns
+
+
+class LogicSigTransactionSigner(TransactionSigner):
+    """
+    Represents a Transaction Signer for a LogicSig that can sign transactions from an
+    atomic transaction group.
+
+    Args:
+        lsig (LogicSigAccount): LogicSig account
+    """
+
+    def __init__(self, lsig) -> None:
+        super().__init__()
+        self.lsig = lsig
+
+    def sign(self, txn_group, indexes):
+        stxns = []
+        for i in indexes:
+            stxn = transaction.LogicSigTransaction(txn_group[i], self.lsig)
+            stxns.append(stxn)
+        return stxns
+
+
+class MultisigTransactionSigner(TransactionSigner):
+    """
+    Represents a Transaction Signer for a Multisig that can sign transactions from an
+    atomic transaction group.
+
+    Args:
+        sks (str): private keys of multisig
+    """
+
+    def __init__(self, sks) -> None:
+        super().__init__()
+        self.sks = sks
+
+    def sign(self, txn_group, indexes):
+        stxns = []
+        for i in indexes:
+            for sk in self.sks:
+                stxn = txn_group[i].sign(sk)
+            stxns.append(stxn)
+        return stxns
 
 
 class TransactionWithSigner:

@@ -4204,7 +4204,7 @@ class TestABIInteraction(unittest.TestCase):
             ),
             (
                 "tupler((string,uint16),bool)void",
-                b"=\x98\xe4]",
+                b"\x3d\x98\xe4\x5d",
                 [
                     type_from_string("(string,uint16)"),
                     type_from_string("bool"),
@@ -4213,12 +4213,13 @@ class TestABIInteraction(unittest.TestCase):
             ),
             (
                 "txcalls(pay,pay,axfer,byte)bool",
-                b"\x05m.\xc0",
+                b"\x05\x6d\x2e\xc0",
                 ["pay", "pay", "axfer", type_from_string("byte")],
                 4,
             ),
-            ("getter()string", b"\xa2Y\x11\x1d", [], 1),
+            ("getter()string", b"\xa2\x59\x11\x1d", [], 1),
         ]
+
         for test_case in test_cases:
             m = Method.from_string(test_case[0])
 
