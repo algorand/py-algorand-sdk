@@ -3,8 +3,7 @@ import base64
 import copy
 from enum import IntEnum
 
-from algosdk import error
-from algosdk import abi
+from algosdk import abi, error
 from algosdk.future import transaction
 
 # The first four bytes of an ABI method call return must have this hash
