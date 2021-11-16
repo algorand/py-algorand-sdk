@@ -21,7 +21,11 @@ class Contract:
     def __eq__(self, o: object) -> bool:
         if not isinstance(o, Contract):
             return False
-        return self.name == o.name and self.app_id == o.app_id and self.methods == o.methods
+        return (
+            self.name == o.name
+            and self.app_id == o.app_id
+            and self.methods == o.methods
+        )
 
     @staticmethod
     def from_json(resp):

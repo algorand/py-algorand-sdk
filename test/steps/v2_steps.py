@@ -2621,33 +2621,41 @@ def check_method_selector(context, method_selector):
     assert context.abi_method.get_selector() == bytes.fromhex(method_selector)
 
 
-@when(u'I create an Interface object from the Method object with name "{interface_name}"')
+@when(
+    'I create an Interface object from the Method object with name "{interface_name}"'
+)
 def create_interface_object(context, interface_name):
-    context.abi_interface = abi.Interface(name=interface_name, methods=[context.abi_method])
+    context.abi_interface = abi.Interface(
+        name=interface_name, methods=[context.abi_method]
+    )
 
 
-@when(u'I serialize the Interface object into json')
+@when("I serialize the Interface object into json")
 def serialize_interface_to_json(context):
     context.json_output = context.abi_interface.dictify()
 
 
-@then(u'the deserialized json should equal the original Interface object')
+@then("the deserialized json should equal the original Interface object")
 def deserialize_json_to_interface(context):
     actual = abi.Interface.undictify(context.json_output)
     assert actual == context.abi_interface
 
 
-@when(u'I create a Contract object from the Method object with name "{contract_name}" and appId {app_id}')
+@when(
+    'I create a Contract object from the Method object with name "{contract_name}" and appId {app_id}'
+)
 def create_contract_object(context, contract_name, app_id):
-    context.abi_contract = abi.Contract(name=contract_name, app_id=app_id, methods=[context.abi_method])
+    context.abi_contract = abi.Contract(
+        name=contract_name, app_id=app_id, methods=[context.abi_method]
+    )
 
 
-@when(u'I serialize the Contract object into json')
+@when("I serialize the Contract object into json")
 def serialize_contract_to_json(context):
     context.json_output = context.abi_contract.dictify()
 
 
-@then(u'the deserialized json should equal the original Contract object')
+@then("the deserialized json should equal the original Contract object")
 def deserialize_json_to_contract(context):
     actual = abi.Contract.undictify(context.json_output)
     assert actual == context.abi_contract

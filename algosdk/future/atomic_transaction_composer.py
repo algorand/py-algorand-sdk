@@ -387,10 +387,6 @@ class AtomicTransactionComposer:
 class TransactionSigner(ABC):
     """
     Represents an object which can sign transactions from an atomic transaction group.
-
-    Args:
-        private_key (str): private key of signing account
-        msig (MultiSig, optional): multisig account information
     """
 
     def __init__(self) -> None:
@@ -446,6 +442,17 @@ class LogicSigTransactionSigner(TransactionSigner):
         self.lsig = lsig
 
     def sign(self, txn_group, indexes):
+        """
+        Sign transactions in a transaction group given the indexes.
+
+        Returns an array of encoded signed transactions. The length of the
+        array will be the same as the length of indexesToSign, and each index i in the array
+        corresponds to the signed transaction from txnGroup[indexesToSign[i]].
+
+        Args:
+            txn_group (list[Transaction]): atomic group of transactions
+            indexes (list[int]): array of indexes in the atomic transaction group that should be signed
+        """
         stxns = []
         for i in indexes:
             stxn = transaction.LogicSigTransaction(txn_group[i], self.lsig)
@@ -467,6 +474,17 @@ class MultisigTransactionSigner(TransactionSigner):
         self.sks = sks
 
     def sign(self, txn_group, indexes):
+        """
+        Sign transactions in a transaction group given the indexes.
+
+        Returns an array of encoded signed transactions. The length of the
+        array will be the same as the length of indexesToSign, and each index i in the array
+        corresponds to the signed transaction from txnGroup[indexesToSign[i]].
+
+        Args:
+            txn_group (list[Transaction]): atomic group of transactions
+            indexes (list[int]): array of indexes in the atomic transaction group that should be signed
+        """
         stxns = []
         for i in indexes:
             for sk in self.sks:
