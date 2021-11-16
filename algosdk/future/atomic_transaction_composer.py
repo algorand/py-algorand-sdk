@@ -3,9 +3,7 @@ import base64
 import copy
 from enum import IntEnum
 
-from algosdk import error
-from algosdk.abi import method
-from algosdk.abi.tuple_type import TupleType
+from algosdk import abi, error
 from algosdk.future import transaction
 
 # The first four bytes of an ABI method call return must have this hash
@@ -159,7 +157,7 @@ class AtomicTransactionComposer:
             raise error.AtomicTransactionComposerError(
                 "number of method arguments do not match the method signature"
             )
-        if not isinstance(method_call, method.Method):
+        if not isinstance(method_call, abi.method.Method):
             raise error.AtomicTransactionComposerError(
                 "invalid Method object was passed into AtomicTransactionComposer"
             )
@@ -174,7 +172,7 @@ class AtomicTransactionComposer:
         # Iterate through the method arguments and either pack a transaction
         # or encode a ABI value.
         for i, arg in enumerate(method_call.args):
-            if arg.type in method.TRANSACTION_ARGS:
+            if arg.type in abi.method.TRANSACTION_ARGS:
                 if not isinstance(method_args[i], TransactionWithSigner):
                     raise error.AtomicTransactionComposerError(
                         "expected TransactionWithSigner as method argument, but received: {}".format(
@@ -191,7 +189,7 @@ class AtomicTransactionComposer:
                 app_args.append(encoded_arg)
 
         if additional_args:
-            remainder_args = TupleType(additional_types).encode(
+            remainder_args = abi.TupleType(additional_types).encode(
                 additional_args
             )
             app_args.append(remainder_args)

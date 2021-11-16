@@ -2,10 +2,7 @@ import json
 
 from Cryptodome.Hash import SHA512
 
-from algosdk.abi.tuple_type import TupleType
-from algosdk.abi.util import type_from_string
-from algosdk import error
-from algosdk import constants
+from algosdk import abi, constants, error
 
 
 TRANSACTION_ARGS = (
@@ -108,7 +105,9 @@ class Method:
         # the second token should be the arguments as a tuple,
         # and the last token should be the return type (or void).
         tokens = Method._parse_string(s)
-        argument_list = [Argument(t) for t in TupleType.parse_tuple(tokens[1])]
+        argument_list = [
+            Argument(t) for t in abi.TupleType.parse_tuple(tokens[1])
+        ]
         return_type = Returns(tokens[-1])
         return Method(name=tokens[0], args=argument_list, returns=return_type)
 
@@ -148,7 +147,7 @@ class Argument:
             self.type = arg_type
         else:
             # If the type cannot be parsed into an ABI type, it will error
-            self.type = type_from_string(arg_type)
+            self.type = abi.util.type_from_string(arg_type)
         self.name = name
         self.desc = desc
 
@@ -194,7 +193,7 @@ class Returns:
             self.type = arg_type
         else:
             # If the type cannot be parsed into an ABI type, it will error
-            self.type = type_from_string(arg_type)
+            self.type = abi.util.type_from_string(arg_type)
         self.desc = desc
 
     def __eq__(self, o: object) -> bool:
