@@ -17,6 +17,8 @@ TRANSACTION_ARGS = (
     constants.APPCALL_TXN,
 )
 
+FOREIGN_ARRAY_ARGS = ("account", "asset", "application")
+
 
 class Method:
     """
@@ -144,7 +146,7 @@ class Argument:
     """
 
     def __init__(self, arg_type, name=None, desc=None) -> None:
-        if arg_type in TRANSACTION_ARGS:
+        if arg_type in TRANSACTION_ARGS or arg_type in FOREIGN_ARRAY_ARGS:
             self.type = arg_type
         else:
             # If the type cannot be parsed into an ABI type, it will error

@@ -4,8 +4,7 @@ import copy
 from enum import IntEnum
 
 from algosdk import error
-from algosdk.abi import method
-from algosdk.abi.tuple_type import TupleType
+from algosdk import abi
 from algosdk.future import transaction
 
 # The first four bytes of an ABI method call return must have this hash
@@ -159,12 +158,15 @@ class AtomicTransactionComposer:
             raise error.AtomicTransactionComposerError(
                 "number of method arguments do not match the method signature"
             )
-        if not isinstance(method_call, method.Method):
+        if not isinstance(method_call, abi.method.Method):
             raise error.AtomicTransactionComposerError(
                 "invalid Method object was passed into AtomicTransactionComposer"
             )
 
         app_args = []
+        foreign_accounts = []
+        foreign_assets = []
+        foreign_apps = []
         # For more than 14 args, including the selector, compact them into a tuple
         additional_args = []
         additional_types = []
@@ -174,7 +176,7 @@ class AtomicTransactionComposer:
         # Iterate through the method arguments and either pack a transaction
         # or encode a ABI value.
         for i, arg in enumerate(method_call.args):
-            if arg.type in method.TRANSACTION_ARGS:
+            if arg.type in abi.method.TRANSACTION_ARGS:
                 if not isinstance(method_args[i], TransactionWithSigner):
                     raise error.AtomicTransactionComposerError(
                         "expected TransactionWithSigner as method argument, but received: {}".format(
@@ -182,16 +184,31 @@ class AtomicTransactionComposer:
                         )
                     )
                 txn_list.append(method_args[i])
-            elif len(app_args) > 14:
-                # Pack the remaining values as a tuple
-                additional_types.append(arg.type)
-                additional_args.append(method_args[i])
             else:
-                encoded_arg = arg.type.encode(method_args[i])
-                app_args.append(encoded_arg)
+                if arg.type in abi.method.FOREIGN_ARRAY_ARGS:
+                    current_type = abi.UintType(8)
+                    if arg.type == "account":
+                        current_arg = len(foreign_accounts)
+                        foreign_accounts.append(method_args[i])
+                    elif arg.type == "asset":
+                        current_arg = len(foreign_assets)
+                        foreign_assets.append(method_args[i])
+                    else:
+                        current_arg = len(foreign_apps)
+                        foreign_apps.append(method_args[i])
+                else:
+                    current_type = arg.type
+                    current_arg = method_args[i]
+                if len(app_args) > 14:
+                    # Pack the remaining values as a tuple
+                    additional_types.append(current_type)
+                    additional_args.append(current_arg)
+                else:
+                    encoded_arg = arg.type.encode(current_arg)
+                    app_args.append(encoded_arg)
 
         if additional_args:
-            remainder_args = TupleType(additional_types).encode(
+            remainder_args = abi.TupleType(additional_types).encode(
                 additional_args
             )
             app_args.append(remainder_args)
@@ -203,6 +220,9 @@ class AtomicTransactionComposer:
             index=app_id,
             on_complete=on_complete,
             app_args=app_args,
+            accounts=foreign_accounts,
+            foreign_apps=foreign_apps,
+            foreign_assets=foreign_assets,
             note=note,
             lease=lease,
             rekey_to=rekey_to,
