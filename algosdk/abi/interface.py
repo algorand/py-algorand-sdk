@@ -16,6 +16,11 @@ class Interface:
         self.name = name
         self.methods = methods
 
+    def __eq__(self, o: object) -> bool:
+        if not isinstance(o, Interface):
+            return False
+        return self.name == o.name and self.methods == o.methods
+
     @staticmethod
     def from_json(resp):
         d = json.loads(resp)

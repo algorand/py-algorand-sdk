@@ -9,7 +9,7 @@ from .string_type import StringType
 from .array_dynamic_type import ArrayDynamicType
 from .array_static_type import ArrayStaticType
 from .tuple_type import TupleType
-from .method import Method
+from .method import Method, Argument, Returns
 from .interface import Interface
 from .contract import Contract
 

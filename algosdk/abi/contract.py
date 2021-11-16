@@ -15,8 +15,13 @@ class Contract:
 
     def __init__(self, name, app_id, methods) -> None:
         self.name = name
-        self.app_id = app_id
+        self.app_id = int(app_id)
         self.methods = methods
+
+    def __eq__(self, o: object) -> bool:
+        if not isinstance(o, Contract):
+            return False
+        return self.name == o.name and self.app_id == o.app_id and self.methods == o.methods
 
     @staticmethod
     def from_json(resp):
@@ -26,13 +31,13 @@ class Contract:
     def dictify(self):
         d = {}
         d["name"] = self.name
-        d["app_id"] = self.app_id
+        d["appId"] = self.app_id
         d["methods"] = [m.dictify() for m in self.methods]
         return d
 
     @staticmethod
     def undictify(d):
         name = d["name"]
-        app_id = d["app_id"]
+        app_id = d["appId"]
         method_list = [Method.undictify(method) for method in d["methods"]]
         return Contract(name=name, app_id=app_id, methods=method_list)

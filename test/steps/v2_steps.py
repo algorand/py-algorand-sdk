@@ -1679,6 +1679,8 @@ def operation_string_to_enum(operation):
         return transaction.OnComplete.NoOpOC
     elif operation == "create":
         return transaction.OnComplete.NoOpOC
+    elif operation == "noop":
+        return transaction.OnComplete.NoOpOC
     elif operation == "update":
         return transaction.OnComplete.UpdateApplicationOC
     elif operation == "optin":
@@ -1842,7 +1844,7 @@ def sign_transaction_with_signing_account(context):
 
 
 @then('the base64 encoded signed transactions should equal "{goldens}"')
-def step_impl(context, goldens):
+def compare_stxns_array_to_base64_golden(context, goldens):
     golden_strings = goldens.split(",")
     for i, golden in enumerate(golden_strings):
         actual_base64 = encoding.msgpack_encode(context.signed_transactions[i])
@@ -2347,15 +2349,22 @@ def create_atomic_transaction_composer(context):
     )
 
 
-@when("I make a transaction signer for the transient account.")
-def create_transaction_signer(context):
-    private_key = context.transient_sk
+@when("I make a transaction signer for the {account_type} account.")
+def create_transaction_signer(context, account_type):
+    if account_type == "transient":
+        private_key = context.transient_sk
+    elif account_type == "signing":
+        private_key = mnemonic.to_private_key(context.signing_mnemonic)
+    else:
+        raise NotImplementedError(
+            "cannot make transaction signer for " + account_type
+        )
     context.transaction_signer = (
         atomic_transaction_composer.AccountTransactionSigner(private_key)
     )
 
 
-@when('I build a method with signature "{method_signature}".')
+@when('I create the Method object from method signature "{method_signature}"')
 def build_abi_method(context, method_signature):
     context.abi_method = abi.Method.from_string(method_signature)
 
@@ -2389,37 +2398,43 @@ def split_and_process_abi_args(method, arg_string):
     return method_args
 
 
+@when("I create a new method arguments array.")
+def create_abi_method_args(context):
+    context.method_args = []
+
+
 @when(
-    'I prepare the method arguments with the app args "{method_args:MaybeString}".'
+    "I append the current transaction with signer to the method arguments array."
 )
-def prepare_abi_method_args(context, method_args):
-    if not method_args:
-        context.method_args = []
+def append_txn_to_method_args(context):
+    context.method_args.append(context.transaction_with_signer)
+
+
+@when(
+    'I append the encoded arguments "{method_args:MaybeString}" to the method arguments array.'
+)
+def append_app_args_to_method_args(context, method_args):
+    # Returns a list of ABI method arguments
+    app_args = split_and_process_abi_args(context.abi_method, method_args)
+    context.method_args += app_args
+
+
+@when(
+    'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments.'
+)
+def add_abi_method_call(context, account_type, operation):
+    if account_type == "transient":
+        sender = context.transient_pk
+    elif account_type == "signing":
+        sender = mnemonic.to_public_key(context.signing_mnemonic)
     else:
-        context.method_args = split_and_process_abi_args(
-            context.abi_method, method_args
+        raise NotImplementedError(
+            "cannot make transaction signer for " + account_type
         )
-
-
-@when(
-    'I prepare the method arguments with the current transaction with signer and the app args "{method_args:MaybeString}".'
-)
-def prepare_abi_method_args_with_transaction(context, method_args):
-    if not method_args:
-        context.method_args = []
-    else:
-        app_args = split_and_process_abi_args(context.abi_method, method_args)
-        context.method_args = [context.transaction_with_signer] + app_args
-
-
-@when(
-    'I add a method call with the transient account, the current application, suggested params, operation "{operation}", current transaction signer, current method arguments.'
-)
-def add_abi_method_call(context, operation):
     context.atomic_transaction_composer.add_method_call(
         app_id=context.current_application_id,
         method_call=context.abi_method,
-        sender=context.transient_pk,
+        sender=sender,
         sp=context.suggested_params,
         signer=context.transaction_signer,
         method_args=context.method_args,
@@ -2490,7 +2505,7 @@ def execute_atomic_transaction_composer(context):
     )
 
 
-@then('The app should have returned "{returns:MaybeString}" in the log.')
+@then('The app should have returned "{returns:MaybeString}".')
 def check_atomic_transaction_composer_response(context, returns):
     if not returns:
         expected_tokens = []
@@ -2502,7 +2517,7 @@ def check_atomic_transaction_composer_response(context, returns):
             assert result.return_value is None
             assert result.decode_error is None
             continue
-        expected_bytes = base64.b64decode(expected)[4:]
+        expected_bytes = base64.b64decode(expected)
         expected_value = context.abi_method.returns.type.decode(expected_bytes)
 
         assert expected_bytes == result.raw_value, "actual is {}".format(
@@ -2512,3 +2527,127 @@ def check_atomic_transaction_composer_response(context, returns):
             result.return_value
         )
         assert result.decode_error is None
+
+
+@when("I serialize the Method object into json")
+def serialize_method_to_json(context):
+    context.json_output = context.abi_method.dictify()
+
+
+@then(
+    'the produced json should equal "{json_path}" loaded from "{json_directory}"'
+)
+def check_json_output_equals(context, json_path, json_directory):
+    with open(
+        "test/features/unit/" + json_directory + "/" + json_path, "rb"
+    ) as f:
+        loaded_response = json.load(f)
+    assert context.json_output == loaded_response
+
+
+@when(
+    'I create the Method object with name "{method_name}" method description "{method_desc}" first argument type "{first_arg_type}" first argument description "{first_arg_desc}" second argument type "{second_arg_type}" second argument description "{second_arg_desc}" and return type "{return_arg_type}"'
+)
+def create_method_from_test_with_arg_name(
+    context,
+    method_name,
+    method_desc,
+    first_arg_type,
+    first_arg_desc,
+    second_arg_type,
+    second_arg_desc,
+    return_arg_type,
+):
+    context.abi_method = abi.Method(
+        name=method_name,
+        args=[
+            abi.Argument(arg_type=first_arg_type, desc=first_arg_desc),
+            abi.Argument(arg_type=second_arg_type, desc=second_arg_desc),
+        ],
+        returns=abi.Returns(return_arg_type),
+        desc=method_desc,
+    )
+
+
+@when(
+    'I create the Method object with name "{method_name}" first argument name "{first_arg_name}" first argument type "{first_arg_type}" second argument name "{second_arg_name}" second argument type "{second_arg_type}" and return type "{return_arg_type}"'
+)
+def create_method_from_test_with_arg_name(
+    context,
+    method_name,
+    first_arg_name,
+    first_arg_type,
+    second_arg_name,
+    second_arg_type,
+    return_arg_type,
+):
+    context.abi_method = abi.Method(
+        name=method_name,
+        args=[
+            abi.Argument(arg_type=first_arg_type, name=first_arg_name),
+            abi.Argument(arg_type=second_arg_type, name=second_arg_name),
+        ],
+        returns=abi.Returns(return_arg_type),
+    )
+
+
+@when(
+    'I create the Method object with name "{method_name}" first argument type "{first_arg_type}" second argument type "{second_arg_type}" and return type "{return_arg_type}"'
+)
+def create_method_from_test(
+    context, method_name, first_arg_type, second_arg_type, return_arg_type
+):
+    context.abi_method = abi.Method(
+        name=method_name,
+        args=[abi.Argument(first_arg_type), abi.Argument(second_arg_type)],
+        returns=abi.Returns(return_arg_type),
+    )
+
+
+@then("the deserialized json should equal the original Method object")
+def deserialize_method_to_object(context):
+    json_string = json.dumps(context.json_output)
+    actual = abi.Method.from_json(json_string)
+    assert actual == context.abi_method
+
+
+@then("the txn count should be {txn_count}")
+def check_method_txn_count(context, txn_count):
+    assert context.abi_method.get_txn_calls() == int(txn_count)
+
+
+@then('the method selector should be "{method_selector}"')
+def check_method_selector(context, method_selector):
+    assert context.abi_method.get_selector() == bytes.fromhex(method_selector)
+
+
+@when(u'I create an Interface object from the Method object with name "{interface_name}"')
+def create_interface_object(context, interface_name):
+    context.abi_interface = abi.Interface(name=interface_name, methods=[context.abi_method])
+
+
+@when(u'I serialize the Interface object into json')
+def serialize_interface_to_json(context):
+    context.json_output = context.abi_interface.dictify()
+
+
+@then(u'the deserialized json should equal the original Interface object')
+def deserialize_json_to_interface(context):
+    actual = abi.Interface.undictify(context.json_output)
+    assert actual == context.abi_interface
+
+
+@when(u'I create a Contract object from the Method object with name "{contract_name}" and appId {app_id}')
+def create_contract_object(context, contract_name, app_id):
+    context.abi_contract = abi.Contract(name=contract_name, app_id=app_id, methods=[context.abi_method])
+
+
+@when(u'I serialize the Contract object into json')
+def serialize_contract_to_json(context):
+    context.json_output = context.abi_contract.dictify()
+
+
+@then(u'the deserialized json should equal the original Contract object')
+def deserialize_json_to_contract(context):
+    actual = abi.Contract.undictify(context.json_output)
+    assert actual == context.abi_contract

@@ -34,9 +34,7 @@ class Method:
         self.name = name
         self.args = args
         self.desc = desc
-        self.returns = (
-            returns if (returns and returns.type != "void") else None
-        )
+        self.returns = returns
         # Calculate number of method calls passed in as arguments and
         # add one for this method call itself.
         txn_count = 1
@@ -44,6 +42,17 @@ class Method:
             if arg.type in TRANSACTION_ARGS:
                 txn_count += 1
         self.txn_calls = txn_count
+
+    def __eq__(self, o: object) -> bool:
+        if not isinstance(o, Method):
+            return False
+        return (
+            self.name == o.name
+            and self.args == o.args
+            and self.returns == o.returns
+            and self.desc == o.desc
+            and self.txn_calls == o.txn_calls
+        )
 
     def get_signature(self):
         arg_string = ",".join([str(arg.type) for arg in self.args])
@@ -143,6 +152,13 @@ class Argument:
         self.name = name
         self.desc = desc
 
+    def __eq__(self, o: object) -> bool:
+        if not isinstance(o, Argument):
+            return False
+        return (
+            self.name == o.name and self.type == o.type and self.desc == o.desc
+        )
+
     def __str__(self):
         return str(self.type)
 
@@ -159,7 +175,7 @@ class Argument:
     def undictify(d):
         return Argument(
             arg_type=d["type"],
-            name=d["name"],
+            name=d["name"] if "name" in d else None,
             desc=d["desc"] if "desc" in d else None,
         )
 
@@ -180,6 +196,11 @@ class Returns:
             # If the type cannot be parsed into an ABI type, it will error
             self.type = type_from_string(arg_type)
         self.desc = desc
+
+    def __eq__(self, o: object) -> bool:
+        if not isinstance(o, Returns):
+            return False
+        return self.type == o.type and self.desc == o.desc
 
     def __str__(self):
         return str(self.type)
