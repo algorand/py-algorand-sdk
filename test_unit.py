@@ -4242,7 +4242,7 @@ class TestABIInteraction(unittest.TestCase):
         )
 
     def test_contract(self):
-        test_json = '{"name": "Calculator","app_id": 3, "methods": [{ "name": "add", "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] },{ "name": "multiply", "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] }]}'
+        test_json = '{"name": "Calculator","appId": 3, "methods": [{ "name": "add", "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] },{ "name": "multiply", "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] }]}'
         c = Contract.from_json(test_json)
         self.assertEqual(c.name, "Calculator")
         self.assertEqual(c.app_id, 3)
