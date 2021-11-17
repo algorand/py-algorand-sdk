@@ -4218,6 +4218,9 @@ class TestABIInteraction(unittest.TestCase):
                 4,
             ),
             ("getter()string", b"\xa2\x59\x11\x1d", [], 1),
+            ("foreigns(account,pay,asset,application,bool)void", b"\xbf\xed\xf2\xc1",
+                ["account", "pay", "asset","application", type_from_string("bool")],
+                2,)
         ]
 
         for test_case in test_cases:
