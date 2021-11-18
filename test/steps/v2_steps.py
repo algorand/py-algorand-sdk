@@ -2366,7 +2366,7 @@ def create_transaction_signer(context, account_type):
 
 @when('I create the Method object from method signature "{method_signature}"')
 def build_abi_method(context, method_signature):
-    context.abi_method = abi.Method.from_string(method_signature)
+    context.abi_method = abi.Method.from_signature(method_signature)
 
 
 @when("I create a transaction with signer with the current transaction.")

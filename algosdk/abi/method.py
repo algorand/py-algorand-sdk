@@ -6,6 +6,7 @@ from algosdk import abi, constants, error
 
 
 TRANSACTION_ARGS = (
+    "txn", # Denotes a placeholder for any of the six transaction types below
     constants.PAYMENT_TXN,
     constants.KEYREG_TXN,
     constants.ASSETCONFIG_TXN,
@@ -99,7 +100,7 @@ class Method:
         return Method.undictify(method_dict)
 
     @staticmethod
-    def from_string(s):
+    def from_signature(s):
         # Split string into tokens around outer parentheses.
         # The first token should always be the name of the method,
         # the second token should be the arguments as a tuple,
