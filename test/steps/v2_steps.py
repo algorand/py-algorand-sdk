@@ -2455,7 +2455,7 @@ def add_abi_method_call(context, account_type, operation):
 )
 def build_atomic_transaction_group(context, error_string):
     # Error checking not yet implemented
-    assert error_string is None
+    assert not error_string
     context.atomic_transaction_composer.build_group()
 
 
