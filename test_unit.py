@@ -4224,7 +4224,7 @@ class TestABIInteraction(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-            m = Method.from_string(test_case[0])
+            m = Method.from_signature(test_case[0])
 
             # Check method signature
             self.assertEqual(m.get_signature(), test_case[0])

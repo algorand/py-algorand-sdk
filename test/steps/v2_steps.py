@@ -15,8 +15,15 @@ from behave import (
     step,
 )  # pylint: disable=no-name-in-module
 
-from algosdk.future import transaction, atomic_transaction_composer
-from algosdk import abi, account, encoding, error, mnemonic
+from algosdk.future import transaction
+from algosdk import (
+    abi,
+    account,
+    atomic_transaction_composer,
+    encoding,
+    error,
+    mnemonic,
+)
 from algosdk.v2client import *
 from algosdk.v2client.models import (
     DryrunRequest,
@@ -1728,7 +1735,7 @@ def build_payment_transaction(
         sp=context.suggested_params,
         receiver=receiver,
         amt=int(amount),
-        # close_remainder_to=close_remainder_to,
+        close_remainder_to=close_remainder_to,
     )
 
 
@@ -1846,6 +1853,7 @@ def sign_transaction_with_signing_account(context):
 @then('the base64 encoded signed transactions should equal "{goldens}"')
 def compare_stxns_array_to_base64_golden(context, goldens):
     golden_strings = goldens.split(",")
+    assert len(golden_strings) == len(context.signed_transactions)
     for i, golden in enumerate(golden_strings):
         actual_base64 = encoding.msgpack_encode(context.signed_transactions[i])
         assert golden == actual_base64, "actual is {}".format(actual_base64)
@@ -2366,7 +2374,7 @@ def create_transaction_signer(context, account_type):
 
 @when('I create the Method object from method signature "{method_signature}"')
 def build_abi_method(context, method_signature):
-    context.abi_method = abi.Method.from_string(method_signature)
+    context.abi_method = abi.Method.from_signature(method_signature)
 
 
 @when("I create a transaction with signer with the current transaction.")
@@ -2433,7 +2441,7 @@ def add_abi_method_call(context, account_type, operation):
         )
     context.atomic_transaction_composer.add_method_call(
         app_id=context.current_application_id,
-        method_call=context.abi_method,
+        method=context.abi_method,
         sender=sender,
         sp=context.suggested_params,
         signer=context.transaction_signer,
