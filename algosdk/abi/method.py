@@ -6,7 +6,7 @@ from algosdk import abi, constants, error
 
 
 TRANSACTION_ARGS = (
-    "txn", # Denotes a placeholder for any of the six transaction types below
+    "txn",  # Denotes a placeholder for any of the six transaction types below
     constants.PAYMENT_TXN,
     constants.KEYREG_TXN,
     constants.ASSETCONFIG_TXN,
@@ -24,11 +24,11 @@ class Method:
         name (string): name of the method
         args (list): list of Argument objects with type, name, and optional
         description
-        returns (Returns, optional): a Returns object with a type and optional description
+        returns (Returns): a Returns object with a type and optional description
         desc (string, optional): optional description of the method
     """
 
-    def __init__(self, name, args, returns=None, desc=None) -> None:
+    def __init__(self, name, args, returns, desc=None) -> None:
         self.name = name
         self.args = args
         self.desc = desc
@@ -107,7 +107,7 @@ class Method:
         # and the last token should be the return type (or void).
         tokens = Method._parse_string(s)
         argument_list = [
-            Argument(t) for t in abi.TupleType.parse_tuple(tokens[1])
+            Argument(t) for t in abi.TupleType._parse_tuple(tokens[1])
         ]
         return_type = Returns(tokens[-1])
         return Method(name=tokens[0], args=argument_list, returns=return_type)
