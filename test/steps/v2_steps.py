@@ -2451,9 +2451,11 @@ def add_abi_method_call(context, account_type, operation):
 
 
 @when(
-    'I build the transaction group with the composer. If there is an error it is "".'
+    'I build the transaction group with the composer. If there is an error it is "{error_string:MaybeString}".'
 )
-def build_atomic_transaction_group(context):
+def build_atomic_transaction_group(context, error_string):
+    # Error checking not yet implemented
+    assert error_string is None
     context.atomic_transaction_composer.build_group()
 
 
@@ -2511,6 +2513,7 @@ def execute_atomic_transaction_composer(context):
     context.atomic_transaction_composer_return = (
         context.atomic_transaction_composer.execute(context.app_acl, 10)
     )
+    assert context.atomic_transaction_composer_return.confirmed_round > 0
 
 
 @then('The app should have returned "{returns:MaybeString}".')
