@@ -202,7 +202,7 @@ class AtomicTransactionComposer:
                     additional_types.append(current_type)
                     additional_args.append(current_arg)
                 else:
-                    encoded_arg = arg.type.encode(current_arg)
+                    encoded_arg = current_type.encode(current_arg)
                     app_args.append(encoded_arg)
 
         if additional_args:
