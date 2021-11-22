@@ -160,6 +160,10 @@ class AtomicTransactionComposer:
             raise error.AtomicTransactionComposerError(
                 "invalid Method object was passed into AtomicTransactionComposer"
             )
+        if app_id == 0:
+            raise error.AtomicTransactionComposerError(
+                "application create call not supported"
+            )
 
         app_args = []
         foreign_accounts = []
@@ -293,6 +297,11 @@ class AtomicTransactionComposer:
             for i, stxn in enumerate(stxns):
                 index = indexes[i]
                 stxn_list[index] = stxn
+
+        if None in stxn_list:
+            raise error.AtomicTransactionComposerError(
+                "missing signatures, got {}".format(stxn_list)
+            )
 
         self.status = AtomicTransactionComposerStatus.SIGNED
         self.signed_txns = stxn_list
