@@ -348,7 +348,7 @@ class AtomicTransactionComposer:
             if i not in self.method_dict:
                 continue
             # Return is void
-            if self.method_dict[i].returns is None:
+            if self.method_dict[i].returns.type == "void":
                 method_results.append(
                     ABIResult(
                         tx_id=tx_id,

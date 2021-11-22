@@ -4200,6 +4200,7 @@ class TestABIInteraction(unittest.TestCase):
                 "add(uint64,uint64)uint128",
                 b"\x8a\xa3\xb6\x1f",
                 [type_from_string("uint64"), type_from_string("uint64")],
+                type_from_string("uint128"),
                 1,
             ),
             (
@@ -4209,15 +4210,23 @@ class TestABIInteraction(unittest.TestCase):
                     type_from_string("(string,uint16)"),
                     type_from_string("bool"),
                 ],
+                "void",
                 1,
             ),
             (
                 "txcalls(pay,pay,axfer,byte)bool",
                 b"\x05\x6d\x2e\xc0",
                 ["pay", "pay", "axfer", type_from_string("byte")],
+                type_from_string("bool"),
                 4,
             ),
-            ("getter()string", b"\xa2\x59\x11\x1d", [], 1),
+            (
+                "getter()string",
+                b"\xa2\x59\x11\x1d",
+                [],
+                type_from_string("string"),
+                1,
+            ),
         ]
 
         for test_case in test_cases:
@@ -4229,8 +4238,10 @@ class TestABIInteraction(unittest.TestCase):
             self.assertEqual(m.get_selector(), test_case[1])
             # Check args
             self.assertEqual([(a.type) for a in m.args], test_case[2])
+            # Check return
+            self.assertEqual(m.returns.type, test_case[3])
             # Check txn calls
-            self.assertEqual(m.get_txn_calls(), test_case[3])
+            self.assertEqual(m.get_txn_calls(), test_case[4])
 
     def test_interface(self):
         test_json = '{"name": "Calculator","methods": [{ "name": "add", "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] },{ "name": "multiply", "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] }]}'
