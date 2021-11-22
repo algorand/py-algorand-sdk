@@ -186,14 +186,22 @@ class AtomicTransactionComposer:
                 if arg.type in abi.method.FOREIGN_ARRAY_ARGS:
                     current_type = abi.UintType(8)
                     if arg.type == "account":
-                        current_arg = len(foreign_accounts)
+                        current_arg = len(foreign_accounts) + 1
                         foreign_accounts.append(method_args[i])
                     elif arg.type == "asset":
                         current_arg = len(foreign_assets)
                         foreign_assets.append(method_args[i])
-                    else:
-                        current_arg = len(foreign_apps)
+                    elif arg.type == "application":
+                        current_arg = len(foreign_apps) + 1
                         foreign_apps.append(method_args[i])
+                    else:
+                        # Shouldn't reach this line unless someone accidentally
+                        # adds another foreign array arg
+                        raise error.AtomicTransactionComposerError(
+                            "cannot recognize {} as a foreign array arg".format(
+                                arg.type
+                            )
+                        )
                 else:
                     current_type = arg.type
                     current_arg = method_args[i]
