@@ -18,7 +18,7 @@ class Contract:
         self.app_id = int(app_id)
         self.methods = methods
 
-    def __eq__(self, o: object) -> bool:
+    def __eq__(self, o) -> bool:
         if not isinstance(o, Contract):
             return False
         return (

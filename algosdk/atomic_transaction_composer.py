@@ -44,7 +44,10 @@ class AtomicTransactionComposer:
         tx_ids (list[str]): list of individual transaction IDs in this atomic group
     """
 
+    # The maximum size of an atomic transaction group.
     MAX_GROUP_SIZE = 16
+    # The maximum number of app-args that can be individually packed for ABIs
+    MAX_ABI_APP_ARG_LIMIT = 14
 
     def __init__(self) -> None:
         self.status = AtomicTransactionComposerStatus.BUILDING
@@ -96,13 +99,16 @@ class AtomicTransactionComposer:
             )
         if len(self.txn_list) == self.MAX_GROUP_SIZE:
             raise error.AtomicTransactionComposerError(
-                "AtomicTransactionComposer cannot exceed MAX_GROUP_SIZE transactions"
+                "AtomicTransactionComposer cannot exceed MAX_GROUP_SIZE {} transactions".format(
+                    self.MAX_GROUP_SIZE
+                )
             )
         if not isinstance(txn_and_signer, TransactionWithSigner):
             raise error.AtomicTransactionComposerError(
                 "expected TransactionWithSigner object to the AtomicTransactionComposer"
             )
         self.txn_list.append(txn_and_signer)
+        return self
 
     def add_method_call(
         self,
@@ -183,7 +189,7 @@ class AtomicTransactionComposer:
                         )
                     )
                 txn_list.append(method_args[i])
-            elif len(app_args) > 14:
+            elif len(app_args) > self.MAX_ABI_APP_ARG_LIMIT:
                 # Pack the remaining values as a tuple
                 additional_types.append(arg.type)
                 additional_args.append(method_args[i])
@@ -213,6 +219,7 @@ class AtomicTransactionComposer:
 
         self.txn_list += txn_list
         self.method_dict[len(self.txn_list) - 1] = method
+        return self
 
     def build_group(self):
         """
@@ -348,7 +355,7 @@ class AtomicTransactionComposer:
             if i not in self.method_dict:
                 continue
             # Return is void
-            if self.method_dict[i].returns.type == "void":
+            if self.method_dict[i].returns.type == abi.Returns.VOID:
                 method_results.append(
                     ABIResult(
                         tx_id=tx_id,

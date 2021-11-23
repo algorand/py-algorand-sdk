@@ -12,11 +12,11 @@ class Interface:
         methods (list): list of Method objects
     """
 
-    def __init__(self, name, methods) -> None:
+    def __init__(self, name, methods):
         self.name = name
         self.methods = methods
 
-    def __eq__(self, o: object) -> bool:
+    def __eq__(self, o):
         if not isinstance(o, Interface):
             return False
         return self.name == o.name and self.methods == o.methods

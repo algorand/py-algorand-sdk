@@ -41,7 +41,7 @@ class Method:
                 txn_count += 1
         self.txn_calls = txn_count
 
-    def __eq__(self, o: object) -> bool:
+    def __eq__(self, o) -> bool:
         if not isinstance(o, Method):
             return False
         return (
@@ -53,7 +53,7 @@ class Method:
         )
 
     def get_signature(self):
-        arg_string = ",".join([str(arg.type) for arg in self.args])
+        arg_string = ",".join(str(arg.type) for arg in self.args)
         ret_string = self.returns.type if self.returns else "void"
         return "{}({}){}".format(self.name, arg_string, ret_string)
 
@@ -66,7 +66,7 @@ class Method:
             bytes: first four bytes of the method signature hash
         """
         hash = SHA512.new(truncate="256")
-        hash.update((self.get_signature()).encode("utf-8"))
+        hash.update(self.get_signature().encode("utf-8"))
         return hash.digest()[:4]
 
     def get_txn_calls(self):
@@ -152,7 +152,7 @@ class Argument:
         self.name = name
         self.desc = desc
 
-    def __eq__(self, o: object) -> bool:
+    def __eq__(self, o) -> bool:
         if not isinstance(o, Argument):
             return False
         return (
@@ -189,15 +189,18 @@ class Returns:
         desc (string, optional): description of this return argument
     """
 
+    # Represents a void return.
+    VOID = "void"
+
     def __init__(self, arg_type, desc=None) -> None:
         if arg_type == "void":
-            self.type = arg_type
+            self.type = self.VOID
         else:
-            # If the type cannot be parsed into an ABI type, it will error
+            # If the type cannot be parsed into an ABI type, it will error.
             self.type = abi.util.type_from_string(arg_type)
         self.desc = desc
 
-    def __eq__(self, o: object) -> bool:
+    def __eq__(self, o) -> bool:
         if not isinstance(o, Returns):
             return False
         return self.type == o.type and self.desc == o.desc
