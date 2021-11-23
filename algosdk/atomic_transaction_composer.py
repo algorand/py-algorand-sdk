@@ -107,6 +107,10 @@ class AtomicTransactionComposer:
             raise error.AtomicTransactionComposerError(
                 "expected TransactionWithSigner object to the AtomicTransactionComposer"
             )
+        if txn_and_signer.txn.group and txn_and_signer.txn.group != 0:
+            raise error.AtomicTransactionComposerError(
+                "cannot add a transaction with nonzero group ID"
+            )
         self.txn_list.append(txn_and_signer)
         return self
 
@@ -187,6 +191,10 @@ class AtomicTransactionComposer:
                         "expected TransactionWithSigner as method argument, but received: {}".format(
                             method_args[i]
                         )
+                    )
+                if method_args[i].txn.group and method_args[i].txn.group != 0:
+                    raise error.AtomicTransactionComposerError(
+                        "cannot add a transaction with nonzero group ID"
                     )
                 txn_list.append(method_args[i])
             elif len(app_args) > self.MAX_ABI_APP_ARG_LIMIT:
