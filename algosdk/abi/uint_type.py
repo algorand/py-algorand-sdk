@@ -1,3 +1,5 @@
+from typing import Union
+
 from .base_type import ABIType
 from .. import error
 
@@ -7,13 +9,13 @@ class UintType(ABIType):
     Represents an Uint ABI Type for encoding.
 
     Args:
-        bit_size (int, optional): size of a uint type, e.g. for a uint8, the bit_size is 8.
+        bit_size (int): size of a uint type, e.g. for a uint8, the bit_size is 8.
 
     Attributes:
         bit_size (int)
     """
 
-    def __init__(self, type_size) -> None:
+    def __init__(self, type_size: int) -> None:
         if (
             not isinstance(type_size, int)
             or type_size % 8 != 0
@@ -26,21 +28,21 @@ class UintType(ABIType):
         super().__init__()
         self.bit_size = type_size
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, UintType):
             return False
         return self.bit_size == other.bit_size
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "uint{}".format(self.bit_size)
 
-    def byte_len(self):
+    def byte_len(self) -> int:
         return self.bit_size // 8
 
-    def is_dynamic(self):
+    def is_dynamic(self) -> bool:
         return False
 
-    def encode(self, value):
+    def encode(self, value: int) -> bytes:
         """
         Encodes a value into a Uint ABI type bytestring.
 
@@ -62,7 +64,7 @@ class UintType(ABIType):
             )
         return value.to_bytes(self.bit_size // 8, byteorder="big")
 
-    def decode(self, bytestring):
+    def decode(self, bytestring: Union[bytes, bytearray]) -> int:
         """
         Decodes a bytestring to a uint.
 

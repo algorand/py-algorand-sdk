@@ -1,3 +1,5 @@
+from typing import Union
+
 from .base_type import ABIType
 from .. import error
 
@@ -7,15 +9,15 @@ class UfixedType(ABIType):
     Represents an Ufixed ABI Type for encoding.
 
     Args:
-        bit_size (int, optional): size of a ufixed type.
-        precision (int, optional): number of precision for a ufixed type.
+        type_size (int): size of a ufixed type.
+        type_precision (int): number of precision for a ufixed type.
 
     Attributes:
         bit_size (int)
         precision (int)
     """
 
-    def __init__(self, type_size, type_precision) -> None:
+    def __init__(self, type_size: int, type_precision: int) -> None:
         if (
             not isinstance(type_size, int)
             or type_size % 8 != 0
@@ -37,7 +39,7 @@ class UfixedType(ABIType):
         self.bit_size = type_size
         self.precision = type_precision
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, UfixedType):
             return False
         return (
@@ -45,16 +47,16 @@ class UfixedType(ABIType):
             and self.precision == other.precision
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "ufixed{}x{}".format(self.bit_size, self.precision)
 
-    def byte_len(self):
+    def byte_len(self) -> int:
         return self.bit_size // 8
 
-    def is_dynamic(self):
+    def is_dynamic(self) -> bool:
         return False
 
-    def encode(self, value):
+    def encode(self, value: int) -> bytes:
         """
         Encodes a value into a Ufixed ABI type bytestring. The precision denotes
         the denominator and the value denotes the numerator.
@@ -77,7 +79,7 @@ class UfixedType(ABIType):
             )
         return value.to_bytes(self.bit_size // 8, byteorder="big")
 
-    def decode(self, bytestring):
+    def decode(self, bytestring: Union[bytes, bytearray]) -> int:
         """
         Decodes a bytestring to a ufixed numerator.
 

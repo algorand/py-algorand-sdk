@@ -1,3 +1,5 @@
+from typing import Union
+
 from .base_type import ABIType
 from .byte_type import ByteType
 from .tuple_type import TupleType
@@ -14,18 +16,18 @@ class AddressType(ABIType):
     def __init__(self) -> None:
         super().__init__()
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, AddressType):
             return False
         return True
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "address"
 
-    def byte_len(self):
+    def byte_len(self) -> int:
         return 32
 
-    def is_dynamic(self):
+    def is_dynamic(self) -> bool:
         return False
 
     def _to_tuple_type(self):
@@ -34,7 +36,7 @@ class AddressType(ABIType):
             child_type_array.append(ByteType())
         return TupleType(child_type_array)
 
-    def encode(self, value):
+    def encode(self, value: Union[str, bytes]) -> bytes:
         """
         Encode an address string or a 32-byte public key into a Address ABI bytestring.
 
@@ -62,7 +64,7 @@ class AddressType(ABIType):
             )
         return bytes(value)
 
-    def decode(self, bytestring):
+    def decode(self, bytestring: Union[bytearray, bytes]) -> bytes:
         """
         Decodes a bytestring to a base32 encoded address string.
 

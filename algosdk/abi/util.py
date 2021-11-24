@@ -1,5 +1,7 @@
 import re
 
+from algosdk.abi.base_type import ABIType
+
 from .uint_type import UintType
 from .ufixed_type import UfixedType
 from .byte_type import ByteType
@@ -17,7 +19,7 @@ UFIXED_REGEX = r"^ufixed([1-9][\d]*)x([1-9][\d]*)$"
 STATIC_ARRAY_REGEX = r"^([a-z\d\[\](),]+)\[([1-9][\d]*)]$"
 
 
-def type_from_string(s):
+def type_from_string(s: str) -> ABIType:
     """
     Convert a valid ABI string to a corresponding ABI type.
     """
