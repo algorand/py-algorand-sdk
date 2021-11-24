@@ -1,4 +1,5 @@
 import json
+from typing import Union
 
 from Cryptodome.Hash import SHA512
 
@@ -28,7 +29,9 @@ class Method:
         desc (string, optional): optional description of the method
     """
 
-    def __init__(self, name, args, returns, desc=None) -> None:
+    def __init__(
+        self, name: str, args: list, returns: "Returns", desc: str = None
+    ) -> None:
         self.name = name
         self.args = args
         self.desc = desc
@@ -41,7 +44,7 @@ class Method:
                 txn_count += 1
         self.txn_calls = txn_count
 
-    def __eq__(self, o) -> bool:
+    def __eq__(self, o: object) -> bool:
         if not isinstance(o, Method):
             return False
         return (
@@ -52,12 +55,12 @@ class Method:
             and self.txn_calls == o.txn_calls
         )
 
-    def get_signature(self):
+    def get_signature(self) -> str:
         arg_string = ",".join(str(arg.type) for arg in self.args)
         ret_string = self.returns.type if self.returns else "void"
         return "{}({}){}".format(self.name, arg_string, ret_string)
 
-    def get_selector(self):
+    def get_selector(self) -> bytes:
         """
         Returns the ABI method signature, which is the first four bytes of the
         SHA-512/256 hash of the method signature.
@@ -69,14 +72,14 @@ class Method:
         hash.update(self.get_signature().encode("utf-8"))
         return hash.digest()[:4]
 
-    def get_txn_calls(self):
+    def get_txn_calls(self) -> int:
         """
         Returns the number of transactions needed to invoke this ABI method.
         """
         return self.txn_calls
 
     @staticmethod
-    def _parse_string(s):
+    def _parse_string(s: str) -> list:
         # Parses a method signature into three tokens, returned as a list:
         # e.g. 'a(b,c)d' -> ['a', 'b,c', 'd']
         stack = []
@@ -88,19 +91,19 @@ class Method:
                     break
                 left_index = stack.pop()
                 if not stack:
-                    return (s[:left_index], s[left_index + 1 : i], s[i + 1 :])
+                    return [s[:left_index], s[left_index + 1 : i], s[i + 1 :]]
 
         raise error.ABIEncodingError(
             "ABI method string has mismatched parentheses: {}".format(s)
         )
 
     @staticmethod
-    def from_json(resp):
+    def from_json(resp: Union[str, bytes, bytearray]) -> "Method":
         method_dict = json.loads(resp)
         return Method.undictify(method_dict)
 
     @staticmethod
-    def from_signature(s):
+    def from_signature(s: str) -> "Method":
         # Split string into tokens around outer parentheses.
         # The first token should always be the name of the method,
         # the second token should be the arguments as a tuple,
@@ -112,7 +115,7 @@ class Method:
         return_type = Returns(tokens[-1])
         return Method(name=tokens[0], args=argument_list, returns=return_type)
 
-    def dictify(self):
+    def dictify(self) -> dict:
         d = {}
         d["name"] = self.name
         d["args"] = [arg.dictify() for arg in self.args]
@@ -123,7 +126,7 @@ class Method:
         return d
 
     @staticmethod
-    def undictify(d):
+    def undictify(d: dict) -> "Method":
         name = d["name"]
         arg_list = [Argument.undictify(arg) for arg in d["args"]]
         return_obj = (
@@ -143,7 +146,9 @@ class Argument:
         desc (string, optional): description of this method argument
     """
 
-    def __init__(self, arg_type, name=None, desc=None) -> None:
+    def __init__(
+        self, arg_type: str, name: str = None, desc: str = None
+    ) -> None:
         if arg_type in TRANSACTION_ARGS:
             self.type = arg_type
         else:
@@ -152,17 +157,17 @@ class Argument:
         self.name = name
         self.desc = desc
 
-    def __eq__(self, o) -> bool:
+    def __eq__(self, o: object) -> bool:
         if not isinstance(o, Argument):
             return False
         return (
             self.name == o.name and self.type == o.type and self.desc == o.desc
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.type)
 
-    def dictify(self):
+    def dictify(self) -> dict:
         d = {}
         d["type"] = str(self.type)
         if self.name:
@@ -172,7 +177,7 @@ class Argument:
         return d
 
     @staticmethod
-    def undictify(d):
+    def undictify(d: dict) -> "Argument":
         return Argument(
             arg_type=d["type"],
             name=d["name"] if "name" in d else None,
@@ -192,7 +197,7 @@ class Returns:
     # Represents a void return.
     VOID = "void"
 
-    def __init__(self, arg_type, desc=None) -> None:
+    def __init__(self, arg_type: str, desc: str = None) -> None:
         if arg_type == "void":
             self.type = self.VOID
         else:
@@ -200,15 +205,15 @@ class Returns:
             self.type = abi.util.type_from_string(arg_type)
         self.desc = desc
 
-    def __eq__(self, o) -> bool:
+    def __eq__(self, o: object) -> bool:
         if not isinstance(o, Returns):
             return False
         return self.type == o.type and self.desc == o.desc
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.type)
 
-    def dictify(self):
+    def dictify(self) -> dict:
         d = {}
         d["type"] = str(self.type)
         if self.desc:
@@ -216,7 +221,7 @@ class Returns:
         return d
 
     @staticmethod
-    def undictify(d):
+    def undictify(d: dict) -> "Returns":
         return Returns(
             arg_type=d["type"], desc=d["desc"] if "desc" in d else None
         )
