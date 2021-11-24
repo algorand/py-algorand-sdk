@@ -1,10 +1,11 @@
 import math
+from typing import Any, List, Union
 
-from .base_type import ABIType
-from .bool_type import BoolType
-from .byte_type import ByteType
-from .tuple_type import TupleType
-from .. import error
+from algosdk.abi.base_type import ABIType
+from algosdk.abi.bool_type import BoolType
+from algosdk.abi.byte_type import ByteType
+from algosdk.abi.tuple_type import TupleType
+from algosdk import error
 
 
 class ArrayStaticType(ABIType):
@@ -12,26 +13,26 @@ class ArrayStaticType(ABIType):
     Represents a ArrayStatic ABI Type for encoding.
 
     Args:
-        child_type (Type): the type of the child_types array.
-        static_length (int): length of the static array.
+        child_type (ABIType): the type of the child_types array.
+        array_len (int): length of the static array.
 
     Attributes:
-        child_type (Type)
+        child_type (ABIType)
         static_length (int)
     """
 
-    def __init__(self, arg_type, array_len) -> None:
+    def __init__(self, arg_type: ABIType, array_len: int) -> None:
         if array_len < 1:
             raise error.ABITypeError(
                 "static array length must be a positive integer: {}".format(
-                    len(array_len)
+                    array_len
                 )
             )
         super().__init__()
         self.child_type = arg_type
         self.static_length = array_len
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, ArrayStaticType):
             return False
         return (
@@ -39,24 +40,24 @@ class ArrayStaticType(ABIType):
             and self.static_length == other.static_length
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "{}[{}]".format(self.child_type, self.static_length)
 
-    def byte_len(self):
+    def byte_len(self) -> int:
         if isinstance(self.child_type, BoolType):
             # 8 Boolean values can be encoded into 1 byte
             return math.ceil(self.static_length / 8)
         element_byte_length = self.child_type.byte_len()
         return self.static_length * element_byte_length
 
-    def is_dynamic(self):
+    def is_dynamic(self) -> bool:
         return self.child_type.is_dynamic()
 
-    def _to_tuple_type(self):
+    def _to_tuple_type(self) -> TupleType:
         child_type_array = [self.child_type] * self.static_length
         return TupleType(child_type_array)
 
-    def encode(self, value_array):
+    def encode(self, value_array: Union[List[Any], bytes, bytearray]) -> bytes:
         """
         Encodes a list of values into a ArrayStatic ABI bytestring.
 
@@ -87,7 +88,7 @@ class ArrayStaticType(ABIType):
         converted_tuple = self._to_tuple_type()
         return converted_tuple.encode(value_array)
 
-    def decode(self, array_bytes):
+    def decode(self, array_bytes: Union[bytes, bytearray]) -> list:
         """
         Decodes a bytestring to a static list.
 

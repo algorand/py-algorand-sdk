@@ -1,6 +1,8 @@
-from .base_type import ABI_LENGTH_SIZE, ABIType
-from .bool_type import BoolType
-from .. import error
+from typing import Any, List, Union
+
+from algosdk.abi.base_type import ABI_LENGTH_SIZE, ABIType
+from algosdk.abi.bool_type import BoolType
+from algosdk import error
 
 
 class TupleType(ABIType):
@@ -8,13 +10,13 @@ class TupleType(ABIType):
     Represents a Tuple ABI Type for encoding.
 
     Args:
-        child_types (list): list of types in the tuple.
+        arg_types (list): list of types in the tuple.
 
     Attributes:
         child_types (list)
     """
 
-    def __init__(self, arg_types) -> None:
+    def __init__(self, arg_types: List[Any]) -> None:
         if len(arg_types) >= 2 ** 16:
             raise error.ABITypeError(
                 "tuple args cannot exceed a uint16: {}".format(len(arg_types))
@@ -22,15 +24,15 @@ class TupleType(ABIType):
         super().__init__()
         self.child_types = arg_types
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, TupleType):
             return False
         return self.child_types == other.child_types
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "({})".format(",".join(str(t) for t in self.child_types))
 
-    def byte_len(self):
+    def byte_len(self) -> int:
         size = 0
         i = 0
         while i < len(self.child_types):
@@ -47,11 +49,11 @@ class TupleType(ABIType):
             i += 1
         return size
 
-    def is_dynamic(self):
+    def is_dynamic(self) -> bool:
         return any(child.is_dynamic() for child in self.child_types)
 
     @staticmethod
-    def _find_bool(type_list, index, delta):
+    def _find_bool(type_list: List[ABIType], index: int, delta: int) -> int:
         """
         Helper function to find consecutive booleans from current index in a tuple.
         """
@@ -71,7 +73,7 @@ class TupleType(ABIType):
         return until
 
     @staticmethod
-    def _parse_tuple(s):
+    def _parse_tuple(s: str) -> list:
         """
         Given a tuple string, parses one layer of the tuple and returns tokens as a list.
         i.e. 'x,(y,(z))' -> ['x', '(y,(z))']
@@ -112,7 +114,7 @@ class TupleType(ABIType):
         return tuple_strs
 
     @staticmethod
-    def _compress_multiple_bool(value_list):
+    def _compress_multiple_bool(value_list: List[bool]) -> int:
         """
         Compress consecutive boolean values into a byte for a Tuple/Array.
         """
@@ -128,13 +130,15 @@ class TupleType(ABIType):
                 result |= 1 << (7 - i)
         return result
 
-    def encode(self, values):
+    def encode(self, values: Union[List[Any], bytes, bytearray]) -> bytes:
         """
         Encodes a list of values into a TupleType ABI bytestring.
 
         Args:
-            values (list): list of values to be encoded.
+            values (list | bytes | bytearray): list of values to be encoded.
             The length of the list cannot exceed a uint16.
+            If the child types are ByteType, then bytes or bytearray can be
+            passed in to be encoded as well.
 
         Returns:
             bytes: encoded bytes of the tuple
@@ -208,7 +212,7 @@ class TupleType(ABIType):
         # Concatenate bytes
         return b"".join(heads) + b"".join(tails)
 
-    def decode(self, bytestring):
+    def decode(self, bytestring: Union[bytes, bytearray]) -> list:
         """
         Decodes a bytestring to a tuple list.
 

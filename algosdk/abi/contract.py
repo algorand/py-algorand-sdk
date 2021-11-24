@@ -1,4 +1,5 @@
 import json
+from typing import List, Union
 
 from algosdk.abi.method import Method
 
@@ -13,12 +14,12 @@ class Contract:
         methods (list): list of Method objects
     """
 
-    def __init__(self, name, app_id, methods) -> None:
+    def __init__(self, name: str, app_id: int, methods: List[Method]) -> None:
         self.name = name
         self.app_id = int(app_id)
         self.methods = methods
 
-    def __eq__(self, o) -> bool:
+    def __eq__(self, o: object) -> bool:
         if not isinstance(o, Contract):
             return False
         return (
@@ -28,11 +29,11 @@ class Contract:
         )
 
     @staticmethod
-    def from_json(resp):
+    def from_json(resp: Union[str, bytes, bytearray]) -> "Contract":
         d = json.loads(resp)
         return Contract.undictify(d)
 
-    def dictify(self):
+    def dictify(self) -> dict:
         d = {}
         d["name"] = self.name
         d["appId"] = self.app_id
@@ -40,7 +41,7 @@ class Contract:
         return d
 
     @staticmethod
-    def undictify(d):
+    def undictify(d: dict) -> "Contract":
         name = d["name"]
         app_id = d["appId"]
         method_list = [Method.undictify(method) for method in d["methods"]]

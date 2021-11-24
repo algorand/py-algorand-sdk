@@ -1,5 +1,7 @@
-from .base_type import ABIType
-from .. import error
+from typing import Union
+
+from algosdk.abi.base_type import ABIType
+from algosdk import error
 
 
 class ByteType(ABIType):
@@ -10,21 +12,21 @@ class ByteType(ABIType):
     def __init__(self) -> None:
         super().__init__()
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, ByteType):
             return False
         return True
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "byte"
 
-    def byte_len(self):
+    def byte_len(self) -> int:
         return 1
 
-    def is_dynamic(self):
+    def is_dynamic(self) -> bool:
         return False
 
-    def encode(self, value):
+    def encode(self, value: int) -> bytes:
         """
         Encode a single byte or a uint8
 
@@ -40,7 +42,7 @@ class ByteType(ABIType):
             )
         return bytes([value])
 
-    def decode(self, bytestring):
+    def decode(self, bytestring: Union[bytes, bytearray]) -> bytes:
         """
         Decodes a bytestring to a single byte.
 
