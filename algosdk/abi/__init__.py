@@ -1,4 +1,3 @@
-from .util import type_from_string
 from algosdk.abi.uint_type import UintType
 from algosdk.abi.ufixed_type import UfixedType
 from algosdk.abi.base_type import ABIType

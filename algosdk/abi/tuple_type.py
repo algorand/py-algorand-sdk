@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Any, List, Union
 
 from algosdk.abi.base_type import ABI_LENGTH_SIZE, ABIType
 from algosdk.abi.bool_type import BoolType
@@ -16,7 +16,7 @@ class TupleType(ABIType):
         child_types (list)
     """
 
-    def __init__(self, arg_types: list) -> None:
+    def __init__(self, arg_types: List[Any]) -> None:
         if len(arg_types) >= 2 ** 16:
             raise error.ABITypeError(
                 "tuple args cannot exceed a uint16: {}".format(len(arg_types))
@@ -53,7 +53,7 @@ class TupleType(ABIType):
         return any(child.is_dynamic() for child in self.child_types)
 
     @staticmethod
-    def _find_bool(type_list: list, index: int, delta: int) -> int:
+    def _find_bool(type_list: List[ABIType], index: int, delta: int) -> int:
         """
         Helper function to find consecutive booleans from current index in a tuple.
         """
@@ -114,7 +114,7 @@ class TupleType(ABIType):
         return tuple_strs
 
     @staticmethod
-    def _compress_multiple_bool(value_list: list) -> int:
+    def _compress_multiple_bool(value_list: List[bool]) -> int:
         """
         Compress consecutive boolean values into a byte for a Tuple/Array.
         """
@@ -130,13 +130,15 @@ class TupleType(ABIType):
                 result |= 1 << (7 - i)
         return result
 
-    def encode(self, values: list) -> bytes:
+    def encode(self, values: Union[List[Any], bytes, bytearray]) -> bytes:
         """
         Encodes a list of values into a TupleType ABI bytestring.
 
         Args:
-            values (list): list of values to be encoded.
+            values (list | bytes | bytearray): list of values to be encoded.
             The length of the list cannot exceed a uint16.
+            If the child types are ByteType, then bytes or bytearray can be
+            passed in to be encoded as well.
 
         Returns:
             bytes: encoded bytes of the tuple

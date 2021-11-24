@@ -64,7 +64,7 @@ class AddressType(ABIType):
             )
         return bytes(value)
 
-    def decode(self, bytestring: Union[bytearray, bytes]) -> bytes:
+    def decode(self, bytestring: Union[bytearray, bytes]) -> str:
         """
         Decodes a bytestring to a base32 encoded address string.
 

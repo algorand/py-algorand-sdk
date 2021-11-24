@@ -1,5 +1,5 @@
 import json
-from typing import Union
+from typing import List, Union
 
 from algosdk.abi.method import Method
 
@@ -13,7 +13,7 @@ class Interface:
         methods (list): list of Method objects
     """
 
-    def __init__(self, name: str, methods: list) -> None:
+    def __init__(self, name: str, methods: List[Method]) -> None:
         self.name = name
         self.methods = methods
 

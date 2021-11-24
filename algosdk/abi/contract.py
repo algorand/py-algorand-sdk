@@ -1,5 +1,5 @@
 import json
-from typing import Union
+from typing import List, Union
 
 from algosdk.abi.method import Method
 
@@ -14,7 +14,7 @@ class Contract:
         methods (list): list of Method objects
     """
 
-    def __init__(self, name: str, app_id: int, methods: list) -> None:
+    def __init__(self, name: str, app_id: int, methods: List[Method]) -> None:
         self.name = name
         self.app_id = int(app_id)
         self.methods = methods

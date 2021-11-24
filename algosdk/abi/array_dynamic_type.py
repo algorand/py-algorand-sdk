@@ -1,4 +1,4 @@
-from typing import NoReturn, Union
+from typing import Any, List, NoReturn, Union
 
 from algosdk.abi.base_type import ABI_LENGTH_SIZE, ABIType
 from algosdk.abi.byte_type import ByteType
@@ -41,7 +41,7 @@ class ArrayDynamicType(ABIType):
         child_type_array = [self.child_type] * length
         return TupleType(child_type_array)
 
-    def encode(self, value_array: Union[list, bytes, bytearray]) -> bytes:
+    def encode(self, value_array: Union[List[Any], bytes, bytearray]) -> bytes:
         """
         Encodes a list of values into a ArrayDynamic ABI bytestring.
 

@@ -2,9 +2,10 @@ from abc import ABC, abstractmethod
 import base64
 import copy
 from enum import IntEnum
-from typing import Any
+from typing import Any, List, Union
 
 from algosdk import abi, error
+from algosdk.abi.base_type import ABIType
 from algosdk.future import transaction
 from algosdk.v2client import algod
 
@@ -125,7 +126,7 @@ class AtomicTransactionComposer:
         sender: str,
         sp: transaction.SuggestedParams,
         signer: "TransactionSigner",
-        method_args: list = None,
+        method_args: List[Union[Any]] = None,
         on_complete: transaction.OnComplete = transaction.OnComplete.NoOpOC,
         note: bytes = None,
         lease: bytes = None,
@@ -425,7 +426,9 @@ class TransactionSigner(ABC):
         pass
 
     @abstractmethod
-    def sign_transactions(self, txn_group: list, indexes: list) -> list:
+    def sign_transactions(
+        self, txn_group: List[transaction.Transaction], indexes: List[int]
+    ) -> list:
         pass
 
 
@@ -442,7 +445,9 @@ class AccountTransactionSigner(TransactionSigner):
         super().__init__()
         self.private_key = private_key
 
-    def sign_transactions(self, txn_group: list, indexes: list) -> list:
+    def sign_transactions(
+        self, txn_group: List[transaction.Transaction], indexes: List[int]
+    ) -> list:
         """
         Sign transactions in a transaction group given the indexes.
 
@@ -474,7 +479,9 @@ class LogicSigTransactionSigner(TransactionSigner):
         super().__init__()
         self.lsig = lsig
 
-    def sign_transactions(self, txn_group: list, indexes: list) -> list:
+    def sign_transactions(
+        self, txn_group: List[transaction.Transaction], indexes: List[int]
+    ) -> list:
         """
         Sign transactions in a transaction group given the indexes.
 
@@ -508,7 +515,9 @@ class MultisigTransactionSigner(TransactionSigner):
         self.msig = msig
         self.sks = sks
 
-    def sign_transactions(self, txn_group: list, indexes: list) -> list:
+    def sign_transactions(
+        self, txn_group: List[transaction.Transaction], indexes: List[int]
+    ) -> list:
         """
         Sign transactions in a transaction group given the indexes.
 
@@ -531,7 +540,7 @@ class MultisigTransactionSigner(TransactionSigner):
 
 class TransactionWithSigner:
     def __init__(
-        self, txn: transaction.transaction, signer: TransactionSigner
+        self, txn: transaction.Transaction, signer: TransactionSigner
     ) -> None:
         self.txn = txn
         self.signer = signer
@@ -553,7 +562,7 @@ class ABIResult:
 
 class AtomicTransactionResponse:
     def __init__(
-        self, confirmed_round: int, tx_ids: list, results: ABIResult
+        self, confirmed_round: int, tx_ids: List[str], results: ABIResult
     ) -> None:
         self.confirmed_round = confirmed_round
         self.tx_ids = tx_ids

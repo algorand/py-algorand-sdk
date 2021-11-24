@@ -1,5 +1,5 @@
 import math
-from typing import Union
+from typing import Any, List, Union
 
 from algosdk.abi.base_type import ABIType
 from algosdk.abi.bool_type import BoolType
@@ -57,7 +57,7 @@ class ArrayStaticType(ABIType):
         child_type_array = [self.child_type] * self.static_length
         return TupleType(child_type_array)
 
-    def encode(self, value_array: Union[list, bytes, bytearray]) -> bytes:
+    def encode(self, value_array: Union[List[Any], bytes, bytearray]) -> bytes:
         """
         Encodes a list of values into a ArrayStatic ABI bytestring.
 

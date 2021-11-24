@@ -1,5 +1,5 @@
 import json
-from typing import Union
+from typing import List, Union
 
 from Cryptodome.Hash import SHA512
 
@@ -30,7 +30,11 @@ class Method:
     """
 
     def __init__(
-        self, name: str, args: list, returns: "Returns", desc: str = None
+        self,
+        name: str,
+        args: List["Argument"],
+        returns: "Returns",
+        desc: str = None,
     ) -> None:
         self.name = name
         self.args = args
@@ -57,7 +61,7 @@ class Method:
 
     def get_signature(self) -> str:
         arg_string = ",".join(str(arg.type) for arg in self.args)
-        ret_string = self.returns.type if self.returns else "void"
+        ret_string = self.returns.type
         return "{}({}){}".format(self.name, arg_string, ret_string)
 
     def get_selector(self) -> bytes:
@@ -119,8 +123,7 @@ class Method:
         d = {}
         d["name"] = self.name
         d["args"] = [arg.dictify() for arg in self.args]
-        if self.returns:
-            d["returns"] = self.returns.dictify()
+        d["returns"] = self.returns.dictify()
         if self.desc:
             d["desc"] = self.desc
         return d
@@ -129,9 +132,7 @@ class Method:
     def undictify(d: dict) -> "Method":
         name = d["name"]
         arg_list = [Argument.undictify(arg) for arg in d["args"]]
-        return_obj = (
-            Returns.undictify(d["returns"]) if "returns" in d else None
-        )
+        return_obj = Returns.undictify(d["returns"])
         desc = d["desc"] if "desc" in d else None
         return Method(name=name, args=arg_list, returns=return_obj, desc=desc)
 
@@ -153,7 +154,7 @@ class Argument:
             self.type = arg_type
         else:
             # If the type cannot be parsed into an ABI type, it will error
-            self.type = abi.util.type_from_string(arg_type)
+            self.type = abi.ABIType.from_string(arg_type)
         self.name = name
         self.desc = desc
 
@@ -202,7 +203,7 @@ class Returns:
             self.type = self.VOID
         else:
             # If the type cannot be parsed into an ABI type, it will error.
-            self.type = abi.util.type_from_string(arg_type)
+            self.type = abi.ABIType.from_string(arg_type)
         self.desc = desc
 
     def __eq__(self, o: object) -> bool:
