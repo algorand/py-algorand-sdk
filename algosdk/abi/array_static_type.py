@@ -1,11 +1,11 @@
 import math
 from typing import Union
 
-from .base_type import ABIType
-from .bool_type import BoolType
-from .byte_type import ByteType
-from .tuple_type import TupleType
-from .. import error
+from algosdk.abi.base_type import ABIType
+from algosdk.abi.bool_type import BoolType
+from algosdk.abi.byte_type import ByteType
+from algosdk.abi.tuple_type import TupleType
+from algosdk import error
 
 
 class ArrayStaticType(ABIType):

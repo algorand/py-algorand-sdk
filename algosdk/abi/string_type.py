@@ -1,7 +1,7 @@
 from typing import NoReturn, Union
 
-from .base_type import ABI_LENGTH_SIZE, ABIType
-from .. import error
+from algosdk.abi.base_type import ABI_LENGTH_SIZE, ABIType
+from algosdk import error
 
 
 class StringType(ABIType):

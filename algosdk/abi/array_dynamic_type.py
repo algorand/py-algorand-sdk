@@ -1,9 +1,9 @@
 from typing import NoReturn, Union
 
-from .base_type import ABI_LENGTH_SIZE, ABIType
-from .byte_type import ByteType
-from .tuple_type import TupleType
-from .. import error
+from algosdk.abi.base_type import ABI_LENGTH_SIZE, ABIType
+from algosdk.abi.byte_type import ByteType
+from algosdk.abi.tuple_type import TupleType
+from algosdk import error
 
 
 class ArrayDynamicType(ABIType):

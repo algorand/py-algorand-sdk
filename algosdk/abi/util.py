@@ -1,17 +1,16 @@
 import re
 
 from algosdk.abi.base_type import ABIType
-
-from .uint_type import UintType
-from .ufixed_type import UfixedType
-from .byte_type import ByteType
-from .bool_type import BoolType
-from .address_type import AddressType
-from .string_type import StringType
-from .array_dynamic_type import ArrayDynamicType
-from .array_static_type import ArrayStaticType
-from .tuple_type import TupleType
-from .. import error
+from algosdk.abi.uint_type import UintType
+from algosdk.abi.ufixed_type import UfixedType
+from algosdk.abi.byte_type import ByteType
+from algosdk.abi.bool_type import BoolType
+from algosdk.abi.address_type import AddressType
+from algosdk.abi.string_type import StringType
+from algosdk.abi.array_dynamic_type import ArrayDynamicType
+from algosdk.abi.array_static_type import ArrayStaticType
+from algosdk.abi.tuple_type import TupleType
+from algosdk import error
 
 
 # Globals

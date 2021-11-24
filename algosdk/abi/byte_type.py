@@ -1,7 +1,7 @@
 from typing import Union
 
-from .base_type import ABIType
-from .. import error
+from algosdk.abi.base_type import ABIType
+from algosdk import error
 
 
 class ByteType(ABIType):

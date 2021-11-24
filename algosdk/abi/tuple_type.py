@@ -1,8 +1,8 @@
 from typing import Union
 
-from .base_type import ABI_LENGTH_SIZE, ABIType
-from .bool_type import BoolType
-from .. import error
+from algosdk.abi.base_type import ABI_LENGTH_SIZE, ABIType
+from algosdk.abi.bool_type import BoolType
+from algosdk import error
 
 
 class TupleType(ABIType):
