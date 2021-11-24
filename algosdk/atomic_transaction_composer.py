@@ -2,9 +2,11 @@ from abc import ABC, abstractmethod
 import base64
 import copy
 from enum import IntEnum
+from typing import Any
 
 from algosdk import abi, error
 from algosdk.future import transaction
+from algosdk.v2client import algod
 
 # The first four bytes of an ABI method call return must have this hash
 ABI_RETURN_HASH = b"\x15\x1f\x7c\x75"
@@ -56,19 +58,19 @@ class AtomicTransactionComposer:
         self.signed_txns = []
         self.tx_ids = []
 
-    def get_status(self):
+    def get_status(self) -> AtomicTransactionComposerStatus:
         """
         Returns the status of this composer's transaction group.
         """
         return self.status
 
-    def get_tx_count(self):
+    def get_tx_count(self) -> int:
         """
         Returns the number of transactions currently in this atomic group.
         """
         return len(self.txn_list)
 
-    def clone(self):
+    def clone(self) -> "AtomicTransactionComposer":
         """
         Creates a new composer with the same underlying transactions.
         The new composer's status will be BUILDING, so additional transactions
@@ -82,7 +84,9 @@ class AtomicTransactionComposer:
         cloned.status = AtomicTransactionComposerStatus.BUILDING
         return cloned
 
-    def add_transaction(self, txn_and_signer):
+    def add_transaction(
+        self, txn_and_signer: "TransactionWithSigner"
+    ) -> "AtomicTransactionComposer":
         """
         Adds a transaction to this atomic group.
 
@@ -116,17 +120,17 @@ class AtomicTransactionComposer:
 
     def add_method_call(
         self,
-        app_id,
-        method,
-        sender,
-        sp,
-        signer,
-        method_args=None,
-        on_complete=transaction.OnComplete.NoOpOC,
-        note=None,
-        lease=None,
-        rekey_to=None,
-    ):
+        app_id: int,
+        method: abi.method.Method,
+        sender: str,
+        sp: transaction.SuggestedParams,
+        signer: "TransactionSigner",
+        method_args: list = None,
+        on_complete: transaction.OnComplete = transaction.OnComplete.NoOpOC,
+        note: bytes = None,
+        lease: bytes = None,
+        rekey_to: str = None,
+    ) -> "AtomicTransactionComposer":
         """
         Add a smart contract method call to this atomic group.
 
@@ -229,7 +233,7 @@ class AtomicTransactionComposer:
         self.method_dict[len(self.txn_list) - 1] = method
         return self
 
-    def build_group(self):
+    def build_group(self) -> list:
         """
         Finalize the transaction group and returns the finalized transactions with signers.
         The composer's status will be at least BUILT after executing this method.
@@ -254,7 +258,7 @@ class AtomicTransactionComposer:
         self.status = AtomicTransactionComposerStatus.BUILT
         return self.txn_list
 
-    def gather_signatures(self):
+    def gather_signatures(self) -> list:
         """
         Obtain signatures for each transaction in this group. If signatures have already been obtained,
         this method will return cached versions of the signatures.
@@ -293,7 +297,7 @@ class AtomicTransactionComposer:
         self.signed_txns = stxn_list
         return self.signed_txns
 
-    def submit(self, client):
+    def submit(self, client: algod.AlgodClient) -> list:
         """
         Send the transaction group to the network, but don't wait for it to be
         committed to a block. An error will be thrown if submission fails.
@@ -319,7 +323,9 @@ class AtomicTransactionComposer:
         self.status = AtomicTransactionComposerStatus.SUBMITTED
         return self.tx_ids
 
-    def execute(self, client, wait_rounds):
+    def execute(
+        self, client: algod.AlgodClient, wait_rounds: int
+    ) -> "AtomicTransactionResponse":
         """
         Send the transaction group to the network and wait until it's committed
         to a block. An error will be thrown if submission or execution fails.
@@ -419,7 +425,7 @@ class TransactionSigner(ABC):
         pass
 
     @abstractmethod
-    def sign_transactions(self, txn_group, indexes):
+    def sign_transactions(self, txn_group: list, indexes: list) -> list:
         pass
 
 
@@ -432,11 +438,11 @@ class AccountTransactionSigner(TransactionSigner):
         private_key (str): private key of signing account
     """
 
-    def __init__(self, private_key) -> None:
+    def __init__(self, private_key: str) -> None:
         super().__init__()
         self.private_key = private_key
 
-    def sign_transactions(self, txn_group, indexes):
+    def sign_transactions(self, txn_group: list, indexes: list) -> list:
         """
         Sign transactions in a transaction group given the indexes.
 
@@ -464,11 +470,11 @@ class LogicSigTransactionSigner(TransactionSigner):
         lsig (LogicSigAccount): LogicSig account
     """
 
-    def __init__(self, lsig) -> None:
+    def __init__(self, lsig: transaction.LogicSigAccount) -> None:
         super().__init__()
         self.lsig = lsig
 
-    def sign_transactions(self, txn_group, indexes):
+    def sign_transactions(self, txn_group: list, indexes: list) -> list:
         """
         Sign transactions in a transaction group given the indexes.
 
@@ -497,12 +503,12 @@ class MultisigTransactionSigner(TransactionSigner):
         sks (str): private keys of multisig
     """
 
-    def __init__(self, msig, sks) -> None:
+    def __init__(self, msig: transaction.Multisig, sks: str) -> None:
         super().__init__()
         self.msig = msig
         self.sks = sks
 
-    def sign_transactions(self, txn_group, indexes):
+    def sign_transactions(self, txn_group: list, indexes: list) -> list:
         """
         Sign transactions in a transaction group given the indexes.
 
@@ -524,13 +530,21 @@ class MultisigTransactionSigner(TransactionSigner):
 
 
 class TransactionWithSigner:
-    def __init__(self, txn, signer) -> None:
+    def __init__(
+        self, txn: transaction.transaction, signer: TransactionSigner
+    ) -> None:
         self.txn = txn
         self.signer = signer
 
 
 class ABIResult:
-    def __init__(self, tx_id, raw_value, return_value, decode_error) -> None:
+    def __init__(
+        self,
+        tx_id: int,
+        raw_value: bytes,
+        return_value: Any,
+        decode_error: error,
+    ) -> None:
         self.tx_id = tx_id
         self.raw_value = raw_value
         self.return_value = return_value
@@ -538,7 +552,9 @@ class ABIResult:
 
 
 class AtomicTransactionResponse:
-    def __init__(self, confirmed_round, tx_ids, results) -> None:
+    def __init__(
+        self, confirmed_round: int, tx_ids: list, results: ABIResult
+    ) -> None:
         self.confirmed_round = confirmed_round
         self.tx_ids = tx_ids
         self.abi_results = results
