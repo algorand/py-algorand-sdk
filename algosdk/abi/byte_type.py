@@ -1,8 +1,8 @@
-from .base_type import Type
+from .base_type import ABIType
 from .. import error
 
 
-class ByteType(Type):
+class ByteType(ABIType):
     """
     Represents a Byte ABI Type for encoding.
     """

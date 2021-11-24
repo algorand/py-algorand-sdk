@@ -1,4 +1,4 @@
-from .base_type import Type
+from .base_type import ABIType
 from .byte_type import ByteType
 from .tuple_type import TupleType
 from .. import error
@@ -6,7 +6,7 @@ from .. import error
 from algosdk import encoding
 
 
-class AddressType(Type):
+class AddressType(ABIType):
     """
     Represents an Address ABI Type for encoding.
     """

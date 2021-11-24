@@ -1,8 +1,8 @@
-from .base_type import Type
+from .base_type import ABIType
 from .. import error
 
 
-class BoolType(Type):
+class BoolType(ABIType):
     """
     Represents a Bool ABI Type for encoding.
     """

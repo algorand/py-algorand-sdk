@@ -1,10 +1,10 @@
-from .base_type import ABI_LENGTH_SIZE, Type
+from .base_type import ABI_LENGTH_SIZE, ABIType
 from .byte_type import ByteType
 from .tuple_type import TupleType
 from .. import error
 
 
-class ArrayDynamicType(Type):
+class ArrayDynamicType(ABIType):
     """
     Represents a ArrayDynamic ABI Type for encoding.
 

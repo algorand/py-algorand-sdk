@@ -30,6 +30,9 @@ from algosdk.abi import (
     ArrayDynamicType,
     ArrayStaticType,
     TupleType,
+    Method,
+    Interface,
+    Contract,
 )
 from algosdk.future import template, transaction
 from algosdk.testing import dryrun
@@ -4178,6 +4181,88 @@ class TestABIEncoding(unittest.TestCase):
             self.assertEqual(actual, expected)
 
 
+class TestABIInteraction(unittest.TestCase):
+    def test_method(self):
+        # Parse method object from JSON
+        test_json = '{"name": "add", "desc": "Calculate the sum of two 64-bit integers", "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ], "returns": { "type": "uint128", "desc": "..." } }'
+        m = Method.from_json(test_json)
+        self.assertEqual(m.get_signature(), "add(uint64,uint64)uint128")
+        self.assertEqual(m.get_selector(), b"\x8a\xa3\xb6\x1f")
+        self.assertEqual(
+            [(a.type) for a in m.args],
+            [type_from_string("uint64"), type_from_string("uint64")],
+        )
+        self.assertEqual(m.get_txn_calls(), 1)
+
+        # Parse method object from string
+        test_cases = [
+            (
+                "add(uint64,uint64)uint128",
+                b"\x8a\xa3\xb6\x1f",
+                [type_from_string("uint64"), type_from_string("uint64")],
+                type_from_string("uint128"),
+                1,
+            ),
+            (
+                "tupler((string,uint16),bool)void",
+                b"\x3d\x98\xe4\x5d",
+                [
+                    type_from_string("(string,uint16)"),
+                    type_from_string("bool"),
+                ],
+                "void",
+                1,
+            ),
+            (
+                "txcalls(pay,pay,axfer,byte)bool",
+                b"\x05\x6d\x2e\xc0",
+                ["pay", "pay", "axfer", type_from_string("byte")],
+                type_from_string("bool"),
+                4,
+            ),
+            (
+                "getter()string",
+                b"\xa2\x59\x11\x1d",
+                [],
+                type_from_string("string"),
+                1,
+            ),
+        ]
+
+        for test_case in test_cases:
+            m = Method.from_signature(test_case[0])
+
+            # Check method signature
+            self.assertEqual(m.get_signature(), test_case[0])
+            # Check selector
+            self.assertEqual(m.get_selector(), test_case[1])
+            # Check args
+            self.assertEqual([(a.type) for a in m.args], test_case[2])
+            # Check return
+            self.assertEqual(m.returns.type, test_case[3])
+            # Check txn calls
+            self.assertEqual(m.get_txn_calls(), test_case[4])
+
+    def test_interface(self):
+        test_json = '{"name": "Calculator","methods": [{ "name": "add", "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] },{ "name": "multiply", "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] }]}'
+        i = Interface.from_json(test_json)
+        self.assertEqual(i.name, "Calculator")
+        self.assertEqual(
+            [m.get_signature() for m in i.methods],
+            ["add(uint64,uint64)void", "multiply(uint64,uint64)void"],
+        )
+
+    def test_contract(self):
+        test_json = '{"name": "Calculator","appId": 3, "methods": [{ "name": "add", "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] },{ "name": "multiply", "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] }]}'
+        c = Contract.from_json(test_json)
+        self.assertEqual(c.name, "Calculator")
+        self.assertEqual(c.app_id, 3)
+        self.assertEqual(
+            [m.get_signature() for m in c.methods],
+            ["add(uint64,uint64)void", "multiply(uint64,uint64)void"],
+        )
+
+
 if __name__ == "__main__":
     to_run = [
         TestPaymentTransaction,
@@ -4197,6 +4282,7 @@ if __name__ == "__main__":
         TestDryrun,
         TestABIType,
         TestABIEncoding,
+        TestABIInteraction,
     ]
     loader = unittest.TestLoader()
     suites = [

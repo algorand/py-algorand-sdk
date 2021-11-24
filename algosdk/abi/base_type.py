@@ -1,11 +1,10 @@
 from abc import ABC, abstractmethod
-from enum import IntEnum
 
 # Globals
 ABI_LENGTH_SIZE = 2  # We use 2 bytes to encode the length of a dynamic element
 
 
-class Type(ABC):
+class ABIType(ABC):
     """
     Represents an ABI Type for encoding.
     """
@@ -45,7 +44,7 @@ class Type(ABC):
         pass
 
     @abstractmethod
-    def decode(self, value_string):
+    def decode(self, bytestring):
         """
         Deserialize the ABI type and value from a byte string using ABI encoding rules.
         """

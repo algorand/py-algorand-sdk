@@ -1,8 +1,8 @@
-from .base_type import Type
+from .base_type import ABIType
 from .. import error
 
 
-class UintType(Type):
+class UintType(ABIType):
     """
     Represents an Uint ABI Type for encoding.
 

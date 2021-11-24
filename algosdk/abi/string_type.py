@@ -1,8 +1,8 @@
-from .base_type import ABI_LENGTH_SIZE, Type
+from .base_type import ABI_LENGTH_SIZE, ABIType
 from .. import error
 
 
-class StringType(Type):
+class StringType(ABIType):
     """
     Represents a String ABI Type for encoding.
     """
