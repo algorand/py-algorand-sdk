@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.9.0
+### Added
+
+- ABI Interaction Support for Python SDK (#247)
+- ABI Type encoding support (#238)
+- Add type hints and clean up ABI code (#253)
+- Add CircleCI configs to the Python SDK repo (#246)
+
 ## 1.8.0
 ### Added
 
