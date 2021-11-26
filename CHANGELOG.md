@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.9.0
+## 1.9.0b1
 ### Added
 
 - ABI Interaction Support for Python SDK (#247)
