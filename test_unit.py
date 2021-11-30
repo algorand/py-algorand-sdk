@@ -4235,8 +4235,9 @@ class TestABIInteraction(unittest.TestCase):
                     "pay",
                     "asset",
                     "application",
-                    type_from_string("bool"),
+                    ABIType.from_string("bool"),
                 ],
+                "void",
                 2,
             ),
         ]
