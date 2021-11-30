@@ -3,6 +3,7 @@ from typing import NoReturn, Union
 from algosdk.abi.base_type import ABI_LENGTH_SIZE, ABIType
 from algosdk import error
 
+
 class StringType(ABIType):
     """
     Represents a String ABI Type for encoding.

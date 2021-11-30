@@ -3,6 +3,7 @@ from typing import Union
 from algosdk.abi.base_type import ABIType
 from algosdk import error
 
+
 class BoolType(ABIType):
     """
     Represents a Bool ABI Type for encoding.

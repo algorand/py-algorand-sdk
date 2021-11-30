@@ -4,6 +4,7 @@ from algosdk.abi.base_type import ABI_LENGTH_SIZE, ABIType
 from algosdk.abi.bool_type import BoolType
 from algosdk import error
 
+
 class TupleType(ABIType):
     """
     Represents a Tuple ABI Type for encoding.

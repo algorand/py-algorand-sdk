@@ -5,6 +5,7 @@ from algosdk.abi.byte_type import ByteType
 from algosdk.abi.tuple_type import TupleType
 from algosdk import error
 
+
 class ArrayDynamicType(ABIType):
     """
     Represents a ArrayDynamic ABI Type for encoding.

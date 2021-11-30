@@ -3,6 +3,7 @@ from typing import Union
 from algosdk.abi.base_type import ABIType
 from algosdk import error
 
+
 class UfixedType(ABIType):
     """
     Represents an Ufixed ABI Type for encoding.

@@ -4190,11 +4190,7 @@ class TestABIInteraction(unittest.TestCase):
         self.assertEqual(m.get_selector(), b"\x8a\xa3\xb6\x1f")
         self.assertEqual(
             [(a.type) for a in m.args],
-<<<<<<< HEAD
-            [type_from_string("uint64"), type_from_string("uint64")],
-=======
             [ABIType.from_string("uint64"), ABIType.from_string("uint64")],
->>>>>>> develop
         )
         self.assertEqual(m.get_txn_calls(), 1)
 
@@ -4203,38 +4199,34 @@ class TestABIInteraction(unittest.TestCase):
             (
                 "add(uint64,uint64)uint128",
                 b"\x8a\xa3\xb6\x1f",
-<<<<<<< HEAD
-                [type_from_string("uint64"), type_from_string("uint64")],
-=======
                 [ABIType.from_string("uint64"), ABIType.from_string("uint64")],
                 ABIType.from_string("uint128"),
->>>>>>> develop
                 1,
             ),
             (
                 "tupler((string,uint16),bool)void",
                 b"\x3d\x98\xe4\x5d",
                 [
-<<<<<<< HEAD
-                    type_from_string("(string,uint16)"),
-                    type_from_string("bool"),
-                ],
-=======
                     ABIType.from_string("(string,uint16)"),
                     ABIType.from_string("bool"),
                 ],
                 "void",
->>>>>>> develop
                 1,
             ),
             (
                 "txcalls(pay,pay,axfer,byte)bool",
                 b"\x05\x6d\x2e\xc0",
-<<<<<<< HEAD
-                ["pay", "pay", "axfer", type_from_string("byte")],
+                ["pay", "pay", "axfer", ABIType.from_string("byte")],
+                ABIType.from_string("bool"),
                 4,
             ),
-            ("getter()string", b"\xa2\x59\x11\x1d", [], 1),
+            (
+                "getter()string",
+                b"\xa2\x59\x11\x1d",
+                [],
+                ABIType.from_string("string"),
+                1,
+            ),
             (
                 "foreigns(account,pay,asset,application,bool)void",
                 b"\xbf\xed\xf2\xc1",
@@ -4246,18 +4238,6 @@ class TestABIInteraction(unittest.TestCase):
                     type_from_string("bool"),
                 ],
                 2,
-=======
-                ["pay", "pay", "axfer", ABIType.from_string("byte")],
-                ABIType.from_string("bool"),
-                4,
-            ),
-            (
-                "getter()string",
-                b"\xa2\x59\x11\x1d",
-                [],
-                ABIType.from_string("string"),
-                1,
->>>>>>> develop
             ),
         ]
 
@@ -4270,13 +4250,6 @@ class TestABIInteraction(unittest.TestCase):
             self.assertEqual(m.get_selector(), test_case[1])
             # Check args
             self.assertEqual([(a.type) for a in m.args], test_case[2])
-<<<<<<< HEAD
-            # Check txn calls
-            self.assertEqual(m.get_txn_calls(), test_case[3])
-
-    def test_interface(self):
-        test_json = '{"name": "Calculator","methods": [{ "name": "add", "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] },{ "name": "multiply", "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] }]}'
-=======
             # Check return
             self.assertEqual(m.returns.type, test_case[3])
             # Check txn calls
@@ -4284,7 +4257,6 @@ class TestABIInteraction(unittest.TestCase):
 
     def test_interface(self):
         test_json = '{"name": "Calculator","methods": [{ "name": "add", "returns": {"type": "void"}, "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] },{ "name": "multiply", "returns": {"type": "void"}, "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] }]}'
->>>>>>> develop
         i = Interface.from_json(test_json)
         self.assertEqual(i.name, "Calculator")
         self.assertEqual(
@@ -4293,11 +4265,7 @@ class TestABIInteraction(unittest.TestCase):
         )
 
     def test_contract(self):
-<<<<<<< HEAD
-        test_json = '{"name": "Calculator","appId": 3, "methods": [{ "name": "add", "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] },{ "name": "multiply", "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] }]}'
-=======
         test_json = '{"name": "Calculator","appId": 3, "methods": [{ "name": "add", "returns": {"type": "void"}, "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] },{ "name": "multiply", "returns": {"type": "void"}, "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] }]}'
->>>>>>> develop
         c = Contract.from_json(test_json)
         self.assertEqual(c.name, "Calculator")
         self.assertEqual(c.app_id, 3)
