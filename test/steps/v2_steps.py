@@ -2520,6 +2520,7 @@ def execute_atomic_transaction_composer(context):
 def check_atomic_transaction_composer_response(context, returns):
     if not returns:
         expected_tokens = []
+<<<<<<< HEAD
     else:
         expected_tokens = returns.split(",")
     for i, expected in enumerate(expected_tokens):
@@ -2538,6 +2539,32 @@ def check_atomic_transaction_composer_response(context, returns):
             result.return_value
         )
         assert result.decode_error is None
+=======
+        assert len(context.atomic_transaction_composer_return.abi_results) == 1
+        result = context.atomic_transaction_composer_return.abi_results[0]
+        assert result.return_value is None
+        assert result.decode_error is None
+    else:
+        expected_tokens = returns.split(",")
+        for i, expected in enumerate(expected_tokens):
+            result = context.atomic_transaction_composer_return.abi_results[i]
+            if not returns or not expected_tokens[i]:
+                assert result.return_value is None
+                assert result.decode_error is None
+                continue
+            expected_bytes = base64.b64decode(expected)
+            expected_value = context.abi_method.returns.type.decode(
+                expected_bytes
+            )
+
+            assert expected_bytes == result.raw_value, "actual is {}".format(
+                result.raw_value
+            )
+            assert (
+                expected_value == result.return_value
+            ), "actual is {}".format(result.return_value)
+            assert result.decode_error is None
+>>>>>>> develop
 
 
 @when("I serialize the Method object into json")

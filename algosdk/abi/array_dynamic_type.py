@@ -1,45 +1,46 @@
-from .base_type import ABI_LENGTH_SIZE, ABIType
-from .byte_type import ByteType
-from .tuple_type import TupleType
-from .. import error
+from typing import Any, List, NoReturn, Union
 
+from algosdk.abi.base_type import ABI_LENGTH_SIZE, ABIType
+from algosdk.abi.byte_type import ByteType
+from algosdk.abi.tuple_type import TupleType
+from algosdk import error
 
 class ArrayDynamicType(ABIType):
     """
     Represents a ArrayDynamic ABI Type for encoding.
 
     Args:
-        child_type (Type): the type of the dynamic array.
+        child_type (ABIType): the type of the dynamic array.
 
     Attributes:
-        child_type (Type)
+        child_type (ABIType)
     """
 
-    def __init__(self, arg_type) -> None:
+    def __init__(self, arg_type: ABIType) -> None:
         super().__init__()
         self.child_type = arg_type
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, ArrayDynamicType):
             return False
         return self.child_type == other.child_type
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "{}[]".format(self.child_type)
 
-    def byte_len(self):
+    def byte_len(self) -> NoReturn:
         raise error.ABITypeError(
             "cannot get length of a dynamic type: {}".format(self)
         )
 
-    def is_dynamic(self):
+    def is_dynamic(self) -> bool:
         return True
 
-    def _to_tuple_type(self, length):
+    def _to_tuple_type(self, length: int) -> TupleType:
         child_type_array = [self.child_type] * length
         return TupleType(child_type_array)
 
-    def encode(self, value_array):
+    def encode(self, value_array: Union[List[Any], bytes, bytearray]) -> bytes:
         """
         Encodes a list of values into a ArrayDynamic ABI bytestring.
 
@@ -67,7 +68,7 @@ class ArrayDynamicType(ABIType):
         encoded = converted_tuple.encode(value_array)
         return bytes(length_to_encode) + encoded
 
-    def decode(self, array_bytes):
+    def decode(self, array_bytes: Union[bytes, bytearray]) -> list:
         """
         Decodes a bytestring to a dynamic list.
 
