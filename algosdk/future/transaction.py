@@ -3064,12 +3064,15 @@ def create_dryrun(
         round (int, optional): The round to evaluate against
     """
 
-    app_infos, acct_infos = [], [], []
+    # The list of info objects passed to the DryrunRequest object
+    app_infos, acct_infos = [], []
 
+    # The running list of things we need to fetch
     apps, assets, accts = [], [], []
     for t in txns:
         txn = t.transaction
 
+        # we only care about app call transactions
         if type(txn) is transaction.ApplicationCallTxn:
             accts.append(txn.sender)
 
@@ -3101,11 +3104,7 @@ def create_dryrun(
             else:
                 apps.append(txn.index)
 
-    assets = [i for i in set(assets) if i]
-    for asset in assets:
-        asset_info = client.asset_info(asset)
-        accts.append(asset_info["params"]["creator"])
-
+    # Dedupe and filter none, reset programs to bytecode instead of b64
     apps = [i for i in set(apps) if i]
     for app in apps:
         app_info = client.application_info(app)
@@ -3120,6 +3119,13 @@ def create_dryrun(
 
         app_infos.append(app_info)
 
+    # Dedupe and filter None, add asset creator to accounts to include in dryrun
+    assets = [i for i in set(assets) if i]
+    for asset in assets:
+        asset_info = client.asset_info(asset)
+        accts.append(asset_info["params"]["creator"])
+
+    # Dedupe and filter None, fetch and add account info
     accts = [i for i in set(accts) if i]
     for acct in accts:
         acct_infos.append(client.account_info(acct))
