@@ -3044,20 +3044,24 @@ def wait_for_confirmation(algod_client, txid, wait_rounds=0, **kwargs):
         current_round += 1
 
 
-
 def create_dryrun(
-    client: algod.AlgodClient, txns: List[Union[transaction.SignedTransaction,  transaction.LogicSigTransaction]],
-    protocol_version=None, latest_timestamp=None, round=None
-)->models.DryrunRequest:
+    client: algod.AlgodClient,
+    txns: List[
+        Union[transaction.SignedTransaction, transaction.LogicSigTransaction]
+    ],
+    protocol_version=None,
+    latest_timestamp=None,
+    round=None,
+) -> models.DryrunRequest:
     """
-    Create DryrunRequest object from a client and list of signed transactions 
+    Create DryrunRequest object from a client and list of signed transactions
 
     Args:
         algod_client (algod.AlgodClient): Instance of the `algod` client
         txns (List[SignedTransaction]): transaction ID
-        protocol_version (string, optional): The protocol version to evaluate against 
-        latest_timestamp (int, optional): The latest timestamp to evaluate against 
-        round (int, optional): The round to evaluate against 
+        protocol_version (string, optional): The protocol version to evaluate against
+        latest_timestamp (int, optional): The latest timestamp to evaluate against
+        round (int, optional): The round to evaluate against
     """
 
     app_infos, acct_infos = [], [], []
@@ -3082,29 +3086,37 @@ def create_dryrun(
                 appId = 1
                 # Make up app id, since tealdbg/dryrun doesnt like 0s
                 # https://github.com/algorand/go-algorand/blob/e466aa18d4d963868d6d15279b1c881977fa603f/libgoal/libgoal.go#L1089-L1090
-                app_infos.append(models.Application(id=appId, params=models.ApplicationParams(
-                    creator=txn.sender,
-                    approval_program=txn.approval_program,
-                    clear_state_program=txn.clear_program,
-                    local_state_schema=txn.local_schema,
-                    global_state_schema=txn.global_schema
-                )))
+                app_infos.append(
+                    models.Application(
+                        id=appId,
+                        params=models.ApplicationParams(
+                            creator=txn.sender,
+                            approval_program=txn.approval_program,
+                            clear_state_program=txn.clear_program,
+                            local_state_schema=txn.local_schema,
+                            global_state_schema=txn.global_schema,
+                        ),
+                    )
+                )
             else:
                 apps.append(txn.index)
-
 
     assets = [i for i in set(assets) if i]
     for asset in assets:
         asset_info = client.asset_info(asset)
-        accts.append(asset_info['params']['creator'])
+        accts.append(asset_info["params"]["creator"])
 
     apps = [i for i in set(apps) if i]
     for app in apps:
         app_info = client.application_info(app)
 
         # Need to pass bytes, not b64 string
-        app_info['params']['approval-program'] = base64.b64decode(app_info['params']['approval-program'])
-        app_info['params']['clear-state-program'] = base64.b64decode(app_info['params']['clear-state-program'])
+        app_info["params"]["approval-program"] = base64.b64decode(
+            app_info["params"]["approval-program"]
+        )
+        app_info["params"]["clear-state-program"] = base64.b64decode(
+            app_info["params"]["clear-state-program"]
+        )
 
         app_infos.append(app_info)
 
@@ -3118,5 +3130,5 @@ def create_dryrun(
         accounts=acct_infos,
         protocol_version=protocol_version,
         latest_timestamp=latest_timestamp,
-        round=round
+        round=round,
     )
