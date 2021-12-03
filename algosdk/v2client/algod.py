@@ -55,7 +55,12 @@ class AlgodClient:
         Returns:
             dict: loaded from json response body
         """
-        header = {}
+
+        header = {
+            'User-Agent':'py-algorand-sdk'
+        }
+
+
 
         if self.headers:
             header.update(self.headers)
@@ -65,6 +70,8 @@ class AlgodClient:
 
         if requrl not in constants.no_auth:
             header.update({constants.algod_auth_header: self.algod_token})
+
+        print(header)
 
         if requrl not in constants.unversioned_paths:
             requrl = api_version_path_prefix + requrl
