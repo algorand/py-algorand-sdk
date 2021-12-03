@@ -9,7 +9,7 @@ from .. import encoding
 from .. import error
 from .. import logic
 from .. import transaction
-from v2client import algod, models
+from ..v2client import algod, models
 from nacl.signing import SigningKey, VerifyKey
 from nacl.exceptions import BadSignatureError
 
@@ -3046,9 +3046,7 @@ def wait_for_confirmation(algod_client, txid, wait_rounds=0, **kwargs):
 
 def create_dryrun(
     client: algod.AlgodClient,
-    txns: List[
-        Union[transaction.SignedTransaction, transaction.LogicSigTransaction]
-    ],
+    txns: List[Union[SignedTransaction, LogicSigTransaction]],
     protocol_version=None,
     latest_timestamp=None,
     round=None,
@@ -3073,7 +3071,7 @@ def create_dryrun(
         txn = t.transaction
 
         # we only care about app call transactions
-        if type(txn) is transaction.ApplicationCallTxn:
+        if type(txn) is ApplicationCallTxn:
             accts.append(txn.sender)
 
             # Add foreign args if they're set
