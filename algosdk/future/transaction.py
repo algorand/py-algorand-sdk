@@ -3044,6 +3044,9 @@ def wait_for_confirmation(algod_client, txid, wait_rounds=0, **kwargs):
         current_round += 1
 
 
+defaultAppId = 1380011588
+
+
 def create_dryrun(
     client: algod.AlgodClient,
     txns: List[Union[SignedTransaction, LogicSigTransaction]],
@@ -3084,7 +3087,7 @@ def create_dryrun(
 
             # For creates, we need to add the source directly from the transaction
             if txn.index == 0:
-                appId = 1
+                appId = defaultAppId
                 # Make up app id, since tealdbg/dryrun doesnt like 0s
                 # https://github.com/algorand/go-algorand/blob/e466aa18d4d963868d6d15279b1c881977fa603f/libgoal/libgoal.go#L1089-L1090
                 app_infos.append(
