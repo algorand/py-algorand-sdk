@@ -19,8 +19,6 @@ Install dependencies
 
 Run tests
 * `make docker-test`
-* `make unit` (only unit tests)
-* `make integration` (only integration tests)
 
 Format code:
 * `black .`
