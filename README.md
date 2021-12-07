@@ -14,7 +14,16 @@ Alternatively, choose a [distribution file](https://pypi.org/project/py-algorand
 
 ## SDK Development
 
-Run tests with `make docker-test`
+Install dependencies
+* `pip install -r requirements.txt`
+
+Run tests
+* `make docker-test`
+* `make unit` (only unit tests)
+* `make integration` (only integration tests)
+
+Format code:
+* `black .`
 
 ## Quick start
 
