@@ -1,2 +1,3 @@
 .
 black==21.9b0
+git+https://github.com/behave/behave
