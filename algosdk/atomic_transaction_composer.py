@@ -51,6 +51,9 @@ class AtomicTransactionComposer:
     MAX_GROUP_SIZE = 16
     # The maximum number of app-args that can be individually packed for ABIs
     MAX_ABI_APP_ARG_LIMIT = 14
+    # The maximum number of foreign objects that can be associated per app
+    FOREIGN_ACCOUNT_LIMIT = 4
+    FOREIGN_ARRAY_LIMIT = 8
 
     def __init__(self) -> None:
         self.status = AtomicTransactionComposerStatus.BUILDING
@@ -128,6 +131,9 @@ class AtomicTransactionComposer:
         signer: "TransactionSigner",
         method_args: List[Union[Any, "TransactionWithSigner"]] = None,
         on_complete: transaction.OnComplete = transaction.OnComplete.NoOpOC,
+        accounts=None,
+        foreign_apps=None,
+        foreign_assets=None,
         note: bytes = None,
         lease: bytes = None,
         rekey_to: str = None,
@@ -150,6 +156,9 @@ class AtomicTransactionComposer:
                 or transactions that immediate precede this method call
             on_complete (OnComplete, optional): intEnum representing what app should do on completion
                 and if blank, it will default to a NoOp call
+            accounts (list[string], optional): list of additional accounts involved in call
+            foreign_apps (list[int], optional): list of other applications (identified by index) involved in call
+            foreign_assets (list[int], optional): list of assets involved in call
             note (bytes, optional): arbitrary optional bytes
             lease (byte[32], optional): specifies a lease, and no other transaction
                 with the same sender and lease can be confirmed in this
@@ -180,10 +189,15 @@ class AtomicTransactionComposer:
                 "application create call not supported"
             )
 
+        # Initialize foreign object maps
+        if not accounts:
+            accounts = []
+        if not foreign_apps:
+            foreign_apps = []
+        if not foreign_assets:
+            foreign_assets = []
+
         app_args = []
-        foreign_accounts = []
-        foreign_assets = []
-        foreign_apps = []
         # For more than 14 args, including the selector, compact them into a tuple
         additional_args = []
         additional_types = []
@@ -205,14 +219,30 @@ class AtomicTransactionComposer:
                 if arg.type in abi.method.FOREIGN_ARRAY_ARGS:
                     current_type = abi.UintType(8)
                     if arg.type == "account":
-                        current_arg = len(foreign_accounts) + 1
-                        foreign_accounts.append(method_args[i])
+                        account_arg = str(method_args[i])
+                        if account_arg == sender:
+                            current_arg = 0
+                        elif account_arg in accounts:
+                            current_arg = accounts.index(account_arg)
+                        else:
+                            current_arg = len(accounts) + 1
+                            accounts.append(account_arg)
                     elif arg.type == "asset":
-                        current_arg = len(foreign_assets)
-                        foreign_assets.append(method_args[i])
+                        asset_arg = int(method_args[i])
+                        if asset_arg in foreign_assets:
+                            current_arg = foreign_assets.index(asset_arg)
+                        else:
+                            current_arg = len(foreign_assets)
+                            foreign_assets.append(asset_arg)
                     elif arg.type == "application":
-                        current_arg = len(foreign_apps) + 1
-                        foreign_apps.append(method_args[i])
+                        app_arg = int(method_args[i])
+                        if app_arg == app_id:
+                            current_arg = 0
+                        elif app_arg in foreign_apps:
+                            current_arg = foreign_apps.index(app_arg)
+                        else:
+                            current_arg = len(foreign_apps) + 1
+                            foreign_apps.append(app_arg)
                     else:
                         # Shouldn't reach this line unless someone accidentally
                         # adds another foreign array arg
@@ -224,7 +254,7 @@ class AtomicTransactionComposer:
                 else:
                     current_type = arg.type
                     current_arg = method_args[i]
-                if len(app_args) > 14:
+                if len(app_args) > self.MAX_ABI_APP_ARG_LIMIT:
                     # Pack the remaining values as a tuple
                     additional_types.append(current_type)
                     additional_args.append(current_arg)
@@ -232,6 +262,11 @@ class AtomicTransactionComposer:
                     encoded_arg = current_type.encode(current_arg)
                     app_args.append(encoded_arg)
 
+        if len(accounts) > self.FOREIGN_ACCOUNT_LIMIT:
+            raise error.AtomicTransactionComposerError("foreign accounts exceed app limit {}".format(self.FOREIGN_ACCOUNT_LIMIT))
+        if len(accounts) + len(foreign_apps) + len(foreign_assets) > self.FOREIGN_ARRAY_LIMIT:
+            raise error.AtomicTransactionComposerError("foreign object array exceedd app limit {}".format(self.FOREIGN_ARRAY_LIMIT))
+        
         if additional_args:
             remainder_args = abi.TupleType(additional_types).encode(
                 additional_args
@@ -245,7 +280,7 @@ class AtomicTransactionComposer:
             index=app_id,
             on_complete=on_complete,
             app_args=app_args,
-            accounts=foreign_accounts,
+            accounts=accounts,
             foreign_apps=foreign_apps,
             foreign_assets=foreign_assets,
             note=note,
