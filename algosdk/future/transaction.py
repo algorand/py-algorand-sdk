@@ -3109,23 +3109,29 @@ def create_dryrun(
     apps = [i for i in set(apps) if i]
     for app in apps:
         app_info = client.application_info(app)
-
         # Need to pass bytes, not b64 string
         app_info = decode_programs(app_info)
-
         app_infos.append(app_info)
+
+        # Make sure the application account is in the accounts array
+        accts.append(logic.get_application_address(app))
 
     # Dedupe and filter None, add asset creator to accounts to include in dryrun
     assets = [i for i in set(assets) if i]
     for asset in assets:
         asset_info = client.asset_info(asset)
+
+        # Make sure the asset creator address is in the accounts array
         accts.append(asset_info["params"]["creator"])
 
     # Dedupe and filter None, fetch and add account info
     accts = [i for i in set(accts) if i]
     for acct in accts:
         acct_info = client.account_info(acct)
-        acct_info['created-apps'] = [decode_programs(ca) for ca in acct_info['created-apps']]
+        if "created-apps" in acct_info:
+            acct_info["created-apps"] = [
+                decode_programs(ca) for ca in acct_info["created-apps"]
+            ]
         acct_infos.append(acct_info)
 
     return models.DryrunRequest(
@@ -3137,7 +3143,12 @@ def create_dryrun(
         round=round,
     )
 
+
 def decode_programs(app):
-    app['params']['approval-program'] = base64.b64decode(app['params']['approval-program'])
-    app['params']['clear-state-program'] = base64.b64decode(app['params']['clear-state-program'])
+    app["params"]["approval-program"] = base64.b64decode(
+        app["params"]["approval-program"]
+    )
+    app["params"]["clear-state-program"] = base64.b64decode(
+        app["params"]["clear-state-program"]
+    )
     return app
