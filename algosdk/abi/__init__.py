@@ -8,8 +8,10 @@ from algosdk.abi.string_type import StringType
 from algosdk.abi.array_dynamic_type import ArrayDynamicType
 from algosdk.abi.array_static_type import ArrayStaticType
 from algosdk.abi.tuple_type import TupleType
-from .method import Method, Argument, Returns
-from .interface import Interface
-from .contract import Contract
+from algosdk.abi.method import Method, Argument, Returns
+from algosdk.abi.interface import Interface
+from algosdk.abi.contract import Contract
+from algosdk.abi.transaction import ABITransactionType, is_abi_transaction_type
+from algosdk.abi.reference import ABIReferenceType, is_abi_reference_type
 
 name = "abi"

@@ -5,7 +5,6 @@ from enum import IntEnum
 from typing import Any, List, Union
 
 from algosdk import abi, error
-from algosdk.abi.base_type import ABIType
 from algosdk.future import transaction
 from algosdk.v2client import algod
 
@@ -50,7 +49,7 @@ class AtomicTransactionComposer:
     # The maximum size of an atomic transaction group.
     MAX_GROUP_SIZE = 16
     # The maximum number of app-args that can be individually packed for ABIs
-    MAX_ABI_APP_ARG_LIMIT = 14
+    MAX_APP_ARG_LIMIT = 16
     # The maximum number of foreign objects that can be associated per app
     FOREIGN_ACCOUNT_LIMIT = 4
     FOREIGN_ARRAY_LIMIT = 8
@@ -125,15 +124,15 @@ class AtomicTransactionComposer:
     def add_method_call(
         self,
         app_id: int,
-        method: abi.method.Method,
+        method: abi.Method,
         sender: str,
         sp: transaction.SuggestedParams,
         signer: "TransactionSigner",
         method_args: List[Union[Any, "TransactionWithSigner"]] = None,
         on_complete: transaction.OnComplete = transaction.OnComplete.NoOpOC,
-        accounts=None,
-        foreign_apps=None,
-        foreign_assets=None,
+        accounts: List[str] = None,
+        foreign_apps: List[int] = None,
+        foreign_assets: List[int] = None,
         note: bytes = None,
         lease: bytes = None,
         rekey_to: str = None,
@@ -180,7 +179,7 @@ class AtomicTransactionComposer:
             raise error.AtomicTransactionComposerError(
                 "number of method arguments do not match the method signature"
             )
-        if not isinstance(method, abi.method.Method):
+        if not isinstance(method, abi.Method):
             raise error.AtomicTransactionComposerError(
                 "invalid Method object was passed into AtomicTransactionComposer"
             )
@@ -198,16 +197,15 @@ class AtomicTransactionComposer:
             foreign_assets = []
 
         app_args = []
-        # For more than 14 args, including the selector, compact them into a tuple
-        additional_args = []
-        additional_types = []
+        raw_values = []
+        raw_types = []
         txn_list = []
         # First app arg must be the selector of the method
         app_args.append(method.get_selector())
         # Iterate through the method arguments and either pack a transaction
         # or encode a ABI value.
         for i, arg in enumerate(method.args):
-            if arg.type in abi.method.TRANSACTION_ARGS:
+            if abi.is_abi_transaction_type(arg.type):
                 if not isinstance(method_args[i], TransactionWithSigner):
                     raise error.AtomicTransactionComposerError(
                         "expected TransactionWithSigner as method argument, but received: {}".format(
@@ -216,7 +214,7 @@ class AtomicTransactionComposer:
                     )
                 txn_list.append(method_args[i])
             else:
-                if arg.type in abi.method.FOREIGN_ARRAY_ARGS:
+                if abi.is_abi_reference_type(arg.type):
                     current_type = abi.UintType(8)
                     if arg.type == "account":
                         account_arg = str(method_args[i])
@@ -254,24 +252,38 @@ class AtomicTransactionComposer:
                 else:
                     current_type = arg.type
                     current_arg = method_args[i]
-                if len(app_args) > self.MAX_ABI_APP_ARG_LIMIT:
-                    # Pack the remaining values as a tuple
-                    additional_types.append(current_type)
-                    additional_args.append(current_arg)
-                else:
-                    encoded_arg = current_type.encode(current_arg)
-                    app_args.append(encoded_arg)
+
+                raw_types.append(current_type)
+                raw_values.append(current_arg)
 
         if len(accounts) > self.FOREIGN_ACCOUNT_LIMIT:
-            raise error.AtomicTransactionComposerError("foreign accounts exceed app limit {}".format(self.FOREIGN_ACCOUNT_LIMIT))
-        if len(accounts) + len(foreign_apps) + len(foreign_assets) > self.FOREIGN_ARRAY_LIMIT:
-            raise error.AtomicTransactionComposerError("foreign object array exceedd app limit {}".format(self.FOREIGN_ARRAY_LIMIT))
-        
-        if additional_args:
-            remainder_args = abi.TupleType(additional_types).encode(
-                additional_args
+            raise error.AtomicTransactionComposerError(
+                "foreign accounts exceed app limit {}".format(
+                    self.FOREIGN_ACCOUNT_LIMIT
+                )
             )
-            app_args.append(remainder_args)
+        if (
+            len(accounts) + len(foreign_apps) + len(foreign_assets)
+            > self.FOREIGN_ARRAY_LIMIT
+        ):
+            raise error.AtomicTransactionComposerError(
+                "foreign object array exceeds app limit {}".format(
+                    self.FOREIGN_ARRAY_LIMIT
+                )
+            )
+
+        # Compact the arguments into a single tuple, if there are more than
+        # 15 arguments excluding the selector, into the last app arg slot.
+        if len(raw_types) > self.MAX_APP_ARG_LIMIT - 1:
+            additional_types = raw_types[14:]
+            additional_values = raw_values[14:]
+            raw_types = raw_types[:14]
+            raw_values = raw_values[:14]
+            raw_types.append(abi.TupleType(additional_types))
+            raw_values.append(additional_values)
+
+        for i, arg_type in enumerate(raw_types):
+            app_args.append(arg_type.encode(raw_values[i]))
 
         # Create a method call transaction
         method_txn = transaction.ApplicationCallTxn(
