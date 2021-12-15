@@ -3111,12 +3111,7 @@ def create_dryrun(
         app_info = client.application_info(app)
 
         # Need to pass bytes, not b64 string
-        app_info["params"]["approval-program"] = base64.b64decode(
-            app_info["params"]["approval-program"]
-        )
-        app_info["params"]["clear-state-program"] = base64.b64decode(
-            app_info["params"]["clear-state-program"]
-        )
+        app_info = decode_programs(app_info)
 
         app_infos.append(app_info)
 
@@ -3129,7 +3124,9 @@ def create_dryrun(
     # Dedupe and filter None, fetch and add account info
     accts = [i for i in set(accts) if i]
     for acct in accts:
-        acct_infos.append(client.account_info(acct))
+        acct_info = client.account_info(acct)
+        acct_info['created-apps'] = [decode_programs(ca) for ca in acct_info['created-apps']]
+        acct_infos.append(acct_info)
 
     return models.DryrunRequest(
         txns=txns,
@@ -3139,3 +3136,8 @@ def create_dryrun(
         latest_timestamp=latest_timestamp,
         round=round,
     )
+
+def decode_programs(app):
+    app['params']['approval-program'] = base64.b64decode(app['params']['approval-program'])
+    app['params']['clear-state-program'] = base64.b64decode(app['params']['clear-state-program'])
+    return app
