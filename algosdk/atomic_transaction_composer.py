@@ -130,6 +130,11 @@ class AtomicTransactionComposer:
         signer: "TransactionSigner",
         method_args: List[Union[Any, "TransactionWithSigner"]] = None,
         on_complete: transaction.OnComplete = transaction.OnComplete.NoOpOC,
+        local_schema: transaction.StateSchema = None,
+        global_schema: transaction.StateSchema = None,
+        approval_program: bytes = None,
+        clear_program: bytes = None,
+        extra_pages: int = None,
         accounts: List[str] = None,
         foreign_apps: List[int] = None,
         foreign_assets: List[int] = None,
@@ -155,6 +160,16 @@ class AtomicTransactionComposer:
                 or transactions that immediate precede this method call
             on_complete (OnComplete, optional): intEnum representing what app should do on completion
                 and if blank, it will default to a NoOp call
+            local_schema (StateSchema, optional): restricts what can be stored by created application;
+                must be omitted if not creating an application
+            global_schema (StateSchema, optional): restricts what can be stored by created application;
+                must be omitted if not creating an application
+            approval_program (bytes, optional): the program to run on transaction approval;
+                must be omitted if not creating or updating an application
+            clear_program (bytes, optional): the program to run when state is being cleared;
+                must be omitted if not creating or updating an application
+            extra_pages (int, optional): additional program space for supporting larger programs.
+                A page is 1024 bytes.
             accounts (list[string], optional): list of additional accounts involved in call
             foreign_apps (list[int], optional): list of other applications (identified by index) involved in call
             foreign_assets (list[int], optional): list of assets involved in call
@@ -173,6 +188,35 @@ class AtomicTransactionComposer:
             raise error.AtomicTransactionComposerError(
                 "AtomicTransactionComposer cannot exceed MAX_GROUP_SIZE transactions"
             )
+        if app_id == 0:
+            if (
+                not approval_program
+                or not clear_program
+                or not local_schema
+                or not global_schema
+            ):
+                raise error.AtomicTransactionComposerError(
+                    "One of the following required parameters for application creation is missing: approvalProgram, clearProgram, numGlobalInts, numGlobalByteSlices, numLocalInts, numLocalByteSlices"
+                )
+        elif on_complete == transaction.OnComplete.UpdateApplicationOC:
+            if not approval_program or not clear_program:
+                raise error.AtomicTransactionComposerError(
+                    "One of the following required parameters for OnApplicationComplete.UpdateApplicationOC is missing: approvalProgram, clearProgram"
+                )
+            if local_schema or global_schema or extra_pages:
+                raise error.AtomicTransactionComposerError(
+                    "One of the following application creation parameters were set on a non-creation call: numGlobalInts, numGlobalByteSlices, numLocalInts, numLocalByteSlices, extraPages"
+                )
+        elif (
+            approval_program
+            or clear_program
+            or local_schema
+            or global_schema
+            or extra_pages
+        ):
+            raise error.AtomicTransactionComposerError(
+                "One of the following application creation parameters were set on a non-creation call: approvalProgram, clearProgram, numGlobalInts, numGlobalByteSlices, numLocalInts, numLocalByteSlices, extraPages"
+            )
         if not method_args:
             method_args = []
         if len(method.args) != len(method_args):
@@ -182,10 +226,6 @@ class AtomicTransactionComposer:
         if not isinstance(method, abi.Method):
             raise error.AtomicTransactionComposerError(
                 "invalid Method object was passed into AtomicTransactionComposer"
-            )
-        if app_id == 0:
-            raise error.AtomicTransactionComposerError(
-                "application create call not supported"
             )
 
         # Initialize foreign object maps
@@ -216,28 +256,28 @@ class AtomicTransactionComposer:
             else:
                 if abi.is_abi_reference_type(arg.type):
                     current_type = abi.UintType(8)
-                    if arg.type == "account":
+                    if arg.type == abi.ABIReferenceType.ACCOUNT:
                         account_arg = str(method_args[i])
                         if account_arg == sender:
                             current_arg = 0
                         elif account_arg in accounts:
-                            current_arg = accounts.index(account_arg)
+                            current_arg = accounts.index(account_arg) + 1
                         else:
                             current_arg = len(accounts) + 1
                             accounts.append(account_arg)
-                    elif arg.type == "asset":
+                    elif arg.type == abi.ABIReferenceType.ASSET:
                         asset_arg = int(method_args[i])
                         if asset_arg in foreign_assets:
                             current_arg = foreign_assets.index(asset_arg)
                         else:
                             current_arg = len(foreign_assets)
                             foreign_assets.append(asset_arg)
-                    elif arg.type == "application":
+                    elif arg.type == abi.ABIReferenceType.APPLICATION:
                         app_arg = int(method_args[i])
                         if app_arg == app_id:
                             current_arg = 0
                         elif app_arg in foreign_apps:
-                            current_arg = foreign_apps.index(app_arg)
+                            current_arg = foreign_apps.index(app_arg) + 1
                         else:
                             current_arg = len(foreign_apps) + 1
                             foreign_apps.append(app_arg)
@@ -291,6 +331,10 @@ class AtomicTransactionComposer:
             sp=sp,
             index=app_id,
             on_complete=on_complete,
+            local_schema=local_schema,
+            global_schema=global_schema,
+            approval_program=approval_program,
+            clear_program=clear_program,
             app_args=app_args,
             accounts=accounts,
             foreign_apps=foreign_apps,
@@ -298,6 +342,7 @@ class AtomicTransactionComposer:
             note=note,
             lease=lease,
             rekey_to=rekey_to,
+            extra_pages=extra_pages,
         )
         txn_with_signer = TransactionWithSigner(method_txn, signer)
         txn_list.append(txn_with_signer)
@@ -322,11 +367,12 @@ class AtomicTransactionComposer:
             )
 
         # Get group transaction id
-        group_txns = [t.txn for t in self.txn_list]
-        group_id = transaction.calculate_group_id(group_txns)
-        for t in self.txn_list:
-            t.txn.group = group_id
-            self.tx_ids.append(t.txn.get_txid())
+        if len(self.txn_list) > 1:
+            group_txns = [t.txn for t in self.txn_list]
+            group_id = transaction.calculate_group_id(group_txns)
+            for t in self.txn_list:
+                t.txn.group = group_id
+                self.tx_ids.append(t.txn.get_txid())
 
         self.status = AtomicTransactionComposerStatus.BUILT
         return self.txn_list
@@ -460,17 +506,24 @@ class AtomicTransactionComposer:
                 logs = resp["logs"] if "logs" in resp else []
 
                 # Look for the last returned value in the log
-                for result in reversed(logs):
-                    # Check that the first four bytes is the hash of "return"
-                    result_bytes = base64.b64decode(result)
-                    if result_bytes[:4] != ABI_RETURN_HASH:
-                        continue
-                    raw_value = result_bytes[4:]
-                    return_value = self.method_dict[i].returns.type.decode(
-                        raw_value
+                if not logs:
+                    raise error.AtomicTransactionComposerError(
+                        "app call transaction did not log a return value"
                     )
-                    decode_error = None
-                    break
+                result = logs[-1]
+                # Check that the first four bytes is the hash of "return"
+                result_bytes = base64.b64decode(result)
+                if (
+                    len(result_bytes) < 4
+                    or result_bytes[:4] != ABI_RETURN_HASH
+                ):
+                    raise error.AtomicTransactionComposerError(
+                        "app call transaction did not log a return value"
+                    )
+                raw_value = result_bytes[4:]
+                return_value = self.method_dict[i].returns.type.decode(
+                    raw_value
+                )
             except Exception as e:
                 decode_error = e
 
