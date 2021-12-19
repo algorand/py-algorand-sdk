@@ -3074,7 +3074,7 @@ def create_dryrun(
         txn = t.transaction
 
         # we only care about app call transactions
-        if type(txn) is ApplicationCallTxn:
+        if issubclass(type(txn), ApplicationCallTxn):
             accts.append(txn.sender)
 
             # Add foreign args if they're set
