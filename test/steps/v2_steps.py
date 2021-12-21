@@ -1966,7 +1966,7 @@ def build_app_txn_with_transient(
         app_accounts = [
             account_pubkey for account_pubkey in app_accounts.split(",")
         ]
-    
+
     sp = context.app_acl.suggested_params()
     context.app_transaction = transaction.ApplicationCallTxn(
         sender=context.transient_pk,
