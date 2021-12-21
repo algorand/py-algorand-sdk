@@ -189,14 +189,9 @@ class AtomicTransactionComposer:
                 "AtomicTransactionComposer cannot exceed MAX_GROUP_SIZE transactions"
             )
         if app_id == 0:
-            if (
-                not approval_program
-                or not clear_program
-                or not local_schema
-                or not global_schema
-            ):
+            if not approval_program or not clear_program:
                 raise error.AtomicTransactionComposerError(
-                    "One of the following required parameters for application creation is missing: approvalProgram, clearProgram, numGlobalInts, numGlobalByteSlices, numLocalInts, numLocalByteSlices"
+                    "One of the following required parameters for application creation is missing: approvalProgram, clearProgram"
                 )
         elif on_complete == transaction.OnComplete.UpdateApplicationOC:
             if not approval_program or not clear_program:
@@ -373,6 +368,8 @@ class AtomicTransactionComposer:
             for t in self.txn_list:
                 t.txn.group = group_id
                 self.tx_ids.append(t.txn.get_txid())
+        else:
+            self.tx_ids.append(self.txn_list[0].txn.get_txid())
 
         self.status = AtomicTransactionComposerStatus.BUILT
         return self.txn_list
