@@ -2727,11 +2727,11 @@ def check_method_selector(context, method_selector):
 
 
 @when(
-    'I create an Interface object from the Method object with name "{interface_name}"'
+    'I create an Interface object from the Method object with name "{interface_name}" and description "{description}"'
 )
-def create_interface_object(context, interface_name):
+def create_interface_object(context, interface_name, description):
     context.abi_interface = abi.Interface(
-        name=interface_name, methods=[context.abi_method]
+        name=interface_name, desc=description, methods=[context.abi_method]
     )
 
 
@@ -2747,12 +2747,19 @@ def deserialize_json_to_interface(context):
 
 
 @when(
-    'I create a Contract object from the Method object with name "{contract_name}" and appId {app_id}'
+    'I create a Contract object from the Method object with name "{contract_name}" and description "{description}"'
 )
-def create_contract_object(context, contract_name, app_id):
+def create_contract_object(context, contract_name, description):
     context.abi_contract = abi.Contract(
-        name=contract_name, app_id=app_id, methods=[context.abi_method]
+        name=contract_name, desc=description, methods=[context.abi_method]
     )
+
+
+@when('I set the Contract\'s appID to {app_id} for the network "{network_id}"')
+def set_contract_networks(context, app_id, network_id):
+    if not context.abi_contract.networks:
+        context.abi_contract.networks = {}
+    context.abi_contract.networks[network_id] = {"appID": int(app_id)}
 
 
 @when("I serialize the Contract object into json")

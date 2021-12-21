@@ -6,19 +6,6 @@ from Cryptodome.Hash import SHA512
 from algosdk import abi, constants, error
 
 
-TRANSACTION_ARGS = (
-    "txn",  # Denotes a placeholder for any of the six transaction types below
-    constants.PAYMENT_TXN,
-    constants.KEYREG_TXN,
-    constants.ASSETCONFIG_TXN,
-    constants.ASSETTRANSFER_TXN,
-    constants.ASSETFREEZE_TXN,
-    constants.APPCALL_TXN,
-)
-
-FOREIGN_ARRAY_ARGS = ("account", "asset", "application")
-
-
 class Method:
     """
     Represents a ABI method description.
@@ -46,7 +33,7 @@ class Method:
         # add one for this method call itself.
         txn_count = 1
         for arg in self.args:
-            if arg.type in TRANSACTION_ARGS:
+            if abi.is_abi_transaction_type(arg.type):
                 txn_count += 1
         self.txn_calls = txn_count
 
@@ -152,7 +139,9 @@ class Argument:
     def __init__(
         self, arg_type: str, name: str = None, desc: str = None
     ) -> None:
-        if arg_type in TRANSACTION_ARGS or arg_type in FOREIGN_ARRAY_ARGS:
+        if abi.is_abi_transaction_type(arg_type) or abi.is_abi_reference_type(
+            arg_type
+        ):
             self.type = arg_type
         else:
             # If the type cannot be parsed into an ABI type, it will error
