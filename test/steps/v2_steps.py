@@ -1915,9 +1915,16 @@ def build_app_txn_with_transient(
     app_accounts,
     extra_pages,
 ):
+    application_id = 0
     if operation == "none":
         operation = None
     else:
+        if (
+            hasattr(context, "current_application_id")
+            and context.current_application_id
+            and operation != "create"
+        ):
+            application_id = context.current_application_id
         operation = operation_string_to_enum(operation)
     dir_path = os.path.dirname(os.path.realpath(__file__))
     dir_path = os.path.dirname(os.path.dirname(dir_path))
@@ -1959,12 +1966,7 @@ def build_app_txn_with_transient(
         app_accounts = [
             account_pubkey for account_pubkey in app_accounts.split(",")
         ]
-    application_id = 0
-    if (
-        hasattr(context, "current_application_id")
-        and context.current_application_id
-    ):
-        application_id = context.current_application_id
+    
     sp = context.app_acl.suggested_params()
     context.app_transaction = transaction.ApplicationCallTxn(
         sender=context.transient_pk,
@@ -2343,6 +2345,7 @@ def create_atomic_transaction_composer(context):
     context.atomic_transaction_composer = (
         atomic_transaction_composer.AtomicTransactionComposer()
     )
+    context.method_list = []
 
 
 @given("I make a transaction signer for the transient account.")
@@ -2371,6 +2374,7 @@ def create_transaction_signer(context, account_type):
 @step('I create the Method object from method signature "{method_signature}"')
 def build_abi_method(context, method_signature):
     context.abi_method = abi.Method.from_signature(method_signature)
+    context.method_list.append(context.abi_method)
 
 
 @step("I create a transaction with signer with the current transaction.")
@@ -2665,7 +2669,7 @@ def check_atomic_transaction_composer_response(context, returns):
                 assert result.decode_error is None
                 continue
             expected_bytes = base64.b64decode(expected)
-            expected_value = context.abi_method.returns.type.decode(
+            expected_value = context.method_list[i].returns.type.decode(
                 expected_bytes
             )
 
