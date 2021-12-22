@@ -2374,6 +2374,8 @@ def create_transaction_signer(context, account_type):
 @step('I create the Method object from method signature "{method_signature}"')
 def build_abi_method(context, method_signature):
     context.abi_method = abi.Method.from_signature(method_signature)
+    if not hasattr(context, "method_list"):
+        context.method_list = []
     context.method_list.append(context.abi_method)
 
 
