@@ -2146,6 +2146,15 @@ def compile_check_step(context, status, result, hash):
     assert context.response["hash"] == hash
 
 
+@then(
+    'base64 decoding the response "{result:MaybeString}" is the same as the binary "{program:MaybeString}"'
+)
+def b64decode_compiled_teal_step(context, result, program):
+    binary = load_resource(program)
+    assert result == context.response["result"]
+    assert base64.b64decode(result.encode()) == binary
+
+
 @when('I dryrun a "{kind}" program "{program}"')
 def dryrun_step(context, kind, program):
     data = load_resource(program)
