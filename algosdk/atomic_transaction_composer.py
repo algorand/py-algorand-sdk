@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import base64
 import copy
 from enum import IntEnum
-from typing import Any, List, Union
+from typing import Any, List, TypeVar, Union
 
 from algosdk import abi, error
 from algosdk.abi.address_type import AddressType
@@ -11,6 +11,8 @@ from algosdk.v2client import algod
 
 # The first four bytes of an ABI method call return must have this hash
 ABI_RETURN_HASH = b"\x15\x1f\x7c\x75"
+# Support for generic typing
+T = TypeVar("T")
 
 
 class AtomicTransactionComposerStatus(IntEnum):
@@ -35,7 +37,7 @@ class AtomicTransactionComposerStatus(IntEnum):
 
 
 def populate_foreign_array(
-    value_to_add: Any, foreign_array: List[Any], zero_value: Any = None
+    value_to_add: T, foreign_array: List[T], zero_value: T = None
 ) -> int:
     """
     Add a value to an application call's foreign array. The addition will be as
@@ -83,9 +85,6 @@ class AtomicTransactionComposer:
     MAX_GROUP_SIZE = 16
     # The maximum number of app-args that can be individually packed for ABIs
     MAX_APP_ARG_LIMIT = 16
-    # The maximum number of foreign objects that can be associated per app
-    FOREIGN_ACCOUNT_LIMIT = 4
-    FOREIGN_ARRAY_LIMIT = 8
 
     def __init__(self) -> None:
         self.status = AtomicTransactionComposerStatus.BUILDING

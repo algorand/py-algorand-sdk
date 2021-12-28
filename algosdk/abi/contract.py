@@ -26,7 +26,7 @@ class Contract:
         self.name = name
         self.methods = methods
         self.desc = desc
-        self.networks = networks
+        self.networks = networks if networks else {}
 
     def __eq__(self, o: object) -> bool:
         if not isinstance(o, Contract):
@@ -46,9 +46,9 @@ class Contract:
     def dictify(self) -> dict:
         d = {}
         d["name"] = self.name
-        d["desc"] = self.desc
-        d["networks"] = self.networks
         d["methods"] = [m.dictify() for m in self.methods]
+        d["desc"] = self.desc
+        d["networks"] = {k: v.dictify() for k, v in self.networks.items()}
         return d
 
     @staticmethod
