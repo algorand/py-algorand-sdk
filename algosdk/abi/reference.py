@@ -1,3 +1,6 @@
+from typing import Any
+
+
 class ABIReferenceType:
     # Account reference type
     ACCOUNT = "account"
@@ -9,7 +12,7 @@ class ABIReferenceType:
     ASSET = "asset"
 
 
-def is_abi_reference_type(t: "ABIReferenceType") -> bool:
+def is_abi_reference_type(t: Any) -> bool:
     return t in (
         ABIReferenceType.ACCOUNT,
         ABIReferenceType.APPLICATION,
