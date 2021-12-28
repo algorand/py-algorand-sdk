@@ -34,6 +34,38 @@ class AtomicTransactionComposerStatus(IntEnum):
     COMMITTED = 4
 
 
+def populate_foreign_array(
+    value_to_add: Any, foreign_array: List[Any], zero_value: Any = None
+) -> int:
+    """
+    Add a value to an application call's foreign array. The addition will be as
+    compact as possible, and this function will return an index used to
+    reference `value_to_add` in the `foreign_array`.
+
+    Args:
+        value_to_add: value to add to the array. If the value is already
+            present, it will not be added again. Instead, the existing index
+            will be returned.
+        foreign_array: the existing foreign array. This input may be modified
+            to append `value_to_add`.
+        zero_value: If provided, this value indicates two things: the 0 value is
+            reserved for this array so `foreign_array` must start at index 1;
+            additionally, if `value_to_add` equals `zero_value`, then
+            `value_to_add` will not be added to the array and the 0 index will
+            be returned.
+    """
+    if zero_value and value_to_add == zero_value:
+        return 0
+
+    offset = 0 if not zero_value else 1
+
+    if value_to_add in foreign_array:
+        return foreign_array.index(value_to_add) + offset
+
+    foreign_array.append(value_to_add)
+    return offset + len(foreign_array) - 1
+
+
 class AtomicTransactionComposer:
     """
     Constructs an atomic transaction group which may contain a combination of
@@ -260,29 +292,19 @@ class AtomicTransactionComposer:
                         account_arg = address_type.decode(
                             address_type.encode(method_args[i])
                         )
-                        if account_arg == sender:
-                            current_arg = 0
-                        elif account_arg in accounts:
-                            current_arg = accounts.index(account_arg) + 1
-                        else:
-                            current_arg = len(accounts) + 1
-                            accounts.append(account_arg)
+                        current_arg = populate_foreign_array(
+                            account_arg, accounts, sender
+                        )
                     elif arg.type == abi.ABIReferenceType.ASSET:
                         asset_arg = int(method_args[i])
-                        if asset_arg in foreign_assets:
-                            current_arg = foreign_assets.index(asset_arg)
-                        else:
-                            current_arg = len(foreign_assets)
-                            foreign_assets.append(asset_arg)
+                        current_arg = populate_foreign_array(
+                            asset_arg, foreign_assets
+                        )
                     elif arg.type == abi.ABIReferenceType.APPLICATION:
                         app_arg = int(method_args[i])
-                        if app_arg == app_id:
-                            current_arg = 0
-                        elif app_arg in foreign_apps:
-                            current_arg = foreign_apps.index(app_arg) + 1
-                        else:
-                            current_arg = len(foreign_apps) + 1
-                            foreign_apps.append(app_arg)
+                        current_arg = populate_foreign_array(
+                            app_arg, foreign_apps, app_id
+                        )
                     else:
                         # Shouldn't reach this line unless someone accidentally
                         # adds another foreign array arg
