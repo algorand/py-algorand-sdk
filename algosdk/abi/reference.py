@@ -9,7 +9,7 @@ class ABIReferenceType:
     ASSET = "asset"
 
 
-def is_abi_reference_type(t):
+def is_abi_reference_type(t: "ABIReferenceType") -> bool:
     return t in (
         ABIReferenceType.ACCOUNT,
         ABIReferenceType.APPLICATION,

@@ -5,6 +5,7 @@ from enum import IntEnum
 from typing import Any, List, Union
 
 from algosdk import abi, error
+from algosdk.abi.address_type import AddressType
 from algosdk.future import transaction
 from algosdk.v2client import algod
 
@@ -224,24 +225,27 @@ class AtomicTransactionComposer:
             )
 
         # Initialize foreign object maps
-        if not accounts:
-            accounts = []
-        if not foreign_apps:
-            foreign_apps = []
-        if not foreign_assets:
-            foreign_assets = []
+        accounts = accounts[:] if accounts else []
+        foreign_apps = foreign_apps[:] if foreign_apps else []
+        foreign_assets = foreign_assets[:] if foreign_assets else []
 
         app_args = []
         raw_values = []
         raw_types = []
         txn_list = []
+
         # First app arg must be the selector of the method
         app_args.append(method.get_selector())
+
         # Iterate through the method arguments and either pack a transaction
         # or encode a ABI value.
         for i, arg in enumerate(method.args):
             if abi.is_abi_transaction_type(arg.type):
-                if not isinstance(method_args[i], TransactionWithSigner):
+                if not isinstance(
+                    method_args[i], TransactionWithSigner
+                ) or not abi.check_abi_transaction_type(
+                    arg.type, method_args[i].txn
+                ):
                     raise error.AtomicTransactionComposerError(
                         "expected TransactionWithSigner as method argument, but received: {}".format(
                             method_args[i]
@@ -252,7 +256,10 @@ class AtomicTransactionComposer:
                 if abi.is_abi_reference_type(arg.type):
                     current_type = abi.UintType(8)
                     if arg.type == abi.ABIReferenceType.ACCOUNT:
-                        account_arg = str(method_args[i])
+                        address_type = AddressType()
+                        account_arg = address_type.decode(
+                            address_type.encode(method_args[i])
+                        )
                         if account_arg == sender:
                             current_arg = 0
                         elif account_arg in accounts:
@@ -291,29 +298,13 @@ class AtomicTransactionComposer:
                 raw_types.append(current_type)
                 raw_values.append(current_arg)
 
-        if len(accounts) > self.FOREIGN_ACCOUNT_LIMIT:
-            raise error.AtomicTransactionComposerError(
-                "foreign accounts exceed app limit {}".format(
-                    self.FOREIGN_ACCOUNT_LIMIT
-                )
-            )
-        if (
-            len(accounts) + len(foreign_apps) + len(foreign_assets)
-            > self.FOREIGN_ARRAY_LIMIT
-        ):
-            raise error.AtomicTransactionComposerError(
-                "foreign object array exceeds app limit {}".format(
-                    self.FOREIGN_ARRAY_LIMIT
-                )
-            )
-
         # Compact the arguments into a single tuple, if there are more than
         # 15 arguments excluding the selector, into the last app arg slot.
         if len(raw_types) > self.MAX_APP_ARG_LIMIT - 1:
-            additional_types = raw_types[14:]
-            additional_values = raw_values[14:]
-            raw_types = raw_types[:14]
-            raw_values = raw_values[:14]
+            additional_types = raw_types[self.MAX_APP_ARG_LIMIT - 2 :]
+            additional_values = raw_values[self.MAX_APP_ARG_LIMIT - 2 :]
+            raw_types = raw_types[: self.MAX_APP_ARG_LIMIT - 2]
+            raw_values = raw_values[: self.MAX_APP_ARG_LIMIT - 2]
             raw_types.append(abi.TupleType(additional_types))
             raw_values.append(additional_values)
 
@@ -469,6 +460,8 @@ class AtomicTransactionComposer:
             )
 
         self.submit(client)
+        self.status = AtomicTransactionComposerStatus.SUBMITTED
+
         resp = transaction.wait_for_confirmation(
             client, self.tx_ids[0], wait_rounds
         )
