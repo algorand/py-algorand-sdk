@@ -5,6 +5,7 @@ import urllib
 import unittest
 from datetime import datetime
 from urllib.request import Request, urlopen
+from algosdk.abi.contract import NetworkInfo
 
 import parse
 from behave import (
@@ -2809,7 +2810,7 @@ def create_contract_object(context, contract_name, description):
 def set_contract_networks(context, app_id, network_id):
     if not context.abi_contract.networks:
         context.abi_contract.networks = {}
-    context.abi_contract.networks[network_id] = {"appID": int(app_id)}
+    context.abi_contract.networks[network_id] = NetworkInfo(int(app_id))
 
 
 @when("I serialize the Contract object into json")
