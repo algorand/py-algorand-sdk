@@ -40,6 +40,9 @@ from test.steps.steps import token as daemon_token
 from test.steps.steps import algod_port
 
 
+########### TYPE REGISTRY ############
+
+
 @parse.with_pattern(r".*")
 def parse_string(text):
     return text
@@ -56,6 +59,55 @@ def parse_bool(value):
 
 
 register_type(MaybeBool=parse_bool)
+
+
+########### HELPERS ############
+
+
+def load_resource(res, is_binary=True):
+    """load data from features/resources"""
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    path = os.path.join(dir_path, "..", "features", "resources", res)
+    filemode = "rb" if is_binary else "r"
+    with open(path, filemode) as fin:
+        data = fin.read()
+    return data
+
+
+def read_program_binary(path):
+    return bytearray(load_resource(path))
+
+
+def read_program(context, path):
+    """
+    Assumes that have already added `context.app_acl` so need to have already
+    called one of the steps "Given an algod v2 client..."
+    """
+    if path.endswith(".teal"):
+        teal = load_resource(path, is_binary=False)
+        resp = context.app_acl.compile(teal)
+        return base64.b64decode(resp["result"])
+
+    return read_program_binary(path)
+
+
+def validate_error(context, err):
+    if context.expected_status_code != 200:
+        if context.expected_status_code == 500:
+            assert context.expected_mock_response["message"] == err.args[0], (
+                context.expected_mock_response,
+                err.args[0],
+            )
+        else:
+            raise NotImplementedError(
+                "test does not know how to validate status code "
+                + context.expected_status_code
+            )
+    else:
+        raise err
+
+
+########### STEPS ############
 
 
 @given("mock server recording request paths")
@@ -100,22 +152,6 @@ def step_impl(context, filename, directory, status):
     f.close()
     expected_mock_response = bytes(expected_mock_response, "ascii")
     context.expected_mock_response = json.loads(expected_mock_response)
-
-
-def validate_error(context, err):
-    if context.expected_status_code != 200:
-        if context.expected_status_code == 500:
-            assert context.expected_mock_response["message"] == err.args[0], (
-                context.expected_mock_response,
-                err.args[0],
-            )
-        else:
-            raise NotImplementedError(
-                "test does not know how to validate status code "
-                + context.expected_status_code
-            )
-    else:
-        raise err
 
 
 @when('we make any "{client}" call to "{endpoint}".')
@@ -1770,22 +1806,14 @@ def build_app_transaction(
         operation = operation_string_to_enum(operation)
     if sender == "none":
         sender = None
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
     if approval_program == "none":
         approval_program = None
     elif approval_program:
-        with open(
-            dir_path + "/test/features/resources/" + approval_program, "rb"
-        ) as f:
-            approval_program = bytearray(f.read())
+        approval_program = read_program(context, approval_program)
     if clear_program == "none":
         clear_program = None
     elif clear_program:
-        with open(
-            dir_path + "/test/features/resources/" + clear_program, "rb"
-        ) as f:
-            clear_program = bytearray(f.read())
+        clear_program = read_program(context, clear_program)
     if app_args == "none":
         app_args = None
     elif app_args:
@@ -1927,22 +1955,14 @@ def build_app_txn_with_transient(
         ):
             application_id = context.current_application_id
         operation = operation_string_to_enum(operation)
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
     if approval_program == "none":
         approval_program = None
     elif approval_program:
-        with open(
-            dir_path + "/test/features/resources/" + approval_program, "rb"
-        ) as f:
-            approval_program = bytearray(f.read())
+        approval_program = read_program(context, approval_program)
     if clear_program == "none":
         clear_program = None
     elif clear_program:
-        with open(
-            dir_path + "/test/features/resources/" + clear_program, "rb"
-        ) as f:
-            clear_program = bytearray(f.read())
+        clear_program = read_program(context, clear_program)
     local_schema = transaction.StateSchema(
         num_uints=int(local_ints), num_byte_slices=int(local_bytes)
     )
@@ -2116,15 +2136,6 @@ def verify_app_txn(
     assert found_value_for_key
 
 
-def load_resource(res):
-    """load data from features/resources"""
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    path = os.path.join(dir_path, "..", "features", "resources", res)
-    with open(path, "rb") as fin:
-        data = fin.read()
-    return data
-
-
 @when('I compile a teal program "{program}"')
 def compile_step(context, program):
     data = load_resource(program)
@@ -2152,8 +2163,10 @@ def compile_check_step(context, status, result, hash):
 )
 def b64decode_compiled_teal_step(context, result, program):
     binary = load_resource(program)
-    assert result == context.response["result"]
-    assert base64.b64decode(result.encode()) == binary
+    response_result = context.response["result"]
+    if result:
+        assert result == response_result
+    assert base64.b64decode(response_result.encode()) == binary
 
 
 @when('I dryrun a "{kind}" program "{program}"')
@@ -2481,7 +2494,7 @@ def add_abi_method_call(context, account_type, operation):
 @when(
     'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments, approval-program "{approval_program_path:MaybeString}", clear-program "{clear_program_path:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, extra-pages {extra_pages}.'
 )
-def add_abi_method_call_creation(
+def add_abi_method_call_creation_with_allocs(
     context,
     account_type,
     operation,
@@ -2504,18 +2517,11 @@ def add_abi_method_call_creation(
     dir_path = os.path.dirname(os.path.realpath(__file__))
     dir_path = os.path.dirname(os.path.dirname(dir_path))
     if approval_program_path:
-        with open(
-            dir_path + "/test/features/resources/" + approval_program_path,
-            "rb",
-        ) as f:
-            approval_program = bytearray(f.read())
+        approval_program = read_program(context, approval_program_path)
     else:
         approval_program = None
     if clear_program_path:
-        with open(
-            dir_path + "/test/features/resources/" + clear_program_path, "rb"
-        ) as f:
-            clear_program = bytearray(f.read())
+        clear_program = read_program(context, clear_program_path)
     else:
         clear_program = None
     local_schema = transaction.StateSchema(
@@ -2556,21 +2562,12 @@ def add_abi_method_call_creation(
         raise NotImplementedError(
             "cannot make transaction signer for " + account_type
         )
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
     if approval_program_path:
-        with open(
-            dir_path + "/test/features/resources/" + approval_program_path,
-            "rb",
-        ) as f:
-            approval_program = bytearray(f.read())
+        approval_program = read_program(context, approval_program_path)
     else:
         approval_program = None
     if clear_program_path:
-        with open(
-            dir_path + "/test/features/resources/" + clear_program_path, "rb"
-        ) as f:
-            clear_program = bytearray(f.read())
+        clear_program = read_program(context, clear_program_path)
     else:
         clear_program = None
     app_args = process_abi_args(context.abi_method, context.method_args)
