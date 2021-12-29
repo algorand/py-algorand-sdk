@@ -1,4 +1,7 @@
+from typing import Any
+
 from algosdk import constants
+from algosdk.future.transaction import Transaction
 
 
 class ABITransactionType:
@@ -24,7 +27,7 @@ class ABITransactionType:
     APPL = constants.APPCALL_TXN
 
 
-def is_abi_transaction_type(t):
+def is_abi_transaction_type(t: Any) -> bool:
     return t in (
         ABITransactionType.ANY,
         ABITransactionType.PAY,
@@ -34,3 +37,9 @@ def is_abi_transaction_type(t):
         ABITransactionType.AFRZ,
         ABITransactionType.APPL,
     )
+
+
+def check_abi_transaction_type(t: Any, txn: Transaction) -> bool:
+    if t == ABITransactionType.ANY:
+        return True
+    return txn.type and txn.type == t

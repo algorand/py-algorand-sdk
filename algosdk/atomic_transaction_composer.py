@@ -2,14 +2,17 @@ from abc import ABC, abstractmethod
 import base64
 import copy
 from enum import IntEnum
-from typing import Any, List, Union
+from typing import Any, List, TypeVar, Union
 
 from algosdk import abi, error
+from algosdk.abi.address_type import AddressType
 from algosdk.future import transaction
 from algosdk.v2client import algod
 
 # The first four bytes of an ABI method call return must have this hash
 ABI_RETURN_HASH = b"\x15\x1f\x7c\x75"
+# Support for generic typing
+T = TypeVar("T")
 
 
 class AtomicTransactionComposerStatus(IntEnum):
@@ -33,6 +36,38 @@ class AtomicTransactionComposerStatus(IntEnum):
     COMMITTED = 4
 
 
+def populate_foreign_array(
+    value_to_add: T, foreign_array: List[T], zero_value: T = None
+) -> int:
+    """
+    Add a value to an application call's foreign array. The addition will be as
+    compact as possible, and this function will return an index used to
+    reference `value_to_add` in the `foreign_array`.
+
+    Args:
+        value_to_add: value to add to the array. If the value is already
+            present, it will not be added again. Instead, the existing index
+            will be returned.
+        foreign_array: the existing foreign array. This input may be modified
+            to append `value_to_add`.
+        zero_value: If provided, this value indicates two things: the 0 value is
+            reserved for this array so `foreign_array` must start at index 1;
+            additionally, if `value_to_add` equals `zero_value`, then
+            `value_to_add` will not be added to the array and the 0 index will
+            be returned.
+    """
+    if zero_value and value_to_add == zero_value:
+        return 0
+
+    offset = 0 if not zero_value else 1
+
+    if value_to_add in foreign_array:
+        return foreign_array.index(value_to_add) + offset
+
+    foreign_array.append(value_to_add)
+    return offset + len(foreign_array) - 1
+
+
 class AtomicTransactionComposer:
     """
     Constructs an atomic transaction group which may contain a combination of
@@ -50,9 +85,6 @@ class AtomicTransactionComposer:
     MAX_GROUP_SIZE = 16
     # The maximum number of app-args that can be individually packed for ABIs
     MAX_APP_ARG_LIMIT = 16
-    # The maximum number of foreign objects that can be associated per app
-    FOREIGN_ACCOUNT_LIMIT = 4
-    FOREIGN_ARRAY_LIMIT = 8
 
     def __init__(self) -> None:
         self.status = AtomicTransactionComposerStatus.BUILDING
@@ -224,24 +256,27 @@ class AtomicTransactionComposer:
             )
 
         # Initialize foreign object maps
-        if not accounts:
-            accounts = []
-        if not foreign_apps:
-            foreign_apps = []
-        if not foreign_assets:
-            foreign_assets = []
+        accounts = accounts[:] if accounts else []
+        foreign_apps = foreign_apps[:] if foreign_apps else []
+        foreign_assets = foreign_assets[:] if foreign_assets else []
 
         app_args = []
         raw_values = []
         raw_types = []
         txn_list = []
+
         # First app arg must be the selector of the method
         app_args.append(method.get_selector())
+
         # Iterate through the method arguments and either pack a transaction
         # or encode a ABI value.
         for i, arg in enumerate(method.args):
             if abi.is_abi_transaction_type(arg.type):
-                if not isinstance(method_args[i], TransactionWithSigner):
+                if not isinstance(
+                    method_args[i], TransactionWithSigner
+                ) or not abi.check_abi_transaction_type(
+                    arg.type, method_args[i].txn
+                ):
                     raise error.AtomicTransactionComposerError(
                         "expected TransactionWithSigner as method argument, but received: {}".format(
                             method_args[i]
@@ -252,30 +287,23 @@ class AtomicTransactionComposer:
                 if abi.is_abi_reference_type(arg.type):
                     current_type = abi.UintType(8)
                     if arg.type == abi.ABIReferenceType.ACCOUNT:
-                        account_arg = str(method_args[i])
-                        if account_arg == sender:
-                            current_arg = 0
-                        elif account_arg in accounts:
-                            current_arg = accounts.index(account_arg) + 1
-                        else:
-                            current_arg = len(accounts) + 1
-                            accounts.append(account_arg)
+                        address_type = AddressType()
+                        account_arg = address_type.decode(
+                            address_type.encode(method_args[i])
+                        )
+                        current_arg = populate_foreign_array(
+                            account_arg, accounts, sender
+                        )
                     elif arg.type == abi.ABIReferenceType.ASSET:
                         asset_arg = int(method_args[i])
-                        if asset_arg in foreign_assets:
-                            current_arg = foreign_assets.index(asset_arg)
-                        else:
-                            current_arg = len(foreign_assets)
-                            foreign_assets.append(asset_arg)
+                        current_arg = populate_foreign_array(
+                            asset_arg, foreign_assets
+                        )
                     elif arg.type == abi.ABIReferenceType.APPLICATION:
                         app_arg = int(method_args[i])
-                        if app_arg == app_id:
-                            current_arg = 0
-                        elif app_arg in foreign_apps:
-                            current_arg = foreign_apps.index(app_arg) + 1
-                        else:
-                            current_arg = len(foreign_apps) + 1
-                            foreign_apps.append(app_arg)
+                        current_arg = populate_foreign_array(
+                            app_arg, foreign_apps, app_id
+                        )
                     else:
                         # Shouldn't reach this line unless someone accidentally
                         # adds another foreign array arg
@@ -291,29 +319,13 @@ class AtomicTransactionComposer:
                 raw_types.append(current_type)
                 raw_values.append(current_arg)
 
-        if len(accounts) > self.FOREIGN_ACCOUNT_LIMIT:
-            raise error.AtomicTransactionComposerError(
-                "foreign accounts exceed app limit {}".format(
-                    self.FOREIGN_ACCOUNT_LIMIT
-                )
-            )
-        if (
-            len(accounts) + len(foreign_apps) + len(foreign_assets)
-            > self.FOREIGN_ARRAY_LIMIT
-        ):
-            raise error.AtomicTransactionComposerError(
-                "foreign object array exceeds app limit {}".format(
-                    self.FOREIGN_ARRAY_LIMIT
-                )
-            )
-
         # Compact the arguments into a single tuple, if there are more than
         # 15 arguments excluding the selector, into the last app arg slot.
         if len(raw_types) > self.MAX_APP_ARG_LIMIT - 1:
-            additional_types = raw_types[14:]
-            additional_values = raw_values[14:]
-            raw_types = raw_types[:14]
-            raw_values = raw_values[:14]
+            additional_types = raw_types[self.MAX_APP_ARG_LIMIT - 2 :]
+            additional_values = raw_values[self.MAX_APP_ARG_LIMIT - 2 :]
+            raw_types = raw_types[: self.MAX_APP_ARG_LIMIT - 2]
+            raw_values = raw_values[: self.MAX_APP_ARG_LIMIT - 2]
             raw_types.append(abi.TupleType(additional_types))
             raw_values.append(additional_values)
 
@@ -469,6 +481,8 @@ class AtomicTransactionComposer:
             )
 
         self.submit(client)
+        self.status = AtomicTransactionComposerStatus.SUBMITTED
+
         resp = transaction.wait_for_confirmation(
             client, self.tx_ids[0], wait_rounds
         )

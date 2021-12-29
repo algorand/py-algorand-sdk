@@ -33,6 +33,7 @@ from algosdk.abi import (
     Method,
     Interface,
     Contract,
+    NetworkInfo,
 )
 from algosdk.future import template, transaction
 from algosdk.testing import dryrun
@@ -4274,12 +4275,12 @@ class TestABIInteraction(unittest.TestCase):
         self.assertEqual(
             c.networks,
             {
-                "wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=": {
-                    "appID": 1234
-                },
-                "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=": {
-                    "appID": 5678
-                },
+                "wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=": NetworkInfo(
+                    app_id=1234
+                ),
+                "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=": NetworkInfo(
+                    app_id=5678
+                ),
             },
         )
         self.assertEqual(
