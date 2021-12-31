@@ -2505,19 +2505,22 @@ def abi_method_adder(
     def int_if_given(given):
         return int(given) if given else 0
 
+    local_schema = global_schema = None
     if create_when_calling:
         if approval_program_path:
             approval_program = read_program(context, approval_program_path)
         if clear_program_path:
             clear_program = read_program(context, clear_program_path)
-        local_schema = transaction.StateSchema(
-            num_uints=int_if_given(local_ints),
-            num_byte_slices=int_if_given(local_bytes),
-        )
-        global_schema = transaction.StateSchema(
-            num_uints=int_if_given(global_ints),
-            num_byte_slices=int_if_given(global_bytes),
-        )
+        if local_ints or local_bytes:
+            local_schema = transaction.StateSchema(
+                num_uints=int_if_given(local_ints),
+                num_byte_slices=int_if_given(local_bytes),
+            )
+        if global_ints or global_bytes:
+            global_schema = transaction.StateSchema(
+                num_uints=int_if_given(global_ints),
+                num_byte_slices=int_if_given(global_bytes),
+            )
         extra_pages = int_if_given(extra_pages)
 
     app_args = process_abi_args(context.abi_method, context.method_args)
