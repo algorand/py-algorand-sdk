@@ -2056,15 +2056,19 @@ def wait_for_app_txn_confirm(context):
 @given("I remember the new application ID.")
 def remember_app_id(context):
     if hasattr(context, "acl"):
-        context.current_application_id = context.acl.pending_transaction_info(
-            context.app_txid
-        )["txresults"]["createdapp"]
+        app_id = context.acl.pending_transaction_info(context.app_txid)[
+            "txresults"
+        ]["createdapp"]
     else:
-        context.current_application_id = (
-            context.app_acl.pending_transaction_info(context.app_txid)[
+        app_id = context.app_acl.pending_transaction_info(context.app_txid)[
                 "application-index"
             ]
-        )
+
+    context.current_application_id = app_id
+    if not hasattr(context, "app_ids"):
+        context.app_ids = []
+
+    context.app_ids.append(app_id)
 
 
 @given("an application id {app_id}")
