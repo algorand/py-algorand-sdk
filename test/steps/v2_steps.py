@@ -97,23 +97,6 @@ def read_program(context, path):
     return read_program_binary(path)
 
 
-# TODO: move this back where it came from
-def validate_error(context, err):
-    if context.expected_status_code != 200:
-        if context.expected_status_code == 500:
-            assert context.expected_mock_response["message"] == err.args[0], (
-                context.expected_mock_response,
-                err.args[0],
-            )
-        else:
-            raise NotImplementedError(
-                "test does not know how to validate status code "
-                + context.expected_status_code
-            )
-    else:
-        raise err
-
-
 ########### STEPS ############
 
 
@@ -141,6 +124,22 @@ def mock_response(context, jsonfiles, directory):
         context.url + "/mock/" + directory + "/" + jsonfiles, method="GET"
     )
     urlopen(req)
+
+
+def validate_error(context, err):
+    if context.expected_status_code != 200:
+        if context.expected_status_code == 500:
+            assert context.expected_mock_response["message"] == err.args[0], (
+                context.expected_mock_response,
+                err.args[0],
+            )
+        else:
+            raise NotImplementedError(
+                "test does not know how to validate status code "
+                + context.expected_status_code
+            )
+    else:
+        raise err
 
 
 @given(
@@ -2482,6 +2481,7 @@ def abi_method_adder(
     context,
     account_type,
     operation,
+    ctxAppIndex=None,
     create_when_calling=False,
     approval_program_path=None,
     clear_program_path=None,
@@ -2523,9 +2523,15 @@ def abi_method_adder(
             )
         extra_pages = int_if_given(extra_pages)
 
+    app_id = (
+        context.app_ids[int(ctxAppIndex)]
+        if ctxAppIndex
+        else int(context.current_application_id)
+    )
+
     app_args = process_abi_args(context.abi_method, context.method_args)
     context.atomic_transaction_composer.add_method_call(
-        app_id=int(context.current_application_id),
+        app_id=app_id,
         method=context.abi_method,
         sender=sender,
         sp=context.suggested_params,
@@ -2538,6 +2544,15 @@ def abi_method_adder(
         clear_program=clear_program,
         extra_pages=extra_pages,
     )
+
+
+@step(
+    'I add a method call with the {account_type} account, the {ctxAppIndex}th app, suggested params, on complete "{operation}", current transaction signer, current method arguments.'
+)
+def add_abi_method_call_for_another_app(
+    context, account_type, operation, ctxAppIndex
+):
+    abi_method_adder(context, account_type, operation, ctxAppIndex=ctxAppIndex)
 
 
 @step(
