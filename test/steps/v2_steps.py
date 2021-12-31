@@ -5,6 +5,8 @@ import urllib
 import unittest
 from datetime import datetime
 from urllib.request import Request, urlopen
+
+from algosdk.abi.base_type import ABIType
 from algosdk.abi.contract import NetworkInfo
 
 import parse
@@ -61,7 +63,7 @@ def parse_bool(value):
 register_type(MaybeBool=parse_bool)
 
 
-########### HELPERS ############
+########### GENERIC HELPERS ############
 
 
 def load_resource(res, is_binary=True):
@@ -80,10 +82,14 @@ def read_program_binary(path):
 
 def read_program(context, path):
     """
-    Assumes that have already added `context.app_acl` so need to have already
+    Assumes that have already added `context.app_acl` so need to have previously
     called one of the steps "Given an algod v2 client..."
     """
     if path.endswith(".teal"):
+        assert hasattr(
+            context, "app_acl"
+        ), "Cannot compile teal program into binary because no algod v2 client has not been provided in the current context"
+
         teal = load_resource(path, is_binary=False)
         resp = context.app_acl.compile(teal)
         return base64.b64decode(resp["result"])
@@ -91,6 +97,7 @@ def read_program(context, path):
     return read_program_binary(path)
 
 
+# TODO: move this back where it came from
 def validate_error(context, err):
     if context.expected_status_code != 200:
         if context.expected_status_code == 500:
@@ -2689,6 +2696,24 @@ def check_atomic_transaction_composer_response(context, returns):
                 expected_value == result.return_value
             ), "actual is {}".format(result.return_value)
             assert result.decode_error is None
+
+
+@then('The app should have returned ABI types "{abiTypes:MaybeString}".')
+def check_atomic_transaction_composer_return_type(context, abiTypes):
+    expected_tokens = abiTypes.split("#")
+    for i, expected in enumerate(expected_tokens):
+        result = context.atomic_transaction_composer_return.abi_results[i]
+        assert result.decode_error is None
+
+        if not result or not expected_tokens[i]:
+            assert result.return_value is None
+            assert result.decode_error is None
+            continue
+
+        expected_type = ABIType.from_string(expected)
+        decoded_result = expected_type.decode(result.raw_value)
+        result_round_trip = expected_type.encode(decoded_result)
+        assert result_round_trip == result.raw_value
 
 
 @when("I serialize the Method object into json")
