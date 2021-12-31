@@ -126,22 +126,6 @@ def mock_response(context, jsonfiles, directory):
     urlopen(req)
 
 
-def validate_error(context, err):
-    if context.expected_status_code != 200:
-        if context.expected_status_code == 500:
-            assert context.expected_mock_response["message"] == err.args[0], (
-                context.expected_mock_response,
-                err.args[0],
-            )
-        else:
-            raise NotImplementedError(
-                "test does not know how to validate status code "
-                + context.expected_status_code
-            )
-    else:
-        raise err
-
-
 @given(
     'mock http responses in "{filename}" loaded from "{directory}" with status {status}.'
 )
@@ -158,6 +142,22 @@ def step_impl(context, filename, directory, status):
     f.close()
     expected_mock_response = bytes(expected_mock_response, "ascii")
     context.expected_mock_response = json.loads(expected_mock_response)
+
+
+def validate_error(context, err):
+    if context.expected_status_code != 200:
+        if context.expected_status_code == 500:
+            assert context.expected_mock_response["message"] == err.args[0], (
+                context.expected_mock_response,
+                err.args[0],
+            )
+        else:
+            raise NotImplementedError(
+                "test does not know how to validate status code "
+                + context.expected_status_code
+            )
+    else:
+        raise err
 
 
 @when('we make any "{client}" call to "{endpoint}".')
