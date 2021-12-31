@@ -2061,8 +2061,8 @@ def remember_app_id(context):
         ]["createdapp"]
     else:
         app_id = context.app_acl.pending_transaction_info(context.app_txid)[
-                "application-index"
-            ]
+            "application-index"
+        ]
 
     context.current_application_id = app_id
     if not hasattr(context, "app_ids"):
@@ -2478,44 +2478,18 @@ def append_app_args_to_method_args(context, method_args):
     context.method_args += app_args
 
 
-@step(
-    'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments.'
-)
-def add_abi_method_call(context, account_type, operation):
-    if account_type == "transient":
-        sender = context.transient_pk
-    elif account_type == "signing":
-        sender = mnemonic.to_public_key(context.signing_mnemonic)
-    else:
-        raise NotImplementedError(
-            "cannot make transaction signer for " + account_type
-        )
-    app_args = process_abi_args(context.abi_method, context.method_args)
-    context.atomic_transaction_composer.add_method_call(
-        app_id=int(context.current_application_id),
-        method=context.abi_method,
-        sender=sender,
-        sp=context.suggested_params,
-        signer=context.transaction_signer,
-        method_args=app_args,
-        on_complete=operation_string_to_enum(operation),
-    )
-
-
-@when(
-    'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments, approval-program "{approval_program_path:MaybeString}", clear-program "{clear_program_path:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, extra-pages {extra_pages}.'
-)
-def add_abi_method_call_creation_with_allocs(
+def abi_method_adder(
     context,
     account_type,
     operation,
-    approval_program_path,
-    clear_program_path,
-    global_bytes,
-    global_ints,
-    local_bytes,
-    local_ints,
-    extra_pages,
+    create_when_calling=False,
+    approval_program_path=None,
+    clear_program_path=None,
+    global_bytes=None,
+    global_ints=None,
+    local_bytes=None,
+    local_ints=None,
+    extra_pages=None,
 ):
     if account_type == "transient":
         sender = context.transient_pk
@@ -2525,23 +2499,27 @@ def add_abi_method_call_creation_with_allocs(
         raise NotImplementedError(
             "cannot make transaction signer for " + account_type
         )
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
-    if approval_program_path:
-        approval_program = read_program(context, approval_program_path)
-    else:
-        approval_program = None
-    if clear_program_path:
-        clear_program = read_program(context, clear_program_path)
-    else:
-        clear_program = None
-    local_schema = transaction.StateSchema(
-        num_uints=int(local_ints), num_byte_slices=int(local_bytes)
-    )
-    global_schema = transaction.StateSchema(
-        num_uints=int(global_ints), num_byte_slices=int(global_bytes)
-    )
-    extra_pages = int(extra_pages)
+    approval_program = clear_program = None
+    global_schema = local_schema = None
+
+    def int_if_given(given):
+        return int(given) if given else 0
+
+    if create_when_calling:
+        if approval_program_path:
+            approval_program = read_program(context, approval_program_path)
+        if clear_program_path:
+            clear_program = read_program(context, clear_program_path)
+        local_schema = transaction.StateSchema(
+            num_uints=int_if_given(local_ints),
+            num_byte_slices=int_if_given(local_bytes),
+        )
+        global_schema = transaction.StateSchema(
+            num_uints=int_if_given(global_ints),
+            num_byte_slices=int_if_given(global_bytes),
+        )
+        extra_pages = int_if_given(extra_pages)
+
     app_args = process_abi_args(context.abi_method, context.method_args)
     context.atomic_transaction_composer.add_method_call(
         app_id=int(context.current_application_id),
@@ -2559,39 +2537,56 @@ def add_abi_method_call_creation_with_allocs(
     )
 
 
+@step(
+    'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments.'
+)
+def add_abi_method_call(context, account_type, operation):
+    abi_method_adder(context, account_type, operation)
+
+
+@when(
+    'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments, approval-program "{approval_program_path:MaybeString}", clear-program "{clear_program_path:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, extra-pages {extra_pages}.'
+)
+def add_abi_method_call_creation_with_allocs(
+    context,
+    account_type,
+    operation,
+    approval_program_path,
+    clear_program_path,
+    global_bytes,
+    global_ints,
+    local_bytes,
+    local_ints,
+    extra_pages,
+):
+    abi_method_adder(
+        context,
+        account_type,
+        operation,
+        True,
+        approval_program_path,
+        clear_program_path,
+        global_bytes,
+        global_ints,
+        local_bytes,
+        local_ints,
+        extra_pages,
+    )
+
+
 @when(
     'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments, approval-program "{approval_program_path:MaybeString}", clear-program "{clear_program_path:MaybeString}".'
 )
 def add_abi_method_call_creation(
     context, account_type, operation, approval_program_path, clear_program_path
 ):
-    if account_type == "transient":
-        sender = context.transient_pk
-    elif account_type == "signing":
-        sender = mnemonic.to_public_key(context.signing_mnemonic)
-    else:
-        raise NotImplementedError(
-            "cannot make transaction signer for " + account_type
-        )
-    if approval_program_path:
-        approval_program = read_program(context, approval_program_path)
-    else:
-        approval_program = None
-    if clear_program_path:
-        clear_program = read_program(context, clear_program_path)
-    else:
-        clear_program = None
-    app_args = process_abi_args(context.abi_method, context.method_args)
-    context.atomic_transaction_composer.add_method_call(
-        app_id=int(context.current_application_id),
-        method=context.abi_method,
-        sender=sender,
-        sp=context.suggested_params,
-        signer=context.transaction_signer,
-        method_args=app_args,
-        on_complete=operation_string_to_enum(operation),
-        approval_program=approval_program,
-        clear_program=clear_program,
+    abi_method_adder(
+        context,
+        account_type,
+        operation,
+        True,
+        approval_program_path,
+        clear_program_path,
     )
 
 
