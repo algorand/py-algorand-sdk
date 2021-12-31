@@ -4060,6 +4060,13 @@ class TestABIEncoding(unittest.TestCase):
                     "00 00 00 00 00 00 00 01 00 00 00 00 00 00 00 02 00 00 00 00 00 00 00 03"
                 ),
             ),
+            (
+                ArrayStaticType(ByteType(), 17),
+                [0, 0, 0, 0, 0, 0, 4, 3, 31, 0, 0, 0, 0, 0, 0, 0, 33],
+                bytes.fromhex(
+                    "00 00 00 00 00 00 04 03 1f 00 00 00 00 00 00 00 21"
+                ),
+            ),
         ]
 
         for test_case in test_cases:
