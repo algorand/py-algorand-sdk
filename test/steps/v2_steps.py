@@ -97,6 +97,12 @@ def read_program(context, path):
     return read_program_binary(path)
 
 
+# ########### GENERIC STEPS ############
+
+# @step("var {x} <-- {y}")
+# def set_variable(context, x, y):
+#     context.x = y
+
 ########### STEPS ############
 
 
@@ -1752,7 +1758,9 @@ def split_and_process_app_args(in_args):
     sub_args = [sub_arg.split(":") for sub_arg in split_args]
     app_args = []
     for sub_arg in sub_args:
-        if sub_arg[0] == "str":
+        if len(sub_arg) == 1:  # assume int
+            app_args.append(int(sub_arg[0]))
+        elif sub_arg[0] in ("str", "b64"):
             app_args.append(bytes(sub_arg[1], "ascii"))
         elif sub_arg[0] == "int":
             app_args.append(int(sub_arg[1]))
@@ -1779,6 +1787,155 @@ def build_payment_transaction(
         receiver=receiver,
         amt=int(amount),
         close_remainder_to=close_remainder_to,
+    )
+
+
+def transient_acct_app_builder(
+    context,
+    operation,
+    approval_program,
+    clear_program,
+    global_bytes,
+    global_ints,
+    local_bytes,
+    local_ints,
+    app_args,
+    foreign_apps,
+    foreign_assets,
+    app_accounts,
+    extra_pages,
+):
+    application_id = 0
+    if operation == "none":
+        operation = None
+    else:
+        if (
+            hasattr(context, "current_application_id")
+            and context.current_application_id
+            and operation != "create"
+        ):
+            application_id = context.current_application_id
+        operation = operation_string_to_enum(operation)
+    if approval_program == "none":
+        approval_program = None
+    elif approval_program:
+        approval_program = read_program(context, approval_program)
+    if clear_program == "none":
+        clear_program = None
+    elif clear_program:
+        clear_program = read_program(context, clear_program)
+    local_schema = transaction.StateSchema(
+        num_uints=int(local_ints), num_byte_slices=int(local_bytes)
+    )
+    global_schema = transaction.StateSchema(
+        num_uints=int(global_ints), num_byte_slices=int(global_bytes)
+    )
+    if app_args == "none":
+        app_args = None
+    elif app_args:
+        app_args = split_and_process_app_args(app_args)
+    if foreign_apps == "none":
+        foreign_apps = None
+    elif foreign_apps:
+        foreign_apps = [int(app) for app in foreign_apps.split(",")]
+    if foreign_assets == "none":
+        foreign_assets = None
+    elif foreign_assets:
+        foreign_assets = [int(asset) for asset in foreign_assets.split(",")]
+    if app_accounts == "none":
+        app_accounts = None
+    elif app_accounts:
+        app_accounts = [
+            account_pubkey for account_pubkey in app_accounts.split(",")
+        ]
+
+    sp = context.app_acl.suggested_params()
+    context.app_transaction = transaction.ApplicationCallTxn(
+        sender=context.transient_pk,
+        sp=sp,
+        index=int(application_id),
+        on_complete=operation,
+        local_schema=local_schema,
+        global_schema=global_schema,
+        approval_program=approval_program,
+        clear_program=clear_program,
+        app_args=app_args,
+        accounts=app_accounts,
+        foreign_apps=foreign_apps,
+        foreign_assets=foreign_assets,
+        extra_pages=int(extra_pages),
+        note=None,
+        lease=None,
+        rekey_to=None,
+    )
+
+
+@given(
+    'I build an application transaction with the transient account, the current application with method args, suggested params, operation "{operation}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", extra-pages {extra_pages}'
+)
+def build_app_txn_with_transient_with_curr_meth_args(
+    context,
+    operation,
+    approval_program,
+    clear_program,
+    global_bytes,
+    global_ints,
+    local_bytes,
+    local_ints,
+    foreign_apps,
+    foreign_assets,
+    app_accounts,
+    extra_pages,
+):
+    transient_acct_app_builder(
+        context,
+        operation,
+        approval_program,
+        clear_program,
+        global_bytes,
+        global_ints,
+        local_bytes,
+        local_ints,
+        ",".join(map(str, context.method_args)),
+        foreign_apps,
+        foreign_assets,
+        app_accounts,
+        extra_pages,
+    )
+
+
+@step(
+    'I build an application transaction with the transient account, the current application, suggested params, operation "{operation}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", extra-pages {extra_pages}'
+)
+def build_app_txn_with_transient(
+    context,
+    operation,
+    approval_program,
+    clear_program,
+    global_bytes,
+    global_ints,
+    local_bytes,
+    local_ints,
+    app_args,
+    foreign_apps,
+    foreign_assets,
+    app_accounts,
+    extra_pages,
+):
+    transient_acct_app_builder(
+        context,
+        operation,
+        approval_program,
+        clear_program,
+        global_bytes,
+        global_ints,
+        local_bytes,
+        local_ints,
+        app_args,
+        foreign_apps,
+        foreign_assets,
+        app_accounts,
+        extra_pages,
     )
 
 
@@ -1930,89 +2087,6 @@ def create_transient_and_fund(context, transient_fund_amount):
     signed_payment = context.wallet.sign_transaction(payment)
     context.app_acl.send_transaction(signed_payment)
     transaction.wait_for_confirmation(context.app_acl, payment.get_txid(), 10)
-
-
-@step(
-    'I build an application transaction with the transient account, the current application, suggested params, operation "{operation}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", extra-pages {extra_pages}'
-)
-def build_app_txn_with_transient(
-    context,
-    operation,
-    approval_program,
-    clear_program,
-    global_bytes,
-    global_ints,
-    local_bytes,
-    local_ints,
-    app_args,
-    foreign_apps,
-    foreign_assets,
-    app_accounts,
-    extra_pages,
-):
-    application_id = 0
-    if operation == "none":
-        operation = None
-    else:
-        if (
-            hasattr(context, "current_application_id")
-            and context.current_application_id
-            and operation != "create"
-        ):
-            application_id = context.current_application_id
-        operation = operation_string_to_enum(operation)
-    if approval_program == "none":
-        approval_program = None
-    elif approval_program:
-        approval_program = read_program(context, approval_program)
-    if clear_program == "none":
-        clear_program = None
-    elif clear_program:
-        clear_program = read_program(context, clear_program)
-    local_schema = transaction.StateSchema(
-        num_uints=int(local_ints), num_byte_slices=int(local_bytes)
-    )
-    global_schema = transaction.StateSchema(
-        num_uints=int(global_ints), num_byte_slices=int(global_bytes)
-    )
-    if app_args == "none":
-        app_args = None
-    elif app_args:
-        app_args = split_and_process_app_args(app_args)
-    if foreign_apps == "none":
-        foreign_apps = None
-    elif foreign_apps:
-        foreign_apps = [int(app) for app in foreign_apps.split(",")]
-    if foreign_assets == "none":
-        foreign_assets = None
-    elif foreign_assets:
-        foreign_assets = [int(asset) for asset in foreign_assets.split(",")]
-    if app_accounts == "none":
-        app_accounts = None
-    elif app_accounts:
-        app_accounts = [
-            account_pubkey for account_pubkey in app_accounts.split(",")
-        ]
-
-    sp = context.app_acl.suggested_params()
-    context.app_transaction = transaction.ApplicationCallTxn(
-        sender=context.transient_pk,
-        sp=sp,
-        index=int(application_id),
-        on_complete=operation,
-        local_schema=local_schema,
-        global_schema=global_schema,
-        approval_program=approval_program,
-        clear_program=clear_program,
-        app_args=app_args,
-        accounts=app_accounts,
-        foreign_apps=foreign_apps,
-        foreign_assets=foreign_assets,
-        extra_pages=int(extra_pages),
-        note=None,
-        lease=None,
-        rekey_to=None,
-    )
 
 
 @step(
@@ -2475,6 +2549,13 @@ def append_app_args_to_method_args(context, method_args):
     # Returns a list of ABI method arguments
     app_args = method_args.split(",")
     context.method_args += app_args
+
+
+@step(
+    "I append the app-id of the {ctxAppIndex}th app to the method arguments array."
+)
+def append_appid_to_method_args(context, ctxAppIndex):
+    context.method_args.append(context.app_ids[int(ctxAppIndex)])
 
 
 def abi_method_adder(
