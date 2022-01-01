@@ -1760,8 +1760,10 @@ def split_and_process_app_args(in_args):
     for sub_arg in sub_args:
         if len(sub_arg) == 1:  # assume int
             app_args.append(int(sub_arg[0]))
-        elif sub_arg[0] in ("str", "b64"):
+        elif sub_arg[0] == "str":
             app_args.append(bytes(sub_arg[1], "ascii"))
+        elif sub_arg[0] == "b64":
+            app_args.append(base64.decodebytes(sub_arg[1].encode()))
         elif sub_arg[0] == "int":
             app_args.append(int(sub_arg[1]))
         elif sub_arg[0] == "addr":
