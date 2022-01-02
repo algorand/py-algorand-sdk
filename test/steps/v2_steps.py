@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+from pathlib import Path
 import urllib
 import unittest
 from datetime import datetime
@@ -68,8 +69,7 @@ register_type(MaybeBool=parse_bool)
 
 def load_resource(res, is_binary=True):
     """load data from features/resources"""
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    path = os.path.join(dir_path, "..", "features", "resources", res)
+    path = Path(__file__).parent.parent / "features" / "resources" / res
     filemode = "rb" if is_binary else "r"
     with open(path, filemode) as fin:
         data = fin.read()
