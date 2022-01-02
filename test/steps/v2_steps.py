@@ -2564,7 +2564,6 @@ def abi_method_adder(
     context,
     account_type,
     operation,
-    ctxAppIndex=None,
     create_when_calling=False,
     approval_program_path=None,
     clear_program_path=None,
@@ -2573,6 +2572,7 @@ def abi_method_adder(
     local_bytes=None,
     local_ints=None,
     extra_pages=None,
+    ctxAppIndex=None,
 ):
     if account_type == "transient":
         sender = context.transient_pk
