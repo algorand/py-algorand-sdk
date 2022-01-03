@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.9.0b2
+### Added
+
+- Support Foreign objects as ABI arguments and address ARC-4 changes (DNS Sec Resolver #251)
+- Add requirement to fetch behave source code and update readme ([ongoing] Update travis job to use CI/CD CLI for linux arm64/amd64 #262)
+- Fix wait for confirmation function (make dsign usable [2] #263)
+- Add a default User-Agent header to the v2 algod client (Create CI docker image for ARM 32 v6 / raspbian #260)
+
 ## 1.9.0b1
 ### Added
 
