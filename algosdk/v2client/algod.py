@@ -55,7 +55,7 @@ class AlgodClient:
         Returns:
             dict: loaded from json response body
         """
-        header = {}
+        header = {"User-Agent": "py-algorand-sdk"}
 
         if self.headers:
             header.update(self.headers)

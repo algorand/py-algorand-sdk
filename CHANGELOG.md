@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.9.0b2
+### Added
+
+- Support Foreign objects as ABI arguments and address ARC-4 changes (#251)
+- Add requirement to fetch behave source code and update readme (#262)
+- Fix wait for confirmation function (#263)
+- Add a default User-Agent header to the v2 algod client (#260)
+
 ## 1.9.0b1
 ### Added
 
