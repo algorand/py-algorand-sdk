@@ -50,10 +50,10 @@ def s512_256_uint64(witness):
 
 
 @then(
-    'Ze atomic result for randomInt() at index {result_index} proves correct for input "{input}"'
+    "Ze {result_index}th atomic result for randomInt({input}) proves correct"
 )
 def sha512_256_of_witness_mod_n_is_result(context, result_index, input):
-    input = int.from_bytes(base64.decodebytes(input.encode()), "big")
+    input = int(input)
     abi_type = ABIType.from_string("(uint64,byte[17])")
     result = context.atomic_transaction_composer_return.abi_results[
         int(result_index)
@@ -66,7 +66,7 @@ def sha512_256_of_witness_mod_n_is_result(context, result_index, input):
 
 
 @then(
-    'Ze atomic result for randElement() at index {result_index} proves correct for input "{input}"'
+    'Ze {result_index}th atomic result for randElement("{input}") proves correct'
 )
 def sha512_256_of_witness_mod_n_is_result(context, result_index, input):
     abi_type = ABIType.from_string("(byte,byte[17])")

@@ -2605,7 +2605,6 @@ def abi_method_adder(
     local_bytes=None,
     local_ints=None,
     extra_pages=None,
-    ctxAppIndex=None,
     prev_apps_foreign=False,
 ):
     if account_type == "transient":
@@ -2640,19 +2639,7 @@ def abi_method_adder(
             )
         extra_pages = int_if_given(extra_pages)
 
-    if ctxAppIndex:
-        ctxAppIndex = int(ctxAppIndex)
-
-    app_id = (
-        context.app_ids[ctxAppIndex]
-        if ctxAppIndex
-        else int(context.current_application_id)
-    )
-
-    foreign_apps = None
-    if prev_apps_foreign:
-        idx_bound = ctxAppIndex if ctxAppIndex else len(context.app_ids)
-        foreign_apps = context.app_ids[:idx_bound]
+    app_id = int(context.current_application_id)
 
     app_args = process_abi_args(
         context, context.abi_method, context.method_args
@@ -2670,17 +2657,7 @@ def abi_method_adder(
         approval_program=approval_program,
         clear_program=clear_program,
         extra_pages=extra_pages,
-        foreign_apps=foreign_apps,
     )
-
-
-@step(
-    'I add a method call with the {account_type} account, the {ctxAppIndex}th app and previous apps foreign, suggested params, on complete "{operation}", current transaction signer, current method arguments.'
-)
-def add_abi_method_call_for_another_app(
-    context, account_type, operation, ctxAppIndex, prev_apps_foreign=True
-):
-    abi_method_adder(context, account_type, operation, ctxAppIndex=ctxAppIndex)
 
 
 @step(
