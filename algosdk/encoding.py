@@ -199,6 +199,25 @@ def encode_address(addr_bytes):
     return _undo_padding(addr.decode())
 
 
+def application_address(application_id: int) -> str:
+    """
+    Calculate an application's from is index
+
+    Args:
+        application_index (int): application index on the network
+
+    Returns:
+        str: base32 encoded address
+    """
+    assert isinstance(
+        application_id, int
+    ), f"application index should be an int. Was provided {application_id} of type {type(application_id)}"
+
+    return encode_address(
+        checksum(b"appID" + (application_id).to_bytes(8, "big"))
+    )
+
+
 def _checksum(addr):
     """
     Compute the checksum of size checkSumLenBytes for the address.

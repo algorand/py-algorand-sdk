@@ -5,6 +5,7 @@ from pathlib import Path
 import urllib
 import unittest
 from datetime import datetime
+from typing import Union
 from urllib.request import Request, urlopen
 
 from algosdk.abi.base_type import ABIType
@@ -2074,21 +2075,38 @@ def algod_v2_client(context):
     context.app_acl = algod.AlgodClient(daemon_token, algod_address)
 
 
+def fund_account_address(
+    context, account_address: str, amount: Union[int, str]
+):
+    sp = context.app_acl.suggested_params()
+    payment = transaction.PaymentTxn(
+        context.accounts[0],
+        sp,
+        account_address,
+        int(amount),
+    )
+    signed_payment = context.wallet.sign_transaction(payment)
+    context.app_acl.send_transaction(signed_payment)
+    transaction.wait_for_confirmation(context.app_acl, payment.get_txid(), 10)
+
+
 @given(
     "I create a new transient account and fund it with {transient_fund_amount} microalgos."
 )
 def create_transient_and_fund(context, transient_fund_amount):
     context.transient_sk, context.transient_pk = account.generate_account()
-    sp = context.app_acl.suggested_params()
-    payment = transaction.PaymentTxn(
-        context.accounts[0],
-        sp,
-        context.transient_pk,
-        int(transient_fund_amount),
+    fund_account_address(context, context.transient_pk, transient_fund_amount)
+
+
+@given(
+    "I fund the current application's address with {fund_amount} microalgos."
+)
+def fund_app_account(context, fund_amount):
+    fund_account_address(
+        context,
+        encoding.application_address(context.current_application_id),
+        fund_amount,
     )
-    signed_payment = context.wallet.sign_transaction(payment)
-    context.app_acl.send_transaction(signed_payment)
-    transaction.wait_for_confirmation(context.app_acl, payment.get_txid(), 10)
 
 
 @step(
@@ -2144,6 +2162,17 @@ def remember_app_id(context):
         context.app_ids = []
 
     context.app_ids.append(app_id)
+
+
+@then(
+    "I get the application info for the current application, and its account matches the app id's hash"
+)
+def assert_app_account_is_the_hash(context):
+    app_id = context.current_application_id
+    app_info = context.app_acl.application_info(app_id)
+    assert app_info["application-account"] == encoding.application_address(
+        app_id
+    )
 
 
 @given("an application id {app_id}")
@@ -2504,7 +2533,7 @@ def add_transaction_to_composer(context):
     )
 
 
-def process_abi_args(method, arg_tokens):
+def process_abi_args(context, method, arg_tokens):
     method_args = []
     for arg_index, arg in enumerate(method.args):
         # Skip arg if it does not have a type
@@ -2522,9 +2551,13 @@ def process_abi_args(method, arg_tokens):
             arg.type == abi.ABIReferenceType.APPLICATION
             or arg.type == abi.ABIReferenceType.ASSET
         ):
-            method_arg = abi.UintType(64).decode(
-                base64.b64decode(arg_tokens[arg_index])
-            )
+            parts = arg_tokens[arg_index].split(":")
+            if len(parts) == 2 and parts[0] == "ctxAppIdx":
+                method_arg = context.app_ids[int(parts[1])]
+            else:
+                method_arg = abi.UintType(64).decode(
+                    base64.b64decode(arg_tokens[arg_index])
+                )
             method_args.append(method_arg)
         else:
             # Append the transaction signer as is
@@ -2573,6 +2606,7 @@ def abi_method_adder(
     local_ints=None,
     extra_pages=None,
     ctxAppIndex=None,
+    prev_apps_foreign=False,
 ):
     if account_type == "transient":
         sender = context.transient_pk
@@ -2606,13 +2640,23 @@ def abi_method_adder(
             )
         extra_pages = int_if_given(extra_pages)
 
+    if ctxAppIndex:
+        ctxAppIndex = int(ctxAppIndex)
+
     app_id = (
-        context.app_ids[int(ctxAppIndex)]
+        context.app_ids[ctxAppIndex]
         if ctxAppIndex
         else int(context.current_application_id)
     )
 
-    app_args = process_abi_args(context.abi_method, context.method_args)
+    foreign_apps = None
+    if prev_apps_foreign:
+        idx_bound = ctxAppIndex if ctxAppIndex else len(context.app_ids)
+        foreign_apps = context.app_ids[:idx_bound]
+
+    app_args = process_abi_args(
+        context, context.abi_method, context.method_args
+    )
     context.atomic_transaction_composer.add_method_call(
         app_id=app_id,
         method=context.abi_method,
@@ -2626,14 +2670,15 @@ def abi_method_adder(
         approval_program=approval_program,
         clear_program=clear_program,
         extra_pages=extra_pages,
+        foreign_apps=foreign_apps,
     )
 
 
 @step(
-    'I add a method call with the {account_type} account, the {ctxAppIndex}th app, suggested params, on complete "{operation}", current transaction signer, current method arguments.'
+    'I add a method call with the {account_type} account, the {ctxAppIndex}th app and previous apps foreign, suggested params, on complete "{operation}", current transaction signer, current method arguments.'
 )
 def add_abi_method_call_for_another_app(
-    context, account_type, operation, ctxAppIndex
+    context, account_type, operation, ctxAppIndex, prev_apps_foreign=True
 ):
     abi_method_adder(context, account_type, operation, ctxAppIndex=ctxAppIndex)
 
@@ -2953,3 +2998,64 @@ def serialize_contract_to_json(context):
 def deserialize_json_to_contract(context):
     actual = abi.Contract.undictify(context.json_output)
     assert actual == context.abi_contract
+
+
+from typing import List
+
+
+class TransactionTree:
+    def __init__(self, txn: dict):
+        self.txn = txn
+        self.inner_txns = [
+            TransactionTree(itxn) for itxn in txn.get("inner-txns", [])
+        ]
+
+    def shape(self) -> str:
+        prefix = self.txn["txn"]["txn"]["type"]
+        suffix = "{" + ",".join(itxn.shape() for itxn in self.inner_txns) + "}"
+        return f"{prefix}->{suffix}"
+
+
+class TransactionForest:
+    def __init__(self, txns: list):
+        self.txns = [TransactionTree(txn) for txn in txns]
+
+    def shape(self) -> str:
+        return "{" + ",".join(txn.shape() for txn in self.txns) + "}"
+
+
+def retrieve_transaction_forest(
+    algod_client, tx_ids: list
+) -> TransactionForest:
+    return TransactionForest(
+        [algod_client.pending_transaction_info(tx_id) for tx_id in tx_ids]
+    )
+
+
+@then(
+    'I can retrieve all inner transactions that were called from the atomic transaction with call graph "{callGraph}".'
+)
+def can_retrieve_all_inner_txns(context, callGraph):
+    forest = retrieve_transaction_forest(
+        context.app_acl, context.atomic_transaction_composer_return.tx_ids
+    )
+    assert forest.shape() == callGraph
+
+
+"""
+tx_info
+    - confirmed-round
+    - logs
+    - pool-error
+    - txn
+        - sig
+        - txn
+            - ap**
+            - type
+    - inner-txns: [] of
+        - pool-error
+        - txn
+            - txn
+                - ap**
+                - type
+"""

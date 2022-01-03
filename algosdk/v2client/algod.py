@@ -125,7 +125,11 @@ class AlgodClient:
             application_id (int): The ID of the application to look up.
         """
         req = "/applications/" + str(application_id)
-        return self.algod_request("GET", req, **kwargs)
+        resp = self.algod_request("GET", req, **kwargs)
+        resp["application-account"] = encoding.application_address(
+            application_id
+        )
+        return resp
 
     def pending_transactions_by_address(
         self, address, limit=0, response_format="json", **kwargs
