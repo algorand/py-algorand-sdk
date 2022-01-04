@@ -3020,6 +3020,8 @@ def can_retrieve_all_inner_txns(context, callGraph):
 
 
 """
+logs = [base64.b64decode(v) for v in forest.txns[0].txn['logs'] ]
+
 tx_info
     - confirmed-round
     - logs
