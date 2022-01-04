@@ -68,7 +68,9 @@ def sha512_256_of_witness_mod_n_is_result(context, result_index, input):
 @then(
     'Ze {result_index}th atomic result for randElement("{input}") proves correct'
 )
-def sha512_256_of_witness_mod_n_is_result(context, result_index, input):
+def char_with_idx_sha512_256_of_witness_mod_n_is_result(
+    context, result_index, input
+):
     abi_type = ABIType.from_string("(byte,byte[17])")
     result = context.atomic_transaction_composer_return.abi_results[
         int(result_index)

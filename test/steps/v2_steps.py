@@ -2605,7 +2605,6 @@ def abi_method_adder(
     local_bytes=None,
     local_ints=None,
     extra_pages=None,
-    prev_apps_foreign=False,
 ):
     if account_type == "transient":
         sender = context.transient_pk
@@ -3016,7 +3015,8 @@ def can_retrieve_all_inner_txns(context, callGraph):
     forest = retrieve_transaction_forest(
         context.app_acl, context.atomic_transaction_composer_return.tx_ids
     )
-    assert forest.shape() == callGraph
+    actual = forest.shape()
+    assert actual == callGraph, f"expected: {callGraph} but got: {actual}"
 
 
 """
