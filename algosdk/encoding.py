@@ -201,13 +201,13 @@ def encode_address(addr_bytes):
 
 def application_address(application_id: int) -> str:
     """
-    Calculate an application's from is index
+    Calculate an application's account address from its index
 
     Args:
         application_index (int): application index on the network
 
     Returns:
-        str: base32 encoded address
+        str: base32 encoded address for the application's account
     """
     assert isinstance(
         application_id, int
