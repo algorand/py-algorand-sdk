@@ -99,12 +99,6 @@ def read_program(context, path):
     return read_program_binary(path)
 
 
-# ########### GENERIC STEPS ############
-
-# @step("var {x} <-- {y}")
-# def set_variable(context, x, y):
-#     context.x = y
-
 ########### STEPS ############
 
 
@@ -2999,12 +2993,10 @@ def same_groupids_for_paths(context, paths):
         for idx, p in enumerate(path):
             d = d["inner-txns"][p] if idx else d[idx]
             _grp = d["txn"]["txn"]["grp"]
-            if not grp:
-                grp = _grp
-            else:
-                assert (
-                    grp == _grp
-                ), f"non-constant txn group hashes {_grp} v {grp}"
+        if not grp:
+            grp = _grp
+        else:
+            assert grp == _grp, f"non-constant txn group hashes {_grp} v {grp}"
 
 
 @then(
