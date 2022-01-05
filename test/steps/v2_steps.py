@@ -90,7 +90,7 @@ def read_program(context, path):
     if path.endswith(".teal"):
         assert hasattr(
             context, "app_acl"
-        ), "Cannot compile teal program into binary because no algod v2 client has not been provided in the current context"
+        ), "Cannot compile teal program into binary because no algod v2 client has been provided in the context"
 
         teal = load_resource(path, is_binary=False)
         resp = context.app_acl.compile(teal)
