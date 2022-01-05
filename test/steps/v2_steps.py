@@ -2989,6 +2989,25 @@ def digging_the_inner_txns(context, path):
 
 
 @then(
+    'I dig into the paths "{paths}" of the resulting atomic transaction tree I see group ids and they are all the same'
+)
+def same_groupids_for_paths(context, paths):
+    paths = [[int(p) for p in path.split(",")] for path in paths.split("#")]
+    grp = None
+    for path in paths:
+        d = context.atomic_transaction_composer_return.tx_infos
+        for idx, p in enumerate(path):
+            d = d["inner-txns"][p] if idx else d[idx]
+            _grp = d["txn"]["txn"]["grp"]
+            if not grp:
+                grp = _grp
+            else:
+                assert (
+                    grp == _grp
+                ), f"non-constant txn group hashes {_grp} v {grp}"
+
+
+@then(
     'I can retrieve all inner transactions that were called from the atomic transaction with call graph "{callGraph}".'
 )
 def can_retrieve_all_inner_txns(context, callGraph):
