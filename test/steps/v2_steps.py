@@ -2600,6 +2600,7 @@ def abi_method_adder(
     local_bytes=None,
     local_ints=None,
     extra_pages=None,
+    force_unique_transactions=False,
 ):
     if account_type == "transient":
         sender = context.transient_pk
@@ -2638,6 +2639,10 @@ def abi_method_adder(
     app_args = process_abi_args(
         context, context.abi_method, context.method_args
     )
+    note = None
+    if force_unique_transactions:
+        note = b"some randomness so I can repeat myself: " + token_bytes(10)
+
     context.atomic_transaction_composer.add_method_call(
         app_id=app_id,
         method=context.abi_method,
@@ -2651,22 +2656,28 @@ def abi_method_adder(
         approval_program=approval_program,
         clear_program=clear_program,
         extra_pages=extra_pages,
-        note=b"some randomness so I can repeat myself: " + token_bytes(10),
+        note=note,
     )
 
 
 @step(
-    'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments.'
+    'I add a hash-{determinism} method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments.'
 )
-def add_abi_method_call(context, account_type, operation):
-    abi_method_adder(context, account_type, operation)
+def add_abi_method_call(context, determinism, account_type, operation):
+    abi_method_adder(
+        context,
+        account_type,
+        operation,
+        force_unique_transactions=(determinism == "nondeterministic"),
+    )
 
 
 @when(
-    'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments, approval-program "{approval_program_path:MaybeString}", clear-program "{clear_program_path:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, extra-pages {extra_pages}.'
+    'I add a hash-{determinism} method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments, approval-program "{approval_program_path:MaybeString}", clear-program "{clear_program_path:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, extra-pages {extra_pages}.'
 )
 def add_abi_method_call_creation_with_allocs(
     context,
+    determinism,
     account_type,
     operation,
     approval_program_path,
@@ -2689,14 +2700,20 @@ def add_abi_method_call_creation_with_allocs(
         local_bytes,
         local_ints,
         extra_pages,
+        force_unique_transactions=(determinism == "nondeterministic"),
     )
 
 
 @when(
-    'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments, approval-program "{approval_program_path:MaybeString}", clear-program "{clear_program_path:MaybeString}".'
+    'I add a hash-{determinism} method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments, approval-program "{approval_program_path:MaybeString}", clear-program "{clear_program_path:MaybeString}".'
 )
 def add_abi_method_call_creation(
-    context, account_type, operation, approval_program_path, clear_program_path
+    context,
+    determinism,
+    account_type,
+    operation,
+    approval_program_path,
+    clear_program_path,
 ):
     abi_method_adder(
         context,
@@ -2705,6 +2722,7 @@ def add_abi_method_call_creation(
         True,
         approval_program_path,
         clear_program_path,
+        force_unique_transactions=(determinism == "nondeterministic"),
     )
 
 
