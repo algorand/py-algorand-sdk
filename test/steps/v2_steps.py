@@ -2581,13 +2581,6 @@ def append_app_args_to_method_args(context, method_args):
     context.method_args += app_args
 
 
-@step(
-    "I append the app-id of the {ctxAppIndex}th app to the method arguments array."
-)
-def append_appid_to_method_args(context, ctxAppIndex):
-    context.method_args.append(context.app_ids[int(ctxAppIndex)])
-
-
 def abi_method_adder(
     context,
     account_type,
