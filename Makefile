@@ -2,7 +2,7 @@ UNITS = "@unit.abijson or @unit.algod or @unit.applications or @unit.atomic_tran
 unit:
 	behave --tags=$(UNITS) test -f progress2
 
-INTEGRATIONS = "@abi or @algod or @applications or @applications.verified or @assets or @auction or @compile or @dryrun or @dryrun.testing or @indexer or @indexer.231 or @indexer.applications or @kmd or @rekey or @send"
+INTEGRATIONS = "@abi or @algod or @applications or @applications.verified or @assets or @auction or @c2c or @compile or @dryrun or @dryrun.testing or @indexer or @indexer.231 or @indexer.applications or @kmd or @rekey or @send"
 integration:
 	behave --tags=$(INTEGRATIONS) test -f progress2
 
