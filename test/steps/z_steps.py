@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+import re
 import urllib
 import unittest
 from datetime import datetime
@@ -80,3 +81,17 @@ def char_with_idx_sha512_256_of_witness_mod_n_is_result(
     x = s512_256_uint64(witness)
     quotient = x % len(input)
     assert input[quotient] == bytes([rand_elt]).decode()
+
+
+@then(
+    'Ze {result_index}th atomic result for "spin()" satisfies the regex "{regex}"'
+)
+def spin_results_satisfy(context, result_index, regex):
+    abi_type = ABIType.from_string("(byte[3],byte[17],byte[17],byte[17])")
+    result = context.atomic_transaction_composer_return.abi_results[
+        int(result_index)
+    ]
+    spin, _, _, _ = abi_type.decode(result.raw_value)
+    spin = bytes(spin).decode()
+
+    assert re.search(regex, spin), f"{spin} did not match the regex {regex}"
