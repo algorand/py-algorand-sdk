@@ -5,6 +5,7 @@ from pathlib import Path
 import urllib
 import unittest
 from datetime import datetime
+from secrets import token_bytes
 from typing import Union
 from urllib.request import Request, urlopen
 
@@ -2656,6 +2657,7 @@ def abi_method_adder(
         approval_program=approval_program,
         clear_program=clear_program,
         extra_pages=extra_pages,
+        note=b"some randomness so I can repeat myself: " + token_bytes(10),
     )
 
 
@@ -2976,65 +2978,21 @@ def deserialize_json_to_contract(context):
     assert actual == context.abi_contract
 
 
-from typing import List
-
-
-class TransactionTree:
-    def __init__(self, txn: dict):
-        self.txn = txn
-        self.inner_txns = [
-            TransactionTree(itxn) for itxn in txn.get("inner-txns", [])
-        ]
-
-    def shape(self) -> str:
-        prefix = self.txn["txn"]["txn"]["type"]
-        suffix = "{" + ",".join(itxn.shape() for itxn in self.inner_txns) + "}"
-        return f"{prefix}->{suffix}"
-
-
-class TransactionForest:
-    def __init__(self, txns: list):
-        self.txns = [TransactionTree(txn) for txn in txns]
-
-    def shape(self) -> str:
-        return "{" + ",".join(txn.shape() for txn in self.txns) + "}"
-
-
-def retrieve_transaction_forest(
-    algod_client, tx_ids: list
-) -> TransactionForest:
-    return TransactionForest(
-        [algod_client.pending_transaction_info(tx_id) for tx_id in tx_ids]
-    )
+@then(
+    'I can dig into the resulting atomic transaction execution tree with path "{path}"'
+)
+def digging_the_inner_txns(context, path):
+    d = context.atomic_transaction_composer_return.tx_infos
+    for i, p in enumerate(path.split(",")):
+        idx = int(p)
+        d = d["inner-txns"][idx] if i else d[idx]
 
 
 @then(
     'I can retrieve all inner transactions that were called from the atomic transaction with call graph "{callGraph}".'
 )
 def can_retrieve_all_inner_txns(context, callGraph):
-    forest = retrieve_transaction_forest(
-        context.app_acl, context.atomic_transaction_composer_return.tx_ids
+    actual = context.atomic_transaction_composer_return.transactions_trace(
+        quote="'"
     )
-    actual = forest.shape()
     assert actual == callGraph, f"expected: {callGraph} but got: {actual}"
-
-
-"""
-logs = [base64.b64decode(v) for v in forest.txns[0].txn['logs'] ]
-
-tx_info
-    - confirmed-round
-    - logs
-    - pool-error
-    - txn
-        - sig
-        - txn
-            - ap**
-            - type
-    - inner-txns: [] of
-        - pool-error
-        - txn
-            - txn
-                - ap**
-                - type
-"""
