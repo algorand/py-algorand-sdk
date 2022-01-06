@@ -4,7 +4,7 @@ from urllib import parse
 import urllib.error
 from urllib.request import Request, urlopen
 
-from .. import constants, error, encoding, future, logic, util
+from .. import constants, encoding, error, future, logic, util
 
 api_version_path_prefix = "/v2"
 
