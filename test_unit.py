@@ -1260,6 +1260,10 @@ class TestApplicationTransactions(unittest.TestCase):
         actual = logic.get_application_address(appID)
         self.assertEqual(actual, expected)
 
+        appID = "seventy seven"
+        with self.assertRaises(AssertionError):
+            logic.get_application_address(appID)
+
     def test_application_call(self):
         params = transaction.SuggestedParams(0, 1, 100, self.genesis)
         for oc in transaction.OnComplete:
