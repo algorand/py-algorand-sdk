@@ -3,10 +3,7 @@ from urllib import parse
 import urllib.error
 import json
 import base64
-from .. import error
-from .. import encoding
-from .. import constants
-from .. import future
+from .. import constants, error, encoding, future, logic
 import msgpack
 from .. import util
 
@@ -126,7 +123,7 @@ class AlgodClient:
         """
         req = "/applications/" + str(application_id)
         resp = self.algod_request("GET", req, **kwargs)
-        resp["application-account"] = encoding.application_address(
+        resp["application-account"] = logic.get_application_address(
             application_id
         )
         return resp

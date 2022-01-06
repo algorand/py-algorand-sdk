@@ -4296,25 +4296,6 @@ class TestABIInteraction(unittest.TestCase):
         )
 
 
-class TestApplication(unittest.TestCase):
-    def test_application_address(self):
-        test_cases = [
-            (
-                182,
-                "UZMDHVAHZJOKHNAF3D7JCEPPZGFLQSOAXNEB4QCYLCTH7M7VZY2J4MA5DQ",
-            ),
-            (
-                188,
-                "HBKRYOSBCJLZJC3I2KMBUFR4FDCN3K2RXNGOIJCTALJ645HFLC6LURSXXI",
-            ),
-        ]
-
-        for test_case in test_cases:
-            self.assertEqual(
-                encoding.application_address(test_case[0]), test_case[1]
-            )
-
-
 if __name__ == "__main__":
     to_run = [
         TestPaymentTransaction,

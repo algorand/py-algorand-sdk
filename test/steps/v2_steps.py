@@ -28,6 +28,7 @@ from algosdk import (
     atomic_transaction_composer,
     encoding,
     error,
+    logic,
     mnemonic,
 )
 from algosdk.v2client import *
@@ -2099,7 +2100,7 @@ def create_transient_and_fund(context, transient_fund_amount):
 def fund_app_account(context, fund_amount):
     fund_account_address(
         context,
-        encoding.application_address(context.current_application_id),
+        logic.get_application_address(context.current_application_id),
         fund_amount,
     )
 
@@ -2165,7 +2166,7 @@ def remember_app_id(context):
 def assert_app_account_is_the_hash(context):
     app_id = context.current_application_id
     app_info = context.app_acl.application_info(app_id)
-    assert app_info["application-account"] == encoding.application_address(
+    assert app_info["application-account"] == logic.get_application_address(
         app_id
     )
 
