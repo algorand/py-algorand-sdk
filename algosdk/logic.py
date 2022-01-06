@@ -278,6 +278,4 @@ def get_application_address(appID: int) -> str:
     Returns:
         str: The address corresponding to that application's escrow account.
     """
-    to_sign = constants.APPID_PREFIX + appID.to_bytes(8, "big")
-    checksum = encoding.checksum(to_sign)
-    return encoding.encode_address(checksum)
+    return encoding.application_address(appID)
