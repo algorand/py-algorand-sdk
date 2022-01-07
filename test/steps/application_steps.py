@@ -15,7 +15,7 @@ from behave import (
 from algosdk import abi, atomic_transaction_composer, encoding, logic, mnemonic
 from algosdk.abi.base_type import ABIType
 from algosdk.abi.contract import NetworkInfo
-from algosdk.encoding import checksum
+from algosdk.encoding import checksum, encode_address
 from algosdk.error import AlgodHTTPError
 from algosdk.future import transaction
 from algosdk.testing.dryrun import DryrunTestCaseMixin
@@ -375,14 +375,15 @@ def remember_app_id(context):
 
 
 @then(
-    "I get the application info for the current application, and its account matches the app id's hash"
+    "I get the account address for the current application and see that it matches the app id's hash"
 )
 def assert_app_account_is_the_hash(context):
     app_id = context.current_application_id
-    app_info = context.app_acl.application_info(app_id)
-    assert app_info["application-account"] == logic.get_application_address(
-        app_id
-    )
+    expected = encode_address(checksum(b"appID" + app_id.to_bytes(8, "big")))
+    actual = logic.get_application_address(app_id)
+    assert (
+        expected == actual
+    ), f"account-address: expected [{expected}], but got [{actual}]"
 
 
 @given("an application id {app_id}")
