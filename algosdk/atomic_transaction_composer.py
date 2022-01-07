@@ -507,6 +507,7 @@ class AtomicTransactionComposer:
                         raw_value=raw_value,
                         return_value=return_value,
                         decode_error=decode_error,
+                        tx_info=client.pending_transaction_info(tx_id),
                     )
                 )
                 continue

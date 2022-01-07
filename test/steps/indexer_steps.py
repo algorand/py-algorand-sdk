@@ -1040,6 +1040,7 @@ def we_expect_path(context, path):
     expect_path(context, path)
 
 
+# TODO: make this actually expect an error
 @then('expect error string to contain "{err:MaybeString}"')
 def expect_error(context, err):
     pass
