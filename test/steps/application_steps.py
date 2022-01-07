@@ -1,4 +1,5 @@
 import base64
+from glom import glom
 import json
 import re
 import unittest
@@ -1206,10 +1207,10 @@ def deserialize_json_to_contract(context):
     'I can dig into the resulting atomic transaction execution tree with path "{path}"'
 )
 def digging_the_inner_txns(context, path):
-    d = context.atomic_transaction_composer_return.tx_infos
+    d = context.atomic_transaction_composer_return.abi_results
     for i, p in enumerate(path.split(",")):
         idx = int(p)
-        d = d["inner-txns"][idx] if i else d[idx]
+        d = d["inner-txns"][idx] if i else d[idx].tx_info
 
 
 @then(
@@ -1219,9 +1220,9 @@ def same_groupids_for_paths(context, paths):
     paths = [[int(p) for p in path.split(",")] for path in paths.split(":")]
     grp = None
     for path in paths:
-        d = context.atomic_transaction_composer_return.tx_infos
+        d = context.atomic_transaction_composer_return.abi_results
         for idx, p in enumerate(path):
-            d = d["inner-txns"][p] if idx else d[idx]
+            d = d["inner-txns"][p] if idx else d[idx].tx_info
             _grp = d["txn"]["txn"]["grp"]
         if not grp:
             grp = _grp
@@ -1290,3 +1291,14 @@ def spin_results_satisfy(context, result_index, regex):
     spin = bytes(spin).decode()
 
     assert re.search(regex, spin), f"{spin} did not match the regex {regex}"
+
+
+@then(
+    'I can dig the {i}th atomic result with path "{path}" and see the eval delta field "{field}"'
+)
+def glom_app_eval_delta(context, i, path, field):
+    results = context.atomic_transaction_composer_return.abi_results
+    actual_field = glom(results[int(i)].tx_info, path)
+    assert field == str(
+        actual_field
+    ), f"expected eval delta field [{field}] but got [{actual_field}]"
