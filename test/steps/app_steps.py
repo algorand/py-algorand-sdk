@@ -1048,7 +1048,7 @@ def check_atomic_transaction_composer_response(context, returns):
 
 @then('The app should have returned ABI types "{abiTypes:MaybeString}".')
 def check_atomic_transaction_composer_return_type(context, abiTypes):
-    expected_tokens = abiTypes.split("#")
+    expected_tokens = abiTypes.split(":")
     for i, expected in enumerate(expected_tokens):
         result = context.atomic_transaction_composer_return.abi_results[i]
         assert result.decode_error is None
@@ -1217,7 +1217,7 @@ def digging_the_inner_txns(context, path):
     'I dig into the paths "{paths}" of the resulting atomic transaction tree I see group ids and they are all the same'
 )
 def same_groupids_for_paths(context, paths):
-    paths = [[int(p) for p in path.split(",")] for path in paths.split("#")]
+    paths = [[int(p) for p in path.split(",")] for path in paths.split(":")]
     grp = None
     for path in paths:
         d = context.atomic_transaction_composer_return.tx_infos
