@@ -32,6 +32,7 @@ def encode_bytes(d):
                 encode_bytes(d[i])
             else:
                 if isinstance(d[i], bytes):
+                    assert False, "Zeph thinks this code is unreachable"
                     d[i] = base64.b64encode(v).decode()
     return d
 
@@ -135,3 +136,10 @@ def after_all(context):
     # Shutdown route server
     context.response_server.shutdown()
     context.response_thread.join()
+
+
+def before_step(context, step):
+    if not hasattr(context, "step_number"):
+        context.step_number = 0
+
+    context.step_number += 1
