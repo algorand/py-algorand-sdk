@@ -515,7 +515,6 @@ class AtomicTransactionComposer:
             # Parse log for ABI method return value
             try:
                 resp = client.pending_transaction_info(tx_id)
-
                 confirmed_round = resp["confirmed-round"]
                 logs = resp["logs"] if "logs" in resp else []
 
