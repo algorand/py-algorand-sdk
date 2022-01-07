@@ -31,6 +31,7 @@ from step_utils import (
     operation_string_to_enum,
     read_program,
     split_and_process_app_args,
+    transactions_trace,
 )
 
 
@@ -1232,8 +1233,10 @@ def same_groupids_for_paths(context, paths):
     'I can retrieve all inner transactions that were called from the atomic transaction with call graph "{callGraph}".'
 )
 def can_retrieve_all_inner_txns(context, callGraph):
-    actual = context.atomic_transaction_composer_return.transactions_trace(
-        quote="'"
+    actual = transactions_trace(
+        context.atomic_transaction_composer,
+        context.atomic_transaction_composer_return.abi_results,
+        quote="'",
     )
     assert actual == callGraph, f"expected: {callGraph} but got: {actual}"
 

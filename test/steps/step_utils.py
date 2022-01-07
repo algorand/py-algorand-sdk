@@ -1,8 +1,12 @@
 import base64
 from pathlib import Path
-from typing import Union
+from typing import List, Union
 
 from algosdk import encoding
+from algosdk.atomic_transaction_composer import (
+    AtomicTransactionComposer,
+    ABIResult,
+)
 from algosdk.future import transaction
 
 import parse
@@ -101,6 +105,44 @@ def split_and_process_app_args(in_args):
         elif sub_arg[0] == "addr":
             app_args.append(encoding.decode_address(sub_arg[1]))
     return app_args
+
+
+def transactions_trace(
+    atc: AtomicTransactionComposer, results: List[ABIResult], quote='"'
+) -> str:
+    """
+    Return a json-like representation of the transactions call graph that occured during execution
+    """
+
+    def _wrap(k, v):
+        return "{" + quote + k + quote + ":" + v + "}"
+
+    def _wrap_iter(vs):
+        vs = list(vs)
+        return vs[0] if len(vs) == 1 else "[" + ",".join(vs) + "]"
+
+    def _tt(tx: Union[int, list, dict]) -> str:
+        if isinstance(tx, list):
+            _wrap_iter(tx)
+
+        if isinstance(tx, dict):
+            k = tx["txn"]["txn"]["type"]
+            tx_info = tx
+
+        # top level only:
+        else:
+            assert isinstance(tx, int)
+            tx_info = results[tx].tx_info
+            k = (
+                atc.method_dict[tx].get_signature()
+                if tx in atc.method_dict
+                else tx_info["txn"]["txn"]["type"]
+            )
+
+        vs = tx_info.get("inner-txns", [])
+        return _wrap(k, _wrap_iter(map(_tt, vs))) if vs else quote + k + quote
+
+    return _wrap_iter(map(_tt, range(len(atc.tx_ids))))
 
 
 ########### STEP HELPERS ############

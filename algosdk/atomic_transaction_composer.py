@@ -492,7 +492,6 @@ class AtomicTransactionComposer:
         confirmed_round = resp["confirmed-round"]
         method_results = []
 
-        tx_infos = []
         for i, tx_id in enumerate(self.tx_ids):
             raw_value = None
             return_value = None
@@ -515,7 +514,6 @@ class AtomicTransactionComposer:
             # Parse log for ABI method return value
             try:
                 resp = client.pending_transaction_info(tx_id)
-                tx_infos.append(resp)
 
                 confirmed_round = resp["confirmed-round"]
                 logs = resp["logs"] if "logs" in resp else []
@@ -547,6 +545,7 @@ class AtomicTransactionComposer:
                 raw_value=raw_value,
                 return_value=return_value,
                 decode_error=decode_error,
+                tx_info=resp,
             )
             method_results.append(abi_result)
 
@@ -554,8 +553,6 @@ class AtomicTransactionComposer:
             confirmed_round=confirmed_round,
             tx_ids=self.tx_ids,
             results=method_results,
-            tx_infos=tx_infos,
-            methods=self.method_dict,
         )
 
 
@@ -695,11 +692,13 @@ class ABIResult:
         raw_value: bytes,
         return_value: Any,
         decode_error: error,
+        tx_info: dict,
     ) -> None:
         self.tx_id = tx_id
         self.raw_value = raw_value
         self.return_value = return_value
         self.decode_error = decode_error
+        self.tx_info = tx_info
 
 
 class AtomicTransactionResponse:
@@ -707,49 +706,8 @@ class AtomicTransactionResponse:
         self,
         confirmed_round: int,
         tx_ids: List[str],
-        results: ABIResult,
-        tx_infos: Dict[str, dict] = None,
-        methods: Dict[int, abi.Method] = None,
+        results: List[ABIResult],
     ) -> None:
         self.confirmed_round = confirmed_round
         self.tx_ids = tx_ids
         self.abi_results = results
-        self.tx_infos = tx_infos
-        self.methods = methods
-
-    def transactions_trace(self, quote='"') -> str:
-        """
-        Return a json-like representation of the transactions call graph that occured during execution
-        """
-
-        def _wrap(k, v):
-            return "{" + quote + k + quote + ":" + v + "}"
-
-        def _wrap_iter(vs):
-            vs = list(vs)
-            return vs[0] if len(vs) == 1 else "[" + ",".join(vs) + "]"
-
-        def _tt(tx: Union[int, list, dict]) -> str:
-            if isinstance(tx, list):
-                _wrap_iter(tx)
-
-            if isinstance(tx, dict):
-                k = tx["txn"]["txn"]["type"]
-                tx_info = tx
-
-            # top level only:
-            else:
-                assert isinstance(tx, int)
-                tx_info = self.tx_infos[tx]
-                k = (
-                    self.methods[tx].get_signature()
-                    if tx in self.methods
-                    else tx_info["txn"]["txn"]["type"]
-                )
-
-            vs = tx_info.get("inner-txns", [])
-            return (
-                _wrap(k, _wrap_iter(map(_tt, vs))) if vs else quote + k + quote
-            )
-
-        return _wrap_iter(map(_tt, range(len(self.tx_ids))))
