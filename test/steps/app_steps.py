@@ -482,13 +482,11 @@ def compile_check_step(context, status, result, hash):
 
 
 @then(
-    'base64 decoding the response "{result:MaybeString}" is the same as the binary "{program:MaybeString}"'
+    'base64 decoding the response is the same as the binary "{binary:MaybeString}"'
 )
-def b64decode_compiled_teal_step(context, result, program):
-    binary = load_resource(program)
+def b64decode_compiled_teal_step(context, binary):
+    binary = load_resource(binary)
     response_result = context.response["result"]
-    if result:
-        assert result == response_result
     assert base64.b64decode(response_result.encode()) == binary
 
 
@@ -1245,7 +1243,7 @@ def s512_256_uint64(witness):
 
 
 @then(
-    "Ze {result_index}th atomic result for randomInt({input}) proves correct"
+    "The {result_index}th atomic result for randomInt({input}) proves correct"
 )
 def sha512_256_of_witness_mod_n_is_result(context, result_index, input):
     input = int(input)
@@ -1261,7 +1259,7 @@ def sha512_256_of_witness_mod_n_is_result(context, result_index, input):
 
 
 @then(
-    'Ze {result_index}th atomic result for randElement("{input}") proves correct'
+    'The {result_index}th atomic result for randElement("{input}") proves correct'
 )
 def char_with_idx_sha512_256_of_witness_mod_n_is_result(
     context, result_index, input
@@ -1278,7 +1276,7 @@ def char_with_idx_sha512_256_of_witness_mod_n_is_result(
 
 
 @then(
-    'Ze {result_index}th atomic result for "spin()" satisfies the regex "{regex}"'
+    'The {result_index}th atomic result for "spin()" satisfies the regex "{regex}"'
 )
 def spin_results_satisfy(context, result_index, regex):
     abi_type = ABIType.from_string("(byte[3],byte[17],byte[17],byte[17])")
