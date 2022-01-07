@@ -703,10 +703,7 @@ class ABIResult:
 
 class AtomicTransactionResponse:
     def __init__(
-        self,
-        confirmed_round: int,
-        tx_ids: List[str],
-        results: List[ABIResult],
+        self, confirmed_round: int, tx_ids: List[str], results: List[ABIResult]
     ) -> None:
         self.confirmed_round = confirmed_round
         self.tx_ids = tx_ids
