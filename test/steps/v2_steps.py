@@ -79,6 +79,19 @@ def validate_error(context, err):
         raise err
 
 
+# TODO: make this actually expect an error
+@then('expect error string to contain "{err:MaybeString}"')
+def expect_error(context, err):
+    pass
+
+
+@then(
+    "the parsed Suggested Transaction Parameters response should have first round valid of {roundNum}"
+)
+def parse_suggested(context, roundNum):
+    assert context.response.first == int(roundNum)
+
+
 @when('we make any "{client}" call to "{endpoint}".')
 def step_impl(context, client, endpoint):
     # with the current implementation of mock responses, there is no need to do an 'endpoint' lookup
@@ -94,6 +107,11 @@ def step_impl(context, client, endpoint):
             validate_error(context, err)
     else:
         raise NotImplementedError('did not recognize client "' + client + '"')
+
+
+@when("we make any Suggested Transaction Parameters call")
+def suggested_any(context):
+    context.response = context.acl.suggested_params()
 
 
 @then("the parsed response should equal the mock response.")
@@ -132,6 +150,14 @@ def pending_txn_any2(context):
     context.response = context.acl.pending_transaction_info(
         "sdfsf", response_format="msgpack"
     )
+
+
+@when("we make any Pending Transaction Information call with json format")
+def pending_txn_any2(context):
+    context.response = context.acl.pending_transaction_info(
+        "sdfsf", response_format="json"
+    )
+    x = 42
 
 
 @then(

@@ -1005,18 +1005,6 @@ def parse_search_assets(context, roundNum, length, index, assetIndex):
         )
 
 
-@when("we make any Suggested Transaction Parameters call")
-def suggested_any(context):
-    context.response = context.acl.suggested_params()
-
-
-@then(
-    "the parsed Suggested Transaction Parameters response should have first round valid of {roundNum}"
-)
-def parse_suggested(context, roundNum):
-    assert context.response.first == int(roundNum)
-
-
 @then('expect the path used to be "{path}"')
 def expect_path(context, path):
     if not isinstance(context.response, dict):
@@ -1038,12 +1026,6 @@ def expect_path(context, path):
 @then('we expect the path used to be "{path}"')
 def we_expect_path(context, path):
     expect_path(context, path)
-
-
-# TODO: make this actually expect an error
-@then('expect error string to contain "{err:MaybeString}"')
-def expect_error(context, err):
-    pass
 
 
 @given(
