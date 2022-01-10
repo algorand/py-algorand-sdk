@@ -33,6 +33,7 @@ from algosdk.abi import (
     Method,
     Interface,
     Contract,
+    NetworkInfo,
 )
 from algosdk.future import template, transaction
 from algosdk.testing import dryrun
@@ -4227,6 +4228,19 @@ class TestABIInteraction(unittest.TestCase):
                 ABIType.from_string("string"),
                 1,
             ),
+            (
+                "foreigns(account,pay,asset,application,bool)void",
+                b"\xbf\xed\xf2\xc1",
+                [
+                    "account",
+                    "pay",
+                    "asset",
+                    "application",
+                    ABIType.from_string("bool"),
+                ],
+                "void",
+                2,
+            ),
         ]
 
         for test_case in test_cases:
@@ -4244,19 +4258,31 @@ class TestABIInteraction(unittest.TestCase):
             self.assertEqual(m.get_txn_calls(), test_case[4])
 
     def test_interface(self):
-        test_json = '{"name": "Calculator","methods": [{ "name": "add", "returns": {"type": "void"}, "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] },{ "name": "multiply", "returns": {"type": "void"}, "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] }]}'
+        test_json = '{"name": "Calculator","desc":"This is an example interface","methods": [{ "name": "add", "returns": {"type": "void"}, "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] },{ "name": "multiply", "returns": {"type": "void"}, "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] }]}'
         i = Interface.from_json(test_json)
         self.assertEqual(i.name, "Calculator")
+        self.assertEqual(i.desc, "This is an example interface")
         self.assertEqual(
             [m.get_signature() for m in i.methods],
             ["add(uint64,uint64)void", "multiply(uint64,uint64)void"],
         )
 
     def test_contract(self):
-        test_json = '{"name": "Calculator","appId": 3, "methods": [{ "name": "add", "returns": {"type": "void"}, "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] },{ "name": "multiply", "returns": {"type": "void"}, "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] }]}'
+        test_json = '{"name": "Calculator","desc":"This is an example contract","networks":{"wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=":{"appID":1234},"SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=":{"appID":5678}}, "methods": [{ "name": "add", "returns": {"type": "void"}, "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] },{ "name": "multiply", "returns": {"type": "void"}, "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] }]}'
         c = Contract.from_json(test_json)
         self.assertEqual(c.name, "Calculator")
-        self.assertEqual(c.app_id, 3)
+        self.assertEqual(c.desc, "This is an example contract")
+        self.assertEqual(
+            c.networks,
+            {
+                "wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=": NetworkInfo(
+                    app_id=1234
+                ),
+                "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=": NetworkInfo(
+                    app_id=5678
+                ),
+            },
+        )
         self.assertEqual(
             [m.get_signature() for m in c.methods],
             ["add(uint64,uint64)void", "multiply(uint64,uint64)void"],

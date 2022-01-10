@@ -11,16 +11,24 @@ class Interface:
     Args:
         name (string): name of the interface
         methods (list): list of Method objects
+        desc (string, optional): description of the interface
     """
 
-    def __init__(self, name: str, methods: List[Method]) -> None:
+    def __init__(
+        self, name: str, methods: List[Method], desc: str = None
+    ) -> None:
         self.name = name
         self.methods = methods
+        self.desc = desc
 
     def __eq__(self, o: object) -> bool:
         if not isinstance(o, Interface):
             return False
-        return self.name == o.name and self.methods == o.methods
+        return (
+            self.name == o.name
+            and self.methods == o.methods
+            and self.desc == o.desc
+        )
 
     @staticmethod
     def from_json(resp: Union[str, bytes, bytearray]) -> "Interface":
@@ -31,10 +39,13 @@ class Interface:
         d = {}
         d["name"] = self.name
         d["methods"] = [m.dictify() for m in self.methods]
+        if self.desc:
+            d["desc"] = self.desc
         return d
 
     @staticmethod
     def undictify(d: dict) -> "Interface":
         name = d["name"]
         method_list = [Method.undictify(method) for method in d["methods"]]
-        return Interface(name=name, methods=method_list)
+        desc = d["desc"] if "desc" in d else None
+        return Interface(name=name, desc=desc, methods=method_list)

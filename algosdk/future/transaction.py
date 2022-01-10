@@ -3011,7 +3011,9 @@ def assign_group_id(txns, address=None):
     return result
 
 
-def wait_for_confirmation(algod_client, txid, wait_rounds=0, **kwargs):
+def wait_for_confirmation(
+    algod_client: algod.AlgodClient, txid: str, wait_rounds: int = 0, **kwargs
+):
     """
     Block until a pending transaction is confirmed by the network.
 
@@ -3019,23 +3021,41 @@ def wait_for_confirmation(algod_client, txid, wait_rounds=0, **kwargs):
         algod_client (algod.AlgodClient): Instance of the `algod` client
         txid (str): transaction ID
         wait_rounds (int, optional): The number of rounds to block for before
-            exiting with an Exception. If not supplied, there is no timeout.
+            exiting with an Exception. If not supplied, this will be 1000.
     """
     last_round = algod_client.status()["last-round"]
     current_round = last_round + 1
 
+    if wait_rounds == 0:
+        wait_rounds = 1000
+
     while True:
         # Check that the `wait_rounds` has not passed
-        if wait_rounds > 0 and current_round > last_round + wait_rounds:
+        if current_round > last_round + wait_rounds:
             raise error.ConfirmationTimeoutError(
-                f"Wait for transaction id {txid} timed out"
+                "Wait for transaction id {} timed out".format(txid)
             )
 
-        tx_info = algod_client.pending_transaction_info(txid, **kwargs)
+        try:
+            tx_info = algod_client.pending_transaction_info(txid, **kwargs)
 
-        # The transaction has been confirmed
-        if "confirmed-round" in tx_info:
-            return tx_info
+            # The transaction has been rejected
+            if "pool-error" in tx_info and len(tx_info["pool-error"]) != 0:
+                raise error.TransactionRejectedError(
+                    "Transaction rejected: " + tx_info["pool-error"]
+                )
+
+            # The transaction has been confirmed
+            if (
+                "confirmed-round" in tx_info
+                and tx_info["confirmed-round"] != 0
+            ):
+                return tx_info
+        except error.AlgodHTTPError as e:
+            # Ignore HTTP errors from pending_transaction_info, since it may return 404 if the algod
+            # instance is behind a load balancer and the request goes to a different algod than the
+            # one we submitted the transaction to
+            pass
 
         # Wait until the block for the `current_round` is confirmed
         algod_client.status_after_block(current_round)
