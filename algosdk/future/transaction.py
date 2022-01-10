@@ -9,7 +9,7 @@ from .. import encoding
 from .. import error
 from .. import logic
 from .. import transaction
-from ..v2client import algod
+from ..v2client import algod, models
 from nacl.signing import SigningKey, VerifyKey
 from nacl.exceptions import BadSignatureError
 
@@ -3062,3 +3062,113 @@ def wait_for_confirmation(
 
         # Incremenent the `current_round`
         current_round += 1
+
+
+defaultAppId = 1380011588
+
+
+def create_dryrun(
+    client: algod.AlgodClient,
+    txns: List[Union[SignedTransaction, LogicSigTransaction]],
+    protocol_version=None,
+    latest_timestamp=None,
+    round=None,
+) -> models.DryrunRequest:
+    """
+    Create DryrunRequest object from a client and list of signed transactions
+
+    Args:
+        algod_client (algod.AlgodClient): Instance of the `algod` client
+        txns (List[SignedTransaction]): transaction ID
+        protocol_version (string, optional): The protocol version to evaluate against
+        latest_timestamp (int, optional): The latest timestamp to evaluate against
+        round (int, optional): The round to evaluate against
+    """
+
+    # The list of info objects passed to the DryrunRequest object
+    app_infos, acct_infos = [], []
+
+    # The running list of things we need to fetch
+    apps, assets, accts = [], [], []
+    for t in txns:
+        txn = t.transaction
+
+        # we only care about app call transactions
+        if issubclass(type(txn), ApplicationCallTxn):
+            accts.append(txn.sender)
+
+            # Add foreign args if they're set
+            if txn.accounts:
+                accts.extend(txn.accounts)
+            if txn.foreign_apps:
+                apps.extend(txn.foreign_apps)
+            if txn.foreign_assets:
+                assets.extend(txn.foreign_assets)
+
+            # For creates, we need to add the source directly from the transaction
+            if txn.index == 0:
+                appId = defaultAppId
+                # Make up app id, since tealdbg/dryrun doesnt like 0s
+                # https://github.com/algorand/go-algorand/blob/e466aa18d4d963868d6d15279b1c881977fa603f/libgoal/libgoal.go#L1089-L1090
+                app_infos.append(
+                    models.Application(
+                        id=appId,
+                        params=models.ApplicationParams(
+                            creator=txn.sender,
+                            approval_program=txn.approval_program,
+                            clear_state_program=txn.clear_program,
+                            local_state_schema=txn.local_schema,
+                            global_state_schema=txn.global_schema,
+                        ),
+                    )
+                )
+            else:
+                apps.append(txn.index)
+
+    # Dedupe and filter none, reset programs to bytecode instead of b64
+    apps = [i for i in set(apps) if i]
+    for app in apps:
+        app_info = client.application_info(app)
+        # Need to pass bytes, not b64 string
+        app_info = decode_programs(app_info)
+        app_infos.append(app_info)
+
+        # Make sure the application account is in the accounts array
+        accts.append(logic.get_application_address(app))
+
+    # Dedupe and filter None, add asset creator to accounts to include in dryrun
+    assets = [i for i in set(assets) if i]
+    for asset in assets:
+        asset_info = client.asset_info(asset)
+
+        # Make sure the asset creator address is in the accounts array
+        accts.append(asset_info["params"]["creator"])
+
+    # Dedupe and filter None, fetch and add account info
+    accts = [i for i in set(accts) if i]
+    for acct in accts:
+        acct_info = client.account_info(acct)
+        if "created-apps" in acct_info:
+            acct_info["created-apps"] = [
+                decode_programs(ca) for ca in acct_info["created-apps"]
+            ]
+        acct_infos.append(acct_info)
+
+    return models.DryrunRequest(
+        txns=txns,
+        apps=app_infos,
+        accounts=acct_infos,
+        protocol_version=protocol_version,
+        latest_timestamp=latest_timestamp,
+        round=round,
+    )
+
+
+def decode_programs(app):
+    app["params"]["approval-program"] = base64.b64decode(
+        app["params"]["approval-program"]
+    )
+    app["params"]["clear-state-program"] = base64.b64decode(
+        app["params"]["clear-state-program"]
+    )
+    return app
