@@ -795,6 +795,11 @@ def append_app_args_to_method_args(context, method_args):
     context.method_args += app_args
 
 
+@given('I add the nonce "{nonce}"')
+def add_nonce(context, nonce):
+    context.nonce = nonce
+
+
 def abi_method_adder(
     context,
     account_type,
@@ -848,7 +853,10 @@ def abi_method_adder(
     )
     note = None
     if force_unique_transactions:
-        note = b"step number: " + context.step_number.to_bytes(8, "big")
+        note = (
+            b"I should be unique thanks to this nonce: "
+            + context.nonce.encode()
+        )
 
     context.atomic_transaction_composer.add_method_call(
         app_id=app_id,

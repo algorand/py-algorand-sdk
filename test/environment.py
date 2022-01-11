@@ -136,10 +136,3 @@ def after_all(context):
     # Shutdown route server
     context.response_server.shutdown()
     context.response_thread.join()
-
-
-def before_step(context, step):
-    if not hasattr(context, "step_number"):
-        context.step_number = 0
-
-    context.step_number += 1
