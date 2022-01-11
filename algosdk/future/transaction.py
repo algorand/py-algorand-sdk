@@ -3110,6 +3110,19 @@ def create_dryrun(
                 appId = defaultAppId
                 # Make up app id, since tealdbg/dryrun doesnt like 0s
                 # https://github.com/algorand/go-algorand/blob/e466aa18d4d963868d6d15279b1c881977fa603f/libgoal/libgoal.go#L1089-L1090
+
+                ls = txn.local_schema
+                if ls is not None:
+                    ls = models.ApplicationStateSchema(
+                        ls.num_uints, ls.num_byte_slices
+                    )
+
+                gs = txn.global_schema
+                if gs is not None:
+                    gs = models.ApplicationStateSchema(
+                        gs.num_uints, gs.num_byte_slices
+                    )
+
                 app_infos.append(
                     models.Application(
                         id=appId,
@@ -3117,8 +3130,8 @@ def create_dryrun(
                             creator=txn.sender,
                             approval_program=txn.approval_program,
                             clear_state_program=txn.clear_program,
-                            local_state_schema=txn.local_schema,
-                            global_state_schema=txn.global_schema,
+                            local_state_schema=ls,
+                            global_state_schema=gs,
                         ),
                     )
                 )
