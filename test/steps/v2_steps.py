@@ -2932,7 +2932,6 @@ def deserialize_json_to_contract(context):
     assert actual == context.abi_contract
 
 
-
 @then(
     'I dig into the paths "{paths}" of the resulting atomic transaction tree I see group ids and they are all the same'
 )
