@@ -2932,15 +2932,6 @@ def deserialize_json_to_contract(context):
     assert actual == context.abi_contract
 
 
-@then(
-    'I can dig into the resulting atomic transaction execution tree with path "{path}"'
-)
-def digging_the_inner_txns(context, path):
-    d = context.atomic_transaction_composer_return.abi_results
-    for i, p in enumerate(path.split(",")):
-        idx = int(p)
-        d = d["inner-txns"][idx] if i else d[idx].tx_info
-
 
 @then(
     'I dig into the paths "{paths}" of the resulting atomic transaction tree I see group ids and they are all the same'
