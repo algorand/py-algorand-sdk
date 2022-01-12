@@ -32,8 +32,7 @@ def encode_bytes(d):
                 encode_bytes(d[i])
             else:
                 if isinstance(d[i], bytes):
-                    assert False, "Zeph thinks this code is unreachable"
-                    d[i] = base64.b64encode(v).decode()
+                    d[i] = base64.b64encode(d[i]).decode()
     return d
 
 
