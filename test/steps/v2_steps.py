@@ -2960,6 +2960,9 @@ def transactions_trace(
 ) -> str:
     """
     Return a json-like representation of the transactions call graph that occured during execution
+
+    TODO: this only works when all the transactions are method calls. Should make this work when
+    other kinds of transactions are added with AtomicTransactionComposer.add_transaction()
     """
 
     def _wrap(k, v):
