@@ -496,13 +496,14 @@ class AtomicTransactionComposer:
             raw_value = None
             return_value = None
             decode_error = None
+            tx_info = None
 
             if i not in self.method_dict:
                 continue
 
             # Parse log for ABI method return value
             try:
-                # Return is void  but, we still want to get the tx_info for this transaction
+                tx_info = client.pending_transaction_info(tx_id)
                 if self.method_dict[i].returns.type == abi.Returns.VOID:
                     method_results.append(
                         ABIResult(
@@ -510,14 +511,13 @@ class AtomicTransactionComposer:
                             raw_value=raw_value,
                             return_value=return_value,
                             decode_error=decode_error,
-                            tx_info=client.pending_transaction_info(tx_id),
+                            tx_info=tx_info,
                         )
                     )
                     continue
 
-                resp = client.pending_transaction_info(tx_id)
-                confirmed_round = resp["confirmed-round"]
-                logs = resp["logs"] if "logs" in resp else []
+                confirmed_round = tx_info["confirmed-round"]
+                logs = tx_info["logs"] if "logs" in tx_info else []
 
                 # Look for the last returned value in the log
                 if not logs:
@@ -546,7 +546,7 @@ class AtomicTransactionComposer:
                 raw_value=raw_value,
                 return_value=return_value,
                 decode_error=decode_error,
-                tx_info=resp,
+                tx_info=tx_info,
             )
             method_results.append(abi_result)
 
