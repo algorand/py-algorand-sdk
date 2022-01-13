@@ -2779,8 +2779,12 @@ def check_atomic_transaction_composer_response(context, returns):
 @then('The app should have returned ABI types "{abiTypes:MaybeString}".')
 def check_atomic_transaction_composer_return_type(context, abiTypes):
     expected_tokens = abiTypes.split(":")
+    results = context.atomic_transaction_composer_return.abi_results
+    assert len(expected_tokens) == len(
+        results
+    ), f"surprisingly, we don't have the same number of expected results ({len(expected_tokens)}) as actual results ({len(results)})"
     for i, expected in enumerate(expected_tokens):
-        result = context.atomic_transaction_composer_return.abi_results[i]
+        result = results[i]
         assert result.decode_error is None
 
         if expected == "void":
