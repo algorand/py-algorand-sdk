@@ -499,21 +499,22 @@ class AtomicTransactionComposer:
 
             if i not in self.method_dict:
                 continue
-            # Return is void
-            if self.method_dict[i].returns.type == abi.Returns.VOID:
-                method_results.append(
-                    ABIResult(
-                        tx_id=tx_id,
-                        raw_value=raw_value,
-                        return_value=return_value,
-                        decode_error=decode_error,
-                        tx_info=client.pending_transaction_info(tx_id),
-                    )
-                )
-                continue
 
             # Parse log for ABI method return value
             try:
+                # Return is void  but, we still want to get the tx_info for this transaction
+                if self.method_dict[i].returns.type == abi.Returns.VOID:
+                    method_results.append(
+                        ABIResult(
+                            tx_id=tx_id,
+                            raw_value=raw_value,
+                            return_value=return_value,
+                            decode_error=decode_error,
+                            tx_info=client.pending_transaction_info(tx_id),
+                        )
+                    )
+                    continue
+
                 resp = client.pending_transaction_info(tx_id)
                 confirmed_round = resp["confirmed-round"]
                 logs = resp["logs"] if "logs" in resp else []
