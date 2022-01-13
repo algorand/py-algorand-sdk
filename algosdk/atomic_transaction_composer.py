@@ -515,7 +515,6 @@ class AtomicTransactionComposer:
                     )
                     continue
 
-                confirmed_round = tx_info["confirmed-round"]
                 logs = tx_info["logs"] if "logs" in tx_info else []
 
                 # Look for the last returned value in the log
