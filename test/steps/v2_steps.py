@@ -6,6 +6,7 @@ import urllib
 import unittest
 from datetime import datetime
 from pathlib import Path
+import pytest
 from typing import List, Union
 from urllib.request import Request, urlopen
 from algosdk.abi.contract import NetworkInfo
@@ -45,7 +46,7 @@ from algosdk.v2client.models import (
     Application,
     ApplicationLocalState,
 )
-from algosdk.error import AlgodHTTPError, IndexerHTTPError
+from algosdk.error import ABITypeError, AlgodHTTPError, IndexerHTTPError
 from algosdk.testing.dryrun import DryrunTestCaseMixin
 
 from test.steps.steps import token as daemon_token
@@ -2782,9 +2783,10 @@ def check_atomic_transaction_composer_return_type(context, abiTypes):
         result = context.atomic_transaction_composer_return.abi_results[i]
         assert result.decode_error is None
 
-        if not result or not expected_tokens[i]:
-            assert result.return_value is None
-            assert result.decode_error is None
+        if expected == "void":
+            assert result.raw_value is None
+            with pytest.raises(ABITypeError):
+                abi.ABIType.from_string(expected)
             continue
 
         expected_type = abi.ABIType.from_string(expected)
