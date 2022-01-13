@@ -6,7 +6,6 @@ from typing import Any, List, TypeVar, Union
 
 from algosdk import abi, error
 from algosdk.abi.address_type import AddressType
-
 from algosdk.future import transaction
 from algosdk.v2client import algod
 
