@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import base64
 import copy
 from enum import IntEnum
-from typing import Any, Dict, List, TypeVar, Union
+from typing import Any, List, TypeVar, Union
 
 from algosdk import abi, error
 from algosdk.abi.address_type import AddressType
