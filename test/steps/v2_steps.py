@@ -43,7 +43,6 @@ from algosdk.v2client.models import (
     DryrunRequest,
     DryrunSource,
     Account,
-    Application,
     ApplicationLocalState,
 )
 from algosdk.error import ABITypeError, AlgodHTTPError, IndexerHTTPError
