@@ -2954,68 +2954,15 @@ def same_groupids_for_paths(context, paths):
             assert grp == _grp, f"non-constant txn group hashes {_grp} v {grp}"
 
 
-def transactions_trace(
-    atc: AtomicTransactionComposer, results: List[ABIResult], quote='"'
-) -> str:
-    """
-    Return a json-like representation of the transactions call graph that occured during execution
-
-    TODO: this only works when all the transactions are method calls. Should make this work when
-    other kinds of transactions are added with AtomicTransactionComposer.add_transaction()
-    """
-
-    def _wrap(k, v):
-        return "{" + quote + k + quote + ":" + v + "}"
-
-    def _wrap_iter(vs):
-        vs = list(vs)
-        return vs[0] if len(vs) == 1 else "[" + ",".join(vs) + "]"
-
-    def _tt(tx: Union[int, list, dict]) -> str:
-        if isinstance(tx, list):
-            _wrap_iter(tx)
-
-        if isinstance(tx, dict):
-            k = tx["txn"]["txn"]["type"]
-            tx_info = tx
-
-        # top level only:
-        else:
-            assert isinstance(tx, int)
-            tx_info = results[tx].tx_info
-            k = (
-                atc.method_dict[tx].get_signature()
-                if tx in atc.method_dict
-                else tx_info["txn"]["txn"]["type"]
-            )
-
-        vs = tx_info.get("inner-txns", [])
-        return _wrap(k, _wrap_iter(map(_tt, vs))) if vs else quote + k + quote
-
-    return _wrap_iter(map(_tt, range(len(atc.tx_ids))))
-
-
 @then(
-    'I can retrieve all inner transactions that were called from the atomic transaction with call graph "{callGraph}".'
-)
-def can_retrieve_all_inner_txns(context, callGraph):
-    actual = transactions_trace(
-        context.atomic_transaction_composer,
-        context.atomic_transaction_composer_return.abi_results,
-        quote="'",
-    )
-    assert actual == callGraph, f"expected: {callGraph} but got: {actual}"
-
-
-@then(
-    'I can dig the {i}th atomic result with path "{path}" and see the eval delta field "{field}"'
+    'I can dig the {i}th atomic result with path "{path}" and see the value "{field}"'
 )
 def glom_app_eval_delta(context, i, path, field):
     results = context.atomic_transaction_composer_return.abi_results
     actual_field = glom(results[int(i)].tx_info, path)
     assert field == str(
         actual_field
-    ), f"expected eval delta field [{field}] but got [{actual_field}]"
+    ), f"path [{path}] expected value [{field}] but got [{actual_field}] instead"
 
 
 def s512_256_uint64(witness):
