@@ -9,8 +9,6 @@ from pathlib import Path
 import pytest
 from typing import List, Union
 from urllib.request import Request, urlopen
-from algosdk.abi.contract import NetworkInfo
-
 
 from behave import (
     given,
@@ -23,7 +21,6 @@ from behave import (
 from glom import glom
 import parse
 
-from algosdk.future import transaction
 from algosdk import (
     abi,
     account,
@@ -33,6 +30,9 @@ from algosdk import (
     logic,
     mnemonic,
 )
+from algosdk.abi.contract import NetworkInfo
+from algosdk.error import ABITypeError, AlgodHTTPError, IndexerHTTPError
+from algosdk.future import transaction
 from algosdk.v2client import *
 from algosdk.v2client.models import (
     DryrunRequest,
@@ -40,7 +40,6 @@ from algosdk.v2client.models import (
     Account,
     ApplicationLocalState,
 )
-from algosdk.error import ABITypeError, AlgodHTTPError, IndexerHTTPError
 from algosdk.testing.dryrun import DryrunTestCaseMixin
 
 from test.steps.steps import token as daemon_token
