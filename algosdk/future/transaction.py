@@ -3149,6 +3149,9 @@ def create_dryrun(
         # Make sure the application account is in the accounts array
         accts.append(logic.get_application_address(app))
 
+        # Make sure the creator is added to accounts array
+        accts.append(app_info["params"]["creator"])
+
     # Dedupe and filter None, add asset creator to accounts to include in dryrun
     assets = [i for i in set(assets) if i]
     for asset in assets:
