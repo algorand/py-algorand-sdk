@@ -5,6 +5,7 @@ import urllib
 import unittest
 from datetime import datetime
 from urllib.request import Request, urlopen
+from algosdk.abi.contract import NetworkInfo
 
 import parse
 from behave import (
@@ -16,7 +17,14 @@ from behave import (
 )  # pylint: disable=no-name-in-module
 
 from algosdk.future import transaction
-from algosdk import account, encoding, error, mnemonic
+from algosdk import (
+    abi,
+    account,
+    atomic_transaction_composer,
+    encoding,
+    error,
+    mnemonic,
+)
 from algosdk.v2client import *
 from algosdk.v2client.models import (
     DryrunRequest,
@@ -1714,10 +1722,17 @@ def step_impl(
     )
 
 
+@given("suggested transaction parameters from the algod v2 client")
+def get_sp_from_algod(context):
+    context.suggested_params = context.app_acl.suggested_params()
+
+
 def operation_string_to_enum(operation):
     if operation == "call":
         return transaction.OnComplete.NoOpOC
     elif operation == "create":
+        return transaction.OnComplete.NoOpOC
+    elif operation == "noop":
         return transaction.OnComplete.NoOpOC
     elif operation == "update":
         return transaction.OnComplete.UpdateApplicationOC
@@ -1747,6 +1762,27 @@ def split_and_process_app_args(in_args):
         elif sub_arg[0] == "addr":
             app_args.append(encoding.decode_address(sub_arg[1]))
     return app_args
+
+
+@step(
+    'I build a payment transaction with sender "{sender:MaybeString}", receiver "{receiver:MaybeString}", amount {amount}, close remainder to "{close_remainder_to:MaybeString}"'
+)
+def build_payment_transaction(
+    context, sender, receiver, amount, close_remainder_to
+):
+    if sender == "transient":
+        sender = context.transient_pk
+    if receiver == "transient":
+        receiver = context.transient_pk
+    if not close_remainder_to:
+        close_remainder_to = None
+    context.transaction = transaction.PaymentTxn(
+        sender=sender,
+        sp=context.suggested_params,
+        receiver=receiver,
+        amt=int(amount),
+        close_remainder_to=close_remainder_to,
+    )
 
 
 @when(
@@ -1815,18 +1851,12 @@ def build_app_transaction(
         ]
     if genesis_hash == "none":
         genesis_hash = None
-    if int(local_ints) == 0 and int(local_bytes) == 0:
-        local_schema = None
-    else:
-        local_schema = transaction.StateSchema(
-            num_uints=int(local_ints), num_byte_slices=int(local_bytes)
-        )
-    if int(global_ints) == 0 and int(global_bytes) == 0:
-        global_schema = None
-    else:
-        global_schema = transaction.StateSchema(
-            num_uints=int(global_ints), num_byte_slices=int(global_bytes)
-        )
+    local_schema = transaction.StateSchema(
+        num_uints=int(local_ints), num_byte_slices=int(local_bytes)
+    )
+    global_schema = transaction.StateSchema(
+        num_uints=int(global_ints), num_byte_slices=int(global_bytes)
+    )
     sp = transaction.SuggestedParams(
         int(fee),
         int(first_valid),
@@ -1858,6 +1888,15 @@ def build_app_transaction(
 def sign_transaction_with_signing_account(context):
     private_key = mnemonic.to_private_key(context.signing_mnemonic)
     context.signed_transaction = context.transaction.sign(private_key)
+
+
+@then('the base64 encoded signed transactions should equal "{goldens}"')
+def compare_stxns_array_to_base64_golden(context, goldens):
+    golden_strings = goldens.split(",")
+    assert len(golden_strings) == len(context.signed_transactions)
+    for i, golden in enumerate(golden_strings):
+        actual_base64 = encoding.msgpack_encode(context.signed_transactions[i])
+        assert golden == actual_base64, "actual is {}".format(actual_base64)
 
 
 @then('the base64 encoded signed transaction should equal "{golden}"')
@@ -1922,9 +1961,16 @@ def build_app_txn_with_transient(
     app_accounts,
     extra_pages,
 ):
+    application_id = 0
     if operation == "none":
         operation = None
     else:
+        if (
+            hasattr(context, "current_application_id")
+            and context.current_application_id
+            and operation != "create"
+        ):
+            application_id = context.current_application_id
         operation = operation_string_to_enum(operation)
     dir_path = os.path.dirname(os.path.realpath(__file__))
     dir_path = os.path.dirname(os.path.dirname(dir_path))
@@ -1942,18 +1988,12 @@ def build_app_txn_with_transient(
             dir_path + "/test/features/resources/" + clear_program, "rb"
         ) as f:
             clear_program = bytearray(f.read())
-    if int(local_ints) == 0 and int(local_bytes) == 0:
-        local_schema = None
-    else:
-        local_schema = transaction.StateSchema(
-            num_uints=int(local_ints), num_byte_slices=int(local_bytes)
-        )
-    if int(global_ints) == 0 and int(global_bytes) == 0:
-        global_schema = None
-    else:
-        global_schema = transaction.StateSchema(
-            num_uints=int(global_ints), num_byte_slices=int(global_bytes)
-        )
+    local_schema = transaction.StateSchema(
+        num_uints=int(local_ints), num_byte_slices=int(local_bytes)
+    )
+    global_schema = transaction.StateSchema(
+        num_uints=int(global_ints), num_byte_slices=int(global_bytes)
+    )
     if app_args == "none":
         app_args = None
     elif app_args:
@@ -1972,12 +2012,7 @@ def build_app_txn_with_transient(
         app_accounts = [
             account_pubkey for account_pubkey in app_accounts.split(",")
         ]
-    application_id = 0
-    if (
-        hasattr(context, "current_application_id")
-        and context.current_application_id
-    ):
-        application_id = context.current_application_id
+
     sp = context.app_acl.suggested_params()
     context.app_transaction = transaction.ApplicationCallTxn(
         sender=context.transient_pk,
@@ -2011,7 +2046,7 @@ def sign_submit_save_txid_with_error(context, error_string):
             signed_app_transaction
         )
     except Exception as e:
-        if error_string not in str(e):
+        if not error_string or error_string not in str(e):
             raise RuntimeError(
                 "error string "
                 + error_string
@@ -2025,17 +2060,34 @@ def wait_for_app_txn_confirm(context):
     sp = context.app_acl.suggested_params()
     last_round = sp.first
     context.app_acl.status_after_block(last_round + 2)
-    assert "type" in context.acl.transaction_info(
-        context.transient_pk, context.app_txid
-    )
-    assert "type" in context.acl.transaction_by_id(context.app_txid)
+    if hasattr(context, "acl"):
+        assert "type" in context.acl.transaction_info(
+            context.transient_pk, context.app_txid
+        )
+        assert "type" in context.acl.transaction_by_id(context.app_txid)
+    else:
+        transaction.wait_for_confirmation(
+            context.app_acl, context.app_txid, 10
+        )
 
 
 @given("I remember the new application ID.")
 def remember_app_id(context):
-    context.current_application_id = context.acl.pending_transaction_info(
-        context.app_txid
-    )["txresults"]["createdapp"]
+    if hasattr(context, "acl"):
+        context.current_application_id = context.acl.pending_transaction_info(
+            context.app_txid
+        )["txresults"]["createdapp"]
+    else:
+        context.current_application_id = (
+            context.app_acl.pending_transaction_info(context.app_txid)[
+                "application-index"
+            ]
+        )
+
+
+@given("an application id {app_id}")
+def set_app_id(context, app_id):
+    context.current_application_id = app_id
 
 
 @step(
@@ -2332,3 +2384,486 @@ def dryrun_test_case_local_state_assert_fail_step(
 
     ts.assertNoError(drr)
     ts.assertLocalStateContains(drr, account, dict(key=key, value=val))
+
+
+@given("a new AtomicTransactionComposer")
+def create_atomic_transaction_composer(context):
+    context.atomic_transaction_composer = (
+        atomic_transaction_composer.AtomicTransactionComposer()
+    )
+    context.method_list = []
+
+
+@given("I make a transaction signer for the transient account.")
+def create_transient_transaction_signer(context):
+    private_key = context.transient_sk
+    context.transaction_signer = (
+        atomic_transaction_composer.AccountTransactionSigner(private_key)
+    )
+
+
+@when("I make a transaction signer for the {account_type} account.")
+def create_transaction_signer(context, account_type):
+    if account_type == "transient":
+        private_key = context.transient_sk
+    elif account_type == "signing":
+        private_key = mnemonic.to_private_key(context.signing_mnemonic)
+    else:
+        raise NotImplementedError(
+            "cannot make transaction signer for " + account_type
+        )
+    context.transaction_signer = (
+        atomic_transaction_composer.AccountTransactionSigner(private_key)
+    )
+
+
+@step('I create the Method object from method signature "{method_signature}"')
+def build_abi_method(context, method_signature):
+    context.abi_method = abi.Method.from_signature(method_signature)
+    if not hasattr(context, "method_list"):
+        context.method_list = []
+    context.method_list.append(context.abi_method)
+
+
+@step("I create a transaction with signer with the current transaction.")
+def create_transaction_with_signer(context):
+    context.transaction_with_signer = (
+        atomic_transaction_composer.TransactionWithSigner(
+            context.transaction, context.transaction_signer
+        )
+    )
+
+
+@when("I add the current transaction with signer to the composer.")
+def add_transaction_to_composer(context):
+    context.atomic_transaction_composer.add_transaction(
+        context.transaction_with_signer
+    )
+
+
+def process_abi_args(method, arg_tokens):
+    method_args = []
+    for arg_index, arg in enumerate(method.args):
+        # Skip arg if it does not have a type
+        if isinstance(arg.type, abi.ABIType):
+            method_arg = arg.type.decode(
+                base64.b64decode(arg_tokens[arg_index])
+            )
+            method_args.append(method_arg)
+        elif arg.type == abi.ABIReferenceType.ACCOUNT:
+            method_arg = abi.AddressType().decode(
+                base64.b64decode(arg_tokens[arg_index])
+            )
+            method_args.append(method_arg)
+        elif (
+            arg.type == abi.ABIReferenceType.APPLICATION
+            or arg.type == abi.ABIReferenceType.ASSET
+        ):
+            method_arg = abi.UintType(64).decode(
+                base64.b64decode(arg_tokens[arg_index])
+            )
+            method_args.append(method_arg)
+        else:
+            # Append the transaction signer as is
+            method_args.append(arg_tokens[arg_index])
+    return method_args
+
+
+@step("I create a new method arguments array.")
+def create_abi_method_args(context):
+    context.method_args = []
+
+
+@step(
+    "I append the current transaction with signer to the method arguments array."
+)
+def append_txn_to_method_args(context):
+    context.method_args.append(context.transaction_with_signer)
+
+
+@step(
+    'I append the encoded arguments "{method_args:MaybeString}" to the method arguments array.'
+)
+def append_app_args_to_method_args(context, method_args):
+    # Returns a list of ABI method arguments
+    app_args = method_args.split(",")
+    context.method_args += app_args
+
+
+@step(
+    'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments.'
+)
+def add_abi_method_call(context, account_type, operation):
+    if account_type == "transient":
+        sender = context.transient_pk
+    elif account_type == "signing":
+        sender = mnemonic.to_public_key(context.signing_mnemonic)
+    else:
+        raise NotImplementedError(
+            "cannot make transaction signer for " + account_type
+        )
+    app_args = process_abi_args(context.abi_method, context.method_args)
+    context.atomic_transaction_composer.add_method_call(
+        app_id=int(context.current_application_id),
+        method=context.abi_method,
+        sender=sender,
+        sp=context.suggested_params,
+        signer=context.transaction_signer,
+        method_args=app_args,
+        on_complete=operation_string_to_enum(operation),
+    )
+
+
+@when(
+    'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments, approval-program "{approval_program_path:MaybeString}", clear-program "{clear_program_path:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, extra-pages {extra_pages}.'
+)
+def add_abi_method_call_creation(
+    context,
+    account_type,
+    operation,
+    approval_program_path,
+    clear_program_path,
+    global_bytes,
+    global_ints,
+    local_bytes,
+    local_ints,
+    extra_pages,
+):
+    if account_type == "transient":
+        sender = context.transient_pk
+    elif account_type == "signing":
+        sender = mnemonic.to_public_key(context.signing_mnemonic)
+    else:
+        raise NotImplementedError(
+            "cannot make transaction signer for " + account_type
+        )
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    dir_path = os.path.dirname(os.path.dirname(dir_path))
+    if approval_program_path:
+        with open(
+            dir_path + "/test/features/resources/" + approval_program_path,
+            "rb",
+        ) as f:
+            approval_program = bytearray(f.read())
+    else:
+        approval_program = None
+    if clear_program_path:
+        with open(
+            dir_path + "/test/features/resources/" + clear_program_path, "rb"
+        ) as f:
+            clear_program = bytearray(f.read())
+    else:
+        clear_program = None
+    local_schema = transaction.StateSchema(
+        num_uints=int(local_ints), num_byte_slices=int(local_bytes)
+    )
+    global_schema = transaction.StateSchema(
+        num_uints=int(global_ints), num_byte_slices=int(global_bytes)
+    )
+    extra_pages = int(extra_pages)
+    app_args = process_abi_args(context.abi_method, context.method_args)
+    context.atomic_transaction_composer.add_method_call(
+        app_id=int(context.current_application_id),
+        method=context.abi_method,
+        sender=sender,
+        sp=context.suggested_params,
+        signer=context.transaction_signer,
+        method_args=app_args,
+        on_complete=operation_string_to_enum(operation),
+        local_schema=local_schema,
+        global_schema=global_schema,
+        approval_program=approval_program,
+        clear_program=clear_program,
+        extra_pages=extra_pages,
+    )
+
+
+@when(
+    'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments, approval-program "{approval_program_path:MaybeString}", clear-program "{clear_program_path:MaybeString}".'
+)
+def add_abi_method_call_creation(
+    context, account_type, operation, approval_program_path, clear_program_path
+):
+    if account_type == "transient":
+        sender = context.transient_pk
+    elif account_type == "signing":
+        sender = mnemonic.to_public_key(context.signing_mnemonic)
+    else:
+        raise NotImplementedError(
+            "cannot make transaction signer for " + account_type
+        )
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    dir_path = os.path.dirname(os.path.dirname(dir_path))
+    if approval_program_path:
+        with open(
+            dir_path + "/test/features/resources/" + approval_program_path,
+            "rb",
+        ) as f:
+            approval_program = bytearray(f.read())
+    else:
+        approval_program = None
+    if clear_program_path:
+        with open(
+            dir_path + "/test/features/resources/" + clear_program_path, "rb"
+        ) as f:
+            clear_program = bytearray(f.read())
+    else:
+        clear_program = None
+    app_args = process_abi_args(context.abi_method, context.method_args)
+    context.atomic_transaction_composer.add_method_call(
+        app_id=int(context.current_application_id),
+        method=context.abi_method,
+        sender=sender,
+        sp=context.suggested_params,
+        signer=context.transaction_signer,
+        method_args=app_args,
+        on_complete=operation_string_to_enum(operation),
+        approval_program=approval_program,
+        clear_program=clear_program,
+    )
+
+
+@step(
+    'I build the transaction group with the composer. If there is an error it is "{error_string:MaybeString}".'
+)
+def build_atomic_transaction_group(context, error_string):
+    try:
+        context.atomic_transaction_composer.build_group()
+    except Exception as e:
+        if not error_string:
+            raise RuntimeError(f"Unexpected error for building composer {e}")
+        elif error_string == "zero group size error":
+            error_message = (
+                "no transactions to build for AtomicTransactionComposer"
+            )
+            assert error_message in str(e)
+        else:
+            raise NotImplemented(
+                f"Unknown error string for building composer: {error_string}"
+            )
+
+
+def composer_status_string_to_enum(status):
+    if status == "BUILDING":
+        return (
+            atomic_transaction_composer.AtomicTransactionComposerStatus.BUILDING
+        )
+    elif status == "BUILT":
+        return (
+            atomic_transaction_composer.AtomicTransactionComposerStatus.BUILT
+        )
+    elif status == "SIGNED":
+        return (
+            atomic_transaction_composer.AtomicTransactionComposerStatus.SIGNED
+        )
+    elif status == "SUBMITTED":
+        return (
+            atomic_transaction_composer.AtomicTransactionComposerStatus.SUBMITTED
+        )
+    elif status == "COMMITTED":
+        return (
+            atomic_transaction_composer.AtomicTransactionComposerStatus.COMMITTED
+        )
+    else:
+        raise NotImplementedError(
+            "no AtomicTransactionComposerStatus enum for " + status
+        )
+
+
+@then('The composer should have a status of "{status}".')
+def check_atomic_transaction_composer_status(context, status):
+    assert (
+        context.atomic_transaction_composer.get_status()
+        == composer_status_string_to_enum(status)
+    )
+
+
+@then("I gather signatures with the composer.")
+def gather_signatures_composer(context):
+    context.signed_transactions = (
+        context.atomic_transaction_composer.gather_signatures()
+    )
+
+
+@then("I clone the composer.")
+def clone_atomic_transaction_composer(context):
+    context.atomic_transaction_composer = (
+        context.atomic_transaction_composer.clone()
+    )
+
+
+@then("I execute the current transaction group with the composer.")
+def execute_atomic_transaction_composer(context):
+    context.atomic_transaction_composer_return = (
+        context.atomic_transaction_composer.execute(context.app_acl, 10)
+    )
+    assert context.atomic_transaction_composer_return.confirmed_round > 0
+
+
+@then('The app should have returned "{returns:MaybeString}".')
+def check_atomic_transaction_composer_response(context, returns):
+    if not returns:
+        expected_tokens = []
+        assert len(context.atomic_transaction_composer_return.abi_results) == 1
+        result = context.atomic_transaction_composer_return.abi_results[0]
+        assert result.return_value is None
+        assert result.decode_error is None
+    else:
+        expected_tokens = returns.split(",")
+        for i, expected in enumerate(expected_tokens):
+            result = context.atomic_transaction_composer_return.abi_results[i]
+            if not returns or not expected_tokens[i]:
+                assert result.return_value is None
+                assert result.decode_error is None
+                continue
+            expected_bytes = base64.b64decode(expected)
+            expected_value = context.method_list[i].returns.type.decode(
+                expected_bytes
+            )
+
+            assert expected_bytes == result.raw_value, "actual is {}".format(
+                result.raw_value
+            )
+            assert (
+                expected_value == result.return_value
+            ), "actual is {}".format(result.return_value)
+            assert result.decode_error is None
+
+
+@when("I serialize the Method object into json")
+def serialize_method_to_json(context):
+    context.json_output = context.abi_method.dictify()
+
+
+@then(
+    'the produced json should equal "{json_path}" loaded from "{json_directory}"'
+)
+def check_json_output_equals(context, json_path, json_directory):
+    with open(
+        "test/features/unit/" + json_directory + "/" + json_path, "rb"
+    ) as f:
+        loaded_response = json.load(f)
+    assert context.json_output == loaded_response
+
+
+@when(
+    'I create the Method object with name "{method_name}" method description "{method_desc}" first argument type "{first_arg_type}" first argument description "{first_arg_desc}" second argument type "{second_arg_type}" second argument description "{second_arg_desc}" and return type "{return_arg_type}"'
+)
+def create_method_from_test_with_arg_name(
+    context,
+    method_name,
+    method_desc,
+    first_arg_type,
+    first_arg_desc,
+    second_arg_type,
+    second_arg_desc,
+    return_arg_type,
+):
+    context.abi_method = abi.Method(
+        name=method_name,
+        args=[
+            abi.Argument(arg_type=first_arg_type, desc=first_arg_desc),
+            abi.Argument(arg_type=second_arg_type, desc=second_arg_desc),
+        ],
+        returns=abi.Returns(return_arg_type),
+        desc=method_desc,
+    )
+
+
+@when(
+    'I create the Method object with name "{method_name}" first argument name "{first_arg_name}" first argument type "{first_arg_type}" second argument name "{second_arg_name}" second argument type "{second_arg_type}" and return type "{return_arg_type}"'
+)
+def create_method_from_test_with_arg_name(
+    context,
+    method_name,
+    first_arg_name,
+    first_arg_type,
+    second_arg_name,
+    second_arg_type,
+    return_arg_type,
+):
+    context.abi_method = abi.Method(
+        name=method_name,
+        args=[
+            abi.Argument(arg_type=first_arg_type, name=first_arg_name),
+            abi.Argument(arg_type=second_arg_type, name=second_arg_name),
+        ],
+        returns=abi.Returns(return_arg_type),
+    )
+
+
+@when(
+    'I create the Method object with name "{method_name}" first argument type "{first_arg_type}" second argument type "{second_arg_type}" and return type "{return_arg_type}"'
+)
+def create_method_from_test(
+    context, method_name, first_arg_type, second_arg_type, return_arg_type
+):
+    context.abi_method = abi.Method(
+        name=method_name,
+        args=[abi.Argument(first_arg_type), abi.Argument(second_arg_type)],
+        returns=abi.Returns(return_arg_type),
+    )
+
+
+@then("the deserialized json should equal the original Method object")
+def deserialize_method_to_object(context):
+    json_string = json.dumps(context.json_output)
+    actual = abi.Method.from_json(json_string)
+    assert actual == context.abi_method
+
+
+@then("the txn count should be {txn_count}")
+def check_method_txn_count(context, txn_count):
+    assert context.abi_method.get_txn_calls() == int(txn_count)
+
+
+@then('the method selector should be "{method_selector}"')
+def check_method_selector(context, method_selector):
+    assert context.abi_method.get_selector() == bytes.fromhex(method_selector)
+
+
+@when(
+    'I create an Interface object from the Method object with name "{interface_name}" and description "{description}"'
+)
+def create_interface_object(context, interface_name, description):
+    context.abi_interface = abi.Interface(
+        name=interface_name, desc=description, methods=[context.abi_method]
+    )
+
+
+@when("I serialize the Interface object into json")
+def serialize_interface_to_json(context):
+    context.json_output = context.abi_interface.dictify()
+
+
+@then("the deserialized json should equal the original Interface object")
+def deserialize_json_to_interface(context):
+    actual = abi.Interface.undictify(context.json_output)
+    assert actual == context.abi_interface
+
+
+@when(
+    'I create a Contract object from the Method object with name "{contract_name}" and description "{description}"'
+)
+def create_contract_object(context, contract_name, description):
+    context.abi_contract = abi.Contract(
+        name=contract_name, desc=description, methods=[context.abi_method]
+    )
+
+
+@when('I set the Contract\'s appID to {app_id} for the network "{network_id}"')
+def set_contract_networks(context, app_id, network_id):
+    if not context.abi_contract.networks:
+        context.abi_contract.networks = {}
+    context.abi_contract.networks[network_id] = NetworkInfo(int(app_id))
+
+
+@when("I serialize the Contract object into json")
+def serialize_contract_to_json(context):
+    context.json_output = context.abi_contract.dictify()
+
+
+@then("the deserialized json should equal the original Contract object")
+def deserialize_json_to_contract(context):
+    actual = abi.Contract.undictify(context.json_output)
+    assert actual == context.abi_contract

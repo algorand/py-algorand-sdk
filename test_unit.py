@@ -20,7 +20,7 @@ from algosdk import (
     wordlist,
 )
 from algosdk.abi import (
-    type_from_string,
+    ABIType,
     UintType,
     UfixedType,
     BoolType,
@@ -30,6 +30,10 @@ from algosdk.abi import (
     ArrayDynamicType,
     ArrayStaticType,
     TupleType,
+    Method,
+    Interface,
+    Contract,
+    NetworkInfo,
 )
 from algosdk.future import template, transaction
 from algosdk.testing import dryrun
@@ -3652,7 +3656,7 @@ class TestABIType(unittest.TestCase):
         for uint_index in range(8, 513, 8):
             uint_type = UintType(uint_index)
             self.assertEqual(str(uint_type), f"uint{uint_index}")
-            actual = type_from_string(str(uint_type))
+            actual = ABIType.from_string(str(uint_type))
             self.assertEqual(uint_type, actual)
 
         # Test for ufixed
@@ -3662,7 +3666,7 @@ class TestABIType(unittest.TestCase):
                 self.assertEqual(
                     str(ufixed_type), f"ufixed{size_index}x{precision_index}"
                 )
-                actual = type_from_string(str(ufixed_type))
+                actual = ABIType.from_string(str(ufixed_type))
                 self.assertEqual(ufixed_type, actual)
 
         test_cases = [
@@ -3755,7 +3759,7 @@ class TestABIType(unittest.TestCase):
         ]
         for test_case in test_cases:
             self.assertEqual(str(test_case[0]), test_case[1])
-            self.assertEqual(test_case[0], type_from_string(test_case[1]))
+            self.assertEqual(test_case[0], ABIType.from_string(test_case[1]))
 
     def test_make_type_invalid(self):
         # Test for invalid uint
@@ -3819,7 +3823,7 @@ class TestABIType(unittest.TestCase):
         )
         for test_case in test_cases:
             with self.assertRaises(error.ABITypeError) as e:
-                type_from_string(test_case)
+                ABIType.from_string(test_case)
 
     def test_is_dynamic(self):
         test_cases = [
@@ -3834,16 +3838,16 @@ class TestABIType(unittest.TestCase):
                 True,
             ),
             # Test tuple child types
-            (type_from_string("(string[100])"), True),
-            (type_from_string("(address,bool,uint256)"), False),
-            (type_from_string("(uint8,(byte[10]))"), False),
-            (type_from_string("(string,uint256)"), True),
+            (ABIType.from_string("(string[100])"), True),
+            (ABIType.from_string("(address,bool,uint256)"), False),
+            (ABIType.from_string("(uint8,(byte[10]))"), False),
+            (ABIType.from_string("(string,uint256)"), True),
             (
-                type_from_string("(bool,(ufixed16x10[],(byte,address)))"),
+                ABIType.from_string("(bool,(ufixed16x10[],(byte,address)))"),
                 True,
             ),
             (
-                type_from_string("(bool,(uint256,(byte,address,string)))"),
+                ABIType.from_string("(bool,(uint256,(byte,address,string)))"),
                 True,
             ),
         ]
@@ -3857,23 +3861,23 @@ class TestABIType(unittest.TestCase):
             (BoolType(), 1),
             (UintType(64), 8),
             (UfixedType(256, 50), 32),
-            (type_from_string("bool[81]"), 11),
-            (type_from_string("bool[80]"), 10),
-            (type_from_string("bool[88]"), 11),
-            (type_from_string("address[5]"), 160),
-            (type_from_string("uint16[20]"), 40),
-            (type_from_string("ufixed64x20[10]"), 80),
-            (type_from_string(f"(address,byte,ufixed16x20)"), 35),
+            (ABIType.from_string("bool[81]"), 11),
+            (ABIType.from_string("bool[80]"), 10),
+            (ABIType.from_string("bool[88]"), 11),
+            (ABIType.from_string("address[5]"), 160),
+            (ABIType.from_string("uint16[20]"), 40),
+            (ABIType.from_string("ufixed64x20[10]"), 80),
+            (ABIType.from_string(f"(address,byte,ufixed16x20)"), 35),
             (
-                type_from_string(
+                ABIType.from_string(
                     f"((bool,address[10]),(bool,bool,bool),uint8[20])"
                 ),
                 342,
             ),
-            (type_from_string(f"(bool,bool)"), 1),
-            (type_from_string(f"({'bool,'*6}uint8)"), 2),
+            (ABIType.from_string(f"(bool,bool)"), 1),
+            (ABIType.from_string(f"({'bool,'*6}uint8)"), 2),
             (
-                type_from_string(f"({'bool,'*10}uint8,{'bool,'*10}byte)"),
+                ABIType.from_string(f"({'bool,'*10}uint8,{'bool,'*10}byte)"),
                 6,
             ),
         ]
@@ -4169,32 +4173,32 @@ class TestABIEncoding(unittest.TestCase):
     def test_tuple_encoding(self):
         test_cases = [
             (
-                type_from_string("()"),
+                ABIType.from_string("()"),
                 [],
                 b"",
             ),
             (
-                type_from_string("(bool[3])"),
+                ABIType.from_string("(bool[3])"),
                 [[True, True, False]],
                 bytes([0b11000000]),
             ),
             (
-                type_from_string("(bool[])"),
+                ABIType.from_string("(bool[])"),
                 [[True, True, False]],
                 bytes.fromhex("00 02 00 03 C0"),
             ),
             (
-                type_from_string("(bool[2],bool[])"),
+                ABIType.from_string("(bool[2],bool[])"),
                 [[True, True], [True, True]],
                 bytes.fromhex("C0 00 03 00 02 C0"),
             ),
             (
-                type_from_string("(bool[],bool[])"),
+                ABIType.from_string("(bool[],bool[])"),
                 [[], []],
                 bytes.fromhex("00 04 00 06 00 00 00 00"),
             ),
             (
-                type_from_string("(string,bool,bool,bool,bool,string)"),
+                ABIType.from_string("(string,bool,bool,bool,bool,string)"),
                 ["AB", True, False, True, False, "DE"],
                 bytes.fromhex("00 05 A0 00 09 00 02 41 42 00 02 44 45"),
             ),
@@ -4209,6 +4213,113 @@ class TestABIEncoding(unittest.TestCase):
             actual = test_case[0].decode(actual)
             expected = test_case[1]
             self.assertEqual(actual, expected)
+
+
+class TestABIInteraction(unittest.TestCase):
+    def test_method(self):
+        # Parse method object from JSON
+        test_json = '{"name": "add", "desc": "Calculate the sum of two 64-bit integers", "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ], "returns": { "type": "uint128", "desc": "..." } }'
+        m = Method.from_json(test_json)
+        self.assertEqual(m.get_signature(), "add(uint64,uint64)uint128")
+        self.assertEqual(m.get_selector(), b"\x8a\xa3\xb6\x1f")
+        self.assertEqual(
+            [(a.type) for a in m.args],
+            [ABIType.from_string("uint64"), ABIType.from_string("uint64")],
+        )
+        self.assertEqual(m.get_txn_calls(), 1)
+
+        # Parse method object from string
+        test_cases = [
+            (
+                "add(uint64,uint64)uint128",
+                b"\x8a\xa3\xb6\x1f",
+                [ABIType.from_string("uint64"), ABIType.from_string("uint64")],
+                ABIType.from_string("uint128"),
+                1,
+            ),
+            (
+                "tupler((string,uint16),bool)void",
+                b"\x3d\x98\xe4\x5d",
+                [
+                    ABIType.from_string("(string,uint16)"),
+                    ABIType.from_string("bool"),
+                ],
+                "void",
+                1,
+            ),
+            (
+                "txcalls(pay,pay,axfer,byte)bool",
+                b"\x05\x6d\x2e\xc0",
+                ["pay", "pay", "axfer", ABIType.from_string("byte")],
+                ABIType.from_string("bool"),
+                4,
+            ),
+            (
+                "getter()string",
+                b"\xa2\x59\x11\x1d",
+                [],
+                ABIType.from_string("string"),
+                1,
+            ),
+            (
+                "foreigns(account,pay,asset,application,bool)void",
+                b"\xbf\xed\xf2\xc1",
+                [
+                    "account",
+                    "pay",
+                    "asset",
+                    "application",
+                    ABIType.from_string("bool"),
+                ],
+                "void",
+                2,
+            ),
+        ]
+
+        for test_case in test_cases:
+            m = Method.from_signature(test_case[0])
+
+            # Check method signature
+            self.assertEqual(m.get_signature(), test_case[0])
+            # Check selector
+            self.assertEqual(m.get_selector(), test_case[1])
+            # Check args
+            self.assertEqual([(a.type) for a in m.args], test_case[2])
+            # Check return
+            self.assertEqual(m.returns.type, test_case[3])
+            # Check txn calls
+            self.assertEqual(m.get_txn_calls(), test_case[4])
+
+    def test_interface(self):
+        test_json = '{"name": "Calculator","desc":"This is an example interface","methods": [{ "name": "add", "returns": {"type": "void"}, "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] },{ "name": "multiply", "returns": {"type": "void"}, "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] }]}'
+        i = Interface.from_json(test_json)
+        self.assertEqual(i.name, "Calculator")
+        self.assertEqual(i.desc, "This is an example interface")
+        self.assertEqual(
+            [m.get_signature() for m in i.methods],
+            ["add(uint64,uint64)void", "multiply(uint64,uint64)void"],
+        )
+
+    def test_contract(self):
+        test_json = '{"name": "Calculator","desc":"This is an example contract","networks":{"wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=":{"appID":1234},"SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=":{"appID":5678}}, "methods": [{ "name": "add", "returns": {"type": "void"}, "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] },{ "name": "multiply", "returns": {"type": "void"}, "args": [ { "name": "a", "type": "uint64", "desc": "..." },{ "name": "b", "type": "uint64", "desc": "..." } ] }]}'
+        c = Contract.from_json(test_json)
+        self.assertEqual(c.name, "Calculator")
+        self.assertEqual(c.desc, "This is an example contract")
+        self.assertEqual(
+            c.networks,
+            {
+                "wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=": NetworkInfo(
+                    app_id=1234
+                ),
+                "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=": NetworkInfo(
+                    app_id=5678
+                ),
+            },
+        )
+        self.assertEqual(
+            [m.get_signature() for m in c.methods],
+            ["add(uint64,uint64)void", "multiply(uint64,uint64)void"],
+        )
 
 
 if __name__ == "__main__":
@@ -4230,6 +4341,7 @@ if __name__ == "__main__":
         TestDryrun,
         TestABIType,
         TestABIEncoding,
+        TestABIInteraction,
     ]
     loader = unittest.TestLoader()
     suites = [

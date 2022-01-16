@@ -1,8 +1,10 @@
-from .base_type import ABI_LENGTH_SIZE, Type
-from .. import error
+from typing import NoReturn, Union
+
+from algosdk.abi.base_type import ABI_LENGTH_SIZE, ABIType
+from algosdk import error
 
 
-class StringType(Type):
+class StringType(ABIType):
     """
     Represents a String ABI Type for encoding.
     """
@@ -10,23 +12,23 @@ class StringType(Type):
     def __init__(self) -> None:
         super().__init__()
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, StringType):
             return False
         return True
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "string"
 
-    def byte_len(self):
+    def byte_len(self) -> NoReturn:
         raise error.ABITypeError(
             "cannot get length of a dynamic type: {}".format(self)
         )
 
-    def is_dynamic(self):
+    def is_dynamic(self) -> bool:
         return True
 
-    def encode(self, string_val):
+    def encode(self, string_val: str) -> bytes:
         """
         Encode a value into a String ABI bytestring.
 
@@ -40,7 +42,7 @@ class StringType(Type):
         encoded = string_val.encode("utf-8")
         return length_to_encode + encoded
 
-    def decode(self, bytestring):
+    def decode(self, bytestring: Union[bytes, bytearray]) -> str:
         """
         Decodes a bytestring to a string.
 
