@@ -2170,7 +2170,7 @@ def read_program_binary(path):
 def read_program(context, path):
     """
     Assumes that have already added `context.app_acl` so need to have previously
-    called one of the steps "Given an algod v2 client..."
+    called one of the steps beginning with "Given an algod v2 client..."
     """
     if path.endswith(".teal"):
         assert hasattr(
