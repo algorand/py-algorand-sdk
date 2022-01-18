@@ -2020,7 +2020,12 @@ def wait_for_app_txn_confirm(context):
         )
 
 
-@given("I remember the new application ID.")
+@given("I reset the array of application IDs to remember.")
+def reset_appid_list(context):
+    context.app_ids = []
+
+
+@step("I remember the new application ID.")
 def remember_app_id(context):
     if hasattr(context, "acl"):
         app_id = context.acl.pending_transaction_info(context.app_txid)[
