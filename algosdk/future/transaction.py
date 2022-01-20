@@ -2533,7 +2533,7 @@ class LogicSig:
             try:
                 verify_key.verify(to_sign, base64.b64decode(self.sig))
                 return True
-            except BadSignatureError:
+            except (BadSignatureError, ValueError):
                 return False
 
         return self.msig.verify(to_sign)
