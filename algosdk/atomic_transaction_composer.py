@@ -451,6 +451,81 @@ class AtomicTransactionComposer:
         self.status = AtomicTransactionComposerStatus.SUBMITTED
         return self.tx_ids
 
+    def dryrun(self, client: algod.AlgodClient) -> "AtomicTransactionResponse":
+        if self.status <= AtomicTransactionComposerStatus.SUBMITTED:
+            self.gather_signatures()
+        else:
+            raise error.AtomicTransactionComposerError(
+                "AtomicTransactionComposerStatus must be submitted or lower to dryrun a group"
+            )
+
+        drr = transaction.create_dryrun(client, self.signed_txns)
+        drr_resp = client.dryrun(drr)
+        method_results = []
+
+        for i, tx_id in enumerate(self.tx_ids):
+            raw_value = None
+            return_value = None
+            decode_error = None
+
+            resp = drr_resp["txns"][i]
+
+            if i not in self.method_dict:
+                continue
+            # Return is void
+            if self.method_dict[i].returns.type == abi.Returns.VOID:
+                method_results.append(
+                    ABIResult(
+                        tx_id=tx_id,
+                        raw_value=raw_value,
+                        return_value=return_value,
+                        decode_error=decode_error,
+                        cost=resp["cost"],
+                    )
+                )
+                continue
+
+            # Parse log for ABI method return value
+            try:
+                logs = resp["logs"] if "logs" in resp else []
+
+                # Look for the last returned value in the log
+                if not logs:
+                    raise error.AtomicTransactionComposerError(
+                        "app call transaction did not log a return value"
+                    )
+                result = logs[-1]
+                # Check that the first four bytes is the hash of "return"
+                result_bytes = base64.b64decode(result)
+                if (
+                    len(result_bytes) < 4
+                    or result_bytes[:4] != ABI_RETURN_HASH
+                ):
+                    raise error.AtomicTransactionComposerError(
+                        "app call transaction did not log a return value"
+                    )
+                raw_value = result_bytes[4:]
+                return_value = self.method_dict[i].returns.type.decode(
+                    raw_value
+                )
+            except Exception as e:
+                decode_error = e
+
+            abi_result = ABIResult(
+                tx_id=tx_id,
+                raw_value=raw_value,
+                return_value=return_value,
+                decode_error=decode_error,
+                cost=resp["cost"],
+            )
+            method_results.append(abi_result)
+
+        return AtomicTransactionResponse(
+            confirmed_round=0,
+            tx_ids=self.tx_ids,
+            results=method_results,
+        )
+
     def execute(
         self, client: algod.AlgodClient, wait_rounds: int
     ) -> "AtomicTransactionResponse":
@@ -689,11 +764,13 @@ class ABIResult:
         raw_value: bytes,
         return_value: Any,
         decode_error: error,
+        cost: int,
     ) -> None:
         self.tx_id = tx_id
         self.raw_value = raw_value
         self.return_value = return_value
         self.decode_error = decode_error
+        self.cost = cost
 
 
 class AtomicTransactionResponse:
