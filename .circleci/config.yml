@@ -1,19 +1,21 @@
 version: 2.1
 jobs:
-  integration-test:
+  unit-test:
     docker:
-      - image: python:3
+      - image: python:3.7.9
     steps:
+      - run: ls
       - run: pip install -r requirements.txt
       - run: black --check .
       - run: python3 test_unit.py
-  unit-test:
+  integration-test:
     docker:
-      - image: docker:19 # the primary container, where your job's commands are run
+      - image: docker:19
     steps:
       - setup_remote_docker:
           version: 19.03.13
           docker_layer_caching: true
+      - run: apk add make bash git docker-compose
       - run: make docker-test
 workflows:
   version: 2
