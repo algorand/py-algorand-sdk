@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import base64
 import copy
 from enum import IntEnum
-from typing import Any, List, TypeVar, Union
+from typing import Any, List, TypeVar, Union, Optional
 
 from algosdk import abi, error
 from algosdk.abi.address_type import AddressType
@@ -764,7 +764,7 @@ class ABIResult:
         raw_value: bytes,
         return_value: Any,
         decode_error: error,
-        cost: int,
+        cost: Optional[int],
     ) -> None:
         self.tx_id = tx_id
         self.raw_value = raw_value
