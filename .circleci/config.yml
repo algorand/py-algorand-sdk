@@ -4,7 +4,7 @@ jobs:
     docker:
       - image: python:3.7.9
     steps:
-      - run: ls
+      - checkout
       - run: pip install -r requirements.txt
       - run: black --check .
       - run: python3 test_unit.py
@@ -16,6 +16,7 @@ jobs:
           version: 19.03.13
           docker_layer_caching: true
       - run: apk add make bash git docker-compose
+      - checkout
       - run: make docker-test
 workflows:
   version: 2
