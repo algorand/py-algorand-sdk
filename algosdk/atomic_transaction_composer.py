@@ -463,18 +463,17 @@ class AtomicTransactionComposer:
         drr_resp = client.dryrun(drr)
         method_results = self.parse_response(drr_resp["txns"])
 
-
         return AtomicTransactionResponse(
             confirmed_round=0,
             tx_ids=self.tx_ids,
             results=method_results,
         )
 
-    def parse_response(self, txns: List[dict])->"List[ABIResult]":
+    def parse_response(self, txns: List[dict]) -> "List[ABIResult]":
         method_results = []
         for i, txn in enumerate(txns):
 
-            tx_id=self.tx_ids[i]
+            tx_id = self.tx_ids[i]
             raw_value = None
             return_value = None
             decode_error = None
@@ -578,7 +577,6 @@ class AtomicTransactionComposer:
             resps.append(client.pending_transaction_info(tx_id))
 
         method_results = self.parse_response(resps)
-
 
         return AtomicTransactionResponse(
             confirmed_round=confirmed_round,
