@@ -16,6 +16,7 @@ jobs:
           docker_layer_caching: true
       - make docker-test
 workflows:
+  version: 2
   test:
     jobs:
       - unit-test
