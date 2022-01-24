@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import base64
 import copy
 from enum import IntEnum
-from typing import Any, List, TypeVar, Union, Optional
+from typing import Any, List, TypeVar, Union, Tuple
 
 from algosdk import abi, error
 from algosdk.abi.address_type import AddressType
@@ -451,7 +451,9 @@ class AtomicTransactionComposer:
         self.status = AtomicTransactionComposerStatus.SUBMITTED
         return self.tx_ids
 
-    def dryrun(self, client: algod.AlgodClient) -> "AtomicTransactionResponse":
+    def dryrun(
+        self, client: algod.AlgodClient
+    ) -> "Tuple[dict, DryrunAtomicTransactionResponse]":
         if self.status <= AtomicTransactionComposerStatus.SUBMITTED:
             self.gather_signatures()
         else:
@@ -461,12 +463,27 @@ class AtomicTransactionComposer:
 
         drr = transaction.create_dryrun(client, self.signed_txns)
         drr_resp = client.dryrun(drr)
+
         method_results = self.parse_response(drr_resp["txns"])
 
-        return AtomicTransactionResponse(
-            confirmed_round=0,
-            tx_ids=self.tx_ids,
-            results=method_results,
+        dryrun_results = []
+        for idx, result in enumerate(method_results):
+            dryrun_results.append(
+                DryrunABIResult(
+                    result.tx_id,
+                    result.raw_value,
+                    result.return_value,
+                    result.decode_error,
+                    drr_resp["txns"][idx]["cost"],
+                )
+            )
+
+        return (
+            drr,
+            DryrunAtomicTransactionResponse(
+                tx_ids=self.tx_ids,
+                results=dryrun_results,
+            ),
         )
 
     def parse_response(self, txns: List[dict]) -> "List[ABIResult]":
@@ -480,15 +497,14 @@ class AtomicTransactionComposer:
 
             # Return is void
             if self.method_dict[i].returns.type == abi.Returns.VOID:
-                abi_res = ABIResult(
-                    tx_id=tx_id,
-                    raw_value=raw_value,
-                    return_value=return_value,
-                    decode_error=decode_error,
+                method_results.append(
+                    ABIResult(
+                        tx_id=tx_id,
+                        raw_value=raw_value,
+                        return_value=return_value,
+                        decode_error=decode_error,
+                    )
                 )
-                if "cost" in txn:
-                    abi_res.cost = txn["cost"]
-                method_results.append(abi_res)
                 continue
 
             # Parse log for ABI method return value
@@ -517,16 +533,14 @@ class AtomicTransactionComposer:
             except Exception as e:
                 decode_error = e
 
-            abi_result = ABIResult(
-                tx_id=tx_id,
-                raw_value=raw_value,
-                return_value=return_value,
-                decode_error=decode_error,
+            method_results.append(
+                ABIResult(
+                    tx_id=tx_id,
+                    raw_value=raw_value,
+                    return_value=return_value,
+                    decode_error=decode_error,
+                )
             )
-            if "cost" in txn:
-                abi_result.cost = txn["cost"]
-
-            method_results.append(abi_result)
 
         return method_results
 
@@ -721,7 +735,30 @@ class ABIResult:
         raw_value: bytes,
         return_value: Any,
         decode_error: error,
-        cost: int = None,
+    ) -> None:
+        self.tx_id = tx_id
+        self.raw_value = raw_value
+        self.return_value = return_value
+        self.decode_error = decode_error
+
+
+class AtomicTransactionResponse:
+    def __init__(
+        self, confirmed_round: int, tx_ids: List[str], results: ABIResult
+    ) -> None:
+        self.confirmed_round = confirmed_round
+        self.tx_ids = tx_ids
+        self.abi_results = results
+
+
+class DryrunABIResult:
+    def __init__(
+        self,
+        tx_id: int,
+        raw_value: bytes,
+        return_value: Any,
+        decode_error: error,
+        cost: int,
     ) -> None:
         self.tx_id = tx_id
         self.raw_value = raw_value
@@ -730,10 +767,7 @@ class ABIResult:
         self.cost = cost
 
 
-class AtomicTransactionResponse:
-    def __init__(
-        self, confirmed_round: int, tx_ids: List[str], results: ABIResult
-    ) -> None:
-        self.confirmed_round = confirmed_round
+class DryrunAtomicTransactionResponse:
+    def __init__(self, tx_ids: List[str], results: DryrunABIResult) -> None:
         self.tx_ids = tx_ids
         self.abi_results = results
