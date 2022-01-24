@@ -453,7 +453,7 @@ class AtomicTransactionComposer:
 
     def dryrun(
         self, client: algod.AlgodClient
-    ) -> "Tuple[dict, DryrunAtomicTransactionResponse]":
+    ) -> "DryrunAtomicTransactionResponse":
         if self.status <= AtomicTransactionComposerStatus.SUBMITTED:
             self.gather_signatures()
         else:
@@ -478,12 +478,10 @@ class AtomicTransactionComposer:
                 )
             )
 
-        return (
-            drr,
-            DryrunAtomicTransactionResponse(
-                tx_ids=self.tx_ids,
-                results=dryrun_results,
-            ),
+        return DryrunAtomicTransactionResponse(
+            dryrun_response=drr,
+            tx_ids=self.tx_ids,
+            results=dryrun_results,
         )
 
     def parse_response(self, txns: List[dict]) -> "List[ABIResult]":
@@ -768,6 +766,12 @@ class DryrunABIResult:
 
 
 class DryrunAtomicTransactionResponse:
-    def __init__(self, tx_ids: List[str], results: DryrunABIResult) -> None:
+    def __init__(
+        self,
+        dryrun_response: dict,
+        tx_ids: List[str],
+        results: DryrunABIResult,
+    ) -> None:
+        self.dryrun_response = dryrun_response
         self.tx_ids = tx_ids
         self.abi_results = results
