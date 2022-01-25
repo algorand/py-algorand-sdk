@@ -9,13 +9,9 @@ jobs:
       - run: black --check .
       - run: python3 test_unit.py
   integration-test:
-    docker:
-      - image: docker:19
+    machine:
+     image: "ubuntu-2004:202104-01"
     steps:
-      - setup_remote_docker:
-          version: 19.03.13
-          docker_layer_caching: true
-      - run: apk add make bash git docker-compose
       - checkout
       - run: make docker-test
 workflows:
