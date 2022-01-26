@@ -469,14 +469,14 @@ class AtomicTransactionComposer:
         dryrun_results = []
         for idx, result in enumerate(method_results):
             dr_res = DryrunABIResult(
-                    result.tx_id,
-                    result.raw_value,
-                    result.return_value,
-                    result.decode_error,
-                    result.tx_info,
-                )
+                result.tx_id,
+                result.raw_value,
+                result.return_value,
+                result.decode_error,
+                result.tx_info,
+            )
             dr_txn = drr_resp["txns"][idx]
-            if "cost"  in dr_txn:
+            if "cost" in dr_txn:
                 dr_res.cost = dr_txn["cost"]
 
             dryrun_results.append(dr_res)
@@ -760,7 +760,6 @@ class AtomicTransactionResponse:
 
 class DryrunABIResult(ABIResult):
     cost: int
-
 
 
 class DryrunAtomicTransactionResponse:
