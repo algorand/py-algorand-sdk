@@ -1,4 +1,12 @@
 version: 2.1
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - unit-test
+      - integration-test
+
 jobs:
   unit-test:
     docker:
@@ -14,9 +22,3 @@ jobs:
     steps:
       - checkout
       - run: make docker-test
-workflows:
-  version: 2
-  test:
-    jobs:
-      - unit-test
-      - integration-test
