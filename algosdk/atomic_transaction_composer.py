@@ -468,15 +468,18 @@ class AtomicTransactionComposer:
 
         dryrun_results = []
         for idx, result in enumerate(method_results):
-            dryrun_results.append(
-                DryrunABIResult(
+            dr_res = DryrunABIResult(
                     result.tx_id,
                     result.raw_value,
                     result.return_value,
                     result.decode_error,
-                    drr_resp["txns"][idx]["cost"],
+                    result.tx_info,
                 )
-            )
+            dr_txn = drr_resp["txns"][idx]
+            if "cost"  in dr_txn:
+                dr_res.cost = dr_txn["cost"]
+
+            dryrun_results.append(dr_res)
 
         return DryrunAtomicTransactionResponse(
             dryrun_response=drr,
@@ -486,28 +489,31 @@ class AtomicTransactionComposer:
 
     def parse_response(self, txns: List[dict]) -> "List[ABIResult]":
         method_results = []
-        for i, txn in enumerate(txns):
+        for i, tx_info in enumerate(txns):
 
             tx_id = self.tx_ids[i]
             raw_value = None
             return_value = None
             decode_error = None
 
-            # Return is void
-            if self.method_dict[i].returns.type == abi.Returns.VOID:
-                method_results.append(
-                    ABIResult(
-                        tx_id=tx_id,
-                        raw_value=raw_value,
-                        return_value=return_value,
-                        decode_error=decode_error,
-                    )
-                )
+            if i not in self.method_dict:
                 continue
 
             # Parse log for ABI method return value
             try:
-                logs = txn["logs"] if "logs" in txn else []
+                if self.method_dict[i].returns.type == abi.Returns.VOID:
+                    method_results.append(
+                        ABIResult(
+                            tx_id=tx_id,
+                            raw_value=raw_value,
+                            return_value=return_value,
+                            decode_error=decode_error,
+                            tx_info=tx_info,
+                        )
+                    )
+                    continue
+
+                logs = tx_info["logs"] if "logs" in tx_info else []
 
                 # Look for the last returned value in the log
                 if not logs:
@@ -537,6 +543,7 @@ class AtomicTransactionComposer:
                     raw_value=raw_value,
                     return_value=return_value,
                     decode_error=decode_error,
+                    tx_info=tx_info,
                 )
             )
 
@@ -733,36 +740,27 @@ class ABIResult:
         raw_value: bytes,
         return_value: Any,
         decode_error: error,
+        tx_info: dict,
     ) -> None:
         self.tx_id = tx_id
         self.raw_value = raw_value
         self.return_value = return_value
         self.decode_error = decode_error
+        self.tx_info = tx_info
 
 
 class AtomicTransactionResponse:
     def __init__(
-        self, confirmed_round: int, tx_ids: List[str], results: ABIResult
+        self, confirmed_round: int, tx_ids: List[str], results: List[ABIResult]
     ) -> None:
         self.confirmed_round = confirmed_round
         self.tx_ids = tx_ids
         self.abi_results = results
 
 
-class DryrunABIResult:
-    def __init__(
-        self,
-        tx_id: int,
-        raw_value: bytes,
-        return_value: Any,
-        decode_error: error,
-        cost: int,
-    ) -> None:
-        self.tx_id = tx_id
-        self.raw_value = raw_value
-        self.return_value = return_value
-        self.decode_error = decode_error
-        self.cost = cost
+class DryrunABIResult(ABIResult):
+    cost: int
+
 
 
 class DryrunAtomicTransactionResponse:
