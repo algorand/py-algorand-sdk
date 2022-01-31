@@ -19,7 +19,7 @@ class DryrunTransactionResult:
         if "local-deltas" in dr:
             self.local_deltas = dr["local-deltas"]
         if "global-delta" in dr:
-            self.global_deltas = dr["global-delta"]
+            self.global_delta = dr["global-delta"]
         if "cost" in dr:
             self.app_call_cost = dr["cost"]
         if "logic-sig-messages" in dr:
