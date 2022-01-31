@@ -1,10 +1,12 @@
 from typing import List
 
+
 class DryrunResponse:
     def __init__(self, drrjson):
         self.error = drrjson["error"]
         self.protocol = drrjson["protocol-version"]
         self.txns = [DryrunTransactionResult(txn) for txn in drrjson["txns"]]
+
 
 class DryrunTransactionResult:
     def __init__(self, dr):
@@ -32,7 +34,9 @@ class DryrunTransactionResult:
         for line in self.app_call_trace.get_trace():
             src_line = self.disassembly[line[0] - 1]
             lines.append(
-                "{}{}\t{}".format(src_line, " " * (16 - len(src_line)), line[1])
+                "{}{}\t{}".format(
+                    src_line, " " * (16 - len(src_line)), line[1]
+                )
             )
         return "\n".join(lines)
 
@@ -41,9 +45,12 @@ class DryrunTransactionResult:
         for line in self.logic_sig_trace.get_trace():
             src_line = self.disassembly[line[0] - 1]
             lines.append(
-                "{}{}\t{}".format(src_line, " " * (16 - len(src_line)), line[1])
+                "{}{}\t{}".format(
+                    src_line, " " * (16 - len(src_line)), line[1]
+                )
             )
         return "\n".join(lines)
+
 
 class DryrunTrace:
     def __init__(self, trace):
@@ -51,6 +58,7 @@ class DryrunTrace:
 
     def get_trace(self) -> List[str]:
         return [line.trace_line() for line in self.trace]
+
 
 class DryrunTraceLine:
     def __init__(self, tl):
@@ -60,6 +68,7 @@ class DryrunTraceLine:
 
     def trace_line(self):
         return (self.line, [sv.__str__() for sv in self.stack])
+
 
 class DryrunStackValue:
     def __init__(self, v):
