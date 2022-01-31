@@ -2,7 +2,8 @@ from typing import List
 
 
 class DryrunResponse:
-    def __init__(self, drrjson):
+    def __init__(self, drrjson: dict):
+        # These are all required fields
         self.error = drrjson["error"]
         self.protocol = drrjson["protocol-version"]
         self.txns = [DryrunTransactionResult(txn) for txn in drrjson["txns"]]
@@ -10,8 +11,10 @@ class DryrunResponse:
 
 class DryrunTransactionResult:
     def __init__(self, dr):
-        if "disassembly" in dr:
-            self.disassembly = dr["disassembly"]
+        # Only required field
+        self.disassembly = dr["disassembly"]
+
+        # These are all optional
         if "app-call-messages" in dr:
             self.app_call_messages = dr["app-call-messages"]
         if "app-call-trace" in dr:
@@ -29,24 +32,24 @@ class DryrunTransactionResult:
         if "logs" in dr:
             self.logs = dr["logs"]
 
-    def app_trace(self):
+    def app_trace(self, trace_spaces: int = 16):
         lines = []
         for line in self.app_call_trace.get_trace():
             src_line = self.disassembly[line[0] - 1]
             lines.append(
                 "{}{}\t{}".format(
-                    src_line, " " * (16 - len(src_line)), line[1]
+                    src_line, " " * (trace_spaces - len(src_line)), line[1]
                 )
             )
         return "\n".join(lines)
 
-    def lsig_trace(self):
+    def lsig_trace(self, trace_spaces: int = 16):
         lines = []
         for line in self.logic_sig_trace.get_trace():
             src_line = self.disassembly[line[0] - 1]
             lines.append(
                 "{}{}\t{}".format(
-                    src_line, " " * (16 - len(src_line)), line[1]
+                    src_line, " " * (trace_spaces - len(src_line)), line[1]
                 )
             )
         return "\n".join(lines)
