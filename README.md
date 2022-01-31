@@ -80,4 +80,4 @@ Documentation for the Python SDK is available at [py-algorand-sdk.readthedocs.io
 
 ## License
 
-py-algorand-sdk is licensed under a MIT license. See the [LICENSE](https://github.com/algorand/py-algorand-sdk/blob/master/LICENSE) file for details.
+py-algorand-sdk is licensed under an MIT license. See the [LICENSE](https://github.com/algorand/py-algorand-sdk/blob/master/LICENSE) file for details.
