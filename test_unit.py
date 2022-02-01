@@ -3,6 +3,7 @@ import copy
 import os
 import random
 import string
+import sys
 import unittest
 import uuid
 from unittest.mock import Mock
@@ -4079,3 +4080,5 @@ if __name__ == "__main__":
     suite = unittest.TestSuite(suites)
     runner = unittest.TextTestRunner(verbosity=2)
     results = runner.run(suite)
+    ret = not results.wasSuccessful()
+    sys.exit(ret)

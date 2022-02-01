@@ -1,14 +1,24 @@
 version: 2.1
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - unit-test
+      - integration-test
+
 jobs:
-  build:
-    machine: 
-      image: "ubuntu-2004:202104-01"
+  unit-test:
+    docker:
+      - image: python:3.7.9
     steps:
       - checkout
-      - run:
-          command: |
-            pip3 install -r requirements.txt
-            black --check .
-            set -e
-            python3 test_unit.py
-            make docker-test
+      - run: pip install -r requirements.txt
+      - run: black --check .
+      - run: python3 test_unit.py
+  integration-test:
+    machine:
+     image: "ubuntu-2004:202104-01"
+    steps:
+      - checkout
+      - run: make docker-test
