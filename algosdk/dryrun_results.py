@@ -1,8 +1,19 @@
 from typing import List
 
 
+def dash_to_snake(k: str) -> str:
+    """dash_to_snake converts strings with dashes to snake case"""
+    return k.replace("-", "_")
+
+
 class DryrunResponse:
     def __init__(self, drrjson: dict):
+
+        for param in ["error", "protocol-version", "txns"]:
+            assert (
+                param in drrjson
+            ), f"expecting dryrun response object to have key '{param}' but it is missing"
+
         # These are all required fields
         self.error = drrjson["error"]
         self.protocol = drrjson["protocol-version"]
@@ -10,53 +21,68 @@ class DryrunResponse:
 
 
 class DryrunTransactionResult:
+    DEFAULT_TRACE_SPACES: int = 16
+
     def __init__(self, dr):
-        # Only required field
+        assert (
+            "disassembly" in dr
+        ), "expecting dryrun transaction result to have key 'disassembly' but its missing"
+
         self.disassembly = dr["disassembly"]
 
-        # These are all optional
-        if "app-call-messages" in dr:
-            self.app_call_messages = dr["app-call-messages"]
-        if "app-call-trace" in dr:
-            self.app_call_trace = DryrunTrace(dr["app-call-trace"])
-        if "local-deltas" in dr:
-            self.local_deltas = dr["local-deltas"]
-        if "global-delta" in dr:
-            self.global_delta = dr["global-delta"]
-        if "cost" in dr:
-            self.app_call_cost = dr["cost"]
-        if "logic-sig-messages" in dr:
-            self.logic_sig_messages = dr["logic-sig-messages"]
-        if "logic-sig-trace" in dr:
-            self.logic_sig_trace = DryrunTrace(dr["logic-sig-trace"])
-        if "logs" in dr:
-            self.logs = dr["logs"]
+        optionals = [
+            "app-call-messages",
+            "local-deltas",
+            "global-delta",
+            "cost",
+            "logic-sig-messages",
+            "logs",
+        ]
+        for field in optionals:
+            if field in dr:
+                setattr(self, dash_to_snake(field), dr[field])
 
-    def app_trace(self, trace_spaces: int = 16):
+        traces = ["app-call-trace", "logic-sig-trace"]
+        for trace_field in traces:
+            if trace_field in dr:
+                setattr(
+                    self,
+                    dash_to_snake(trace_field),
+                    DryrunTrace(dr[trace_field]),
+                )
+
+    @classmethod
+    def trace(
+        cls,
+        dr_trace: "DryrunTrace",
+        disassembly: List[str],
+        spaces: int = None,
+    ) -> str:
+        if spaces is None:
+            spaces = cls.DEFAULT_TRACE_SPACES
+
         lines = []
-        for line in self.app_call_trace.get_trace():
-            src_line = self.disassembly[line[0] - 1]
+        for line in dr_trace.get_trace():
+            src_line = disassembly[line[0] - 1]
             lines.append(
                 "{}{}\t{}".format(
-                    src_line, " " * (trace_spaces - len(src_line)), line[1]
+                    src_line, " " * (spaces - len(src_line)), line[1]
                 )
             )
+
         return "\n".join(lines)
 
-    def lsig_trace(self, trace_spaces: int = 16):
-        lines = []
-        for line in self.logic_sig_trace.get_trace():
-            src_line = self.disassembly[line[0] - 1]
-            lines.append(
-                "{}{}\t{}".format(
-                    src_line, " " * (trace_spaces - len(src_line)), line[1]
-                )
-            )
-        return "\n".join(lines)
+    def app_trace(self, spaces: int = None) -> str:
+        return self.trace(self.app_call_trace, self.disassembly, spaces=spaces)
+
+    def lsig_trace(self, spaces: int = None) -> str:
+        return self.trace(
+            self.logic_sig_trace, self.disassembly, spaces=spaces
+        )
 
 
 class DryrunTrace:
-    def __init__(self, trace):
+    def __init__(self, trace: List[dict]):
         self.trace = [DryrunTraceLine(line) for line in trace]
 
     def get_trace(self) -> List[str]:
@@ -70,7 +96,7 @@ class DryrunTraceLine:
         self.stack = [DryrunStackValue(sv) for sv in tl["stack"]]
 
     def trace_line(self):
-        return (self.line, [sv.__str__() for sv in self.stack])
+        return (self.line, [str(sv) for sv in self.stack])
 
 
 class DryrunStackValue:
