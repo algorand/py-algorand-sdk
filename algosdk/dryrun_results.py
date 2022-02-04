@@ -68,9 +68,15 @@ class DryrunTransactionResult:
         return "\n".join(lines)
 
     def app_trace(self, spaces: int = None) -> str:
+        if not hasattr(self, "app_call_trace"):
+            return ""
+
         return self.trace(self.app_call_trace, self.disassembly, spaces=spaces)
 
     def lsig_trace(self, spaces: int = None) -> str:
+        if not hasattr(self, "logic_sig_trace"):
+            return ""
+
         return self.trace(
             self.logic_sig_trace, self.disassembly, spaces=spaces
         )
@@ -100,7 +106,7 @@ class DryrunStackValue:
         self.bytes = v["bytes"]
         self.int = v["uint"]
 
-    def __str__(self)->str:
+    def __str__(self) -> str:
         if self.type == 1:
             return str(self.bytes)
         return str(self.int)
