@@ -1,11 +1,6 @@
 from typing import List
 
 
-def dash_to_snake(k: str) -> str:
-    """dash_to_snake converts strings with dashes to snake case"""
-    return k.replace("-", "_")
-
-
 class DryrunResponse:
     def __init__(self, drrjson: dict):
 
@@ -40,14 +35,14 @@ class DryrunTransactionResult:
         ]
         for field in optionals:
             if field in dr:
-                setattr(self, dash_to_snake(field), dr[field])
+                setattr(self, field.replace("-", "_"), dr[field])
 
         traces = ["app-call-trace", "logic-sig-trace"]
         for trace_field in traces:
             if trace_field in dr:
                 setattr(
                     self,
-                    dash_to_snake(trace_field),
+                    trace_field.replace("-", "_"),
                     DryrunTrace(dr[trace_field]),
                 )
 
@@ -105,7 +100,7 @@ class DryrunStackValue:
         self.bytes = v["bytes"]
         self.int = v["uint"]
 
-    def __str__(self):
+    def __str__(self)->str:
         if self.type == 1:
-            return self.bytes
-        return self.int
+            return str(self.bytes)
+        return str(self.int)
