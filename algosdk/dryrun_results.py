@@ -16,7 +16,7 @@ class DryrunResponse:
 
 
 class DryrunTransactionResult:
-    DEFAULT_TRACE_SPACES: int = 16
+    DEFAULT_TRACE_SPACES: int = 20
 
     def __init__(self, dr):
         assert (
@@ -60,7 +60,7 @@ class DryrunTransactionResult:
         for line in dr_trace.get_trace():
             src_line = disassembly[line[0] - 1]
             lines.append(
-                "{}{}\t{}".format(
+                "{}{} {}".format(
                     src_line, " " * (spaces - len(src_line)), line[1]
                 )
             )
