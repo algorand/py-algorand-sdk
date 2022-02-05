@@ -32,7 +32,7 @@ class DryrunTransactionResult:
             "global-delta",
             "cost",
             "logic-sig-messages",
-            "lsig-disassembly",
+            "logic-sig-disassembly",
             "logs",
         ]
         for field in optionals:
@@ -89,8 +89,13 @@ class DryrunTransactionResult:
         if not hasattr(self, "logic_sig_trace"):
             return ""
 
+        # TODO: should be able to take this out when go-algorand#3577 is merged
+        dis = self.disassembly
+        if hasattr(self, "logic_sig_disassembly"):
+            dis = self.logic_sig_disassembly
+
         return self.trace(
-            self.logic_sig_trace, self.disassembly, spaces=spaces
+            self.logic_sig_trace, dis, spaces=spaces
         )
 
 
