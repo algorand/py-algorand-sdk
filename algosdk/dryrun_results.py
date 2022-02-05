@@ -58,18 +58,19 @@ class DryrunTransactionResult:
         if spaces is None:
             spaces = cls.DEFAULT_TRACE_SPACES
 
-        
         # If 0, pad to the lenght of the longest line
         if spaces == 0:
             for line in disassembly:
-                if len(line)>spaces:
+                if len(line) > spaces:
                     spaces = len(line)
 
         lines = []
         for line in dr_trace.get_trace():
             # Pad to 4 spaces since we don't expect programs to have > 9999 lines
             line_number_padding = " " * (4 - len(str(line[0])))
-            src_line = "{}{}| {}".format(line[0], line_number_padding, disassembly[line[0]])
+            src_line = "{}{}| {}".format(
+                line[0], line_number_padding, disassembly[line[0]]
+            )
             lines.append(
                 "{}{} {}".format(
                     src_line, " " * (spaces - len(src_line)), line[1]
@@ -108,7 +109,10 @@ class DryrunTraceLine:
         self.stack = [DryrunStackValue(sv) for sv in tl["stack"]]
 
     def trace_line(self):
-        return (self.line, "["+", ".join([str(sv) for sv in self.stack])+"]")
+        return (
+            self.line,
+            "[" + ", ".join([str(sv) for sv in self.stack]) + "]",
+        )
 
 
 class DryrunStackValue:
@@ -119,8 +123,8 @@ class DryrunStackValue:
 
     def __str__(self) -> str:
         if self.type == 1:
-            if len(self.bytes)>0:
-                return "0x"+base64.b64decode(self.bytes).hex()
+            if len(self.bytes) > 0:
+                return "0x" + base64.b64decode(self.bytes).hex()
             else:
                 "''"
         return str(self.int)
