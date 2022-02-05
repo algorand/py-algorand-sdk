@@ -63,6 +63,7 @@ class DryrunTransactionResult:
             for line in disassembly:
                 if len(line) > spaces:
                     spaces = len(line)
+            spaces += 5 # 4 for line number + 1 for space between number and line
 
         lines = []
         for line in dr_trace.get_trace():
