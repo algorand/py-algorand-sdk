@@ -68,8 +68,8 @@ class DryrunTransactionResult:
         for line in dr_trace.get_trace():
             # Pad to 4 spaces since we don't expect programs to have > 9999 lines
             line_number_padding = " " * (4 - len(str(line[0])))
-            src_line = "{}{}| {}".format(
-                line[0], line_number_padding, disassembly[line[0]]
+            src_line = "{}{} {}".format(
+               line_number_padding, line[0],  disassembly[line[0]]
             )
             lines.append(
                 "{}{} {}".format(
