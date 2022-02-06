@@ -134,8 +134,5 @@ class DryrunStackValue:
 
     def __str__(self) -> str:
         if self.type == 1:
-            if len(self.bytes) > 0:
-                return "0x" + base64.b64decode(self.bytes).hex()
-            else:
-                "''"
+            return "0x" + base64.b64decode(self.bytes).hex()
         return str(self.int)
