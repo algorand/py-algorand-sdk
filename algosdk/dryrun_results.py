@@ -63,18 +63,19 @@ class DryrunTransactionResult:
             for line in disassembly:
                 if len(line) > spaces:
                     spaces = len(line)
-            spaces += 5 # 4 for line number + 1 for space between number and line
+            spaces += 10 # 4 for line number + 1 for space between number and line
 
-        lines = []
+        lines = ["pc# line# source" + " "*(spaces-15) +"stack "]
         for line in dr_trace.get_trace():
             # Pad to 4 spaces since we don't expect programs to have > 9999 lines
             line_number_padding = " " * (4 - len(str(line[0])))
-            src_line = "{}{} {}".format(
-               line_number_padding, line[0],  disassembly[line[0]]
+            pc_number_padding = " " * (4 - len(str(line[1])))
+            src_line = "{}{} {}{} {}".format(
+               pc_number_padding, line[1], line_number_padding, line[0], disassembly[line[0]]
             )
             lines.append(
                 "{}{} {}".format(
-                    src_line, " " * (spaces - len(src_line)), line[1]
+                    src_line, " " * (spaces - len(src_line)), line[2]
                 )
             )
 
@@ -117,6 +118,7 @@ class DryrunTraceLine:
     def trace_line(self):
         return (
             self.line,
+            self.pc,
             "[" + ", ".join([str(sv) for sv in self.stack]) + "]",
         )
 
