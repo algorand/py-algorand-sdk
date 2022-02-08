@@ -6,6 +6,7 @@ workflows:
     jobs:
       - unit-test
       - integration-test
+      - docset
 
 jobs:
   unit-test:
@@ -22,3 +23,22 @@ jobs:
     steps:
       - checkout
       - run: make docker-test
+  docset:
+    docker:
+      # NOTE: We might eventually need Docker authentication here.
+      - image: cimg/python:3.9
+    steps:
+      - checkout
+      - run:
+          # NOTE: We might add caching at `pip` level here.
+          command: |
+            pip install -r requirements.txt
+            cd docs
+            pip install -r requirements.txt
+            pip install sphinx sphinx_rtd_theme doc2dash
+            make html
+            doc2dash --name py-algo-sdk --index-page index.html --online-redirect-url https://py-algorand-sdk.readthedocs.io/en/latest/ _build/html
+            mv py-algo-sdk.docset /tmp
+      - store_artifacts:
+          path: /tmp/py-algo-sdk.docset
+          destination: py-algo-sdk.docset
