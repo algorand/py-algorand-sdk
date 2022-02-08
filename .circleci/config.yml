@@ -38,7 +38,8 @@ jobs:
             pip install sphinx sphinx_rtd_theme doc2dash
             make html
             doc2dash --name py-algo-sdk --index-page index.html --online-redirect-url https://py-algorand-sdk.readthedocs.io/en/latest/ _build/html
-            mv py-algo-sdk.docset /tmp
+            tar -czvf py-algo-sdk.docset.tar.gz py-algo-sdk.docset
+            mv py-algo-sdk.docset.tar.gz /tmp
       - store_artifacts:
-          path: /tmp/py-algo-sdk.docset
-          destination: py-algo-sdk.docset
+          path: /tmp/py-algo-sdk.docset.tar.gz
+          destination: py-algo-sdk.docset.tar.gz
