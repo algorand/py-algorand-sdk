@@ -4,7 +4,6 @@ import base64
 
 class DryrunResponse:
     def __init__(self, drrjson: dict):
-
         for param in ["error", "protocol-version", "txns"]:
             assert (
                 param in drrjson
@@ -38,6 +37,8 @@ class DryrunTransactionResult:
         for field in optionals:
             if field in dr:
                 setattr(self, field.replace("-", "_"), dr[field])
+            else:
+                setattr(self, field.replace("-", "_"), None)
 
         traces = ["app-call-trace", "logic-sig-trace"]
         for trace_field in traces:
@@ -47,6 +48,16 @@ class DryrunTransactionResult:
                     trace_field.replace("-", "_"),
                     DryrunTrace(dr[trace_field]),
                 )
+
+    def app_call_rejected(self) -> bool:
+        if self.app_call_messages is not None:
+            return "REJECT" in self.app_call_messages
+        return False
+
+    def logic_sig_rejected(self) -> bool:
+        if self.logic_sig_messages is not None:
+            return "REJECT" in self.logic_sig_messages
+        return False
 
     @classmethod
     def trace(
@@ -69,7 +80,7 @@ class DryrunTransactionResult:
 
         lines = ["pc# line# source" + " " * (spaces - 15) + "stack"]
 
-        for (line, pc, stack) in dr_trace.get_trace():
+        for line, pc, stack in dr_trace.get_trace():
             # Pad to 4 spaces since we don't expect programs to have > 9999 lines
             line_number_padding = " " * (4 - len(str(line)))
             pc_number_padding = " " * (4 - len(str(pc)))
@@ -102,7 +113,10 @@ class DryrunTransactionResult:
 
         # TODO: should be able to take this out when go-algorand#3577 is merged
         dis = self.disassembly
-        if hasattr(self, "logic_sig_disassembly"):
+        if (
+            hasattr(self, "logic_sig_disassembly")
+            and self.logic_sig_disassembly is not None
+        ):
             dis = self.logic_sig_disassembly
 
         return self.trace(self.logic_sig_trace, dis, spaces=spaces)
