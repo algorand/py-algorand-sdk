@@ -111,15 +111,15 @@ class DryrunTransactionResult:
         if not hasattr(self, "logic_sig_trace"):
             return ""
 
-        # TODO: should be able to take this out when go-algorand#3577 is merged
-        dis = self.disassembly
         if (
-            hasattr(self, "logic_sig_disassembly")
-            and self.logic_sig_disassembly is not None
+            not hasattr(self, "logic_sig_disassembly")
+            or self.logic_sig_disassembly is None
         ):
-            dis = self.logic_sig_disassembly
+            return ""
 
-        return self.trace(self.logic_sig_trace, dis, spaces=spaces)
+        return self.trace(
+            self.logic_sig_trace, self.logic_sig_disassembly, spaces=spaces
+        )
 
 
 class DryrunTrace:
