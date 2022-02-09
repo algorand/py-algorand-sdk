@@ -1261,6 +1261,10 @@ class TestApplicationTransactions(unittest.TestCase):
         actual = logic.get_application_address(appID)
         self.assertEqual(actual, expected)
 
+        appID = "seventy seven"
+        with self.assertRaises(AssertionError):
+            logic.get_application_address(appID)
+
     def test_application_call(self):
         params = transaction.SuggestedParams(0, 1, 100, self.genesis)
         for oc in transaction.OnComplete:
@@ -2857,254 +2861,6 @@ class TestLogicSigTransaction(unittest.TestCase):
         self._test_sign_txn(lsigAccount, sender, expected)
 
 
-class TestTemplate(unittest.TestCase):
-    def test_split(self):
-        addr1 = "WO3QIJ6T4DZHBX5PWJH26JLHFSRT7W7M2DJOULPXDTUS6TUX7ZRIO4KDFY"
-        addr2 = "W6UUUSEAOGLBHT7VFT4H2SDATKKSG6ZBUIJXTZMSLW36YS44FRP5NVAU7U"
-        addr3 = "XCIBIN7RT4ZXGBMVAMU3QS6L5EKB7XGROC5EPCNHHYXUIBAA5Q6C5Y7NEU"
-        s = template.Split(
-            addr1, addr2, addr3, 30, 100, 123456, 10000, 5000000
-        )
-        golden = (
-            "ASAIAcCWsQICAMDEB2QekE4mAyCztwQn0+DycN+vsk+vJWcsoz/b7NDS6i33HOkvT"
-            "pf+YiC3qUpIgHGWE8/1LPh9SGCalSN7IaITeeWSXbfsS5wsXyC4kBQ38Z8zcwWVAy"
-            "m4S8vpFB/c0XC6R4mnPi9EBADsPDEQIhIxASMMEDIEJBJAABkxCSgSMQcyAxIQMQg"
-            "lEhAxAiEEDRAiQAAuMwAAMwEAEjEJMgMSEDMABykSEDMBByoSEDMACCEFCzMBCCEG"
-            "CxIQMwAIIQcPEBA="
-        )
-        golden_addr = (
-            "HDY7A4VHBWQWQZJBEMASFOUZKBNGWBMJEMUXAGZ4SPIRQ6C24MJHUZKFGY"
-        )
-        self.assertEqual(s.get_program(), base64.b64decode(golden))
-        self.assertEqual(s.get_address(), golden_addr)
-        sp = transaction.SuggestedParams(
-            10000, 1, 100, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
-        )
-        txns = s.get_split_funds_transaction(s.get_program(), 1300000, sp)
-        golden_txns = base64.b64decode(
-            "gqRsc2lngaFsxM4BIAgBwJaxAgIAwMQHZB6QTiYDILO3BCfT4PJw36+yT68lZyyjP"
-            "9vs0NLqLfcc6S9Ol/5iILepSkiAcZYTz/Us+H1IYJqVI3shohN55ZJdt+xLnCxfIL"
-            "iQFDfxnzNzBZUDKbhLy+kUH9zRcLpHiac+L0QEAOw8MRAiEjEBIwwQMgQkEkAAGTE"
-            "JKBIxBzIDEhAxCCUSEDECIQQNECJAAC4zAAAzAQASMQkyAxIQMwAHKRIQMwEHKhIQ"
-            "MwAIIQULMwEIIQYLEhAzAAghBw8QEKN0eG6Jo2FtdM4ABJPgo2ZlZc4AId/gomZ2A"
-            "aJnaMQgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmjZ3JwxCBLA74bTV"
-            "35FJNL1h0K9ZbRU24b4M1JRkD1YTogvvDXbqJsdmSjcmN2xCC3qUpIgHGWE8/1LPh"
-            "9SGCalSN7IaITeeWSXbfsS5wsX6NzbmTEIDjx8HKnDaFoZSEjASK6mVBaawWJIylw"
-            "GzyT0Rh4WuMSpHR5cGWjcGF5gqRsc2lngaFsxM4BIAgBwJaxAgIAwMQHZB6QTiYDI"
-            "LO3BCfT4PJw36+yT68lZyyjP9vs0NLqLfcc6S9Ol/5iILepSkiAcZYTz/Us+H1IYJ"
-            "qVI3shohN55ZJdt+xLnCxfILiQFDfxnzNzBZUDKbhLy+kUH9zRcLpHiac+L0QEAOw"
-            "8MRAiEjEBIwwQMgQkEkAAGTEJKBIxBzIDEhAxCCUSEDECIQQNECJAAC4zAAAzAQAS"
-            "MQkyAxIQMwAHKRIQMwEHKhIQMwAIIQULMwEIIQYLEhAzAAghBw8QEKN0eG6Jo2Ftd"
-            "M4AD0JAo2ZlZc4AId/gomZ2AaJnaMQgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt"
-            "3SABJtkGmjZ3JwxCBLA74bTV35FJNL1h0K9ZbRU24b4M1JRkD1YTogvvDXbqJsdmS"
-            "jcmN2xCC4kBQ38Z8zcwWVAym4S8vpFB/c0XC6R4mnPi9EBADsPKNzbmTEIDjx8HKn"
-            "DaFoZSEjASK6mVBaawWJIylwGzyT0Rh4WuMSpHR5cGWjcGF5"
-        )
-        encoded_txns = b""
-        for txn in txns:
-            encoded_txns += base64.b64decode(encoding.msgpack_encode(txn))
-        self.assertEqual(encoded_txns, golden_txns)
-
-    def test_HTLC(self):
-        addr1 = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
-        addr2 = "42NJMHTPFVPXVSDGA6JGKUV6TARV5UZTMPFIREMLXHETRKIVW34QFSDFRE"
-        preimage = "cHJlaW1hZ2U="
-        hash_image = "EHZhE08h/HwCIj1Qq56zYAvD/8NxJCOh5Hux+anb9V8="
-        s = template.HTLC(addr1, addr2, "sha256", hash_image, 600000, 1000)
-        golden_addr = (
-            "FBZIR3RWVT2BTGVOG25H3VAOLVD54RTCRNRLQCCJJO6SVSCT5IVDYKNCSU"
-        )
-
-        golden = (
-            "ASAE6AcBAMDPJCYDIOaalh5vLV96yGYHkmVSvpgjXtMzY8qIkYu5yTipFbb5IBB2Y"
-            "RNPIfx8AiI9UKues2ALw//DcSQjoeR7sfmp2/VfIP68oLsUSlpOp7Q4pGgayA5soQ"
-            "W8tgf8VlMlyVaV9qITMQEiDjEQIxIQMQcyAxIQMQgkEhAxCSgSLQEpEhAxCSoSMQI"
-            "lDRAREA=="
-        )
-        p = s.get_program()
-        self.assertEqual(p, base64.b64decode(golden))
-        self.assertEqual(s.get_address(), golden_addr)
-        golden_ltxn = (
-            "gqRsc2lngqNhcmeRxAhwcmVpbWFnZaFsxJcBIAToBwEAwM8kJgMg5pqWHm8tX3rIZ"
-            "geSZVK+mCNe0zNjyoiRi7nJOKkVtvkgEHZhE08h/HwCIj1Qq56zYAvD/8NxJCOh5H"
-            "ux+anb9V8g/ryguxRKWk6ntDikaBrIDmyhBby2B/xWUyXJVpX2ohMxASIOMRAjEhA"
-            "xBzIDEhAxCCQSEDEJKBItASkSEDEJKhIxAiUNEBEQo3R4boelY2xvc2XEIOaalh5v"
-            "LV96yGYHkmVSvpgjXtMzY8qIkYu5yTipFbb5o2ZlZc0D6KJmdgGiZ2jEIH+DsWV/8"
-            "fxTuS3BgUih1l38LUsfo9Z3KErd0gASbZBpomx2ZKNzbmTEIChyiO42rPQZmq42un"
-            "3UDl1H3kZii2K4CElLvSrIU+oqpHR5cGWjcGF5"
-        )
-        sp = transaction.SuggestedParams(
-            0, 1, 100, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
-        )
-        ltxn = template.HTLC.get_transaction(p, preimage, sp)
-        self.assertEqual(golden_ltxn, encoding.msgpack_encode(ltxn))
-
-    def test_dynamic_fee(self):
-        addr1 = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
-        addr2 = "42NJMHTPFVPXVSDGA6JGKUV6TARV5UZTMPFIREMLXHETRKIVW34QFSDFRE"
-        sp = transaction.SuggestedParams(
-            0, 12345, 12346, "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
-        )
-
-        s = template.DynamicFee(addr1, 5000, sp, addr2)
-        s.lease_value = base64.b64decode(
-            "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
-        )
-
-        golden_addr = (
-            "GCI4WWDIWUFATVPOQ372OZYG52EULPUZKI7Y34MXK3ZJKIBZXHD2H5C5TI"
-        )
-
-        golden = (
-            "ASAFAgGIJ7lgumAmAyD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJclWlfaiEyDmm"
-            "pYeby1feshmB5JlUr6YI17TM2PKiJGLuck4qRW2+SB/g7Flf/H8U7ktwYFIodZd/C"
-            "1LH6PWdyhK3dIAEm2QaTIEIhIzABAjEhAzAAcxABIQMwAIMQESEDEWIxIQMRAjEhA"
-            "xBygSEDEJKRIQMQgkEhAxAiUSEDEEIQQSEDEGKhIQ"
-        )
-        p = s.get_program()
-        self.assertEqual(p, base64.b64decode(golden))
-        self.assertEqual(s.get_address(), golden_addr)
-        sk = (
-            "cv8E0Ln24FSkwDgGeuXKStOTGcze5u8yldpXxgrBxumFPYdMJymqcGoxdDeyuM8t6"
-            "Kxixfq0PJCyJP71uhYT7w=="
-        )
-        txn, lsig = s.sign_dynamic_fee(sk)
-
-        golden_txn = (
-            "iqNhbXTNE4ilY2xvc2XEIOaalh5vLV96yGYHkmVSvpgjXtMzY8qIkYu5yTipFbb5"
-            "o2ZlZc0D6KJmds0wOaJnaMQgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtk"
-            "GmibHbNMDqibHjEIH+DsWV/8fxTuS3BgUih1l38LUsfo9Z3KErd0gASbZBpo3Jjds"
-            "Qg/ryguxRKWk6ntDikaBrIDmyhBby2B/xWUyXJVpX2ohOjc25kxCCFPYdMJymqcGo"
-            "xdDeyuM8t6Kxixfq0PJCyJP71uhYT76R0eXBlo3BheQ=="
-        )
-        golden_lsig = (
-            "gqFsxLEBIAUCAYgnuWC6YCYDIP68oLsUSlpOp7Q4pGgayA5soQW8tgf8VlMlyVaV9"
-            "qITIOaalh5vLV96yGYHkmVSvpgjXtMzY8qIkYu5yTipFbb5IH+DsWV/8fxTuS3BgU"
-            "ih1l38LUsfo9Z3KErd0gASbZBpMgQiEjMAECMSEDMABzEAEhAzAAgxARIQMRYjEhA"
-            "xECMSEDEHKBIQMQkpEhAxCCQSEDECJRIQMQQhBBIQMQYqEhCjc2lnxEAhLNdfdDp9"
-            "Wbi0YwsEQCpP7TVHbHG7y41F4MoESNW/vL1guS+5Wj4f5V9fmM63/VKTSMFidHOSw"
-            "m5o+pbV5lYH"
-        )
-        self.assertEqual(golden_txn, encoding.msgpack_encode(txn))
-        self.assertEqual(golden_lsig, encoding.msgpack_encode(lsig))
-
-        sk_2 = (
-            "2qjz96Vj9M6YOqtNlfJUOKac13EHCXyDty94ozCjuwwriI+jzFgStFx9E6kEk1l4+"
-            "lFsW4Te2PY1KV8kNcccRg=="
-        )
-        txns = s.get_transactions(txn, lsig, sk_2, 1234)
-
-        golden_txns = (
-            "gqNzaWfEQJBNVry9qdpnco+uQzwFicUWHteYUIxwDkdHqY5Qw2Q8Fc2StrQUgN+2k"
-            "8q4rC0LKrTMJQnE+mLWhZgMMJvq3QCjdHhuiqNhbXTOAAWq6qNmZWXOAATzvqJmds"
-            "0wOaJnaMQgf4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmjZ3JwxCCCVfq"
-            "hCinRBXKMIq9eSrJQIXZ+7iXUTig91oGd/mZEAqJsds0wOqJseMQgf4OxZX/x/FO5"
-            "LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmjcmN2xCCFPYdMJymqcGoxdDeyuM8t6Kxix"
-            "fq0PJCyJP71uhYT76NzbmTEICuIj6PMWBK0XH0TqQSTWXj6UWxbhN7Y9jUpXyQ1xx"
-            "xGpHR5cGWjcGF5gqRsc2lngqFsxLEBIAUCAYgnuWC6YCYDIP68oLsUSlpOp7Q4pGg"
-            "ayA5soQW8tgf8VlMlyVaV9qITIOaalh5vLV96yGYHkmVSvpgjXtMzY8qIkYu5yTip"
-            "Fbb5IH+DsWV/8fxTuS3BgUih1l38LUsfo9Z3KErd0gASbZBpMgQiEjMAECMSEDMAB"
-            "zEAEhAzAAgxARIQMRYjEhAxECMSEDEHKBIQMQkpEhAxCCQSEDECJRIQMQQhBBIQMQ"
-            "YqEhCjc2lnxEAhLNdfdDp9Wbi0YwsEQCpP7TVHbHG7y41F4MoESNW/vL1guS+5Wj4"
-            "f5V9fmM63/VKTSMFidHOSwm5o+pbV5lYHo3R4boujYW10zROIpWNsb3NlxCDmmpYe"
-            "by1feshmB5JlUr6YI17TM2PKiJGLuck4qRW2+aNmZWXOAAWq6qJmds0wOaJnaMQgf"
-            "4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmjZ3JwxCCCVfqhCinRBXKMIq"
-            "9eSrJQIXZ+7iXUTig91oGd/mZEAqJsds0wOqJseMQgf4OxZX/x/FO5LcGBSKHWXfw"
-            "tSx+j1ncoSt3SABJtkGmjcmN2xCD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJclW"
-            "lfaiE6NzbmTEIIU9h0wnKapwajF0N7K4zy3orGLF+rQ8kLIk/vW6FhPvpHR5cGWjc"
-            "GF5"
-        )
-
-        actual = base64.b64decode(
-            encoding.msgpack_encode(txns[0])
-        ) + base64.b64decode(encoding.msgpack_encode(txns[1]))
-        self.assertEqual(golden_txns, base64.b64encode(actual).decode())
-
-    def test_periodic_payment(self):
-        addr = "SKXZDBHECM6AS73GVPGJHMIRDMJKEAN5TUGMUPSKJCQ44E6M6TC2H2UJ3I"
-        s = template.PeriodicPayment(addr, 500000, 95, 100, 1000, 2445756)
-        s.lease_value = base64.b64decode(
-            "AQIDBAUGBwgBAgMEBQYHCAECAwQFBgcIAQIDBAUGBwg="
-        )
-
-        golden_addr = (
-            "JMS3K4LSHPULANJIVQBTEDP5PZK6HHMDQS4OKHIMHUZZ6OILYO3FVQW7IY"
-        )
-
-        golden = (
-            "ASAHAegHZABfoMIevKOVASYCIAECAwQFBgcIAQIDBAUGBwgBAgMEBQYHCAECAwQFB"
-            "gcIIJKvkYTkEzwJf2arzJOxERsSogG9nQzKPkpIoc4TzPTFMRAiEjEBIw4QMQIkGC"
-            "USEDEEIQQxAggSEDEGKBIQMQkyAxIxBykSEDEIIQUSEDEJKRIxBzIDEhAxAiEGDRA"
-            "xCCUSEBEQ"
-        )
-        p = s.get_program()
-        self.assertEqual(p, base64.b64decode(golden))
-        self.assertEqual(s.get_address(), golden_addr)
-        gh = "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
-        sp = transaction.SuggestedParams(0, 1200, None, gh)
-
-        ltxn = s.get_withdrawal_transaction(p, sp)
-        golden_ltxn = (
-            "gqRsc2lngaFsxJkBIAcB6AdkAF+gwh68o5UBJgIgAQIDBAUGBwgBAgMEBQYHCAECA"
-            "wQFBgcIAQIDBAUGBwggkq+RhOQTPAl/ZqvMk7ERGxKiAb2dDMo+SkihzhPM9MUxEC"
-            "ISMQEjDhAxAiQYJRIQMQQhBDECCBIQMQYoEhAxCTIDEjEHKRIQMQghBRIQMQkpEjE"
-            "HMgMSEDECIQYNEDEIJRIQERCjdHhuiaNhbXTOAAehIKNmZWXNA+iiZnbNBLCiZ2jE"
-            "IH+DsWV/8fxTuS3BgUih1l38LUsfo9Z3KErd0gASbZBpomx2zQUPomx4xCABAgMEB"
-            "QYHCAECAwQFBgcIAQIDBAUGBwgBAgMEBQYHCKNyY3bEIJKvkYTkEzwJf2arzJOxER"
-            "sSogG9nQzKPkpIoc4TzPTFo3NuZMQgSyW1cXI76LA1KKwDMg39flXjnYOEuOUdDD0"
-            "znzkLw7akdHlwZaNwYXk="
-        )
-        self.assertEqual(golden_ltxn, encoding.msgpack_encode(ltxn))
-
-    def test_limit_order_a(self):
-        addr = "726KBOYUJJNE5J5UHCSGQGWIBZWKCBN4WYD7YVSTEXEVNFPWUIJ7TAEOPM"
-        s = template.LimitOrder(addr, 12345, 30, 100, 123456, 5000000, 10000)
-
-        golden_addr = (
-            "LXQWT2XLIVNFS54VTLR63UY5K6AMIEWI7YTVE6LB4RWZDBZKH22ZO3S36I"
-        )
-
-        golden = (
-            "ASAKAAHAlrECApBOBLlgZB7AxAcmASD+vKC7FEpaTqe0OKRoGsgObKEFvLYH/FZTJ"
-            "clWlfaiEzEWIhIxECMSEDEBJA4QMgQjEkAAVTIEJRIxCCEEDRAxCTIDEhAzARAhBR"
-            "IQMwERIQYSEDMBFCgSEDMBEzIDEhAzARIhBx01AjUBMQghCB01BDUDNAE0Aw1AACQ"
-            "0ATQDEjQCNAQPEEAAFgAxCSgSMQIhCQ0QMQcyAxIQMQgiEhAQ"
-        )
-        p = s.get_program()
-
-        self.assertEqual(p, base64.b64decode(golden))
-        self.assertEqual(s.get_address(), golden_addr)
-
-        sk = (
-            "DTKVj7KMON3GSWBwMX9McQHtaDDi8SDEBi0bt4rOxlHNRahLa0zVG+25BDIaHB1dS"
-            "oIHIsUQ8FFcdnCdKoG+Bg=="
-        )
-        gh = "f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk="
-        sp = transaction.SuggestedParams(10, 1234, 2234, gh)
-        [stx_1, stx_2] = s.get_swap_assets_transactions(p, 3000, 10000, sk, sp)
-        golden_txn_1 = (
-            "gqRsc2lngaFsxLcBIAoAAcCWsQICkE4EuWBkHsDEByYBIP68oLsUSlpOp7Q4pGgay"
-            "A5soQW8tgf8VlMlyVaV9qITMRYiEjEQIxIQMQEkDhAyBCMSQABVMgQlEjEIIQQNED"
-            "EJMgMSEDMBECEFEhAzAREhBhIQMwEUKBIQMwETMgMSEDMBEiEHHTUCNQExCCEIHTU"
-            "ENQM0ATQDDUAAJDQBNAMSNAI0BA8QQAAWADEJKBIxAiEJDRAxBzIDEhAxCCISEBCj"
-            "dHhuiaNhbXTNJxCjZmVlzQisomZ2zQTSomdoxCB/g7Flf/H8U7ktwYFIodZd/C1LH"
-            "6PWdyhK3dIAEm2QaaNncnDEIKz368WOGpdE/Ww0L8wUu5Ly2u2bpG3ZSMKCJvcvGA"
-            "pTomx2zQi6o3JjdsQgzUWoS2tM1RvtuQQyGhwdXUqCByLFEPBRXHZwnSqBvgajc25"
-            "kxCBd4Wnq60VaWXeVmuPt0x1XgMQSyP4nUnlh5G2Rhyo+taR0eXBlo3BheQ=="
-        )
-        golden_txn_2 = (
-            "gqNzaWfEQKXv8Z6OUDNmiZ5phpoQJHmfKyBal4gBZLPYsByYnlXCAlXMBeVFG5CLP"
-            "1k5L6BPyEG2/XIbjbyM0CGG55CxxAKjdHhuiqRhYW10zQu4pGFyY3bEIP68oLsUSl"
-            "pOp7Q4pGgayA5soQW8tgf8VlMlyVaV9qITo2ZlZc0JJKJmds0E0qJnaMQgf4OxZX/"
-            "x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGmjZ3JwxCCs9+vFjhqXRP1sNC/MFLuS"
-            "8trtm6Rt2UjCgib3LxgKU6Jsds0IuqNzbmTEIM1FqEtrTNUb7bkEMhocHV1Kggcix"
-            "RDwUVx2cJ0qgb4GpHR5cGWlYXhmZXKkeGFpZM0wOQ=="
-        )
-
-        self.assertEqual(encoding.msgpack_encode(stx_1), golden_txn_1)
-        self.assertEqual(encoding.msgpack_encode(stx_2), golden_txn_2)
-
-
 class TestDryrun(dryrun.DryrunTestCaseMixin, unittest.TestCase):
     def setUp(self):
         self.mock_response = dict(error=None, txns=[])
@@ -4061,6 +3817,13 @@ class TestABIEncoding(unittest.TestCase):
                     "00 00 00 00 00 00 00 01 00 00 00 00 00 00 00 02 00 00 00 00 00 00 00 03"
                 ),
             ),
+            (
+                ArrayStaticType(ByteType(), 17),
+                [0, 0, 0, 0, 0, 0, 4, 3, 31, 0, 0, 0, 0, 0, 0, 0, 33],
+                bytes.fromhex(
+                    "00 00 00 00 00 00 04 03 1f 00 00 00 00 00 00 00 21"
+                ),
+            ),
         ]
 
         for test_case in test_cases:
@@ -4305,7 +4068,6 @@ if __name__ == "__main__":
         TestLogicSig,
         TestLogicSigAccount,
         TestLogicSigTransaction,
-        TestTemplate,
         TestDryrun,
         TestABIType,
         TestABIEncoding,
