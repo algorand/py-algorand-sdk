@@ -10,6 +10,8 @@ import pytest
 from typing import List, Union
 from urllib.request import Request, urlopen
 
+# TODO: This file is WAY TOO BIG. Break it up into logically related chunks.
+
 from behave import (
     given,
     when,
