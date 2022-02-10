@@ -78,7 +78,8 @@ class DryrunTransactionResult:
                 10  # 4 for line number + 1 for space between number and line
             )
 
-        lines = ["pc# line# source" + " " * (spaces - 15) + "stack"]
+        # 16 for length of the header up to spaces
+        lines = ["pc# line# source" + " " * (spaces - 16) + "stack"]
 
         for line, pc, stack in dr_trace.get_trace():
             # Pad to 4 spaces since we don't expect programs to have > 9999 lines
@@ -94,7 +95,7 @@ class DryrunTransactionResult:
             )
 
             lines.append(
-                "{}{} {}".format(
+                "{}{}{}".format(
                     src_line, " " * (spaces - len(src_line)), stack
                 )
             )
