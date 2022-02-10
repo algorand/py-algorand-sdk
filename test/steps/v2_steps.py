@@ -2969,6 +2969,8 @@ def dryrun_compare_golden(context, golden_file):
     assert (
         golden_expected == context.dryrun_trace
     ), "Expected '{}' got '{}'".format(golden_expected, context.dryrun_trace)
+
+
 @then(
     'I dig into the paths "{paths}" of the resulting atomic transaction tree I see group ids and they are all the same'
 )
