@@ -8,7 +8,7 @@ import base64
 
 class Template:
     """
-    NOTE: This class is deprecated.
+    NOTE: This class is deprecated
     """
 
     def get_address(self):

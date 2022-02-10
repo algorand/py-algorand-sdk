@@ -12,6 +12,7 @@ from . import mnemonic
 from . import template
 from . import transaction
 from . import util
+from . import v2client
 from . import wallet
 from . import wordlist
 

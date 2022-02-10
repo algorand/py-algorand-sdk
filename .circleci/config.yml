@@ -1,14 +1,45 @@
 version: 2.1
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - unit-test
+      - integration-test
+      - docset
+
 jobs:
-  build:
-    machine: 
-      image: "ubuntu-2004:202104-01"
+  unit-test:
+    docker:
+      - image: python:3.7.9
+    steps:
+      - checkout
+      - run: pip install -r requirements.txt
+      - run: black --check .
+      - run: python3 test_unit.py
+  integration-test:
+    machine:
+     image: "ubuntu-2004:202104-01"
+    steps:
+      - checkout
+      - run: make docker-test
+  docset:
+    docker:
+      # NOTE: We might eventually need Docker authentication here.
+      - image: cimg/python:3.9
     steps:
       - checkout
       - run:
+          # NOTE: We might add caching at `pip` level here.
           command: |
-            pip3 install -r requirements.txt
-            black --check .
-            set -e
-            python3 test_unit.py
-            make docker-test
+            pip install -r requirements.txt
+            cd docs
+            pip install -r requirements.txt
+            pip install sphinx sphinx_rtd_theme doc2dash
+            make html
+            doc2dash --name py-algo-sdk --index-page index.html --online-redirect-url https://py-algorand-sdk.readthedocs.io/en/latest/ _build/html
+            tar -czvf py-algo-sdk.docset.tar.gz py-algo-sdk.docset
+            mv py-algo-sdk.docset.tar.gz /tmp
+      - store_artifacts:
+          path: /tmp/py-algo-sdk.docset.tar.gz
+          destination: py-algo-sdk.docset.tar.gz
