@@ -113,3 +113,9 @@ venv.bak/
 *.feature
 test/features
 test-harness
+
+# Build files
+py-algorand-sdk-*
+
+# Pycharm
+.idea

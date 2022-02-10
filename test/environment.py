@@ -32,7 +32,7 @@ def encode_bytes(d):
                 encode_bytes(d[i])
             else:
                 if isinstance(d[i], bytes):
-                    d[i] = base64.b64encode(v).decode()
+                    d[i] = base64.b64encode(d[i]).decode()
     return d
 
 

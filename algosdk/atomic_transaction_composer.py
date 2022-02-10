@@ -495,26 +495,27 @@ class AtomicTransactionComposer:
             raw_value = None
             return_value = None
             decode_error = None
+            tx_info = None
 
             if i not in self.method_dict:
-                continue
-            # Return is void
-            if self.method_dict[i].returns.type == abi.Returns.VOID:
-                method_results.append(
-                    ABIResult(
-                        tx_id=tx_id,
-                        raw_value=raw_value,
-                        return_value=return_value,
-                        decode_error=decode_error,
-                    )
-                )
                 continue
 
             # Parse log for ABI method return value
             try:
-                resp = client.pending_transaction_info(tx_id)
-                confirmed_round = resp["confirmed-round"]
-                logs = resp["logs"] if "logs" in resp else []
+                tx_info = client.pending_transaction_info(tx_id)
+                if self.method_dict[i].returns.type == abi.Returns.VOID:
+                    method_results.append(
+                        ABIResult(
+                            tx_id=tx_id,
+                            raw_value=raw_value,
+                            return_value=return_value,
+                            decode_error=decode_error,
+                            tx_info=tx_info,
+                        )
+                    )
+                    continue
+
+                logs = tx_info["logs"] if "logs" in tx_info else []
 
                 # Look for the last returned value in the log
                 if not logs:
@@ -543,6 +544,7 @@ class AtomicTransactionComposer:
                 raw_value=raw_value,
                 return_value=return_value,
                 decode_error=decode_error,
+                tx_info=tx_info,
             )
             method_results.append(abi_result)
 
@@ -689,16 +691,18 @@ class ABIResult:
         raw_value: bytes,
         return_value: Any,
         decode_error: error,
+        tx_info: dict,
     ) -> None:
         self.tx_id = tx_id
         self.raw_value = raw_value
         self.return_value = return_value
         self.decode_error = decode_error
+        self.tx_info = tx_info
 
 
 class AtomicTransactionResponse:
     def __init__(
-        self, confirmed_round: int, tx_ids: List[str], results: ABIResult
+        self, confirmed_round: int, tx_ids: List[str], results: List[ABIResult]
     ) -> None:
         self.confirmed_round = confirmed_round
         self.tx_ids = tx_ids
