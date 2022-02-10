@@ -7,6 +7,10 @@ import base64
 
 
 class Template:
+    """
+    NOTE: This class is deprecated
+    """
+
     def get_address(self):
         """
         Return the address of the contract.
@@ -19,6 +23,8 @@ class Template:
 
 class Split(Template):
     """
+    NOTE: This class is deprecated.
+
     Split allows locking algos in an account which allows transfering to two
     predefined addresses in a specified ratio such that for the given ratn and
     ratd parameters we have:
@@ -156,6 +162,8 @@ class Split(Template):
 
 class HTLC(Template):
     """
+    NOTE: This class is deprecated.
+
     Hash Time Locked Contract allows a user to recieve the Algo prior to a
     deadline (in terms of a round) by proving knowledge of a special value
     or to forfeit the ability to claim, returning it to the payer.
@@ -291,6 +299,8 @@ class HTLC(Template):
 
 class DynamicFee(Template):
     """
+    NOTE: This class is deprecated.
+
     DynamicFee contract allows you to create a transaction without
     specifying the fee. The fee will be determined at the moment of
     transfer.
@@ -416,6 +426,8 @@ class DynamicFee(Template):
 
 class PeriodicPayment(Template):
     """
+    NOTE: This class is deprecated.
+
     PeriodicPayment contract enables creating an account which allows the
     withdrawal of a fixed amount of assets every fixed number of rounds to a
     specific Algrorand Address. In addition, the contract allows to add
@@ -528,6 +540,8 @@ class PeriodicPayment(Template):
 
 class LimitOrder(Template):
     """
+    NOTE: This class is deprecated.
+
     Limit Order allows to trade Algos for other assets given a specific ratio;
     for N Algos, swap for Rate * N Assets.
     ...
