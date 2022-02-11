@@ -2939,7 +2939,9 @@ def deserialize_json_to_contract(context):
     assert actual == context.abi_contract
 
 
-@given('a dryrun response file "{dryrun_response_file}" and a transaction id "{txn_id}"')
+@given(
+    'a dryrun response file "{dryrun_response_file}" and a transaction id "{txn_id}"'
+)
 def parse_dryrun_response_object(context, dryrun_response_file, txn_id):
     dir_path = os.path.dirname(os.path.realpath(__file__))
     dir_path = os.path.dirname(os.path.dirname(dir_path))
