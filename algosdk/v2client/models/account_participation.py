@@ -19,6 +19,7 @@ class AccountParticipation(object):
         "vote_key_dilution": "int",
         "vote_last_valid": "int",
         "vote_participation_key": "str",
+        "state-proof-key": "str",
     }
 
     attribute_map = {
@@ -27,6 +28,7 @@ class AccountParticipation(object):
         "vote_key_dilution": "vote-key-dilution",
         "vote_last_valid": "vote-last-valid",
         "vote_participation_key": "vote-participation-key",
+        "state_proof_key": "state-proof-key",
     }
 
     def __init__(
@@ -36,6 +38,7 @@ class AccountParticipation(object):
         vote_key_dilution=None,
         vote_last_valid=None,
         vote_participation_key=None,
+        state_proof_key=None,
     ):  # noqa: E501
         """AccountParticipation - a model defined in OpenAPI"""  # noqa: E501
 
@@ -44,12 +47,14 @@ class AccountParticipation(object):
         self._vote_key_dilution = None
         self._vote_last_valid = None
         self._vote_participation_key = None
+        self._state_proof_key = None
 
         self.selection_participation_key = selection_participation_key
         self.vote_first_valid = vote_first_valid
         self.vote_key_dilution = vote_key_dilution
         self.vote_last_valid = vote_last_valid
         self.vote_participation_key = vote_participation_key
+        self.state_proof_key = state_proof_key
 
     @property
     def selection_participation_key(self):
@@ -165,6 +170,29 @@ class AccountParticipation(object):
         """
 
         self._vote_participation_key = vote_participation_key
+
+    @property
+    def state_proof_key(self):
+        """Gets the state_proof_key of this AccountParticipation.  # noqa: E501
+
+        \\[sprfkey\\] merkle verifier (if any) stored for this round.  # noqa: E501
+
+        :return: The state_proof_key of this AccountParticipation.  # noqa: E501
+        :rtype: str
+        """
+        return self._state_proof_key
+
+    @state_proof_key.setter
+    def state_proof_key(self, state_proof_key):
+        """Sets the state_proof_key of this AccountParticipation.
+
+        \\[sprfkey\\] merkle verifier (if any) stored for this round.  # noqa: E501
+
+        :param state_proof_key: The state_proof_key of this AccountParticipation.  # noqa: E501
+        :type state_proof_key: str
+        """
+
+        self._state_proof_key = state_proof_key
 
     def dictify(self):
         """Returns the model properties as a dict"""
