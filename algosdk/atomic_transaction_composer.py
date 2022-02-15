@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import base64
 import copy
 from enum import IntEnum
-from typing import Any, List, TypeVar, Union
+from typing import Any, List, Optional, TypeVar, Union
 
 from algosdk import abi, error
 from algosdk.abi.address_type import AddressType
@@ -690,7 +690,7 @@ class ABIResult:
         tx_id: int,
         raw_value: bytes,
         return_value: Any,
-        decode_error: error,
+        decode_error: Optional[Exception],
         tx_info: dict,
     ) -> None:
         self.tx_id = tx_id

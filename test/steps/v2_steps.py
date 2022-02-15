@@ -1685,6 +1685,51 @@ def suggested_transaction_parameters(
     )
 
 
+@when(
+    'I build a keyreg transaction with sender "{sender}", nonparticipation "{nonpart:MaybeBool}", vote first {vote_first}, vote last {vote_last}, key dilution {key_dilution}, vote public key "{vote_pk:MaybeString}", selection public key "{selection_pk:MaybeString}", and state proof public key "{state_proof_pk:MaybeString}"'
+)
+def step_impl(
+    context,
+    sender,
+    nonpart,
+    vote_first,
+    vote_last,
+    key_dilution,
+    vote_pk,
+    selection_pk,
+    state_proof_pk,
+):
+    if nonpart:
+        context.transaction = transaction.KeyregNonparticipatingTxn(
+            sender, context.suggested_params
+        )
+        return
+
+    if len(vote_pk) == 0:
+        vote_pk = None
+    if len(selection_pk) == 0:
+        selection_pk = None
+    if len(state_proof_pk) == 0:
+        state_proof_pk = None
+
+    if vote_pk is None and selection_pk is None and state_proof_pk is None:
+        context.transaction = transaction.KeyregOfflineTxn(
+            sender, context.suggested_params
+        )
+        return
+
+    context.transaction = transaction.KeyregOnlineTxn(
+        sender,
+        context.suggested_params,
+        vote_pk,
+        selection_pk,
+        int(vote_first),
+        int(vote_last),
+        int(key_dilution),
+        sprfkey=state_proof_pk,
+    )
+
+
 @given("suggested transaction parameters from the algod v2 client")
 def get_sp_from_algod(context):
     context.suggested_params = context.app_acl.suggested_params()
