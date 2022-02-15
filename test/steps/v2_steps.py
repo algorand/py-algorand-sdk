@@ -1,13 +1,17 @@
 import base64
 import json
 import os
+import re
 import urllib
 import unittest
 from datetime import datetime
+from pathlib import Path
+import pytest
+from typing import List, Union
 from urllib.request import Request, urlopen
-from algosdk.abi.contract import NetworkInfo
 
-import parse
+# TODO: This file is WAY TOO BIG. Break it up into logically related chunks.
+
 from behave import (
     given,
     when,
@@ -16,24 +20,28 @@ from behave import (
     step,
 )  # pylint: disable=no-name-in-module
 
-from algosdk.future import transaction
+from glom import glom
+import parse
+
 from algosdk import (
     abi,
     account,
     atomic_transaction_composer,
     encoding,
     error,
+    logic,
     mnemonic,
 )
+from algosdk.abi.contract import NetworkInfo
+from algosdk.error import ABITypeError, AlgodHTTPError, IndexerHTTPError
+from algosdk.future import transaction
 from algosdk.v2client import *
 from algosdk.v2client.models import (
     DryrunRequest,
     DryrunSource,
     Account,
-    Application,
     ApplicationLocalState,
 )
-from algosdk.error import AlgodHTTPError, IndexerHTTPError
 from algosdk.testing.dryrun import DryrunTestCaseMixin
 
 from test.steps.steps import token as daemon_token
@@ -1677,6 +1685,51 @@ def suggested_transaction_parameters(
     )
 
 
+@when(
+    'I build a keyreg transaction with sender "{sender}", nonparticipation "{nonpart:MaybeBool}", vote first {vote_first}, vote last {vote_last}, key dilution {key_dilution}, vote public key "{vote_pk:MaybeString}", selection public key "{selection_pk:MaybeString}", and state proof public key "{state_proof_pk:MaybeString}"'
+)
+def step_impl(
+    context,
+    sender,
+    nonpart,
+    vote_first,
+    vote_last,
+    key_dilution,
+    vote_pk,
+    selection_pk,
+    state_proof_pk,
+):
+    if nonpart:
+        context.transaction = transaction.KeyregNonparticipatingTxn(
+            sender, context.suggested_params
+        )
+        return
+
+    if len(vote_pk) == 0:
+        vote_pk = None
+    if len(selection_pk) == 0:
+        selection_pk = None
+    if len(state_proof_pk) == 0:
+        state_proof_pk = None
+
+    if vote_pk is None and selection_pk is None and state_proof_pk is None:
+        context.transaction = transaction.KeyregOfflineTxn(
+            sender, context.suggested_params
+        )
+        return
+
+    context.transaction = transaction.KeyregOnlineTxn(
+        sender,
+        context.suggested_params,
+        vote_pk,
+        selection_pk,
+        int(vote_first),
+        int(vote_last),
+        int(key_dilution),
+        sprfkey=state_proof_pk,
+    )
+
+
 @given("suggested transaction parameters from the algod v2 client")
 def get_sp_from_algod(context):
     context.suggested_params = context.app_acl.suggested_params()
@@ -1710,8 +1763,12 @@ def split_and_process_app_args(in_args):
     sub_args = [sub_arg.split(":") for sub_arg in split_args]
     app_args = []
     for sub_arg in sub_args:
-        if sub_arg[0] == "str":
+        if len(sub_arg) == 1:  # assume int
+            app_args.append(int(sub_arg[0]))
+        elif sub_arg[0] == "str":
             app_args.append(bytes(sub_arg[1], "ascii"))
+        elif sub_arg[0] == "b64":
+            app_args.append(base64.decodebytes(sub_arg[1].encode()))
         elif sub_arg[0] == "int":
             app_args.append(int(sub_arg[1]))
         elif sub_arg[0] == "addr":
@@ -1770,22 +1827,14 @@ def build_app_transaction(
         operation = operation_string_to_enum(operation)
     if sender == "none":
         sender = None
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
     if approval_program == "none":
         approval_program = None
     elif approval_program:
-        with open(
-            dir_path + "/test/features/resources/" + approval_program, "rb"
-        ) as f:
-            approval_program = bytearray(f.read())
+        approval_program = read_program(context, approval_program)
     if clear_program == "none":
         clear_program = None
     elif clear_program:
-        with open(
-            dir_path + "/test/features/resources/" + clear_program, "rb"
-        ) as f:
-            clear_program = bytearray(f.read())
+        clear_program = read_program(context, clear_program)
     if app_args == "none":
         app_args = None
     elif app_args:
@@ -1927,22 +1976,14 @@ def build_app_txn_with_transient(
         ):
             application_id = context.current_application_id
         operation = operation_string_to_enum(operation)
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
     if approval_program == "none":
         approval_program = None
     elif approval_program:
-        with open(
-            dir_path + "/test/features/resources/" + approval_program, "rb"
-        ) as f:
-            approval_program = bytearray(f.read())
+        approval_program = read_program(context, approval_program)
     if clear_program == "none":
         clear_program = None
     elif clear_program:
-        with open(
-            dir_path + "/test/features/resources/" + clear_program, "rb"
-        ) as f:
-            clear_program = bytearray(f.read())
+        clear_program = read_program(context, clear_program)
     local_schema = transaction.StateSchema(
         num_uints=int(local_ints), num_byte_slices=int(local_bytes)
     )
@@ -2026,18 +2067,67 @@ def wait_for_app_txn_confirm(context):
         )
 
 
-@given("I remember the new application ID.")
+@given("I reset the array of application IDs to remember.")
+def reset_appid_list(context):
+    context.app_ids = []
+
+
+@step("I remember the new application ID.")
 def remember_app_id(context):
     if hasattr(context, "acl"):
-        context.current_application_id = context.acl.pending_transaction_info(
-            context.app_txid
-        )["txresults"]["createdapp"]
+        app_id = context.acl.pending_transaction_info(context.app_txid)[
+            "txresults"
+        ]["createdapp"]
     else:
-        context.current_application_id = (
-            context.app_acl.pending_transaction_info(context.app_txid)[
-                "application-index"
-            ]
-        )
+        app_id = context.app_acl.pending_transaction_info(context.app_txid)[
+            "application-index"
+        ]
+
+    context.current_application_id = app_id
+    if not hasattr(context, "app_ids"):
+        context.app_ids = []
+
+    context.app_ids.append(app_id)
+
+
+@then(
+    "I get the account address for the current application and see that it matches the app id's hash"
+)
+def assert_app_account_is_the_hash(context):
+    app_id = context.current_application_id
+    expected = encoding.encode_address(
+        encoding.checksum(b"appID" + app_id.to_bytes(8, "big"))
+    )
+    actual = logic.get_application_address(app_id)
+    assert (
+        expected == actual
+    ), f"account-address: expected [{expected}], but got [{actual}]"
+
+
+def fund_account_address(
+    context, account_address: str, amount: Union[int, str]
+):
+    sp = context.app_acl.suggested_params()
+    payment = transaction.PaymentTxn(
+        context.accounts[0],
+        sp,
+        account_address,
+        int(amount),
+    )
+    signed_payment = context.wallet.sign_transaction(payment)
+    context.app_acl.send_transaction(signed_payment)
+    transaction.wait_for_confirmation(context.app_acl, payment.get_txid(), 10)
+
+
+@given(
+    "I fund the current application's address with {fund_amount} microalgos."
+)
+def fund_app_account(context, fund_amount):
+    fund_account_address(
+        context,
+        logic.get_application_address(context.current_application_id),
+        fund_amount,
+    )
 
 
 @given("an application id {app_id}")
@@ -2116,13 +2206,34 @@ def verify_app_txn(
     assert found_value_for_key
 
 
-def load_resource(res):
+def load_resource(res, is_binary=True):
     """load data from features/resources"""
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    path = os.path.join(dir_path, "..", "features", "resources", res)
-    with open(path, "rb") as fin:
+    path = Path(__file__).parent.parent / "features" / "resources" / res
+    filemode = "rb" if is_binary else "r"
+    with open(path, filemode) as fin:
         data = fin.read()
     return data
+
+
+def read_program_binary(path):
+    return bytearray(load_resource(path))
+
+
+def read_program(context, path):
+    """
+    Assumes that have already added `context.app_acl` so need to have previously
+    called one of the steps beginning with "Given an algod v2 client..."
+    """
+    if path.endswith(".teal"):
+        assert hasattr(
+            context, "app_acl"
+        ), "Cannot compile teal program into binary because no algod v2 client has been provided in the context"
+
+        teal = load_resource(path, is_binary=False)
+        resp = context.app_acl.compile(teal)
+        return base64.b64decode(resp["result"])
+
+    return read_program_binary(path)
 
 
 @when('I compile a teal program "{program}"')
@@ -2145,6 +2256,15 @@ def compile_check_step(context, status, result, hash):
     assert context.status == int(status)
     assert context.response["result"] == result
     assert context.response["hash"] == hash
+
+
+@then(
+    'base64 decoding the response is the same as the binary "{binary:MaybeString}"'
+)
+def b64decode_compiled_teal_step(context, binary):
+    binary = load_resource(binary)
+    response_result = context.response["result"]
+    assert base64.b64decode(response_result.encode()) == binary
 
 
 @when('I dryrun a "{kind}" program "{program}"')
@@ -2349,15 +2469,7 @@ def create_atomic_transaction_composer(context):
     context.method_list = []
 
 
-@given("I make a transaction signer for the transient account.")
-def create_transient_transaction_signer(context):
-    private_key = context.transient_sk
-    context.transaction_signer = (
-        atomic_transaction_composer.AccountTransactionSigner(private_key)
-    )
-
-
-@when("I make a transaction signer for the {account_type} account.")
+@step("I make a transaction signer for the {account_type} account.")
 def create_transaction_signer(context, account_type):
     if account_type == "transient":
         private_key = context.transient_sk
@@ -2396,7 +2508,7 @@ def add_transaction_to_composer(context):
     )
 
 
-def process_abi_args(method, arg_tokens):
+def process_abi_args(context, method, arg_tokens):
     method_args = []
     for arg_index, arg in enumerate(method.args):
         # Skip arg if it does not have a type
@@ -2414,9 +2526,13 @@ def process_abi_args(method, arg_tokens):
             arg.type == abi.ABIReferenceType.APPLICATION
             or arg.type == abi.ABIReferenceType.ASSET
         ):
-            method_arg = abi.UintType(64).decode(
-                base64.b64decode(arg_tokens[arg_index])
-            )
+            parts = arg_tokens[arg_index].split(":")
+            if len(parts) == 2 and parts[0] == "ctxAppIdx":
+                method_arg = context.app_ids[int(parts[1])]
+            else:
+                method_arg = abi.UintType(64).decode(
+                    base64.b64decode(arg_tokens[arg_index])
+                )
             method_args.append(method_arg)
         else:
             # Append the transaction signer as is
@@ -2445,44 +2561,24 @@ def append_app_args_to_method_args(context, method_args):
     context.method_args += app_args
 
 
-@step(
-    'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments.'
-)
-def add_abi_method_call(context, account_type, operation):
-    if account_type == "transient":
-        sender = context.transient_pk
-    elif account_type == "signing":
-        sender = mnemonic.to_public_key(context.signing_mnemonic)
-    else:
-        raise NotImplementedError(
-            "cannot make transaction signer for " + account_type
-        )
-    app_args = process_abi_args(context.abi_method, context.method_args)
-    context.atomic_transaction_composer.add_method_call(
-        app_id=int(context.current_application_id),
-        method=context.abi_method,
-        sender=sender,
-        sp=context.suggested_params,
-        signer=context.transaction_signer,
-        method_args=app_args,
-        on_complete=operation_string_to_enum(operation),
-    )
+@given('I add the nonce "{nonce}"')
+def add_nonce(context, nonce):
+    context.nonce = nonce
 
 
-@when(
-    'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments, approval-program "{approval_program_path:MaybeString}", clear-program "{clear_program_path:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, extra-pages {extra_pages}.'
-)
-def add_abi_method_call_creation(
+def abi_method_adder(
     context,
     account_type,
     operation,
-    approval_program_path,
-    clear_program_path,
-    global_bytes,
-    global_ints,
-    local_bytes,
-    local_ints,
-    extra_pages,
+    create_when_calling=False,
+    approval_program_path=None,
+    clear_program_path=None,
+    global_bytes=None,
+    global_ints=None,
+    local_bytes=None,
+    local_ints=None,
+    extra_pages=None,
+    force_unique_transactions=False,
 ):
     if account_type == "transient":
         sender = context.transient_pk
@@ -2492,33 +2588,44 @@ def add_abi_method_call_creation(
         raise NotImplementedError(
             "cannot make transaction signer for " + account_type
         )
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
-    if approval_program_path:
-        with open(
-            dir_path + "/test/features/resources/" + approval_program_path,
-            "rb",
-        ) as f:
-            approval_program = bytearray(f.read())
-    else:
-        approval_program = None
-    if clear_program_path:
-        with open(
-            dir_path + "/test/features/resources/" + clear_program_path, "rb"
-        ) as f:
-            clear_program = bytearray(f.read())
-    else:
-        clear_program = None
-    local_schema = transaction.StateSchema(
-        num_uints=int(local_ints), num_byte_slices=int(local_bytes)
+    approval_program = clear_program = None
+    global_schema = local_schema = None
+
+    def int_if_given(given):
+        return int(given) if given else 0
+
+    local_schema = global_schema = None
+    if create_when_calling:
+        if approval_program_path:
+            approval_program = read_program(context, approval_program_path)
+        if clear_program_path:
+            clear_program = read_program(context, clear_program_path)
+        if local_ints or local_bytes:
+            local_schema = transaction.StateSchema(
+                num_uints=int_if_given(local_ints),
+                num_byte_slices=int_if_given(local_bytes),
+            )
+        if global_ints or global_bytes:
+            global_schema = transaction.StateSchema(
+                num_uints=int_if_given(global_ints),
+                num_byte_slices=int_if_given(global_bytes),
+            )
+        extra_pages = int_if_given(extra_pages)
+
+    app_id = int(context.current_application_id)
+
+    app_args = process_abi_args(
+        context, context.abi_method, context.method_args
     )
-    global_schema = transaction.StateSchema(
-        num_uints=int(global_ints), num_byte_slices=int(global_bytes)
-    )
-    extra_pages = int(extra_pages)
-    app_args = process_abi_args(context.abi_method, context.method_args)
+    note = None
+    if force_unique_transactions:
+        note = (
+            b"I should be unique thanks to this nonce: "
+            + context.nonce.encode()
+        )
+
     context.atomic_transaction_composer.add_method_call(
-        app_id=int(context.current_application_id),
+        app_id=app_id,
         method=context.abi_method,
         sender=sender,
         sp=context.suggested_params,
@@ -2530,6 +2637,60 @@ def add_abi_method_call_creation(
         approval_program=approval_program,
         clear_program=clear_program,
         extra_pages=extra_pages,
+        note=note,
+    )
+
+
+@step(
+    'I add a nonced method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments.'
+)
+def add_abi_method_call_nonced(context, account_type, operation):
+    abi_method_adder(
+        context,
+        account_type,
+        operation,
+        force_unique_transactions=True,
+    )
+
+
+@step(
+    'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments.'
+)
+def add_abi_method_call(context, account_type, operation):
+    abi_method_adder(
+        context,
+        account_type,
+        operation,
+    )
+
+
+@when(
+    'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments, approval-program "{approval_program_path:MaybeString}", clear-program "{clear_program_path:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, extra-pages {extra_pages}.'
+)
+def add_abi_method_call_creation_with_allocs(
+    context,
+    account_type,
+    operation,
+    approval_program_path,
+    clear_program_path,
+    global_bytes,
+    global_ints,
+    local_bytes,
+    local_ints,
+    extra_pages,
+):
+    abi_method_adder(
+        context,
+        account_type,
+        operation,
+        True,
+        approval_program_path,
+        clear_program_path,
+        global_bytes,
+        global_ints,
+        local_bytes,
+        local_ints,
+        extra_pages,
     )
 
 
@@ -2537,44 +2698,19 @@ def add_abi_method_call_creation(
     'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments, approval-program "{approval_program_path:MaybeString}", clear-program "{clear_program_path:MaybeString}".'
 )
 def add_abi_method_call_creation(
-    context, account_type, operation, approval_program_path, clear_program_path
+    context,
+    account_type,
+    operation,
+    approval_program_path,
+    clear_program_path,
 ):
-    if account_type == "transient":
-        sender = context.transient_pk
-    elif account_type == "signing":
-        sender = mnemonic.to_public_key(context.signing_mnemonic)
-    else:
-        raise NotImplementedError(
-            "cannot make transaction signer for " + account_type
-        )
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
-    if approval_program_path:
-        with open(
-            dir_path + "/test/features/resources/" + approval_program_path,
-            "rb",
-        ) as f:
-            approval_program = bytearray(f.read())
-    else:
-        approval_program = None
-    if clear_program_path:
-        with open(
-            dir_path + "/test/features/resources/" + clear_program_path, "rb"
-        ) as f:
-            clear_program = bytearray(f.read())
-    else:
-        clear_program = None
-    app_args = process_abi_args(context.abi_method, context.method_args)
-    context.atomic_transaction_composer.add_method_call(
-        app_id=int(context.current_application_id),
-        method=context.abi_method,
-        sender=sender,
-        sp=context.suggested_params,
-        signer=context.transaction_signer,
-        method_args=app_args,
-        on_complete=operation_string_to_enum(operation),
-        approval_program=approval_program,
-        clear_program=clear_program,
+    abi_method_adder(
+        context,
+        account_type,
+        operation,
+        True,
+        approval_program_path,
+        clear_program_path,
     )
 
 
@@ -2683,6 +2819,29 @@ def check_atomic_transaction_composer_response(context, returns):
                 expected_value == result.return_value
             ), "actual is {}".format(result.return_value)
             assert result.decode_error is None
+
+
+@then('The app should have returned ABI types "{abiTypes:MaybeString}".')
+def check_atomic_transaction_composer_return_type(context, abiTypes):
+    expected_tokens = abiTypes.split(":")
+    results = context.atomic_transaction_composer_return.abi_results
+    assert len(expected_tokens) == len(
+        results
+    ), f"surprisingly, we don't have the same number of expected results ({len(expected_tokens)}) as actual results ({len(results)})"
+    for i, expected in enumerate(expected_tokens):
+        result = results[i]
+        assert result.decode_error is None
+
+        if expected == "void":
+            assert result.raw_value is None
+            with pytest.raises(ABITypeError):
+                abi.ABIType.from_string(expected)
+            continue
+
+        expected_type = abi.ABIType.from_string(expected)
+        decoded_result = expected_type.decode(result.raw_value)
+        result_round_trip = expected_type.encode(decoded_result)
+        assert result_round_trip == result.raw_value
 
 
 @when("I serialize the Method object into json")
@@ -2822,3 +2981,82 @@ def serialize_contract_to_json(context):
 def deserialize_json_to_contract(context):
     actual = abi.Contract.undictify(context.json_output)
     assert actual == context.abi_contract
+
+
+@then(
+    'I dig into the paths "{paths}" of the resulting atomic transaction tree I see group ids and they are all the same'
+)
+def same_groupids_for_paths(context, paths):
+    paths = [[int(p) for p in path.split(",")] for path in paths.split(":")]
+    grp = None
+    for path in paths:
+        d = context.atomic_transaction_composer_return.abi_results
+        for idx, p in enumerate(path):
+            d = d["inner-txns"][p] if idx else d[idx].tx_info
+            _grp = d["txn"]["txn"]["grp"]
+        if not grp:
+            grp = _grp
+        else:
+            assert grp == _grp, f"non-constant txn group hashes {_grp} v {grp}"
+
+
+@then(
+    'I can dig the {i}th atomic result with path "{path}" and see the value "{field}"'
+)
+def glom_app_eval_delta(context, i, path, field):
+    results = context.atomic_transaction_composer_return.abi_results
+    actual_field = glom(results[int(i)].tx_info, path)
+    assert field == str(
+        actual_field
+    ), f"path [{path}] expected value [{field}] but got [{actual_field}] instead"
+
+
+def s512_256_uint64(witness):
+    return int.from_bytes(encoding.checksum(witness)[:8], "big")
+
+
+@then(
+    "The {result_index}th atomic result for randomInt({input}) proves correct"
+)
+def sha512_256_of_witness_mod_n_is_result(context, result_index, input):
+    input = int(input)
+    abi_type = abi.ABIType.from_string("(uint64,byte[17])")
+    result = context.atomic_transaction_composer_return.abi_results[
+        int(result_index)
+    ]
+    rand_int, witness = abi_type.decode(result.raw_value)
+    witness = bytes(witness)
+    x = s512_256_uint64(witness)
+    quotient = x % input
+    assert quotient == rand_int
+
+
+@then(
+    'The {result_index}th atomic result for randElement("{input}") proves correct'
+)
+def char_with_idx_sha512_256_of_witness_mod_n_is_result(
+    context, result_index, input
+):
+    abi_type = abi.ABIType.from_string("(byte,byte[17])")
+    result = context.atomic_transaction_composer_return.abi_results[
+        int(result_index)
+    ]
+    rand_elt, witness = abi_type.decode(result.raw_value)
+    witness = bytes(witness)
+    x = s512_256_uint64(witness)
+    quotient = x % len(input)
+    assert input[quotient] == bytes([rand_elt]).decode()
+
+
+@then(
+    'The {result_index}th atomic result for "spin()" satisfies the regex "{regex}"'
+)
+def spin_results_satisfy(context, result_index, regex):
+    abi_type = abi.ABIType.from_string("(byte[3],byte[17],byte[17],byte[17])")
+    result = context.atomic_transaction_composer_return.abi_results[
+        int(result_index)
+    ]
+    spin, _, _, _ = abi_type.decode(result.raw_value)
+    spin = bytes(spin).decode()
+
+    assert re.search(regex, spin), f"{spin} did not match the regex {regex}"

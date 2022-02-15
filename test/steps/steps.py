@@ -724,6 +724,13 @@ def create_keyreg_txn(context):
     )
 
 
+@given("default V2 key registration transaction {type}")
+def default_v2_keyreg_txn(context, type):
+    context.params = context.acl.suggested_params_as_object()
+    context.pk = context.accounts[0]
+    context.txn = buildTxn(type, context.pk, context.params)
+
+
 @when("I get recent transactions, limited by {cnt} transactions")
 def step_impl(context, cnt):
     txns = context.acl.transactions_by_address(
@@ -941,162 +948,6 @@ def revoke_txn(context, amount):
     )
 
 
-@given(
-    "a split contract with ratio {ratn} to {ratd} and minimum payment {min_pay}"
-)
-def split_contract(context, ratn, ratd, min_pay):
-    context.params = context.acl.suggested_params_as_object()
-    context.template = template.Split(
-        context.accounts[0],
-        context.accounts[1],
-        context.accounts[2],
-        int(ratn),
-        int(ratd),
-        context.params.last,
-        int(min_pay),
-        20000,
-    )
-    context.fund_amt = int(
-        2 * context.template.min_pay * (int(ratn) + int(ratd)) / int(ratn)
-    )
-
-
-@when("I send the split transactions")
-def send_split(context):
-    amt = context.fund_amt // 2
-    txns = context.template.get_split_funds_transaction(
-        context.template.get_program(), amt, context.params
-    )
-    context.txn = txns[0].transaction
-    context.acl.send_transactions(txns)
-
-
-@given('an HTLC contract with hash preimage "{preimage}"')
-def htlc_contract(context, preimage):
-    context.preimage = bytes(preimage, "ascii")
-    context.params = context.acl.suggested_params_as_object()
-    h = base64.b64encode(hashlib.sha256(context.preimage).digest()).decode()
-    context.fund_amt = 1000000
-    context.template = template.HTLC(
-        context.accounts[0],
-        context.accounts[1],
-        "sha256",
-        h,
-        context.params.last,
-        2000,
-    )
-
-
-@when("I fund the contract account")
-def fund_contract(context):
-    context.txn = transaction.PaymentTxn(
-        context.accounts[0],
-        context.params,
-        context.template.get_address(),
-        context.fund_amt,
-    )
-    context.txn = context.wallet.sign_transaction(context.txn)
-    context.acl.send_transaction(context.txn)
-    transaction.wait_for_confirmation(context.acl, context.txn.get_txid(), 10)
-
-
-@when("I claim the algos")
-def claim_algos(context):
-    context.ltxn = template.HTLC.get_transaction(
-        context.template.get_program(),
-        base64.b64encode(context.preimage),
-        context.params,
-    )
-    context.txn = context.ltxn.transaction
-    context.acl.send_transaction(context.ltxn)
-
-
-@given(
-    "a periodic payment contract with withdrawing window {wd_window} and period {period}"
-)
-def periodic_pay_contract(context, wd_window, period):
-    context.params = context.acl.suggested_params_as_object()
-    context.template = template.PeriodicPayment(
-        context.accounts[1],
-        12345,
-        int(wd_window),
-        int(period),
-        2000,
-        int(context.params.last),
-    )
-    context.fund_amt = 1000000
-
-
-@when("I claim the periodic payment")
-def claim_periodic(context):
-    context.params.first = (
-        context.params.first
-        // context.template.period
-        * context.template.period
-    )
-    ltxn = context.template.get_withdrawal_transaction(
-        context.template.get_program(), context.params
-    )
-    context.txn = ltxn.transaction
-    context.acl.send_transaction(ltxn)
-
-
-@given("contract test fixture")
-def contract_fixture(context):
-    pass
-
-
-@given("a limit order contract with parameters {ratn} {ratd} {min_trade}")
-def limit_order_contract(context, ratn, ratd, min_trade):
-    context.params = context.acl.suggested_params_as_object()
-    context.ratn = int(ratn)
-    context.ratd = int(ratd)
-    context.template = template.LimitOrder(
-        context.accounts[1],
-        context.asset_index,
-        int(ratn),
-        int(ratd),
-        context.params.last,
-        2000,
-        int(min_trade),
-    )
-    context.sk = context.wallet.export_key(context.accounts[0])
-    context.fund_amt = max(2 * int(min_trade), 1000000)
-    context.rcv = context.accounts[1]
-
-
-@when("I swap assets for algos")
-def swap_assets(context):
-    context.txns = context.template.get_swap_assets_transactions(
-        context.template.get_program(),
-        12345,
-        int(12345 * context.ratd / context.ratn),
-        context.sk,
-        context.params,
-    )
-    context.txn = context.txns[0].transaction
-    context.acl.send_transactions(context.txns)
-
-
-@given("a dynamic fee contract with amount {amt}")
-def dynamic_fee_contract(context, amt):
-    context.params = context.acl.suggested_params_as_object()
-    context.sk = context.wallet.export_key(context.accounts[0])
-    context.template = template.DynamicFee(
-        context.accounts[1], int(amt), context.params
-    )
-    txn, lsig = context.template.sign_dynamic_fee(context.sk)
-    context.txns = context.template.get_transactions(
-        txn, lsig, context.wallet.export_key(context.accounts[2]), 0
-    )
-    context.txn = context.txns[0].transaction
-
-
-@when("I send the dynamic fee transactions")
-def send_dynamic_fee(context):
-    context.acl.send_transactions(context.txns)
-
-
 @given("I sign the transaction with the private key")
 def given_sign_with_sk(context):
     # python cucumber considers "Given foo" and "When foo" to be distinct,
@@ -1187,3 +1038,29 @@ def fee_not_in_txn(context):
     else:
         stxn = context.mtx.dictify()
     assert "fee" not in stxn["txn"]
+
+
+def buildTxn(t, sender, params):
+    txn = None
+    if "online" in t:
+        votekey = "9mr13Ri8rFepxN3ghIUrZNui6LqqM5hEzB45Rri5lkU="
+        selkey = "dx717L3uOIIb/jr9OIyls1l5Ei00NFgRa380w7TnPr4="
+        votefst = 0
+        votelst = 2000
+        votekd = 10
+        sprf = "mYR0GVEObMTSNdsKM6RwYywHYPqVDqg3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk9w=="
+        txn = transaction.KeyregOnlineTxn(
+            sender,
+            params,
+            votekey,
+            selkey,
+            votefst,
+            votelst,
+            votekd,
+            sprfkey=sprf,
+        )
+    elif "offline" in t:
+        txn = transaction.KeyregOfflineTxn(sender, params)
+    elif "nonparticipation" in t:
+        txn = transaction.KeyregNonparticipatingTxn(sender, params)
+    return txn

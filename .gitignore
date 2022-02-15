@@ -106,6 +106,9 @@ venv.bak/
 # vscode
 .vscode/
 
+# pycharm
+.idea
+
 # DS_Store
 .DS_Store
 
@@ -113,3 +116,9 @@ venv.bak/
 *.feature
 test/features
 test-harness
+
+# Build files
+py-algorand-sdk-*
+
+# Pycharm
+.idea
