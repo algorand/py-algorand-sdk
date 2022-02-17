@@ -123,6 +123,28 @@ class AlgodClient:
         req = "/applications/" + str(application_id)
         return self.algod_request("GET", req, **kwargs)
 
+    def account_asset_info(self, address, asset_id, **kwargs):
+        """
+        Return asset information for a specific account.
+
+        Args:
+            address (str): account public key
+            asset_id (int): The ID of the asset to look up.
+        """
+        req = "/accounts/" + address + "/assets/" + str(asset_id)
+        return self.algod_request("GET", req, **kwargs)
+
+    def account_application_info(self, address, application_id, **kwargs):
+        """
+        Return application information for a specific account.
+
+        Args:
+            address (str): account public key
+            application_id (int): The ID of the application to look up.
+        """
+        req = "/accounts/" + address + "/applications/" + str(application_id)
+        return self.algod_request("GET", req, **kwargs)
+
     def pending_transactions_by_address(
         self, address, limit=0, response_format="json", **kwargs
     ):
