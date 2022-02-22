@@ -250,6 +250,176 @@ class IndexerClient:
 
         return self.indexer_request("GET", req, query, **kwargs)
 
+    def account_asset_info(
+        self,
+        address,
+        limit=None,
+        next_page=None,
+        asset_id=None,
+        block=None,
+        round_num=None,
+        include_all=False,
+        **kwargs
+    ):
+        """
+        Return asset information for a specific account.
+
+        Args:
+            address (str): account public key
+            limit (int, optional): maximum number of results to return
+            next_page (str, optional): the next page of results; use the next
+                token provided by the previous results
+            asset_id (int): include transactions for the specified
+                asset
+            block (int, optional): use results from the specified round
+            round_num (int, optional): alias for block; only specify one of
+                these
+            include_all (bool, optional): include all items including closed
+                accounts, deleted applications, destroyed assets, opted-out
+                asset holdings, and closed-out application localstates. Defaults
+                to false.
+        """
+        req = "/accounts/" + address + "/assets"
+        query = dict()
+        _specify_round(query, block, round_num)
+        if include_all:
+            query["include-all"] = include_all
+        if limit:
+            query["limit"] = limit
+        if next_page:
+            query["next"] = next_page
+        if asset_id:
+            query["asset-id"] = asset_id
+
+        return self.indexer_request("GET", req, query, **kwargs)
+
+    def account_asset_by_creator(
+        self,
+        address,
+        limit=None,
+        next_page=None,
+        asset_id=None,
+        block=None,
+        round_num=None,
+        include_all=False,
+        **kwargs
+    ):
+        """
+        Return asset information created by a specific account.
+
+        Args:
+            address (str): account public key
+            limit (int, optional): maximum number of results to return
+            next_page (str, optional): the next page of results; use the next
+                token provided by the previous results
+            asset_id (int): include transactions for the specified
+                asset
+            block (int, optional): use results from the specified round
+            round_num (int, optional): alias for block; only specify one of
+                these
+            include_all (bool, optional): include all items including closed
+                accounts, deleted applications, destroyed assets, opted-out
+                asset holdings, and closed-out application localstates. Defaults
+                to false.
+        """
+        req = "/accounts/" + address + "/created-assets"
+        query = dict()
+        _specify_round(query, block, round_num)
+        if include_all:
+            query["include-all"] = include_all
+        if limit:
+            query["limit"] = limit
+        if next_page:
+            query["next"] = next_page
+        if asset_id:
+            query["asset-id"] = asset_id
+
+        return self.indexer_request("GET", req, query, **kwargs)
+
+    def account_application_local_state(
+        self,
+        address,
+        limit=None,
+        next_page=None,
+        application_id=None,
+        block=None,
+        round_num=None,
+        include_all=False,
+        **kwargs
+    ):
+        """
+        Return application local state for a specific account.
+
+        Args:
+            address (str): account public key
+            limit (int, optional): maximum number of results to return
+            next_page (str, optional): the next page of results; use the next
+                token provided by the previous results
+            application_id (int, optional): restrict search to application index
+            block (int, optional): use results from the specified round
+            round_num (int, optional): alias for block; only specify one of
+                these
+            include_all (bool, optional): include all items including closed
+                accounts, deleted applications, destroyed assets, opted-out
+                asset holdings, and closed-out application localstates. Defaults
+                to false.
+        """
+        req = "/accounts/" + address + "/apps-local-state"
+        query = dict()
+        _specify_round(query, block, round_num)
+        if include_all:
+            query["include-all"] = include_all
+        if limit:
+            query["limit"] = limit
+        if next_page:
+            query["next"] = next_page
+        if application_id:
+            query["application-id"] = application_id
+
+        return self.indexer_request("GET", req, query, **kwargs)
+
+    def account_application_by_creator(
+        self,
+        address,
+        limit=None,
+        next_page=None,
+        application_id=None,
+        block=None,
+        round_num=None,
+        include_all=False,
+        **kwargs
+    ):
+        """
+        Return asset information created by a specific account.
+
+        Args:
+            address (str): account public key
+            limit (int, optional): maximum number of results to return
+            next_page (str, optional): the next page of results; use the next
+                token provided by the previous results
+            application_id (int, optional): restrict search to application index
+            block (int, optional): use results from the specified round
+            round_num (int, optional): alias for block; only specify one of
+                these
+            include_all (bool, optional): include all items including closed
+                accounts, deleted applications, destroyed assets, opted-out
+                asset holdings, and closed-out application localstates. Defaults
+                to false.
+        """
+        req = "/accounts/" + address + "/created-applications"
+        query = dict()
+        _specify_round(query, block, round_num)
+        if include_all:
+            query["include-all"] = include_all
+        if limit:
+            query["limit"] = limit
+        if next_page:
+            query["next"] = next_page
+        if application_id:
+            query["application-id"] = application_id
+
+        return self.indexer_request("GET", req, query, **kwargs)
+
     def transaction(self, txid, **kwargs):
         """
         Returns information about the given transaction.
