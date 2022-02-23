@@ -427,6 +427,7 @@ class KeyregTxn(Transaction):
             transaction's valid rounds
         rekey_to (str, optional): additionally rekey the sender to this address
         nonpart (bool, optional): mark the account non-participating if true
+        StateProofPK: state proof
 
     Attributes:
         sender (str)
@@ -446,6 +447,7 @@ class KeyregTxn(Transaction):
         lease (byte[32])
         rekey_to (str)
         nonpart (bool)
+        sprfkey (str)
     """
 
     def __init__(
@@ -461,6 +463,7 @@ class KeyregTxn(Transaction):
         lease=None,
         rekey_to=None,
         nonpart=None,
+        sprfkey=None,
     ):
         Transaction.__init__(
             self, sender, sp, note, lease, constants.keyreg_txn, rekey_to
@@ -471,6 +474,8 @@ class KeyregTxn(Transaction):
         self.votelst = votelst
         self.votekd = votekd
         self.nonpart = nonpart
+        self.sprfkey = sprfkey
+
         if not sp.flat_fee:
             self.fee = max(
                 self.estimate_size() * self.fee, constants.min_txn_fee
@@ -490,6 +495,9 @@ class KeyregTxn(Transaction):
             d["votelst"] = self.votelst
         if self.nonpart is not None:
             d["nonpart"] = self.nonpart
+        if self.sprfkey is not None:
+            d["sprfkey"] = base64.b64decode(self.sprfkey)
+
         d.update(super(KeyregTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
 
@@ -506,6 +514,7 @@ class KeyregTxn(Transaction):
             and self.votelst == other.votelst
             and self.votekd == other.votekd
             and self.nonpart == other.nonpart
+            and self.sprfkey == other.sprfkey
         )
 
 
@@ -527,6 +536,7 @@ class KeyregOnlineTxn(KeyregTxn):
             with the same sender and lease can be confirmed in this
             transaction's valid rounds
         rekey_to (str, optional): additionally rekey the sender to this address
+        sprfkey (str, optional): state proof ID
 
     Attributes:
         sender (str)
@@ -545,6 +555,7 @@ class KeyregOnlineTxn(KeyregTxn):
         type (str)
         lease (byte[32])
         rekey_to (str)
+        sprfkey (str)
     """
 
     def __init__(
@@ -559,6 +570,7 @@ class KeyregOnlineTxn(KeyregTxn):
         note=None,
         lease=None,
         rekey_to=None,
+        sprfkey=None,
     ):
         KeyregTxn.__init__(
             self,
@@ -573,12 +585,14 @@ class KeyregOnlineTxn(KeyregTxn):
             lease,
             rekey_to,
             nonpart=False,
+            sprfkey=sprfkey,
         )
         self.votepk = votekey
         self.selkey = selkey
         self.votefst = votefst
         self.votelst = votelst
         self.votekd = votekd
+        self.sprfkey = sprfkey
         if votekey is None:
             raise error.KeyregOnlineTxnInitError("votekey")
         if selkey is None:
@@ -601,13 +615,26 @@ class KeyregOnlineTxn(KeyregTxn):
         votefst = d["votefst"]
         votelst = d["votelst"]
         votekd = d["votekd"]
-        args = {
-            "votekey": votekey,
-            "selkey": selkey,
-            "votefst": votefst,
-            "votelst": votelst,
-            "votekd": votekd,
-        }
+        if "sprfkey" in d:
+            sprfID = base64.b64encode(d["sprfkey"]).decode()
+
+            args = {
+                "votekey": votekey,
+                "selkey": selkey,
+                "votefst": votefst,
+                "votelst": votelst,
+                "votekd": votekd,
+                "sprfkey": sprfID,
+            }
+        else:
+            args = {
+                "votekey": votekey,
+                "selkey": selkey,
+                "votefst": votefst,
+                "votelst": votelst,
+                "votekd": votekd,
+            }
+
         return args
 
     def __eq__(self, other):
@@ -658,6 +685,7 @@ class KeyregOfflineTxn(KeyregTxn):
             lease=lease,
             rekey_to=rekey_to,
             nonpart=False,
+            sprfkey=None,
         )
         if not sp.flat_fee:
             self.fee = max(
@@ -717,6 +745,7 @@ class KeyregNonparticipatingTxn(KeyregTxn):
             lease=lease,
             rekey_to=rekey_to,
             nonpart=True,
+            sprfkey=None,
         )
         if not sp.flat_fee:
             self.fee = max(

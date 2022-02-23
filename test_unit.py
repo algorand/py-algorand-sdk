@@ -421,24 +421,34 @@ class TestPaymentTransaction(unittest.TestCase):
         votefirst = 10000
         votelast = 10111
         votedilution = 11
+        sprfKey = "mYR0GVEObMTSNdsKM6RwYywHYPqVDqg3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk9w=="
 
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True
         )
         txn = transaction.KeyregTxn(
-            pk, sp, votepk, selpk, votefirst, votelast, votedilution
+            pk,
+            sp,
+            votepk,
+            selpk,
+            votefirst,
+            votelast,
+            votedilution,
+            sprfkey=sprfKey,
         )
         signed_txn = txn.sign(sk)
 
         golden = (
-            "gqNzaWfEQEA8ANbrvTRxU9c8v6WERcEPw7D/HacRgg4vICa61vEof60Wwtx6KJKDy"
-            "vBuvViFeacLlngPY6vYCVP0DktTwQ2jdHhui6NmZWXNA+iiZnbOAATsD6JnaMQgSG"
-            "O1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOAATv96ZzZWxrZXnEIGz"
-            "4K7+GKID3HWlAMa7dUMrGGU1ckQLlDA+M0JgrvZZXo3NuZMQgCfvSdiwI+Gxa5r9t"
-            "16epAd5mdddQ4H6MXHaYZH224f2kdHlwZaZrZXlyZWendm90ZWZzdM0nEKZ2b3Rla"
-            "2QLp3ZvdGVrZXnEICr+0CO3IYtcumsaMvre8MwFaXj6kav65I81of0TGMi6p3ZvdG"
-            "Vsc3TNJ38="
+            "gqNzaWfEQDDDuwMXAJM2JISVLu0yjeLT5zf9d4p/TBiEr26zny/M72GfLpciu1jSRv"
+            "sM4zlp3V92Ix5/4iN52lhVwspabA2jdHhujKNmZWXNA+iiZnbOAATsD6JnaMQgSGO1"
+            "GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOAATv96ZzZWxrZXnEIGz4K7"
+            "+GKID3HWlAMa7dUMrGGU1ckQLlDA+M0JgrvZZXo3NuZMQgCfvSdiwI+Gxa5r9t16ep"
+            "Ad5mdddQ4H6MXHaYZH224f2nc3ByZmtlecRAmYR0GVEObMTSNdsKM6RwYywHYPqVDqg"
+            "3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk96R0eXBlpmtleX"
+            "JlZ6d2b3RlZnN0zScQpnZvdGVrZAundm90ZWtlecQgKv7QI7chi1y6axoy+t7wzAVpe"
+            "PqRq/rkjzWh/RMYyLqndm90ZWxzdM0nfw=="
         )
+        print(encoding.msgpack_encode(signed_txn))
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_serialize_keyreg_offline(self):
@@ -516,23 +526,30 @@ class TestPaymentTransaction(unittest.TestCase):
         votefirst = 10000
         votelast = 10111
         votedilution = 11
-
+        sprfKey = "mYR0GVEObMTSNdsKM6RwYywHYPqVDqg3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk9w=="
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True
         )
         txn = transaction.KeyregOnlineTxn(
-            pk, sp, votepk, selpk, votefirst, votelast, votedilution
+            pk,
+            sp,
+            votepk,
+            selpk,
+            votefirst,
+            votelast,
+            votedilution,
+            sprfkey=sprfKey,
         )
         signed_txn = txn.sign(sk)
-
         golden = (
-            "gqNzaWfEQEA8ANbrvTRxU9c8v6WERcEPw7D/HacRgg4vICa61vEof60Wwtx"
-            "6KJKDyvBuvViFeacLlngPY6vYCVP0DktTwQ2jdHhui6NmZWXNA+iiZnbOAA"
-            "TsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOA"
-            "ATv96ZzZWxrZXnEIGz4K7+GKID3HWlAMa7dUMrGGU1ckQLlDA+M0JgrvZZX"
-            "o3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2kdHlwZaZ"
-            "rZXlyZWendm90ZWZzdM0nEKZ2b3Rla2QLp3ZvdGVrZXnEICr+0CO3IYtcum"
-            "saMvre8MwFaXj6kav65I81of0TGMi6p3ZvdGVsc3TNJ38="
+            "gqNzaWfEQDDDuwMXAJM2JISVLu0yjeLT5zf9d4p/TBiEr26zny/M72GfLpciu1jSRv"
+            "sM4zlp3V92Ix5/4iN52lhVwspabA2jdHhujKNmZWXNA+iiZnbOAATsD6JnaMQgSGO1"
+            "GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOAATv96ZzZWxrZXnEIGz4K7"
+            "+GKID3HWlAMa7dUMrGGU1ckQLlDA+M0JgrvZZXo3NuZMQgCfvSdiwI+Gxa5r9t16ep"
+            "Ad5mdddQ4H6MXHaYZH224f2nc3ByZmtlecRAmYR0GVEObMTSNdsKM6RwYywHYPqVDqg"
+            "3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk96R0eXBlpmtleX"
+            "JlZ6d2b3RlZnN0zScQpnZvdGVrZAundm90ZWtlecQgKv7QI7chi1y6axoy+t7wzAVpe"
+            "PqRq/rkjzWh/RMYyLqndm90ZWxzdM0nfw=="
         )
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
@@ -551,16 +568,25 @@ class TestPaymentTransaction(unittest.TestCase):
         votefirst = 10000
         votelast = 10111
         votedilution = 11
-
+        sprfKey = "mYR0GVEObMTSNdsKM6RwYywHYPqVDqg3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk9w=="
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True
         )
         txn = transaction.KeyregOnlineTxn(
-            pk, sp, votepk, selpk, votefirst, votelast, votedilution
+            pk,
+            sp,
+            votepk,
+            selpk,
+            votefirst,
+            votelast,
+            votedilution,
+            sprfkey=sprfKey,
         )
         path = "/tmp/%s" % uuid.uuid4()
         transaction.write_to_file([txn], path)
         txnr = transaction.retrieve_from_file(path)[0]
+        print("txn:", txn)
+        print("txnr:", txnr)
         os.remove(path)
         self.assertEqual(txn, txnr)
 
@@ -579,13 +605,20 @@ class TestPaymentTransaction(unittest.TestCase):
         votefirst = 10000
         votelast = None
         votedilution = 11
-
+        sprfKey = "mYR0GVEObMTSNdsKM6RwYywHYPqVDqg3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk9w=="
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True
         )
         with self.assertRaises(error.KeyregOnlineTxnInitError) as cm:
             transaction.KeyregOnlineTxn(
-                pk, sp, votepk, selpk, votefirst, votelast, votedilution
+                pk,
+                sp,
+                votepk,
+                selpk,
+                votefirst,
+                votelast,
+                votedilution,
+                sprfkey=sprfKey,
             )
         the_exception = cm.exception
         self.assertTrue("votelst" in the_exception.__repr__())
@@ -2304,6 +2337,31 @@ class TestLogic(unittest.TestCase):
         # cover, uncover, log
         program = b"\x05\x80\x01\x61\x80\x01\x62\x80\x01\x63\x4e\x02\x4f\x02\x50\x50\xb0\x81\x01"
         # byte "a"; byte "b"; byte "c"; cover 2; uncover 2; concat; concat; log; int 1
+        self.assertTrue(logic.check_program(program, None))
+
+    def test_check_program_teal_6(self):
+        # check TEAL v6 opcodes
+
+        self.assertIsNotNone(
+            logic.spec, "Must be called after any of logic.check_program"
+        )
+        self.assertTrue(logic.spec["EvalMaxVersion"] >= 6)
+
+        # bsqrt
+        program = b"\x06\x80\x01\x90\x96\x80\x01\x0c\xa8"
+        # byte 0x90; bsqrt; byte 0x0c; b==
+        self.assertTrue(logic.check_program(program, None))
+
+        # divw
+        program = b"\x06\x81\x09\x81\xec\xff\xff\xff\xff\xff\xff\xff\xff\x01\x81\x0a\x97\x81\xfe\xff\xff\xff\xff\xff\xff\xff\xff\x01\x12"
+        # int 9; int 18446744073709551596; int 10; divw; int 18446744073709551614; ==
+        self.assertTrue(logic.check_program(program, None))
+
+        # txn fields
+        program = (
+            b"\x06\x31\x3f\x15\x81\x40\x12\x33\x00\x3e\x15\x81\x0a\x12\x10"
+        )
+        # txn StateProofPK; len; int 64; ==; gtxn 0 LastLog; len; int 10; ==; &&
         self.assertTrue(logic.check_program(program, None))
 
 
