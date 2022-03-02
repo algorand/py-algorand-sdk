@@ -1,6 +1,6 @@
 # Changelog
 
-# 1.10.0b1
+# 1.10.0
 
 ## Added:
 
