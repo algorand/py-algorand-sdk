@@ -313,6 +313,21 @@ def parse_acc_info(context, address):
     assert context.response["address"] == address
 
 
+@when("we make an Account Information call against account {account} with exclude {exclude}")
+def acc_info_exclude(context, account, exclude):
+    context.response = context.acl.account_info(account, exclude)
+
+
+@when("we make an Account Asset Information call against account {account} with assetID {assetID}")
+def acc_info_exclude(context, account, assetID):
+    context.response = context.acl.account_asset_info(account, assetID)
+
+
+@when("we make an Account Application Information call against account {account} with applicationID {applicationID}")
+def acc_info_exclude(context, account, applicationID):
+    context.response = context.acl.account_application_info(account, applicationID)
+
+
 @when("we make a GetAssetByID call for assetID {asset_id}")
 def asset_info(context, asset_id):
     context.response = context.acl.asset_info(int(asset_id))
@@ -369,14 +384,13 @@ def check_asset_balance(context, numaccounts, account, isfrozen, amount):
 
 
 @when(
-    'we make a Lookup Asset Balances call against asset index {index} with limit {limit} afterAddress "{afterAddress:MaybeString}" round {block} currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan}'
+    'we make a Lookup Asset Balances call against asset index {index} with limit {limit} afterAddress "{afterAddress:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan}'
 )
 def asset_balance(
     context,
     index,
     limit,
     afterAddress,
-    block,
     currencyGreaterThan,
     currencyLessThan,
 ):
@@ -386,7 +400,6 @@ def asset_balance(
         next_page=None,
         min_balance=int(currencyGreaterThan),
         max_balance=int(currencyLessThan),
-        block=int(block),
     )
 
 
@@ -408,6 +421,26 @@ def parse_asset_balance(
     assert context.response["balances"][int(idx)]["is-frozen"] == (
         frozenState == "true"
     )
+
+
+@when("we make a LookupAccountAssets call with accountID {account} assetID {asset_id} includeAll {includeAll} limit {limit} next {next}")
+def lookup_account_assets(context, account, asset_id, includeAll, limit, next):
+    context.response = context.icls.account_asset_info(account, asset_id, includeAll, limit, next)
+
+
+@when("we make a LookupAccountCreatedAssets call with accountID {account} assetID {asset_id} includeAll {includeAll} limit {limit} next {next}")
+def lookup_account_created_assets(context, account, asset_id, includeAll, limit, next):
+    context.response = context.icls.account_asset_by_creator(account, asset_id, includeAll, limit, next)
+
+
+@when("we make a LookupAccountAppLocalStates call with accountID {account} applicationID {application_id} includeAll {includeAll} limit {limit} next {next}")
+def lookup_account_applications(context, account, application_id, includeAll, limit, next):
+    context.response = context.icls.account_application_local_state(account, application_id, includeAll, limit, next)
+
+
+@when("we make a LookupAccountCreatedApplications call with accountID {account} applicationID {application_id} includeAll {includeAll} limit {limit} next {next}")
+def lookup_account_created_applications(context, account, application_id, includeAll, limit, next):
+    context.response = context.icls.account_application_by_creator(account, application_id, includeAll, limit, next)
 
 
 @when("I use {indexer} to search for all {assetid} asset transactions")
