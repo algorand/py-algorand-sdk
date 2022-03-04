@@ -1,0 +1,226 @@
+from base64 import b64decode
+from contextlib import contextmanager
+from dataclasses import dataclass
+from typing import Any, Generator, List
+
+from algosdk.algod import AlgodClient
+from algosdk.dryrun_results import DryrunResponse, DryrunTransactionResult
+from algosdk.future.transaction import (
+    ApplicationCallTxn,
+    ApplicationCreateTxn,
+    ApplicationDeleteTxn,
+    LogicSigAccount,
+    LogicSigTransaction,
+    OnComplete,
+    PaymentTxn,
+    SignedTransaction,
+    StateSchema,
+    SuggestedParams,
+    assign_group_id,
+    create_dryrun,
+    wait_for_confirmation,
+)
+from algosdk.kmd import KMDClient
+import algosdk.logic as logic
+
+PRAGMA = "#pragma version 6"
+
+CLEAR_TEAL = f"""{PRAGMA}
+pushint 1
+return"""
+
+# TODO: Can we skip the logic sig altogether?
+LOGIC_SIG_TEAL = f"""{PRAGMA}
+pushint 1"""
+
+
+SB_KMD_ADDRESS = "http://localhost:4002"
+SB_KMD_TOKEN = (
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+)
+
+SB_KMD_WALLET_NAME = "unencrypted-default-wallet"
+SB_KMD_WALLET_PASSWORD = ""
+
+
+@dataclass
+class AddressAndSecret:
+    address: str
+    secret: str
+
+
+@dataclass
+class ApplicationBundle:
+    author: AddressAndSecret
+    sp: SuggestedParams
+    approval_src: str
+    approval: bytes
+    clear_src: str
+    clear: bytes
+    local_schema: StateSchema
+    global_schema: StateSchema
+    create_txn: ApplicationCreateTxn
+    signed_txn: SignedTransaction
+    txid: str
+    resp: dict
+    index: int
+    address: str
+
+
+class DryRunContext:
+    def __init__(
+        self,
+        algod: AlgodClient,
+        creator: AddressAndSecret,
+        clear_src: str = CLEAR_TEAL,
+        lsig_src: str = LOGIC_SIG_TEAL,
+    ):
+        self.algod = algod
+        self.creator = creator
+        self.clear_src = clear_src
+        self.lsig_src = lsig_src
+
+        self.clear: bytes = b64decode(self.algod.compile(clear_src)["result"])
+        self.lsig: bytes = b64decode(self.algod.compile(lsig_src)["result"])
+        self.lsig_account: LogicSigAccount = LogicSigAccount(self.lsig)
+
+    @contextmanager
+    def application(
+        self,
+        approval_src: str,
+        local_schema: StateSchema = StateSchema(0, 0),
+        global_schema: StateSchema = StateSchema(0, 0),
+        wait_rounds: int = 3,
+    ) -> Generator[ApplicationBundle, None, None]:
+        sp = self.algod.suggested_params()
+        approval = b64decode(self.algod.compile(approval_src)["result"])
+
+        create = ApplicationCreateTxn(
+            self.creator.address,
+            sp,
+            OnComplete.NoOpOC,
+            approval,
+            self.clear,
+            local_schema,
+            global_schema,
+        )
+        signed = create.sign(self.creator.secret)
+
+        txid = self.algod.send_transaction(signed)
+
+        res = wait_for_confirmation(self.algod, txid, wait_rounds)
+
+        app_id = res["application-index"]
+        app_addr = logic.get_application_address(app_id)
+
+        app = ApplicationBundle(
+            self.creator,
+            sp,
+            approval_src,
+            approval,
+            self.clear_src,
+            self.clear,
+            local_schema,
+            global_schema,
+            create,
+            signed,
+            txid,
+            res,
+            app_id,
+            app_addr,
+        )
+        try:
+            print(f"Created app with index={app_id}")
+            yield app
+        finally:
+            sp = self.algod.suggested_params()
+
+            app_delete = ApplicationDeleteTxn(self.creator.address, sp, app_id)
+            signed_delete = app_delete.sign(self.creator.secret)
+            txid = self.algod.send_transaction(signed_delete)
+            print(f"Gonna delete app with index={app_id}")
+            addr = self.creator.address
+            created_apps = self.algod.account_info(addr)["created-apps"]
+            print(
+                f"""Before commencing, creator [{addr}] currently has {len(created_apps)} live apps
+These have indices: {', '.join(str(a['id']) for a in created_apps)}"""
+            )
+
+
+def _get_accounts():
+    kmd = KMDClient(SB_KMD_TOKEN, SB_KMD_ADDRESS)
+    wallets = kmd.list_wallets()
+
+    walletID = None
+    for wallet in wallets:
+        if wallet["name"] == SB_KMD_WALLET_NAME:
+            walletID = wallet["id"]
+            break
+
+    if walletID is None:
+        raise Exception("Wallet not found: {}".format(SB_KMD_WALLET_NAME))
+
+    walletHandle = kmd.init_wallet_handle(walletID, SB_KMD_WALLET_PASSWORD)
+
+    try:
+        addresses = kmd.list_keys(walletHandle)
+        privateKeys = [
+            kmd.export_key(walletHandle, SB_KMD_WALLET_PASSWORD, addr)
+            for addr in addresses
+        ]
+        kmdAccounts = [
+            (addresses[i], privateKeys[i]) for i in range(len(privateKeys))
+        ]
+    finally:
+        kmd.release_wallet_handle(walletHandle)
+
+    return kmdAccounts
+
+
+def get_account_addresses() -> List[AddressAndSecret]:
+    return [AddressAndSecret(addr, pk) for addr, pk in _get_accounts()]
+
+
+def dryrun_report(i: int, run_name: str, txn: DryrunTransactionResult) -> str:
+    return f"""===============
+{i}. <<<{run_name}>>>
+===============
+txn.app_call_rejected={txn.app_call_rejected()}
+txn.logic_sig_rejected={txn.logic_sig_rejected()}
+===============
+App Messages: {txn.app_call_messages}
+App Logs: {txn.logs}
+App Trace:
+{txn.app_trace(0)}
+===============
+Lsig Messages: {txn.logic_sig_messages}
+Lsig Trace: 
+{txn.lsig_trace(0)}
+"""
+
+
+def do_dryrun(
+    run_name: str, algod: AlgodClient, approval_teal: str, *app_args: Any
+):
+    creator = get_account_addresses()[0]
+    drc = DryRunContext(algod, creator)
+
+    with drc.application(approval_teal) as app:
+        print(f"Created application {app.index} with address: {app.address}")
+
+        sig_addr = drc.lsig_account.address()
+        print(f"Created Signature with address: {sig_addr}")
+
+        pay_txn = PaymentTxn(creator.address, app.sp, sig_addr, 10000)
+        app_txn = ApplicationCallTxn(
+            sig_addr, app.sp, app.index, OnComplete.NoOpOC, app_args=app_args
+        )
+        assign_group_id([pay_txn, app_txn])
+        spay_txn = pay_txn.sign(creator.secret)
+        sapp_txn = LogicSigTransaction(app_txn, drc.lsig_account)
+
+        drr = create_dryrun(algod, [spay_txn, sapp_txn])
+        raw = algod.dryrun(drr)
+        resp = DryrunResponse(raw)
+        for i, txn in enumerate(resp.txns):
+            print(dryrun_report(i + 1, run_name, txn))

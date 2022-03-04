@@ -8,3 +8,10 @@ integration:
 
 docker-test:
 	./run_integration.sh
+
+# The following only works if you have the sandbox dev private network up.
+# EG, after going into the sandbox repo and running
+# ./sandbox up dev
+# the following command should then work
+blackbox-test:
+	pytest -sv x/blackbox/blackbox_test.py
