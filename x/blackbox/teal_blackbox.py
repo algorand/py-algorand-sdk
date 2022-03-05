@@ -12,11 +12,11 @@ from algosdk.future.transaction import (
     LogicSigAccount,
     LogicSigTransaction,
     OnComplete,
-    PaymentTxn,
+    # PaymentTxn,
     SignedTransaction,
     StateSchema,
     SuggestedParams,
-    assign_group_id,
+    # assign_group_id,
     create_dryrun,
     wait_for_confirmation,
 )
@@ -107,10 +107,11 @@ class DryRunContext:
 
         approval = b64decode(self.algod.compile(approval_src)["result"])
 
+        # Create and simultaneously opt-in to the app I just created:
         create = ApplicationCreateTxn(
             self.creator.address,
             sp,
-            OnComplete.NoOpOC,
+            OnComplete.OptInOC,
             approval,
             clear,
             local_schema,
@@ -254,23 +255,37 @@ def do_dryrun(
     algod = get_algod()
 
     creator = get_creator()
-    drc = DryRunContext(algod, creator)
+    drc = DryRunContext(
+        algod,
+        creator,
+    )
 
-    with drc.application(approval.teal) as app:
+    with drc.application(
+        approval.teal,
+        local_schema=approval.local_schema,
+        global_schema=approval.global_schema,
+    ) as app:
         print(f"Created application {app.index} with address: {app.address}")
 
         sig_addr = drc.lsig_account.address()
         print(f"Created Signature with address: {sig_addr}")
 
-        pay_txn = PaymentTxn(creator.address, app.sp, sig_addr, 10000)
+        # pay_txn = PaymentTxn(creator.address, app.sp, sig_addr, 10000)
         app_txn = ApplicationCallTxn(
-            sig_addr, app.sp, app.index, OnComplete.NoOpOC, app_args=app_args
+            # sig_addr,
+            creator.address,
+            app.sp,
+            app.index,
+            OnComplete.NoOpOC,
+            app_args=app_args,
         )
-        assign_group_id([pay_txn, app_txn])
-        spay_txn = pay_txn.sign(creator.secret)
+        # assign_group_id([pay_txn, app_txn])
+        # spay_txn = pay_txn.sign(creator.secret)
         sapp_txn = LogicSigTransaction(app_txn, drc.lsig_account)
 
-        drr = create_dryrun(algod, [spay_txn, sapp_txn])
+        # drr = create_dryrun(algod, [spay_txn, sapp_txn])
+
+        drr = create_dryrun(algod, [sapp_txn])
         raw = algod.dryrun(drr)
         resp = DryrunResponse(raw)
         for i, txn in enumerate(resp.txns):

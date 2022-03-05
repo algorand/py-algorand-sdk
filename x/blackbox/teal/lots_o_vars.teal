@@ -1,4 +1,8 @@
-#pragma version 5
+#pragma version 6
+global CurrentApplicationID
+int 0
+==
+bnz main_l2
 int 1
 store 0
 byte "two"
@@ -7,22 +11,22 @@ int 3
 store 2
 byte "four"
 store 3
-// int 0
-// byte "five"
-// int 5
-// app_local_put
-// int 0
-// byte "six"
-// byte "six"
-// app_local_put
-// int 0
-// byte "seven"
-// int 7
-// app_local_put
-// int 0
-// byte "eight"
-// byte "eight"
-// app_local_put
+int 0
+byte "five"
+int 5
+app_local_put
+int 0
+byte "six"
+byte "six"
+app_local_put
+int 0
+byte "seven"
+int 7
+app_local_put
+int 0
+byte "eight"
+byte "eight"
+app_local_put
 byte "nine"
 int 9
 app_global_put
@@ -43,22 +47,22 @@ load 2
 pop
 load 3
 pop
-// int 0
-// byte "five"
-// app_local_get
-// pop
-// int 0
-// byte "six"
-// app_local_get
-// pop
-// int 0
-// byte "seven"
-// app_local_get
-// pop
-// int 0
-// byte "eight"
-// app_local_get
-// pop
+int 0
+byte "five"
+app_local_get
+pop
+int 0
+byte "six"
+app_local_get
+pop
+int 0
+byte "seven"
+app_local_get
+pop
+int 0
+byte "eight"
+app_local_get
+pop
 byte "nine"
 app_global_get
 pop
@@ -72,4 +76,8 @@ byte "twelve"
 app_global_get
 pop
 int 1337
+b main_l3
+main_l2:
+int 1
+main_l3:
 return
