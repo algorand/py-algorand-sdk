@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, Generator, List
 
-from algosdk.algod import AlgodClient
+from algosdk.v2client.algod import AlgodClient
 from algosdk.dryrun_results import DryrunResponse, DryrunTransactionResult
 from algosdk.future.transaction import (
     ApplicationCallTxn,
@@ -34,10 +34,11 @@ LOGIC_SIG_TEAL = f"""{PRAGMA}
 pushint 1"""
 
 
+SB_ALGOD_ADDRESS = "http://localhost:4001"
+SB_ALGOD_TOKEN = "a" * 64
+
 SB_KMD_ADDRESS = "http://localhost:4002"
-SB_KMD_TOKEN = (
-    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-)
+SB_KMD_TOKEN = "a" * 64
 
 SB_KMD_WALLET_NAME = "unencrypted-default-wallet"
 SB_KMD_WALLET_PASSWORD = ""
@@ -147,8 +148,28 @@ These have indices: {', '.join(str(a['id']) for a in created_apps)}"""
             )
 
 
-def _get_accounts():
-    kmd = KMDClient(SB_KMD_TOKEN, SB_KMD_ADDRESS)
+def cleanup():
+    print("\n\n\n --------- TEARDOWN --------- \n\n")
+    creator = get_creator()
+    addr = creator.address
+    pk = creator.secret
+    algod = get_algod()
+    sp = algod.suggested_params()
+    created_apps = algod.account_info(addr)["created-apps"]
+    print(
+        f"""Gonna tear down {len(created_apps)} apps for account {addr}
+These have indexes: {','.join(str(a['id']) for a in created_apps)}"""
+    )
+    for app in created_apps:
+        index = app["id"]
+        app_delete = ApplicationDeleteTxn(addr, sp, index)
+        signed_delete = app_delete.sign(pk)
+        algod.send_transaction(signed_delete)
+
+
+def _get_accounts(kmd: KMDClient = None):
+    if not kmd:
+        kmd = KMDClient(SB_KMD_TOKEN, SB_KMD_ADDRESS)
     wallets = kmd.list_wallets()
 
     walletID = None
@@ -177,8 +198,16 @@ def _get_accounts():
     return kmdAccounts
 
 
-def get_account_addresses() -> List[AddressAndSecret]:
-    return [AddressAndSecret(addr, pk) for addr, pk in _get_accounts()]
+def get_account_addresses(kmd: KMDClient = None) -> List[AddressAndSecret]:
+    return [AddressAndSecret(addr, pk) for addr, pk in _get_accounts(kmd)]
+
+
+def get_creator(kmd: KMDClient = None) -> AddressAndSecret:
+    return get_account_addresses(kmd)[0]
+
+
+def get_algod() -> AlgodClient:
+    return AlgodClient(SB_ALGOD_TOKEN, SB_ALGOD_ADDRESS)
 
 
 def dryrun_report(i: int, run_name: str, txn: DryrunTransactionResult) -> str:
@@ -200,9 +229,13 @@ Lsig Trace:
 
 
 def do_dryrun(
-    run_name: str, algod: AlgodClient, approval_teal: str, *app_args: Any
+    run_name: str,
+    approval_teal: str,
+    *app_args: Any,
 ):
-    creator = get_account_addresses()[0]
+    algod = get_algod()
+
+    creator = get_creator()
     drc = DryRunContext(algod, creator)
 
     with drc.application(approval_teal) as app:
