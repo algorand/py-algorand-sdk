@@ -267,8 +267,8 @@ def do_dryrun(
     ) as app:
         print(f"Created application {app.index} with address: {app.address}")
 
-        sig_addr = drc.lsig_account.address()
-        print(f"Created Signature with address: {sig_addr}")
+        # sig_addr = drc.lsig_account.address()
+        # print(f"Created Signature with address: {sig_addr}")
 
         # pay_txn = PaymentTxn(creator.address, app.sp, sig_addr, 10000)
         app_txn = ApplicationCallTxn(
