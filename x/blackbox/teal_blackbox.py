@@ -23,14 +23,13 @@ from algosdk.future.transaction import (
 from algosdk.kmd import KMDClient
 import algosdk.logic as logic
 
-PRAGMA = "#pragma version 6"
 
-CLEAR_TEAL = f"""{PRAGMA}
+CLEAR_TEAL = """{}
 pushint 1
 return"""
 
 # TODO: Can we skip the logic sig altogether?
-LOGIC_SIG_TEAL = f"""{PRAGMA}
+LOGIC_SIG_TEAL = """{}
 pushint 1"""
 
 
@@ -42,6 +41,8 @@ SB_KMD_TOKEN = "a" * 64
 
 SB_KMD_WALLET_NAME = "unencrypted-default-wallet"
 SB_KMD_WALLET_PASSWORD = ""
+
+ZERO_SCHEMA = StateSchema(num_uints=0, num_byte_slices=0)
 
 
 @dataclass
@@ -78,22 +79,32 @@ class DryRunContext:
     ):
         self.algod = algod
         self.creator = creator
-        self.clear_src = clear_src
-        self.lsig_src = lsig_src
+        self.clear_src_tmpl = clear_src
 
-        self.clear: bytes = b64decode(self.algod.compile(clear_src)["result"])
-        self.lsig: bytes = b64decode(self.algod.compile(lsig_src)["result"])
-        self.lsig_account: LogicSigAccount = LogicSigAccount(self.lsig)
+        self.lsig_src_tmpl = lsig_src
+        self.lsig_src: str
+        self.lsig: bytes
+        self.lsig_account: LogicSigAccount
 
     @contextmanager
     def application(
         self,
         approval_src: str,
-        local_schema: StateSchema = StateSchema(0, 0),
-        global_schema: StateSchema = StateSchema(0, 0),
+        local_schema: StateSchema = ZERO_SCHEMA,
+        global_schema: StateSchema = ZERO_SCHEMA,
         wait_rounds: int = 3,
     ) -> Generator[ApplicationBundle, None, None]:
+        lines = approval_src.split("\n")
+        pragma = lines[0]
         sp = self.algod.suggested_params()
+
+        clear_src: str = self.clear_src_tmpl.format(pragma)
+        clear: bytes = b64decode(self.algod.compile(clear_src)["result"])
+
+        self.lsig_src = self.lsig_src_tmpl.format(pragma)
+        self.lsig = b64decode(self.algod.compile(self.lsig_src)["result"])
+        self.lsig_account = LogicSigAccount(self.lsig)
+
         approval = b64decode(self.algod.compile(approval_src)["result"])
 
         create = ApplicationCreateTxn(
@@ -101,7 +112,7 @@ class DryRunContext:
             sp,
             OnComplete.NoOpOC,
             approval,
-            self.clear,
+            clear,
             local_schema,
             global_schema,
         )
@@ -119,8 +130,8 @@ class DryRunContext:
             sp,
             approval_src,
             approval,
-            self.clear_src,
-            self.clear,
+            clear_src,
+            clear,
             local_schema,
             global_schema,
             create,
@@ -228,9 +239,16 @@ Lsig Trace:
 """
 
 
+@dataclass
+class ApprovalBundle:
+    teal: str
+    local_schema: StateSchema = ZERO_SCHEMA
+    global_schema: StateSchema = ZERO_SCHEMA
+
+
 def do_dryrun(
     run_name: str,
-    approval_teal: str,
+    approval: ApprovalBundle,
     *app_args: Any,
 ):
     algod = get_algod()
@@ -238,7 +256,7 @@ def do_dryrun(
     creator = get_creator()
     drc = DryRunContext(algod, creator)
 
-    with drc.application(approval_teal) as app:
+    with drc.application(approval.teal) as app:
         print(f"Created application {app.index} with address: {app.address}")
 
         sig_addr = drc.lsig_account.address()
