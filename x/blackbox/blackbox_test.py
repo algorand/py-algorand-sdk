@@ -23,14 +23,14 @@ def teardown():
 
 
 test_cases = [
-    ("demo succeed", ApprovalBundle("demo"), ["succeed"]),
-    ("demo FAIL", ApprovalBundle("demo"), ["FAIL"]),
-    ("new factorial", ApprovalBundle("fac_by_ref"), []),
-    ("old factorial", ApprovalBundle("old_fac"), []),
-    ("swap", ApprovalBundle("swapper"), []),
-    ("increment", ApprovalBundle("increment"), []),
-    ("tally", ApprovalBundle("tallygo"), []),
-    ("BAD factorial", ApprovalBundle("fac_by_ref_BAD"), []),
+    # ("demo succeed", ApprovalBundle("demo"), ["succeed"]),
+    # ("demo FAIL", ApprovalBundle("demo"), ["FAIL"]),
+    # ("new factorial", ApprovalBundle("fac_by_ref"), []),
+    # ("old factorial", ApprovalBundle("old_fac"), []),
+    # ("swap", ApprovalBundle("swapper"), []),
+    # ("increment", ApprovalBundle("increment"), []),
+    # ("tally", ApprovalBundle("tallygo"), []),
+    # ("BAD factorial", ApprovalBundle("fac_by_ref_BAD"), []),
     (
         "lots O vars",
         ApprovalBundle(
@@ -49,4 +49,4 @@ def test_blackbox():
         print(f"case={tcase}, approval_path={path}")
         with open(path) as f:
             approval.teal = f.read()
-            do_dryrun(tcase, approval, *args)
+            do_dryrun(tcase, approval, args, col_max=50)
