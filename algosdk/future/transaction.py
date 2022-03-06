@@ -366,7 +366,7 @@ class PaymentTxn(Transaction):
         self.close_remainder_to = close_remainder_to
         if not sp.flat_fee:
             self.fee = max(
-                self.estimate_size() * self.fee, constants.min_txn_fee
+                self.estimate_size() * self.fee, sp.min_fee
             )
 
     def dictify(self):
@@ -478,7 +478,7 @@ class KeyregTxn(Transaction):
 
         if not sp.flat_fee:
             self.fee = max(
-                self.estimate_size() * self.fee, constants.min_txn_fee
+                self.estimate_size() * self.fee, sp.min_fee
             )
 
     def dictify(self):
@@ -605,7 +605,7 @@ class KeyregOnlineTxn(KeyregTxn):
             raise error.KeyregOnlineTxnInitError("votekd")
         if not sp.flat_fee:
             self.fee = max(
-                self.estimate_size() * self.fee, constants.min_txn_fee
+                self.estimate_size() * self.fee, sp.min_fee
             )
 
     @staticmethod
@@ -689,7 +689,7 @@ class KeyregOfflineTxn(KeyregTxn):
         )
         if not sp.flat_fee:
             self.fee = max(
-                self.estimate_size() * self.fee, constants.min_txn_fee
+                self.estimate_size() * self.fee, sp.min_fee
             )
 
     @staticmethod
@@ -749,7 +749,7 @@ class KeyregNonparticipatingTxn(KeyregTxn):
         )
         if not sp.flat_fee:
             self.fee = max(
-                self.estimate_size() * self.fee, constants.min_txn_fee
+                self.estimate_size() * self.fee, sp.min_fee
             )
 
     @staticmethod
@@ -884,7 +884,7 @@ class AssetConfigTxn(Transaction):
             raise error.OutOfRangeDecimalsError
         if not sp.flat_fee:
             self.fee = max(
-                self.estimate_size() * self.fee, constants.min_txn_fee
+                self.estimate_size() * self.fee, sp.min_fee
             )
 
     def dictify(self):
@@ -1239,7 +1239,7 @@ class AssetFreezeTxn(Transaction):
         self.new_freeze_state = new_freeze_state
         if not sp.flat_fee:
             self.fee = max(
-                self.estimate_size() * self.fee, constants.min_txn_fee
+                self.estimate_size() * self.fee, sp.min_fee
             )
 
     def dictify(self):
@@ -1356,7 +1356,7 @@ class AssetTransferTxn(Transaction):
         self.revocation_target = revocation_target
         if not sp.flat_fee:
             self.fee = max(
-                self.estimate_size() * self.fee, constants.min_txn_fee
+                self.estimate_size() * self.fee, sp.min_fee
             )
 
     def dictify(self):
@@ -1626,7 +1626,7 @@ class ApplicationCallTxn(Transaction):
         self.extra_pages = extra_pages
         if not sp.flat_fee:
             self.fee = max(
-                self.estimate_size() * self.fee, constants.min_txn_fee
+                self.estimate_size() * self.fee, sp.min_fee
             )
 
     @staticmethod
