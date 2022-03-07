@@ -1,11 +1,10 @@
 from base64 import b64decode
 from contextlib import contextmanager
 from dataclasses import dataclass
-from email.policy import default
 from glom import glom
 from inspect import stack
 from tabulate import tabulate
-from typing import Any, Generator, List, Optional, Set
+from typing import Any, Generator, List, Optional, Set, Union
 
 from algosdk.v2client.algod import AlgodClient
 
@@ -309,19 +308,30 @@ class TealVal:
         return "0x" + b64decode(self.b).hex() if self.is_b else str(self.i)
 
 
-def trace_table(trace: List[dict], lines: List[str], col_max: int) -> str:
-    black_box_result = essential_info(trace, lines)
+def trace_table(
+    trace: List[dict],
+    lines: List[str],
+    col_max: int,
+    scratch_colon: str = "->",
+    scratch_verbose: bool = False,
+) -> str:
+    black_box_result = essential_info(
+        trace,
+        lines,
+        scratch_colon=scratch_colon,
+        scratch_verbose=scratch_verbose,
+    )
     # pcs, tls, N, stacks, scratches, slots_used = list(map(getattr(
 
     rows = [
         map(
             str,
             [
-                i + 1,
                 black_box_result.program_counters[i],
+                i + 1,
                 black_box_result.teal_source_lines[i],
                 black_box_result.stack_evolution[i],
-                *black_box_result.stack_evolution[i],
+                *black_box_result.scratch_evolution[i],
             ],
         )
         for i in range(black_box_result.program_length)
@@ -331,11 +341,15 @@ def trace_table(trace: List[dict], lines: List[str], col_max: int) -> str:
     table = tabulate(
         rows,
         headers=[
-            "L#",
             "PC#",
+            "L#",
             "Teal",
             "Stack",
-            *(f"S@{s}" for s in black_box_result.slots_used),
+            *(
+                [f"S@{s}" for s in black_box_result.slots_used]
+                if scratch_verbose
+                else ["Scratch"]
+            ),
         ],
         tablefmt="presto",
     )
@@ -367,7 +381,9 @@ class BlackBoxResults:
         return f"BlackBoxResult(program_length={self.program_length})"
 
 
-def essential_info(trace, lines):
+def essential_info(
+    trace, lines, scratch_colon: str = "->", scratch_verbose: bool = False
+):
     pcs = [t["pc"] for t in trace]
 
     tls = [lines[t["line"] - 1] for t in trace]
@@ -395,10 +411,34 @@ def essential_info(trace, lines):
         for scratch in scratches
     ]
     slots_used = sorted(set().union(*(s.keys() for s in scratches)))
-    scratches = [
-        [f"{i}->{scratch[i]}" if i in scratch else "" for i in slots_used]
-        for scratch in scratches
-    ]
+    if not scratch_verbose:
+
+        def compute_delta(prev, curr):
+            pks, cks = set(prev.keys()), set(curr.keys())
+            new_keys = cks - pks
+            if new_keys:
+                return {k: curr[k] for k in new_keys}
+            return {k: v for k, v in curr.items() if prev[k] != v}
+
+        scratch_deltas = [scratches[0]]
+        for i in range(1, len(scratches)):
+            scratch_deltas.append(
+                compute_delta(scratches[i - 1], scratches[i])
+            )
+
+        scratches = [
+            [f"{i}{scratch_colon}{v}" for i, v in scratch.items()]
+            for scratch in scratch_deltas
+        ]
+    else:
+        scratches = [
+            [
+                f"{i}{scratch_colon}{scratch[i]}" if i in scratch else ""
+                for i in slots_used
+            ]
+            for scratch in scratches
+        ]
+
     assert N == len(
         scratches
     ), f"mismatch of lengths in tls v. scratches ({N} v. {len(scratches)})"
@@ -422,18 +462,26 @@ class DryRunTester:
         self,
         name: str,
         dry_run_response: dict,
-        creator_address: str,
-        testing_txn_index: int = 0,
+        runner_address: str,
+        default_txn_index: int = 0,
         col_max: int = None,
+        scratch_colon: str = "->",
+        scratch_verbose: bool = False,
     ):
         self.name = name
         self.resp = dry_run_response
-        self.creator_address = creator_address
-        self.testing_idx = testing_txn_index
+        self.runner_address = runner_address
+        self.default_report_idx = default_txn_index
         self.col_max = col_max
+        self.scratch_colon = scratch_colon
+        self.scratch_verbose = scratch_verbose
 
         self.black_box_results = [
-            essential_info(tx["app-call-trace"], tx["disassembly"])
+            essential_info(
+                tx["app-call-trace"],
+                tx["disassembly"],
+                scratch_colon=self.scratch_colon,
+            )
             for tx in self.resp["txns"]
         ]
         for bbr in self.black_box_results:
@@ -442,23 +490,26 @@ class DryRunTester:
     ### methods that pivot of testing idx ###
     def testing_txn(self, idx: int = None) -> dict:
         if idx is None:
-            idx = self.testing_idx
+            idx = self.default_report_idx
         return self.resp["txns"][idx]
+
+    def cost(self, idx: int = None) -> int:
+        return self.testing_txn(idx)["cost"]
 
     def last_log(self, idx: int = None) -> Optional[str]:
         if idx is None:
-            idx = self.testing_idx
+            idx = self.default_report_idx
         logs = self.logs(idx)
         return logs[-1] if logs else None
 
     def logs(self, idx: int = None) -> List[str]:
         if idx is None:
-            idx = self.testing_idx
+            idx = self.default_report_idx
         return self.resp["txns"][idx].get("logs", [])
 
     def get_black_box_result(self, idx: int = None) -> BlackBoxResults:
         if idx is None:
-            idx = self.testing_idx
+            idx = self.default_report_idx
         return self.black_box_results[idx]
 
     def last_stack_value(self, idx: int = None) -> Optional[TealVal]:
@@ -489,7 +540,7 @@ class DryRunTester:
         ldeltas = [
             ld
             for ld in self.testing_txn(idx).get("local-deltas", [])
-            if ld["address"] == self.creator_address
+            if ld["address"] == self.runner_address
         ]
         if not ldeltas:
             return 0
@@ -507,7 +558,7 @@ class DryRunTester:
         return self._local_x_used("bytes", idx)
 
     def local_uints_used(self, idx: int = None) -> int:
-        return self._local_x_used("uints", idx)
+        return self._local_x_used("uint", idx)
 
     ### human readable summary ###
 
@@ -515,11 +566,12 @@ class DryRunTester:
         bookend = f"""
         <<<<<<{self.name}>>>>>>
 REPORTS FOR {len(self.resp["txns"])} TRANSACTIONS
-DEFAULT TXN TESTING-INDEX: {self.testing_idx}
+DEFAULT TXN REPORTING-INDEX: {self.default_report_idx}
+TOTAL OP-CODE COST: {self.cost()}
 BLACK BOX RESULT: {self.get_black_box_result()}
 FINAL LOG: {self.last_log()}
 TOP OF STACK: {self.last_stack_value()!r}
-SLOTS USED: {self.slots_used()}
+{len(self.slots_used())} SLOTS USED: {self.slots_used()}
 GLOBAL BYTES USED: {self.global_bytes_used()}
 GLOBAL UINTS USED: {self.global_uints_used()}
 LOCAL BYTES USED: {self.local_bytes_used()}
@@ -528,16 +580,17 @@ LOCAL UINTS USED: {self.local_uints_used()}
 
         txn_reports = []
         for i, txn in enumerate(self.resp["txns"]):
-            txn_reports.append(
-                self.txn_report(i, self.name, txn, self.col_max)
-            )
+            txn_reports.append(self.txn_report(i, txn, self.col_max))
 
         txn_reports = [bookend] + txn_reports + [bookend]
 
         return "\n".join(txn_reports)
 
     def txn_report(
-        self, idx: int, run_name: str, txn: dict, col_max: int
+        self,
+        idx: int,
+        txn: dict,
+        col_max: int,
     ) -> str:
         gdelta = txn.get("global-delta", [])
         ldelta = txn.get("local-deltas", [])
@@ -551,10 +604,23 @@ LOCAL UINTS USED: {self.local_uints_used()}
         lsig_messages = txn["logic-sig-messages"]
         lsig_trace = txn["logic-sig-trace"]
 
-        app_table = trace_table(app_trace, app_lines, col_max)
-        lsig_table = trace_table(lsig_trace, lsig_lines, col_max)
+        app_table = trace_table(
+            app_trace,
+            app_lines,
+            col_max,
+            scratch_colon=self.scratch_colon,
+            scratch_verbose=self.scratch_verbose,
+        )
+        lsig_table = trace_table(
+            lsig_trace,
+            lsig_lines,
+            col_max,
+            scratch_colon=self.scratch_colon,
+            scratch_verbose=self.scratch_verbose,
+        )
 
         return f"""===============
+        <<<Transaction@index={idx}>>>
 ===============
 TOTAL COST: {cost}
 ===============
@@ -578,11 +644,33 @@ Local Delta:
 """
 
 
+def lightly_encode_args(args: List[Union[str, int]]) -> List[str]:
+    """
+    Assumes int's are uint64 and
+    """
+
+    def encode(arg):
+        assert isinstance(
+            arg, (int, str)
+        ), f"can't handle arg [{arg}] of type {type(arg)}"
+        if isinstance(arg, int):
+            assert (
+                arg >= 0
+            ), f"can't handle negative arguments but was given {arg}"
+        return (
+            arg if isinstance(arg, str) else arg.to_bytes(8, byteorder="big")
+        )
+
+    return [encode(a) for a in args]
+
+
 def do_dryrun(
     run_name: str,
     approval: ApprovalBundle,
-    app_args: list,
+    app_args: List[Union[str, int]],
     col_max: int = None,
+    scratch_colon: str = "->",
+    scratch_verbose: bool = False,
 ):
     algod = get_algod()
 
@@ -604,7 +692,7 @@ def do_dryrun(
             app.sp,
             app.index,
             OnComplete.NoOpOC,
-            app_args=app_args,
+            app_args=lightly_encode_args(app_args),
         )
         sapp_txn = LogicSigTransaction(app_txn, drc.lsig_account)
 
@@ -612,6 +700,11 @@ def do_dryrun(
         resp = algod.dryrun(drr)
         print(
             DryRunTester(
-                run_name, resp, creator.address, col_max=col_max
+                run_name,
+                resp,
+                creator.address,
+                col_max=col_max,
+                scratch_colon=scratch_colon,
+                scratch_verbose=scratch_verbose,
             ).report()
         )

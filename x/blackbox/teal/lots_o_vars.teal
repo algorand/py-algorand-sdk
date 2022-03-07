@@ -2,13 +2,13 @@
 global CurrentApplicationID
 int 0
 ==
-txn OnCompletion
-int DeleteApplication
+txn NumAppArgs
+int 0
 ==
 ||
 bnz main_l2
 int 1
-store 42
+store 0
 byte "two"
 store 1
 int 3
@@ -113,6 +113,16 @@ byte "twelve"
 app_global_get
 concat
 app_global_put
+txna ApplicationArgs 0
+btoi
+store 13
+txna ApplicationArgs 1
+store 14
+txna ApplicationArgs 2
+btoi
+store 6
+txna ApplicationArgs 3
+store 7
 load 0
 pop
 load 1
@@ -149,6 +159,28 @@ pop
 byte "twelve"
 app_global_get
 pop
+int 13
+store 4
+load 4
+loads
+itob
+log
+int 14
+store 5
+load 5
+loads
+log
+int 6
+store 4
+load 4
+loads
+itob
+log
+int 7
+store 5
+load 5
+loads
+log
 int 1337
 b main_l3
 main_l2:
