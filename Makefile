@@ -15,5 +15,3 @@ docker-test:
 # the following command should then work
 blackbox-test:
 	pytest -sv x/blackbox/blackbox_test.py
-	
-include z.Makefile
