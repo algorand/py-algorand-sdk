@@ -3,9 +3,9 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
 from glom import glom
-from inspect import stack
+import operator
 from tabulate import tabulate
-from typing import Dict, Generator, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, Generator, List, Optional, Set, Tuple, Union
 
 from algosdk.v2client.algod import AlgodClient
 
@@ -308,6 +308,11 @@ class TealVal:
         ), f"can't handle StackVariable with empty type"
         return "0x" + b64decode(self.b).hex() if self.is_b else str(self.i)
 
+    def as_python_type(self) -> Union[int, str, None]:
+        if self.is_b is None:
+            return None
+        return self.b if self.is_b else self.i
+
 
 def trace_table(
     trace: List[dict],
@@ -476,13 +481,54 @@ class BlackBoxAssertionType(Enum):
 
 
 class BlackBoxExpectation:
-    def __init__(self, input_case: List[Union[int, str]], expectation: "blah"):
-        pass
+    def __init__(
+        self,
+        input_case: List[Union[int, str]],
+        expected: Union[int, str],
+        case_name: str = "",
+        assert_type: BlackBoxAssertionType = BlackBoxAssertionType.FINAL_STACK_TOP,
+        predicate=operator.eq,
+    ):
+        self.case_name = case_name
+        self.input_case = input_case
+        self.expected = expected
+        self.assert_type = assert_type
+        self.predicate = predicate
 
+    def get_actual(self, tester: "DryRunTester", txn_index: int) -> Any:
+        val = None
+        if self.assert_type == BlackBoxAssertionType.FINAL_STACK_TOP:
+            val = tester.last_stack_value(txn_index)
+        elif self.assert_type == BlackBoxAssertionType.LAST_LOG:
+            val = tester.last_log(txn_index)
+        elif self.assert_type == BlackBoxAssertionType.COST:
+            val = tester.cost(txn_index)
+        elif self.assert_type == BlackBoxAssertionType.FINAL_SCRATCH_STATE:
+            val = tester.final_scratch_state(txn_index)
+            val = {k: v.as_python_type() for k, v in val.items()}
+        elif self.assert_type == BlackBoxAssertionType.MAX_STACK_HEIGHT:
+            val, lines = tester.max_stack_height(txn_index)
+        else:
+            raise Exception(
+                f"don't know what to do with BlackBoxAssertionType {self.assert_type}"
+            )
 
-class BlackBoxExpectations:
-    def __init__(self, input_cases: List[List[Union[int, str]]]):
-        pass
+        if isinstance(val, TealVal):
+            return val.as_python_type()
+
+        return val
+
+    def assert_expected(self, tester: "DryRunTester", txn_index: int):
+        actual = self.get_actual(tester, txn_index)
+        assert self.predicate(
+            self.expected, actual
+        ), f"""evaluation assertion <{self.expected}>::{self.predicate}::<{actual}> has failed
+Input {self.case_name}: {self.input_case} of assertion type {self.assert_type}
+
+++++++++++++++REPORT++++++++++++++++++
+
+{tester.report(unique_index=txn_index)}
+"""
 
 
 class DryRunTester:
@@ -545,13 +591,9 @@ class DryRunTester:
         return last_stack[-1] if last_stack else None
 
     def max_stack_height(self, idx: int = None) -> Tuple[int, List[int]]:
-        stack_evolution = self.get_black_box_result(idx).stack_evolution
-        max_height = max(map(len, stack_evolution))
-        lines = [
-            i + 1
-            for i, s in enumerate(stack_evolution)
-            if len(s) == max_height
-        ]
+        stacks = self.get_black_box_result(idx).raw_stacks
+        max_height = max(map(len, stacks))
+        lines = [i + 1 for i, s in enumerate(stacks) if len(s) == max_height]
         return max_height, lines
 
     def slots_used(self, idx: int = None) -> Set[int]:
@@ -603,7 +645,10 @@ class DryRunTester:
 
     ### human readable reporting ###
 
-    def report(self) -> str:
+    def report(self, unique_index: int = None) -> str:
+        if unique_index is not None:
+            prev_index = self.default_report_idx
+            self.default_report_idx = unique_index
         max_stack_height, msh_lines = self.max_stack_height()
         bookend = f"""
         <<<<<<{self.name}>>>>>>
@@ -624,9 +669,14 @@ LOCAL UINTS USED: {self.local_uints_used()}
 
         txn_reports = []
         for i, txn in enumerate(self.resp["txns"]):
+            if unique_index is not None and i != unique_index:
+                continue
             txn_reports.append(self.txn_report(i, txn, self.col_max))
 
         txn_reports = [bookend] + txn_reports + [bookend]
+
+        if unique_index is not None:
+            self.default_report_idx = prev_index
 
         return "\n".join(txn_reports)
 
@@ -719,10 +769,7 @@ def do_dryrun_reports(
     algod = get_algod()
 
     creator = get_creator()
-    drc = DryRunContext(
-        algod,
-        creator,
-    )
+    drc = DryRunContext(algod, creator)
 
     with drc.application(
         approval.teal,
@@ -752,3 +799,67 @@ def do_dryrun_reports(
                 scratch_verbose=scratch_verbose,
             ).report()
         )
+
+
+def run_blackbox(run_name: str, approval: ApprovalBundle, scenarios: dict):
+    algod = get_algod()
+
+    creator = get_creator()
+    drc = DryRunContext(algod, creator)
+
+    with drc.application(
+        approval.teal,
+        local_schema=approval.local_schema,
+        global_schema=approval.global_schema,
+    ) as app:
+        print(f"Created application {app.index} with address: {app.address}")
+
+        input_cases = scenarios["input_cases"]
+        N = len(input_cases)
+        print(f"Running {N} input cases")
+
+        expectations = scenarios["expectations"]
+
+        app_txns = [
+            ApplicationCallTxn(
+                creator.address,
+                app.sp,
+                app.index,
+                OnComplete.NoOpOC,
+                app_args=lightly_encode_args(args),
+            )
+            for args in input_cases
+        ]
+        assign_group_id(app_txns)
+
+        lsig_txns = [
+            LogicSigTransaction(atxn, drc.lsig_account) for atxn in app_txns
+        ]
+
+        drr = create_dryrun(algod, lsig_txns)
+        tester = DryRunTester(
+            run_name,
+            algod.dryrun(drr),
+            creator.address,
+        )
+
+        assert N == len(
+            tester.black_box_results
+        ), f"mismatch with expected no. of black boxes ({N} v {len(tester.black_box_results)})"
+
+        for i, args in enumerate(input_cases):
+            for assertion_type, expectation in expectations.items():
+                f = expectation.get("func", None)
+                output = f(*args) if f else expectation["outputs"][i]
+                predicate = expectation.get("op", operator.eq)
+                bbe = BlackBoxExpectation(
+                    args,
+                    output,
+                    assert_type=assertion_type,
+                    predicate=predicate,
+                    case_name=run_name,
+                )
+                print(
+                    f"testing {run_name}[{i}] for args {args} and assertion type {assertion_type}"
+                )
+                bbe.assert_expected(tester, i)

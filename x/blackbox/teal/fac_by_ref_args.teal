@@ -1,10 +1,22 @@
 #pragma version 6
+global CurrentApplicationID
+int 0
+==
+txn NumAppArgs
+int 0
+==
+||
+bnz main_l2
 txna ApplicationArgs 0
 btoi
 store 2
 int 2
 callsub factorial_0
 load 2
+b main_l3
+main_l2:
+int 1
+main_l3:
 return
 
 // factorial
