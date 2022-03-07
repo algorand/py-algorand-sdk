@@ -4,7 +4,6 @@ import base64
 
 class DryrunResponse:
     def __init__(self, drrjson: dict):
-        self.raw_response: dict = drrjson
         for param in ["error", "protocol-version", "txns"]:
             assert (
                 param in drrjson
