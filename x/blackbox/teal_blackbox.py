@@ -1,284 +1,21 @@
 from base64 import b64decode
-from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
 from glom import glom
 import operator
 from tabulate import tabulate
-from typing import Any, Dict, Generator, List, Optional, Set, Tuple, Union
-
-from algosdk.v2client.algod import AlgodClient
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from algosdk.future.transaction import (
     ApplicationCallTxn,
-    ApplicationClearStateTxn,
-    ApplicationOptInTxn,
-    ApplicationCreateTxn,
-    ApplicationDeleteTxn,
-    LogicSigAccount,
     LogicSigTransaction,
     OnComplete,
-    SignedTransaction,
     StateSchema,
-    SuggestedParams,
     assign_group_id,
     create_dryrun,
-    wait_for_confirmation,
 )
-from algosdk.kmd import KMDClient
-import algosdk.logic as logic
 
-
-CLEAR_TEAL = """{}
-pushint 1
-return"""
-
-# TODO: Can we skip the logic sig altogether?
-LOGIC_SIG_TEAL = """{}
-pushint 1"""
-
-
-SB_ALGOD_ADDRESS = "http://localhost:4001"
-SB_ALGOD_TOKEN = "a" * 64
-
-SB_KMD_ADDRESS = "http://localhost:4002"
-SB_KMD_TOKEN = "a" * 64
-
-SB_KMD_WALLET_NAME = "unencrypted-default-wallet"
-SB_KMD_WALLET_PASSWORD = ""
-
-ZERO_SCHEMA = StateSchema(num_uints=0, num_byte_slices=0)
-
-
-@dataclass
-class AddressAndSecret:
-    address: str
-    secret: str
-
-
-@dataclass
-class ApplicationBundle:
-    author: AddressAndSecret
-    sp: SuggestedParams
-    approval_src: str
-    approval: bytes
-    clear_src: str
-    clear: bytes
-    local_schema: StateSchema
-    global_schema: StateSchema
-    create_txn: ApplicationCreateTxn
-    signed_txn: SignedTransaction
-    txid: str
-    resp: dict
-    index: int
-    address: str
-
-
-class DryRunContext:
-    def __init__(
-        self,
-        algod: AlgodClient,
-        creator: AddressAndSecret,
-        clear_src: str = CLEAR_TEAL,
-        lsig_src: str = LOGIC_SIG_TEAL,
-    ):
-        self.algod = algod
-        self.creator = creator
-        self.clear_src_tmpl = clear_src
-
-        self.lsig_src_tmpl = lsig_src
-        self.lsig_src: str
-        self.lsig: bytes
-        self.lsig_account: LogicSigAccount
-
-    @contextmanager
-    def application(
-        self,
-        approval_src: str,
-        local_schema: StateSchema = ZERO_SCHEMA,
-        global_schema: StateSchema = ZERO_SCHEMA,
-        wait_rounds: int = 3,
-    ) -> Generator[ApplicationBundle, None, None]:
-        lines = approval_src.split("\n")
-        pragma = lines[0]
-        sp = self.algod.suggested_params()
-
-        clear_src: str = self.clear_src_tmpl.format(pragma)
-        clear: bytes = b64decode(self.algod.compile(clear_src)["result"])
-
-        self.lsig_src = self.lsig_src_tmpl.format(pragma)
-        self.lsig = b64decode(self.algod.compile(self.lsig_src)["result"])
-        self.lsig_account = LogicSigAccount(self.lsig)
-
-        approval = b64decode(self.algod.compile(approval_src)["result"])
-
-        # Create and simultaneously opt-in to the app I just created:
-        create = ApplicationCreateTxn(
-            self.creator.address,
-            sp,
-            OnComplete.OptInOC,
-            approval,
-            clear,
-            local_schema,
-            global_schema,
-        )
-        signed = create.sign(self.creator.secret)
-        txid = self.algod.send_transaction(signed)
-        res = wait_for_confirmation(self.algod, txid, wait_rounds)
-
-        app_id = res["application-index"]
-        app_addr = logic.get_application_address(app_id)
-
-        # optin = ApplicationOptInTxn(self.creator.address, sp, app_id)
-        # signed = optin.sign(self.creator.secret)
-        # txid = self.algod.send_transaction(signed)
-        res = wait_for_confirmation(self.algod, txid, wait_rounds)
-
-        app = ApplicationBundle(
-            self.creator,
-            sp,
-            approval_src,
-            approval,
-            clear_src,
-            clear,
-            local_schema,
-            global_schema,
-            create,
-            signed,
-            txid,
-            res,
-            app_id,
-            app_addr,
-        )
-        try:
-            print(f"Created app with index={app_id}")
-            yield app
-        finally:
-            addr = self.creator.address
-            account_info = self.algod.account_info(addr)
-            apps_opted_in = account_info["apps-local-state"]
-            optin_ids = [a["id"] for a in apps_opted_in]
-
-            apps_created = account_info["created-apps"]
-            created_ids = [a["id"] for a in apps_created]
-            print(
-                f"""Before commencing, creator [{addr}] currently has:
-* {len(apps_opted_in)} opted-in apps
-    * indices: {', '.join(str(x) for x in optin_ids)}
-* {len(apps_created)} created apps
-    * indices: {', '.join(str(x) for x in created_ids)}
-"""
-            )
-
-            sp = self.algod.suggested_params()
-
-            print(f"Gonna delete app with index={app_id}")
-
-            if app_id not in optin_ids:
-                app_optin = ApplicationOptInTxn(
-                    self.creator.address, sp, app_id
-                )
-                app_delete = ApplicationDeleteTxn(
-                    self.creator.address, sp, app_id
-                )
-                assign_group_id([app_optin, app_delete])
-                signed_optin = app_optin.sign(self.creator.secret)
-                signed_delete = app_delete.sign(self.creator.secret)
-                delete_txn = self.algod.send_transactions(
-                    [signed_optin, signed_delete]
-                )
-            else:
-                app_delete = ApplicationDeleteTxn(
-                    self.creator.address, sp, app_id
-                )
-                signed_delete = app_delete.sign(self.creator.secret)
-                delete_txn = self.algod.send_transaction(signed_delete)
-
-            print(f"Gonna clear out of app with index={app_id}")
-            app_clear = ApplicationClearStateTxn(addr, sp, app_id)
-            signed_clear = app_clear.sign(self.creator.secret)
-            clear_txn = self.algod.send_transaction(signed_clear)
-
-            delete_resp = wait_for_confirmation(self.algod, delete_txn, 3)
-            clear_resp = wait_for_confirmation(self.algod, clear_txn, 3)
-
-
-def cleanup():
-    print("\n\n\n --------- TEARDOWN --------- \n\n")
-    creator = get_creator()
-    addr = creator.address
-    pk = creator.secret
-    algod = get_algod()
-    sp = algod.suggested_params()
-    account_info = algod.account_info(addr)
-
-    apps_created = account_info["created-apps"]
-    print(
-        f"""Gonna tear down {len(apps_created)} apps for account {addr}
-These have indexes: {','.join(str(a['id']) for a in apps_created)}"""
-    )
-    for app in apps_created:
-        index = app["id"]
-        app_delete = ApplicationDeleteTxn(addr, sp, index)
-        signed_delete = app_delete.sign(pk)
-        deleteid = algod.send_transaction(signed_delete)
-        delete_resp = wait_for_confirmation(algod, deleteid, 3)
-        x = 42
-
-    apps_opted_in = account_info["apps-local-state"]
-    print(
-        f"""Gonna clear out of {len(apps_opted_in)} apps for account {addr}
-These have indexes: {','.join(str(a['id']) for a in apps_opted_in)}"""
-    )
-    for app in apps_opted_in:
-        index = app["id"]
-        app_clear = ApplicationClearStateTxn(addr, sp, index)
-        signed_clear = app_clear.sign(pk)
-        clearid = algod.send_transaction(signed_clear)
-        close_resp = wait_for_confirmation(algod, clearid, 3)
-
-
-def _get_accounts(kmd: KMDClient = None):
-    if not kmd:
-        kmd = KMDClient(SB_KMD_TOKEN, SB_KMD_ADDRESS)
-    wallets = kmd.list_wallets()
-
-    walletID = None
-    for wallet in wallets:
-        if wallet["name"] == SB_KMD_WALLET_NAME:
-            walletID = wallet["id"]
-            break
-
-    if walletID is None:
-        raise Exception("Wallet not found: {}".format(SB_KMD_WALLET_NAME))
-
-    walletHandle = kmd.init_wallet_handle(walletID, SB_KMD_WALLET_PASSWORD)
-
-    try:
-        addresses = kmd.list_keys(walletHandle)
-        privateKeys = [
-            kmd.export_key(walletHandle, SB_KMD_WALLET_PASSWORD, addr)
-            for addr in addresses
-        ]
-        kmdAccounts = [
-            (addresses[i], privateKeys[i]) for i in range(len(privateKeys))
-        ]
-    finally:
-        kmd.release_wallet_handle(walletHandle)
-
-    return kmdAccounts
-
-
-def get_account_addresses(kmd: KMDClient = None) -> List[AddressAndSecret]:
-    return [AddressAndSecret(addr, pk) for addr, pk in _get_accounts(kmd)]
-
-
-def get_creator(kmd: KMDClient = None) -> AddressAndSecret:
-    return get_account_addresses(kmd)[0]
-
-
-def get_algod() -> AlgodClient:
-    return AlgodClient(SB_ALGOD_TOKEN, SB_ALGOD_ADDRESS)
+from .blacksand import get_algod, get_creator, DryRunContext, ZERO_SCHEMA
 
 
 @dataclass
@@ -314,6 +51,39 @@ class TealVal:
         return self.b if self.is_b else self.i
 
 
+@dataclass
+class BlackBoxResults:
+    program_length: int
+    program_counters: int
+    teal_source_lines: List[str]
+    stack_evolution: List[list]
+    scratch_evolution: List[dict]
+    final_scratch_state: Dict[int, TealVal]
+    slots_used: List[int]
+    raw_stacks: List[list]
+
+    def assert_well_defined(self):
+        assert all(
+            self.program_length == len(x)
+            for x in (
+                self.program_counters,
+                self.teal_source_lines,
+                self.stack_evolution,
+                self.scratch_evolution,
+            )
+        )
+
+    def __str__(self) -> str:
+        return f"BlackBoxResult(program_length={self.program_length})"
+
+
+@dataclass
+class ApprovalBundle:
+    teal: str
+    local_schema: StateSchema = ZERO_SCHEMA
+    global_schema: StateSchema = ZERO_SCHEMA
+
+
 def trace_table(
     trace: List[dict],
     lines: List[str],
@@ -321,13 +91,12 @@ def trace_table(
     scratch_colon: str = "->",
     scratch_verbose: bool = False,
 ) -> str:
-    black_box_result = essential_info(
+    black_box_result = scrape_the_black_box(
         trace,
         lines,
         scratch_colon=scratch_colon,
         scratch_verbose=scratch_verbose,
     )
-    # pcs, tls, N, stacks, scratches, slots_used = list(map(getattr(
 
     rows = [
         map(
@@ -362,33 +131,7 @@ def trace_table(
     return table
 
 
-@dataclass
-class BlackBoxResults:
-    program_length: int
-    program_counters: int
-    teal_source_lines: List[str]
-    stack_evolution: List[list]
-    scratch_evolution: List[dict]
-    final_scratch_state: Dict[int, TealVal]
-    slots_used: List[int]
-    raw_stacks: List[list]
-
-    def assert_well_defined(self):
-        assert all(
-            self.program_length == len(x)
-            for x in (
-                self.program_counters,
-                self.teal_source_lines,
-                self.stack_evolution,
-                self.scratch_evolution,
-            )
-        )
-
-    def __str__(self) -> str:
-        return f"BlackBoxResult(program_length={self.program_length})"
-
-
-def essential_info(
+def scrape_the_black_box(
     trace, lines, scratch_colon: str = "->", scratch_verbose: bool = False
 ) -> BlackBoxResults:
     pcs = [t["pc"] for t in trace]
@@ -465,13 +208,6 @@ def essential_info(
     return bbr
 
 
-@dataclass
-class ApprovalBundle:
-    teal: str
-    local_schema: StateSchema = ZERO_SCHEMA
-    global_schema: StateSchema = ZERO_SCHEMA
-
-
 class BlackBoxAssertionType(Enum):
     FINAL_STACK_TOP = 1
     LAST_LOG = 2
@@ -531,6 +267,26 @@ Input {self.case_name}: {self.input_case} of assertion type {self.assert_type}
 """
 
 
+def lightly_encode_args(args: List[Union[str, int]]) -> List[str]:
+    """
+    Assumes int's are uint64 and
+    """
+
+    def encode(arg):
+        assert isinstance(
+            arg, (int, str)
+        ), f"can't handle arg [{arg}] of type {type(arg)}"
+        if isinstance(arg, int):
+            assert (
+                arg >= 0
+            ), f"can't handle negative arguments but was given {arg}"
+        return (
+            arg if isinstance(arg, str) else arg.to_bytes(8, byteorder="big")
+        )
+
+    return [encode(a) for a in args]
+
+
 class DryRunTester:
     def __init__(
         self,
@@ -551,7 +307,7 @@ class DryRunTester:
         self.scratch_verbose = scratch_verbose
 
         self.black_box_results = [
-            essential_info(
+            scrape_the_black_box(
                 tx["app-call-trace"],
                 tx["disassembly"],
                 scratch_colon=self.scratch_colon,
@@ -738,26 +494,6 @@ Local Delta:
 """
 
 
-def lightly_encode_args(args: List[Union[str, int]]) -> List[str]:
-    """
-    Assumes int's are uint64 and
-    """
-
-    def encode(arg):
-        assert isinstance(
-            arg, (int, str)
-        ), f"can't handle arg [{arg}] of type {type(arg)}"
-        if isinstance(arg, int):
-            assert (
-                arg >= 0
-            ), f"can't handle negative arguments but was given {arg}"
-        return (
-            arg if isinstance(arg, str) else arg.to_bytes(8, byteorder="big")
-        )
-
-    return [encode(a) for a in args]
-
-
 def do_dryrun_reports(
     run_name: str,
     approval: ApprovalBundle,
@@ -801,7 +537,7 @@ def do_dryrun_reports(
         )
 
 
-def run_blackbox(run_name: str, approval: ApprovalBundle, scenarios: dict):
+def deep_blackbox(run_name: str, approval: ApprovalBundle, scenarios: dict):
     algod = get_algod()
 
     creator = get_creator()
