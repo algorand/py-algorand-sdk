@@ -426,7 +426,7 @@ class DryRunTester:
         bookend = f"""
         <<<<<<{self.name}>>>>>>
 REPORTS FOR {len(self.resp["txns"])} TRANSACTIONS
-DEFAULT TXN REPORTING-INDEX: {self.default_report_idx}
+TRANSACTION INDEX (for this short summary): {self.default_report_idx}
 BLACK BOX RESULT: {self.get_black_box_result()}
 TOTAL OP-CODE COST: {self.cost()}
 MAXIMUM STACK HEIGHT: {max_stack_height} AT LINES {msh_lines}
