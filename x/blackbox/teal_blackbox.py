@@ -12,10 +12,9 @@ from algosdk.future.transaction import (
     OnComplete,
     StateSchema,
     assign_group_id,
-    create_dryrun,
 )
 
-from .blacksand import get_algod, get_creator, DryRunContext, ZERO_SCHEMA
+from .blacksand import DryRunContext, ZERO_SCHEMA
 
 
 @dataclass
@@ -520,10 +519,7 @@ def do_dryrun_reports(
     scratch_colon: str = "->",
     scratch_verbose: bool = False,
 ):
-    algod = get_algod()
-
-    creator = get_creator()
-    drc = DryRunContext(algod, creator)
+    drc = DryRunContext()
 
     with drc.application(
         approval.teal,
@@ -533,7 +529,7 @@ def do_dryrun_reports(
         print(f"Created application {app.index} with address: {app.address}")
 
         app_txn = ApplicationCallTxn(
-            creator.address,
+            drc.creator.address,
             app.sp,
             app.index,
             OnComplete.NoOpOC,
@@ -541,13 +537,12 @@ def do_dryrun_reports(
         )
         sapp_txn = LogicSigTransaction(app_txn, drc.lsig_account)
 
-        drr = create_dryrun(algod, [sapp_txn])
-        resp = algod.dryrun(drr)
+        dryrun = drc.dryrun([sapp_txn])
         print(
             DryRunTester(
                 run_name,
-                resp,
-                creator.address,
+                dryrun,
+                drc.creator.address,
                 col_max=col_max,
                 scratch_colon=scratch_colon,
                 scratch_verbose=scratch_verbose,
@@ -556,11 +551,7 @@ def do_dryrun_reports(
 
 
 def deep_blackbox(run_name: str, approval: ApprovalBundle, scenarios: dict):
-    algod = get_algod()
-
-    creator = get_creator()
-    drc = DryRunContext(algod, creator)
-
+    drc = DryRunContext()
     with drc.application(
         approval.teal,
         local_schema=approval.local_schema,
@@ -576,7 +567,7 @@ def deep_blackbox(run_name: str, approval: ApprovalBundle, scenarios: dict):
 
         app_txns = [
             ApplicationCallTxn(
-                creator.address,
+                drc.creator.address,
                 app.sp,
                 app.index,
                 OnComplete.NoOpOC,
@@ -590,11 +581,12 @@ def deep_blackbox(run_name: str, approval: ApprovalBundle, scenarios: dict):
             LogicSigTransaction(atxn, drc.lsig_account) for atxn in app_txns
         ]
 
-        drr = create_dryrun(algod, lsig_txns)
+        dryrun = drc.dryrun(lsig_txns)
+
         tester = DryRunTester(
             run_name,
-            algod.dryrun(drr),
-            creator.address,
+            dryrun,
+            drc.creator.address,
         )
 
         assert N == len(

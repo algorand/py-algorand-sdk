@@ -4,10 +4,10 @@ Interface between the black box analysis and the sand box runtime
 from base64 import b64decode
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Generator, List
+from typing import Generator, List, Union
 
 from algosdk.future.transaction import (
-    assign_group_id,
+    LogicSigTransaction,
     ApplicationClearStateTxn,
     ApplicationCreateTxn,
     ApplicationOptInTxn,
@@ -17,6 +17,8 @@ from algosdk.future.transaction import (
     SignedTransaction,
     StateSchema,
     SuggestedParams,
+    assign_group_id,
+    create_dryrun,
     wait_for_confirmation,
 )
 from algosdk.kmd import KMDClient
@@ -113,11 +115,16 @@ def get_algod() -> AlgodClient:
 class DryRunContext:
     def __init__(
         self,
-        algod: AlgodClient,
-        creator: "AddressAndSecret",
+        algod: AlgodClient = None,
+        creator: "AddressAndSecret" = None,
         clear_src: str = CLEAR_TEAL,
         lsig_src: str = LOGIC_SIG_TEAL,
     ):
+        if not algod:
+            algod = get_algod()
+        if not creator:
+            creator = get_creator()
+
         self.algod = algod
         self.creator = creator
         self.clear_src_tmpl = clear_src
@@ -126,6 +133,13 @@ class DryRunContext:
         self.lsig_src: str
         self.lsig: bytes
         self.lsig_account: LogicSigAccount
+
+    def dryrun(
+        self, l_or_s_txns: List[Union[SignedTransaction, LogicSigTransaction]]
+    ) -> dict:
+        drr = create_dryrun(self.algod, l_or_s_txns)
+        resp = self.algod.dryrun(drr)
+        return resp
 
     @contextmanager
     def application(
