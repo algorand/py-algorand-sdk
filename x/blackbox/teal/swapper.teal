@@ -1,19 +1,19 @@
 #pragma version 6
 byte "hello"
-store 5
+store 0
 byte "goodbye"
-store 6
-load 5
-load 6
+store 1
+load 0
+load 1
 callsub cat_1
-int 5
-int 6
+int 0
+int 1
 callsub swap_0
-load 5
+load 0
 byte "goodbye"
 ==
 assert
-load 6
+load 1
 byte "hello"
 ==
 assert
@@ -22,26 +22,26 @@ return
 
 // swap
 swap_0:
-store 1
-store 0
-load 0
-loads
+store 3
 store 2
-load 0
-load 1
+load 2
+loads
+store 4
+load 2
+load 3
 loads
 stores
-load 1
-load 2
+load 3
+load 4
 stores
 retsub
 
 // cat
 cat_1:
-store 4
-store 3
-load 3
-load 4
+store 6
+store 5
+load 5
+load 6
 concat
 pop
 retsub

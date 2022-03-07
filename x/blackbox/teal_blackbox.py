@@ -53,8 +53,9 @@ class TealVal:
 
 @dataclass
 class BlackBoxResults:
-    program_length: int
+    steps_executed: int
     program_counters: int
+    teal_line_numbers: List[int]
     teal_source_lines: List[str]
     stack_evolution: List[list]
     scratch_evolution: List[dict]
@@ -64,7 +65,7 @@ class BlackBoxResults:
 
     def assert_well_defined(self):
         assert all(
-            self.program_length == len(x)
+            self.steps_executed == len(x)
             for x in (
                 self.program_counters,
                 self.teal_source_lines,
@@ -74,7 +75,7 @@ class BlackBoxResults:
         )
 
     def __str__(self) -> str:
-        return f"BlackBoxResult(program_length={self.program_length})"
+        return f"BlackBoxResult(steps_executed={self.steps_executed})"
 
 
 @dataclass
@@ -90,7 +91,11 @@ def trace_table(
     col_max: int,
     scratch_colon: str = "->",
     scratch_verbose: bool = False,
+    scratch_before_stack: bool = True,
 ) -> str:
+    assert not (
+        scratch_verbose and scratch_before_stack
+    ), "Cannot request scratch columns before stack when verbose"
     black_box_result = scrape_the_black_box(
         trace,
         lines,
@@ -98,36 +103,47 @@ def trace_table(
         scratch_verbose=scratch_verbose,
     )
 
+    def empty_hack(se):
+        return se if se else [""]
+
     rows = [
-        map(
-            str,
-            [
-                black_box_result.program_counters[i],
-                i + 1,
-                black_box_result.teal_source_lines[i],
-                black_box_result.stack_evolution[i],
-                *black_box_result.scratch_evolution[i],
-            ],
+        list(
+            map(
+                str,
+                [
+                    i,
+                    black_box_result.program_counters[i],
+                    black_box_result.teal_line_numbers[i],
+                    black_box_result.teal_source_lines[i],
+                    black_box_result.stack_evolution[i],
+                    *empty_hack(black_box_result.scratch_evolution[i]),
+                ],
+            )
         )
-        for i in range(black_box_result.program_length)
+        for i in range(black_box_result.steps_executed)
     ]
     if col_max and col_max > 0:
         rows = [[x[:col_max] for x in row] for row in rows]
-    table = tabulate(
-        rows,
-        headers=[
-            "PC#",
-            "L#",
-            "Teal",
-            "Stack",
-            *(
-                [f"S@{s}" for s in black_box_result.slots_used]
-                if scratch_verbose
-                else ["Scratch"]
-            ),
-        ],
-        tablefmt="presto",
-    )
+    headers = [
+        "step",
+        "PC#",
+        "L#",
+        "Teal",
+        "Stack",
+        *(
+            [f"S@{s}" for s in black_box_result.slots_used]
+            if scratch_verbose
+            else ["Scratch"]
+        ),
+    ]
+    if scratch_before_stack:
+        # with assertion above, we know that there is only one
+        # scratch column and it's at the very end
+        headers[-1], headers[-2] = headers[-2], headers[-1]
+        for i in range(len(rows)):
+            rows[i][-1], rows[i][-2] = rows[i][-2], rows[i][-1]
+
+    table = tabulate(rows, headers=headers, tablefmt="presto")
     return table
 
 
@@ -135,8 +151,9 @@ def scrape_the_black_box(
     trace, lines, scratch_colon: str = "->", scratch_verbose: bool = False
 ) -> BlackBoxResults:
     pcs = [t["pc"] for t in trace]
-
-    tls = [lines[t["line"] - 1] for t in trace]
+    line_nums = [t["line"] for t in trace]
+    # tls = [lines[t["line"] - 1] for t in trace]
+    tls = [lines[ln - 1] for ln in line_nums]
     N = len(pcs)
     assert N == len(
         tls
@@ -197,6 +214,7 @@ def scrape_the_black_box(
     bbr = BlackBoxResults(
         N,
         pcs,
+        line_nums,
         tls,
         stacks,
         scratches,

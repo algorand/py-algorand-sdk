@@ -42,6 +42,7 @@ reporting_cases = [
         ),
         [39, 100, 42, "fourty two"],
     ),
+    ("swapper", ApprovalBundle("swapper"), []),
 ]
 
 
@@ -56,11 +57,9 @@ def test_blackbox_with_report():
 
 def fac_by_ref_args_expectations():
     def fac(n):
-        """make it fail INTENTIONALLY for n=15"""
         if n < 2:
             return 1
-        correct = n * fac(n - 1)
-        return correct + 1 if n == 15 else correct
+        return n * fac(n - 1)
 
     def expected_cost(n):
         return 10 * n ** 2 + 28
