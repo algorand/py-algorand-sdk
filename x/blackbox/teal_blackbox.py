@@ -1,10 +1,11 @@
 from base64 import b64decode
 from contextlib import contextmanager
 from dataclasses import dataclass
+from enum import Enum
 from glom import glom
 from inspect import stack
 from tabulate import tabulate
-from typing import Any, Generator, List, Optional, Set, Union
+from typing import Dict, Generator, List, Optional, Set, Tuple, Union
 
 from algosdk.v2client.algod import AlgodClient
 
@@ -362,7 +363,8 @@ class BlackBoxResults:
     program_counters: int
     teal_source_lines: List[str]
     stack_evolution: List[list]
-    scratch_evolution: List[list]
+    scratch_evolution: List[dict]
+    final_scratch_state: Dict[int, TealVal]
     slots_used: List[int]
     raw_stacks: List[list]
 
@@ -383,7 +385,7 @@ class BlackBoxResults:
 
 def essential_info(
     trace, lines, scratch_colon: str = "->", scratch_verbose: bool = False
-):
+) -> BlackBoxResults:
     pcs = [t["pc"] for t in trace]
 
     tls = [lines[t["line"] - 1] for t in trace]
@@ -411,6 +413,7 @@ def essential_info(
         for scratch in scratches
     ]
     slots_used = sorted(set().union(*(s.keys() for s in scratches)))
+    final_scratch_state = scratches[-1]
     if not scratch_verbose:
 
         def compute_delta(prev, curr):
@@ -444,7 +447,14 @@ def essential_info(
     ), f"mismatch of lengths in tls v. scratches ({N} v. {len(scratches)})"
 
     bbr = BlackBoxResults(
-        N, pcs, tls, stacks, scratches, slots_used, raw_stacks
+        N,
+        pcs,
+        tls,
+        stacks,
+        scratches,
+        final_scratch_state,
+        slots_used,
+        raw_stacks,
     )
     bbr.assert_well_defined()
     return bbr
@@ -455,6 +465,24 @@ class ApprovalBundle:
     teal: str
     local_schema: StateSchema = ZERO_SCHEMA
     global_schema: StateSchema = ZERO_SCHEMA
+
+
+class BlackBoxAssertionType(Enum):
+    FINAL_STACK_TOP = 1
+    LAST_LOG = 2
+    COST = 3
+    FINAL_SCRATCH_STATE = 4
+    MAX_STACK_HEIGHT = 5
+
+
+class BlackBoxExpectation:
+    def __init__(self, input_case: List[Union[int, str]], expectation: "blah"):
+        pass
+
+
+class BlackBoxExpectations:
+    def __init__(self, input_cases: List[List[Union[int, str]]]):
+        pass
 
 
 class DryRunTester:
@@ -516,8 +544,21 @@ class DryRunTester:
         last_stack = self.get_black_box_result(idx).raw_stacks[-1]
         return last_stack[-1] if last_stack else None
 
+    def max_stack_height(self, idx: int = None) -> Tuple[int, List[int]]:
+        stack_evolution = self.get_black_box_result(idx).stack_evolution
+        max_height = max(map(len, stack_evolution))
+        lines = [
+            i + 1
+            for i, s in enumerate(stack_evolution)
+            if len(s) == max_height
+        ]
+        return max_height, lines
+
     def slots_used(self, idx: int = None) -> Set[int]:
         return self.get_black_box_result(idx).slots_used
+
+    def final_scratch_state(self, idx: int = None) -> Dict[int, TealVal]:
+        return self.get_black_box_result(idx).final_scratch_state
 
     def _global_x_used(self, x: str, idx: int = None) -> int:
         gdeltas = self.testing_txn(idx).get("global-delta", [])
@@ -560,18 +601,21 @@ class DryRunTester:
     def local_uints_used(self, idx: int = None) -> int:
         return self._local_x_used("uint", idx)
 
-    ### human readable summary ###
+    ### human readable reporting ###
 
     def report(self) -> str:
+        max_stack_height, msh_lines = self.max_stack_height()
         bookend = f"""
         <<<<<<{self.name}>>>>>>
 REPORTS FOR {len(self.resp["txns"])} TRANSACTIONS
 DEFAULT TXN REPORTING-INDEX: {self.default_report_idx}
-TOTAL OP-CODE COST: {self.cost()}
 BLACK BOX RESULT: {self.get_black_box_result()}
-FINAL LOG: {self.last_log()}
+TOTAL OP-CODE COST: {self.cost()}
+MAXIMUM STACK HEIGHT: {max_stack_height} AT LINES {msh_lines}
 TOP OF STACK: {self.last_stack_value()!r}
+FINAL LOG: {self.last_log()}
 {len(self.slots_used())} SLOTS USED: {self.slots_used()}
+FINAL SCRATCH STATE: {self.final_scratch_state()}
 GLOBAL BYTES USED: {self.global_bytes_used()}
 GLOBAL UINTS USED: {self.global_uints_used()}
 LOCAL BYTES USED: {self.local_bytes_used()}
@@ -664,7 +708,7 @@ def lightly_encode_args(args: List[Union[str, int]]) -> List[str]:
     return [encode(a) for a in args]
 
 
-def do_dryrun(
+def do_dryrun_reports(
     run_name: str,
     approval: ApprovalBundle,
     app_args: List[Union[str, int]],
