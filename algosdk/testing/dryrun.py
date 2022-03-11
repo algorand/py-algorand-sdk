@@ -2,6 +2,7 @@ import base64
 import binascii
 import string
 from dataclasses import dataclass
+import pytest
 from typing import List, Union
 
 from algosdk.constants import payment_txn, appcall_txn
@@ -42,6 +43,154 @@ class App:
     global_state: List[TealKeyValue] = None
 
 
+#### LIGHTWEIGHT ASSERTIONS FOR RE-USE ####
+def _fail(self, msg):
+    try:
+        pytest.fail(msg)
+    except AttributeError:
+        raise AssertionError(msg)
+
+
+def _assert_in(status, msgs, msg):
+    assert status in msgs, "{status} should be {msgs}: {msg}"
+
+
+def assert_pass(txn_index, msg, txns_res):
+    assert_status("PASS", txn_index, msg, txns_res)
+
+
+def assert_reject(txn_index, msg, txns_res):
+    assert_status("REJECT", txn_index, msg, txns_res)
+
+
+def assert_status(status, txn_index, msg, txns_res):
+    if txn_index is not None and (txn_index < 0 or txn_index >= len(txns_res)):
+        _fail(f"txn index {txn_index} is out of range [0, {len(txns_res)})")
+
+    assert_all = True
+    all_msgs = []
+    if status == "REJECT":
+        assert_all = False
+
+    for idx, txn_res in enumerate(txns_res):
+        # skip if txn_index is set
+        if txn_index is not None and idx != txn_index:
+            continue
+
+        msgs = []
+        if (
+            "logic-sig-messages" in txn_res
+            and txn_res["logic-sig-messages"] is not None
+            and len(txn_res["logic-sig-messages"]) > 0
+        ):
+            msgs = txn_res["logic-sig-messages"]
+        elif (
+            "app-call-messages" in txn_res
+            and txn_res["app-call-messages"] is not None
+            and len(txn_res["app-call-messages"]) > 0
+        ):
+            msgs = txn_res["app-call-messages"]
+        else:
+            _fail("no messages from dryrun")
+        if assert_all or idx == txn_index:
+            _assert_in(status, msgs, msg=msg)
+        all_msgs.extend(msgs)
+
+    if not assert_all:
+        _assert_in(status, all_msgs, msg=msg)
+
+
+def assert_no_error(drr, txn_index=None, msg=None):
+    error = Helper.find_error(drr, txn_index=txn_index)
+    assert error is False, f"{msg}: {error}"
+
+
+def assert_global_state_contains(delta_value, txn_index, txns_res):
+    if txn_index is not None and (txn_index < 0 or txn_index >= len(txns_res)):
+        _fail(f"txn index {txn_index} is out of range [0, {len(txns_res)})")
+
+    found = False
+    all_global_deltas = []
+    for idx, txn_res in enumerate(txns_res):
+        # skip if txn_index is set
+        if txn_index is not None and idx != txn_index:
+            continue
+        if (
+            "global-delta" in txn_res
+            and txn_res["global-delta"] is not None
+            and len(txn_res["global-delta"]) > 0
+        ):
+            found = Helper.find_delta_value(
+                txn_res["global-delta"], delta_value
+            )
+            if not found and idx == txn_index:
+                msg = (
+                    msg
+                    if msg is not None
+                    else f"{delta_value} not found in {txn_res['global-delta']}"
+                )
+                _fail(msg)
+            if found:
+                break
+            all_global_deltas.extend(txn_res["global-delta"])
+        elif idx == txn_index:
+            _fail("no global state from dryrun")
+
+    if not found:
+        msg = (
+            msg
+            if msg is not None
+            else f"{delta_value} not found in any of {all_global_deltas}"
+        )
+        _fail(msg)
+
+
+def assert_local_state_contains(addr, delta_value, txn_index, txns_res):
+    if txn_index is not None and (txn_index < 0 or txn_index >= len(txns_res)):
+        _fail(f"txn index {txn_index} is out of range [0, {len(txns_res)})")
+
+    found = False
+    all_local_deltas = []
+    for idx, txn_res in enumerate(txns_res):
+        # skip if txn_index is set
+        if txn_index is not None and idx != txn_index:
+            continue
+        if (
+            "local-deltas" in txn_res
+            and txn_res["local-deltas"] is not None
+            and len(txn_res["local-deltas"]) > 0
+        ):
+            for local_delta in txn_res["local-deltas"]:
+                addr_found = False
+                if local_delta["address"] == addr:
+                    addr_found = True
+                    found = Helper.find_delta_value(
+                        local_delta["delta"], delta_value
+                    )
+                    if not found and idx == txn_index:
+                        msg = (
+                            msg
+                            if msg is not None
+                            else f"{delta_value} not found in {local_delta['delta']}"
+                        )
+                        _fail(msg)
+                    if found:
+                        break
+                    all_local_deltas.extend(local_delta["delta"])
+            if not addr_found and idx == txn_index:
+                _fail(f"no address {addr} in local states from dryrun")
+        elif idx == txn_index:
+            _fail("no local states from dryrun")
+
+    if not found:
+        msg = (
+            msg
+            if msg is not None
+            else f"{delta_value} not found in any of {all_local_deltas}"
+        )
+        _fail(msg)
+
+
 class DryrunTestCaseMixin:
     """
     Mixin class for unittest.TestCase
@@ -74,16 +223,8 @@ class DryrunTestCaseMixin:
             unittest.TestCase.failureException: if not passed
             TypeError: program is not bytes or str
         """
-
-        self.assertStatus(
-            prog_drr_txns,
-            "PASS",
-            lsig=lsig,
-            app=app,
-            sender=sender,
-            txn_index=txn_index,
-            msg=msg,
-        )
+        txns_res = self._checked_request(prog_drr_txns, lsig, app, sender)
+        assert_pass(txn_index, msg, txns_res)
 
     def assertReject(
         self,
@@ -110,16 +251,8 @@ class DryrunTestCaseMixin:
             unittest.TestCase.failureException: if not passed
             TypeError: program is not bytes or str
         """
-
-        self.assertStatus(
-            prog_drr_txns,
-            "REJECT",
-            lsig=lsig,
-            app=app,
-            sender=sender,
-            txn_index=txn_index,
-            msg=msg,
-        )
+        txns_res = self._checked_request(prog_drr_txns, lsig, app, sender)
+        assert_reject(txn_index, msg, txns_res)
 
     def assertStatus(
         self,
@@ -149,45 +282,7 @@ class DryrunTestCaseMixin:
             TypeError: program is not bytes or str
         """
         txns_res = self._checked_request(prog_drr_txns, lsig, app, sender)
-
-        if txn_index is not None and (
-            txn_index < 0 or txn_index >= len(txns_res)
-        ):
-            self._fail(
-                f"txn index {txn_index} is out of range [0, {len(txns_res)})"
-            )
-
-        assert_all = True
-        all_msgs = []
-        if status == "REJECT":
-            assert_all = False
-
-        for idx, txn_res in enumerate(txns_res):
-            # skip if txn_index is set
-            if txn_index is not None and idx != txn_index:
-                continue
-
-            msgs = []
-            if (
-                "logic-sig-messages" in txn_res
-                and txn_res["logic-sig-messages"] is not None
-                and len(txn_res["logic-sig-messages"]) > 0
-            ):
-                msgs = txn_res["logic-sig-messages"]
-            elif (
-                "app-call-messages" in txn_res
-                and txn_res["app-call-messages"] is not None
-                and len(txn_res["app-call-messages"]) > 0
-            ):
-                msgs = txn_res["app-call-messages"]
-            else:
-                self._fail("no messages from dryrun")
-            if assert_all or idx == txn_index:
-                self.assertIn(status, msgs, msg=msg)
-            all_msgs.extend(msgs)
-
-        if not assert_all:
-            self.assertIn(status, all_msgs, msg=msg)
+        assert_status(status, txn_index, msg, txns_res)
 
     def assertNoError(
         self,
@@ -216,8 +311,7 @@ class DryrunTestCaseMixin:
             TypeError: program is not bytes or str
         """
         drr = self._dryrun_request(prog_drr_txns, lsig, app, sender)
-        error = Helper.find_error(drr, txn_index=txn_index)
-        self.assertFalse(error, msg)
+        assert_no_error(drr, txn_index=txn_index, msg=msg)
 
     def assertError(
         self,
@@ -251,7 +345,7 @@ class DryrunTestCaseMixin:
         error = Helper.find_error(drr, txn_index=txn_index)
         self.assertTrue(error, msg)
         if pattern is not None:
-            self.assertIn(pattern, error)
+            _assert_in(pattern, error)
 
     def assertGlobalStateContains(
         self,
@@ -277,48 +371,7 @@ class DryrunTestCaseMixin:
         txns_res = self._checked_request(
             prog_drr_txns, lsig=None, app=app, sender=sender
         )
-        if txn_index is not None and (
-            txn_index < 0 or txn_index >= len(txns_res)
-        ):
-            self._fail(
-                f"txn index {txn_index} is out of range [0, {len(txns_res)})"
-            )
-
-        found = False
-        all_global_deltas = []
-        for idx, txn_res in enumerate(txns_res):
-            # skip if txn_index is set
-            if txn_index is not None and idx != txn_index:
-                continue
-            if (
-                "global-delta" in txn_res
-                and txn_res["global-delta"] is not None
-                and len(txn_res["global-delta"]) > 0
-            ):
-
-                found = Helper.find_delta_value(
-                    txn_res["global-delta"], delta_value
-                )
-                if not found and idx == txn_index:
-                    msg = (
-                        msg
-                        if msg is not None
-                        else f"{delta_value} not found in {txn_res['global-delta']}"
-                    )
-                    self._fail(msg)
-                if found:
-                    break
-                all_global_deltas.extend(txn_res["global-delta"])
-            elif idx == txn_index:
-                self._fail("no global state from dryrun")
-
-        if not found:
-            msg = (
-                msg
-                if msg is not None
-                else f"{delta_value} not found in any of {all_global_deltas}"
-            )
-            self._fail(msg)
+        self.assert_global_state_contains(delta_value, txn_index, txns_res)
 
     def assertLocalStateContains(
         self,
@@ -346,56 +399,9 @@ class DryrunTestCaseMixin:
         txns_res = self._checked_request(
             prog_drr_txns, lsig=None, app=app, sender=sender
         )
-        if txn_index is not None and (
-            txn_index < 0 or txn_index >= len(txns_res)
-        ):
-            self._fail(
-                f"txn index {txn_index} is out of range [0, {len(txns_res)})"
-            )
-
-        found = False
-        all_local_deltas = []
-        for idx, txn_res in enumerate(txns_res):
-            # skip if txn_index is set
-            if txn_index is not None and idx != txn_index:
-                continue
-            if (
-                "local-deltas" in txn_res
-                and txn_res["local-deltas"] is not None
-                and len(txn_res["local-deltas"]) > 0
-            ):
-
-                for local_delta in txn_res["local-deltas"]:
-                    addr_found = False
-                    if local_delta["address"] == addr:
-                        addr_found = True
-                        found = Helper.find_delta_value(
-                            local_delta["delta"], delta_value
-                        )
-                        if not found and idx == txn_index:
-                            msg = (
-                                msg
-                                if msg is not None
-                                else f"{delta_value} not found in {local_delta['delta']}"
-                            )
-                            self._fail(msg)
-                        if found:
-                            break
-                        all_local_deltas.extend(local_delta["delta"])
-                if not addr_found and idx == txn_index:
-                    self._fail(
-                        f"no address {addr} in local states from dryrun"
-                    )
-            elif idx == txn_index:
-                self._fail("no local states from dryrun")
-
-        if not found:
-            msg = (
-                msg
-                if msg is not None
-                else f"{delta_value} not found in any of {all_local_deltas}"
-            )
-            self._fail(msg)
+        self.assert_local_state_contains(
+            addr, delta_value, txn_index, txns_res
+        )
 
     def dryrun_request(
         self, program, lsig=None, app=None, sender=ZERO_ADDRESS
@@ -485,18 +491,12 @@ class DryrunTestCaseMixin:
         """
         drr = self._dryrun_request(prog_drr_txns, lsig, app, sender)
         if drr["error"]:
-            self._fail(f"error in dryrun response: {drr['error']}")
+            _fail(f"error in dryrun response: {drr['error']}")
 
         if not drr["txns"]:
-            self._fail("empty response from dryrun")
+            _fail("empty response from dryrun")
 
         return drr["txns"]
-
-    def _fail(self, msg):
-        try:
-            self.fail(msg)
-        except AttributeError:
-            raise AssertionError(msg)
 
 
 class Helper:
