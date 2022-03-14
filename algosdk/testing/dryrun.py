@@ -44,15 +44,19 @@ class App:
 
 
 #### LIGHTWEIGHT ASSERTIONS FOR RE-USE ####
-def _fail(self, msg):
+def _msg_if(msg):
+    return "" if msg is None else f": {msg}"
+
+
+def _fail(msg):
     try:
         pytest.fail(msg)
     except AttributeError:
         raise AssertionError(msg)
 
 
-def _assert_in(status, msgs, msg):
-    assert status in msgs, "{status} should be {msgs}: {msg}"
+def _assert_in(status, msgs, msg=None):
+    assert status in msgs, f"{status} should be in {msgs}" + _msg_if(msg)
 
 
 def assert_pass(txn_index, msg, txns_res):
@@ -100,12 +104,19 @@ def assert_status(status, txn_index, msg, txns_res):
         _assert_in(status, all_msgs, msg=msg)
 
 
+def assert_error(drr, pattern=None, txn_index=None, msg=None):
+    error = Helper.find_error(drr, txn_index=txn_index)
+    assert error, f"expected truthy error but got {error}" + _msg_if(msg)
+    if pattern is not None:
+        _assert_in(pattern, error)
+
+
 def assert_no_error(drr, txn_index=None, msg=None):
     error = Helper.find_error(drr, txn_index=txn_index)
-    assert error is False, f"{msg}: {error}"
+    assert not error, f"{msg}: {error}" + _msg_if(msg)
 
 
-def assert_global_state_contains(delta_value, txn_index, txns_res):
+def assert_global_state_contains(delta_value, txn_index, txns_res, msg=None):
     if txn_index is not None and (txn_index < 0 or txn_index >= len(txns_res)):
         _fail(f"txn index {txn_index} is out of range [0, {len(txns_res)})")
 
@@ -145,7 +156,9 @@ def assert_global_state_contains(delta_value, txn_index, txns_res):
         _fail(msg)
 
 
-def assert_local_state_contains(addr, delta_value, txn_index, txns_res):
+def assert_local_state_contains(
+    addr, delta_value, txn_index, txns_res, msg=None
+):
     if txn_index is not None and (txn_index < 0 or txn_index >= len(txns_res)):
         _fail(f"txn index {txn_index} is out of range [0, {len(txns_res)})")
 
@@ -342,10 +355,7 @@ class DryrunTestCaseMixin:
         """
 
         drr = self._dryrun_request(prog_drr_txns, lsig, app, sender)
-        error = Helper.find_error(drr, txn_index=txn_index)
-        self.assertTrue(error, msg)
-        if pattern is not None:
-            _assert_in(pattern, error)
+        assert_error(drr, pattern=pattern, txn_index=txn_index, msg=msg)
 
     def assertGlobalStateContains(
         self,
@@ -371,7 +381,7 @@ class DryrunTestCaseMixin:
         txns_res = self._checked_request(
             prog_drr_txns, lsig=None, app=app, sender=sender
         )
-        self.assert_global_state_contains(delta_value, txn_index, txns_res)
+        assert_global_state_contains(delta_value, txn_index, txns_res, msg=msg)
 
     def assertLocalStateContains(
         self,
@@ -399,8 +409,8 @@ class DryrunTestCaseMixin:
         txns_res = self._checked_request(
             prog_drr_txns, lsig=None, app=app, sender=sender
         )
-        self.assert_local_state_contains(
-            addr, delta_value, txn_index, txns_res
+        assert_local_state_contains(
+            addr, delta_value, txn_index, txns_res, msg=msg
         )
 
     def dryrun_request(
@@ -503,6 +513,22 @@ class Helper:
     """Utility functions for dryrun"""
 
     @classmethod
+    def build_simple_lsig_request(
+        cls, program: str, args: List[bytes], sender=ZERO_ADDRESS
+    ):
+        return cls.build_dryrun_request(
+            program, lsig=LSig(args), sender=sender
+        )
+
+    @classmethod
+    def build_simple_app_request(
+        cls, program: str, args: List[bytes], sender=ZERO_ADDRESS
+    ):
+        return cls.build_dryrun_request(
+            program, app=App(args=args), sender=sender
+        )
+
+    @classmethod
     def build_dryrun_request(
         cls, program, lsig=None, app=None, sender=ZERO_ADDRESS
     ):
@@ -527,81 +553,141 @@ class Helper:
         if lsig is not None and app is not None:
             raise ValueError("both lsig and app not supported")
 
-        # validate input and determine run mode
-        if app is not None:
-            if not isinstance(app, App) and not isinstance(app, dict):
-                raise ValueError("app must be a dict or App")
-            if isinstance(app, dict):
-                app = App(**app)
+        if app and not isinstance(app, (App, dict)):
+            raise ValueError("app must be a dict or App")
 
-            if app.app_idx is None:
-                app.app_idx = 0
+        if lsig and not isinstance(lsig, (LSig, dict)):
+            raise ValueError("lsig must be a dict or LSig")
 
-            run_mode = "approv"
-            if app.on_complete is None:
-                app.on_complete = transaction.OnComplete.NoOpOC
-            elif app.on_complete == transaction.OnComplete.ClearStateOC:
-                run_mode = "clearp"
+        if not isinstance(program, (bytes, str)):
+            raise TypeError("program must be bytes or str")
 
-            if app.accounts is not None:
-                accounts = []
-                for acc in app.accounts:
-                    if isinstance(acc, str):
-                        accounts.append(
-                            Account(
-                                address=acc,
-                            )
-                        )
-                    else:
-                        accounts.append(acc)
-                app.accounts = accounts
+        run_mode = cls._get_run_mode(app)
 
-            txn = cls.sample_txn(sender, appcall_txn)
+        app_or_lsig = (
+            cls._prepare_lsig(lsig, sender)
+            if run_mode == "lsig"
+            else cls._prepare_app(app, sender)
+        )
 
-        else:
-            if lsig is not None:
-                if not isinstance(lsig, LSig) and not isinstance(lsig, dict):
-                    raise ValueError("lsig must be a dict or LSig")
-                if isinstance(lsig, dict):
-                    lsig = LSig(**lsig)
-            else:
-                lsig = LSig()
+        del app
+        del lsig
 
-            run_mode = "lsig"
-            txn = cls.sample_txn(sender, payment_txn)
+        txn = (
+            cls.sample_txn(sender, payment_txn)
+            if run_mode == "lsig"
+            else cls.sample_txn(sender, appcall_txn)
+        )
 
+        if isinstance(program, str):
+            return (
+                cls._prepare_lsig_source_request(
+                    program, app_or_lsig, run_mode, txn
+                )
+                if run_mode == "lsig"
+                else cls._prepare_app_source_request(
+                    program, app_or_lsig, sender, run_mode, txn
+                )
+            )
+
+        # in case of bytes:
         sources = []
         apps = []
         accounts = []
         rnd = None
 
-        if isinstance(program, bytes):
-            if run_mode != "lsig":
-                txns = [cls._build_appcall_signed_txn(txn, app)]
-                application = cls.sample_app(sender, app, program)
-                apps = [application]
-                accounts = app.accounts
-                rnd = app.round
-            else:
-                txns = [cls._build_logicsig_txn(program, txn, lsig)]
-        elif isinstance(program, str):
-            source = DryrunSource(
-                field_name=run_mode, source=program, txn_index=0
-            )
-            if run_mode != "lsig":
-                txns = [cls._build_appcall_signed_txn(txn, app)]
-                application = cls.sample_app(sender, app)
-                apps = [application]
-                accounts = app.accounts
-                # app idx must match in sources and in apps arrays so dryrun find apps sources
-                source.app_index = application.id
-                rnd = app.round
-            else:
-                txns = [cls._build_logicsig_txn(program, txn, lsig)]
-            sources = [source]
+        if run_mode != "lsig":
+            txns = [cls._build_appcall_signed_txn(txn, app_or_lsig)]
+            application = cls.sample_app(sender, app_or_lsig, program)
+            apps = [application]
+            accounts = app_or_lsig.accounts
+            rnd = app_or_lsig.round
         else:
-            raise TypeError("program must be bytes or str")
+            txns = [cls._build_logicsig_txn(program, txn, app_or_lsig)]
 
+        return DryrunRequest(
+            txns=txns,
+            sources=sources,
+            apps=apps,
+            accounts=accounts,
+            round=rnd,
+        )
+
+    @classmethod
+    def _get_run_mode(cls, app):
+        run_mode = "lsig"
+        if app is not None:
+            on_complete = (
+                app.get("on_complete")
+                if isinstance(app, dict)
+                else app.on_complete
+            )
+            run_mode = (
+                "clearp"
+                if on_complete == transaction.OnComplete.ClearStateOC
+                else "approv"
+            )
+        return run_mode
+
+    @classmethod
+    def _prepare_app(cls, app, sender):
+        if isinstance(app, dict):
+            app = App(**app)
+
+        if app.app_idx is None:
+            app.app_idx = 0
+
+        if app.accounts is not None:
+            accounts = []
+            for acc in app.accounts:
+                if isinstance(acc, str):
+                    accounts.append(
+                        Account(
+                            address=acc,
+                        )
+                    )
+                else:
+                    accounts.append(acc)
+            app.accounts = accounts
+
+        return app
+
+    @classmethod
+    def _prepare_lsig(cls, lsig, sender):
+        if lsig is None:
+            lsig = LSig()
+        elif isinstance(lsig, dict):
+            lsig = LSig(**lsig)
+
+        return lsig
+
+    @classmethod
+    def _prepare_lsig_source_request(cls, program, lsig, run_mode, txn):
+        source = DryrunSource(field_name=run_mode, source=program, txn_index=0)
+        apps = []
+        accounts = []
+        rnd = None
+        txns = [cls._build_logicsig_txn(program, txn, lsig)]
+        sources = [source]
+        return DryrunRequest(
+            txns=txns,
+            sources=sources,
+            apps=apps,
+            accounts=accounts,
+            round=rnd,
+        )
+
+    @classmethod
+    def _prepare_app_source_request(cls, program, app, sender, run_mode, txn):
+        source = DryrunSource(field_name=run_mode, source=program, txn_index=0)
+        txns = [cls._build_appcall_signed_txn(txn, app)]
+        application = cls.sample_app(sender, app)
+        apps = [application]
+        accounts = app.accounts
+        # app idx must match in sources and in apps arrays so dryrun find apps sources
+        source.app_index = application.id
+        rnd = app.round
+        sources = [source]
         return DryrunRequest(
             txns=txns,
             sources=sources,
