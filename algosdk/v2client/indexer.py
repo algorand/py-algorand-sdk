@@ -105,6 +105,7 @@ class IndexerClient:
         application_id=None,
         round_num=None,
         include_all=False,
+        exclude=None,
         **kwargs
     ):
         """
@@ -156,6 +157,8 @@ class IndexerClient:
             query["application-id"] = application_id
         if include_all:
             query["include-all"] = include_all
+        if exclude:
+            query["exclude"] = exclude
         return self.indexer_request("GET", req, query, **kwargs)
 
     def asset_balances(
@@ -165,8 +168,6 @@ class IndexerClient:
         next_page=None,
         min_balance=None,
         max_balance=None,
-        block=None,
-        round_num=None,
         include_all=False,
         **kwargs
     ):
@@ -208,7 +209,6 @@ class IndexerClient:
             query["currency-less-than"] = max_balance
         if include_all:
             query["include-all"] = include_all
-        _specify_round(query, block, round_num)
         return self.indexer_request("GET", req, query, **kwargs)
 
     def block_info(self, block=None, round_num=None, **kwargs):
@@ -250,7 +250,7 @@ class IndexerClient:
 
         return self.indexer_request("GET", req, query, **kwargs)
 
-    def account_asset_info(
+    def lookup_account_assets(
         self,
         address,
         limit=None,
@@ -293,7 +293,7 @@ class IndexerClient:
 
         return self.indexer_request("GET", req, query, **kwargs)
 
-    def account_asset_by_creator(
+    def lookup_account_asset_by_creator(
         self,
         address,
         limit=None,
@@ -336,7 +336,7 @@ class IndexerClient:
 
         return self.indexer_request("GET", req, query, **kwargs)
 
-    def account_application_local_state(
+    def lookup_account_application_local_state(
         self,
         address,
         limit=None,
@@ -378,7 +378,7 @@ class IndexerClient:
 
         return self.indexer_request("GET", req, query, **kwargs)
 
-    def account_application_by_creator(
+    def lookup_account_application_by_creator(
         self,
         address,
         limit=None,
