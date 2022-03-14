@@ -313,19 +313,27 @@ def parse_acc_info(context, address):
     assert context.response["address"] == address
 
 
-@when("we make an Account Information call against account {account} with exclude {exclude}")
+@when(
+    "we make an Account Information call against account {account} with exclude {exclude}"
+)
 def acc_info_exclude(context, account, exclude):
     context.response = context.acl.account_info(account, exclude)
 
 
-@when("we make an Account Asset Information call against account {account} with assetID {assetID}")
+@when(
+    "we make an Account Asset Information call against account {account} with assetID {assetID}"
+)
 def acc_asset_info(context, account, assetID):
     context.response = context.acl.account_asset_info(account, assetID)
 
 
-@when("we make an Account Application Information call against account {account} with applicationID {applicationID}")
+@when(
+    "we make an Account Application Information call against account {account} with applicationID {applicationID}"
+)
 def acc_application_info(context, account, applicationID):
-    context.response = context.acl.account_application_info(account, applicationID)
+    context.response = context.acl.account_application_info(
+        account, applicationID
+    )
 
 
 @when("we make a GetAssetByID call for assetID {asset_id}")
@@ -423,24 +431,46 @@ def parse_asset_balance(
     )
 
 
-@when("we make a LookupAccountAssets call with accountID {account} assetID {asset_id} includeAll {includeAll} limit {limit} next {next}")
+@when(
+    "we make a LookupAccountAssets call with accountID {account} assetID {asset_id} includeAll {includeAll} limit {limit} next {next}"
+)
 def lookup_account_assets(context, account, asset_id, includeAll, limit, next):
-    context.response = context.icls.lookup_account_assets(account, asset_id, includeAll, limit, next)
+    context.response = context.icls.lookup_account_assets(
+        account, asset_id, includeAll, limit, next
+    )
 
 
-@when("we make a LookupAccountCreatedAssets call with accountID {account} assetID {asset_id} includeAll {includeAll} limit {limit} next {next}")
-def lookup_account_created_assets(context, account, asset_id, includeAll, limit, next):
-    context.response = context.icls.lookup_account_asset_by_creator(account, asset_id, includeAll, limit, next)
+@when(
+    "we make a LookupAccountCreatedAssets call with accountID {account} assetID {asset_id} includeAll {includeAll} limit {limit} next {next}"
+)
+def lookup_account_created_assets(
+    context, account, asset_id, includeAll, limit, next
+):
+    context.response = context.icls.lookup_account_asset_by_creator(
+        account, asset_id, includeAll, limit, next
+    )
 
 
-@when("we make a LookupAccountAppLocalStates call with accountID {account} applicationID {application_id} includeAll {includeAll} limit {limit} next {next}")
-def lookup_account_applications(context, account, application_id, includeAll, limit, next):
-    context.response = context.icls.lookup_account_application_local_state(account, application_id, includeAll, limit, next)
+@when(
+    "we make a LookupAccountAppLocalStates call with accountID {account} applicationID {application_id} includeAll {includeAll} limit {limit} next {next}"
+)
+def lookup_account_applications(
+    context, account, application_id, includeAll, limit, next
+):
+    context.response = context.icls.lookup_account_application_local_state(
+        account, application_id, includeAll, limit, next
+    )
 
 
-@when("we make a LookupAccountCreatedApplications call with accountID {account} applicationID {application_id} includeAll {includeAll} limit {limit} next {next}")
-def lookup_account_created_applications(context, account, application_id, includeAll, limit, next):
-    context.response = context.icls.lookup_account_application_by_creator(account, application_id, includeAll, limit, next)
+@when(
+    "we make a LookupAccountCreatedApplications call with accountID {account} applicationID {application_id} includeAll {includeAll} limit {limit} next {next}"
+)
+def lookup_account_created_applications(
+    context, account, application_id, includeAll, limit, next
+):
+    context.response = context.icls.lookup_account_application_by_creator(
+        account, application_id, includeAll, limit, next
+    )
 
 
 @when("I use {indexer} to search for all {assetid} asset transactions")
