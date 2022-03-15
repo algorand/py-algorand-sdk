@@ -9,7 +9,7 @@ from .. import encoding
 from .. import error
 from .. import logic
 from .. import transaction
-from ..v2client import algod
+from ..v2client import algod, models
 from nacl.signing import SigningKey, VerifyKey
 from nacl.exceptions import BadSignatureError
 
@@ -427,6 +427,7 @@ class KeyregTxn(Transaction):
             transaction's valid rounds
         rekey_to (str, optional): additionally rekey the sender to this address
         nonpart (bool, optional): mark the account non-participating if true
+        StateProofPK: state proof
 
     Attributes:
         sender (str)
@@ -446,6 +447,7 @@ class KeyregTxn(Transaction):
         lease (byte[32])
         rekey_to (str)
         nonpart (bool)
+        sprfkey (str)
     """
 
     def __init__(
@@ -461,6 +463,7 @@ class KeyregTxn(Transaction):
         lease=None,
         rekey_to=None,
         nonpart=None,
+        sprfkey=None,
     ):
         Transaction.__init__(
             self, sender, sp, note, lease, constants.keyreg_txn, rekey_to
@@ -471,6 +474,8 @@ class KeyregTxn(Transaction):
         self.votelst = votelst
         self.votekd = votekd
         self.nonpart = nonpart
+        self.sprfkey = sprfkey
+
         if not sp.flat_fee:
             self.fee = max(
                 self.estimate_size() * self.fee, constants.min_txn_fee
@@ -490,6 +495,9 @@ class KeyregTxn(Transaction):
             d["votelst"] = self.votelst
         if self.nonpart is not None:
             d["nonpart"] = self.nonpart
+        if self.sprfkey is not None:
+            d["sprfkey"] = base64.b64decode(self.sprfkey)
+
         d.update(super(KeyregTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
 
@@ -506,6 +514,7 @@ class KeyregTxn(Transaction):
             and self.votelst == other.votelst
             and self.votekd == other.votekd
             and self.nonpart == other.nonpart
+            and self.sprfkey == other.sprfkey
         )
 
 
@@ -527,6 +536,7 @@ class KeyregOnlineTxn(KeyregTxn):
             with the same sender and lease can be confirmed in this
             transaction's valid rounds
         rekey_to (str, optional): additionally rekey the sender to this address
+        sprfkey (str, optional): state proof ID
 
     Attributes:
         sender (str)
@@ -545,6 +555,7 @@ class KeyregOnlineTxn(KeyregTxn):
         type (str)
         lease (byte[32])
         rekey_to (str)
+        sprfkey (str)
     """
 
     def __init__(
@@ -559,6 +570,7 @@ class KeyregOnlineTxn(KeyregTxn):
         note=None,
         lease=None,
         rekey_to=None,
+        sprfkey=None,
     ):
         KeyregTxn.__init__(
             self,
@@ -573,12 +585,14 @@ class KeyregOnlineTxn(KeyregTxn):
             lease,
             rekey_to,
             nonpart=False,
+            sprfkey=sprfkey,
         )
         self.votepk = votekey
         self.selkey = selkey
         self.votefst = votefst
         self.votelst = votelst
         self.votekd = votekd
+        self.sprfkey = sprfkey
         if votekey is None:
             raise error.KeyregOnlineTxnInitError("votekey")
         if selkey is None:
@@ -601,13 +615,26 @@ class KeyregOnlineTxn(KeyregTxn):
         votefst = d["votefst"]
         votelst = d["votelst"]
         votekd = d["votekd"]
-        args = {
-            "votekey": votekey,
-            "selkey": selkey,
-            "votefst": votefst,
-            "votelst": votelst,
-            "votekd": votekd,
-        }
+        if "sprfkey" in d:
+            sprfID = base64.b64encode(d["sprfkey"]).decode()
+
+            args = {
+                "votekey": votekey,
+                "selkey": selkey,
+                "votefst": votefst,
+                "votelst": votelst,
+                "votekd": votekd,
+                "sprfkey": sprfID,
+            }
+        else:
+            args = {
+                "votekey": votekey,
+                "selkey": selkey,
+                "votefst": votefst,
+                "votelst": votelst,
+                "votekd": votekd,
+            }
+
         return args
 
     def __eq__(self, other):
@@ -658,6 +685,7 @@ class KeyregOfflineTxn(KeyregTxn):
             lease=lease,
             rekey_to=rekey_to,
             nonpart=False,
+            sprfkey=None,
         )
         if not sp.flat_fee:
             self.fee = max(
@@ -717,6 +745,7 @@ class KeyregNonparticipatingTxn(KeyregTxn):
             lease=lease,
             rekey_to=rekey_to,
             nonpart=True,
+            sprfkey=None,
         )
         if not sp.flat_fee:
             self.fee = max(
@@ -2533,7 +2562,7 @@ class LogicSig:
             try:
                 verify_key.verify(to_sign, base64.b64decode(self.sig))
                 return True
-            except BadSignatureError:
+            except (BadSignatureError, ValueError):
                 return False
 
         return self.msig.verify(to_sign)
@@ -3062,3 +3091,129 @@ def wait_for_confirmation(
 
         # Incremenent the `current_round`
         current_round += 1
+
+
+defaultAppId = 1380011588
+
+
+def create_dryrun(
+    client: algod.AlgodClient,
+    txns: List[Union[SignedTransaction, LogicSigTransaction]],
+    protocol_version=None,
+    latest_timestamp=None,
+    round=None,
+) -> models.DryrunRequest:
+    """
+    Create DryrunRequest object from a client and list of signed transactions
+
+    Args:
+        algod_client (algod.AlgodClient): Instance of the `algod` client
+        txns (List[SignedTransaction]): transaction ID
+        protocol_version (string, optional): The protocol version to evaluate against
+        latest_timestamp (int, optional): The latest timestamp to evaluate against
+        round (int, optional): The round to evaluate against
+    """
+
+    # The list of info objects passed to the DryrunRequest object
+    app_infos, acct_infos = [], []
+
+    # The running list of things we need to fetch
+    apps, assets, accts = [], [], []
+    for t in txns:
+        txn = t.transaction
+
+        # we only care about app call transactions
+        if issubclass(type(txn), ApplicationCallTxn):
+            accts.append(txn.sender)
+
+            # Add foreign args if they're set
+            if txn.accounts:
+                accts.extend(txn.accounts)
+            if txn.foreign_apps:
+                apps.extend(txn.foreign_apps)
+            if txn.foreign_assets:
+                assets.extend(txn.foreign_assets)
+
+            # For creates, we need to add the source directly from the transaction
+            if txn.index == 0:
+                appId = defaultAppId
+                # Make up app id, since tealdbg/dryrun doesnt like 0s
+                # https://github.com/algorand/go-algorand/blob/e466aa18d4d963868d6d15279b1c881977fa603f/libgoal/libgoal.go#L1089-L1090
+
+                ls = txn.local_schema
+                if ls is not None:
+                    ls = models.ApplicationStateSchema(
+                        ls.num_uints, ls.num_byte_slices
+                    )
+
+                gs = txn.global_schema
+                if gs is not None:
+                    gs = models.ApplicationStateSchema(
+                        gs.num_uints, gs.num_byte_slices
+                    )
+
+                app_infos.append(
+                    models.Application(
+                        id=appId,
+                        params=models.ApplicationParams(
+                            creator=txn.sender,
+                            approval_program=txn.approval_program,
+                            clear_state_program=txn.clear_program,
+                            local_state_schema=ls,
+                            global_state_schema=gs,
+                        ),
+                    )
+                )
+            else:
+                apps.append(txn.index)
+
+    # Dedupe and filter none, reset programs to bytecode instead of b64
+    apps = [i for i in set(apps) if i]
+    for app in apps:
+        app_info = client.application_info(app)
+        # Need to pass bytes, not b64 string
+        app_info = decode_programs(app_info)
+        app_infos.append(app_info)
+
+        # Make sure the application account is in the accounts array
+        accts.append(logic.get_application_address(app))
+
+        # Make sure the creator is added to accounts array
+        accts.append(app_info["params"]["creator"])
+
+    # Dedupe and filter None, add asset creator to accounts to include in dryrun
+    assets = [i for i in set(assets) if i]
+    for asset in assets:
+        asset_info = client.asset_info(asset)
+
+        # Make sure the asset creator address is in the accounts array
+        accts.append(asset_info["params"]["creator"])
+
+    # Dedupe and filter None, fetch and add account info
+    accts = [i for i in set(accts) if i]
+    for acct in accts:
+        acct_info = client.account_info(acct)
+        if "created-apps" in acct_info:
+            acct_info["created-apps"] = [
+                decode_programs(ca) for ca in acct_info["created-apps"]
+            ]
+        acct_infos.append(acct_info)
+
+    return models.DryrunRequest(
+        txns=txns,
+        apps=app_infos,
+        accounts=acct_infos,
+        protocol_version=protocol_version,
+        latest_timestamp=latest_timestamp,
+        round=round,
+    )
+
+
+def decode_programs(app):
+    app["params"]["approval-program"] = base64.b64decode(
+        app["params"]["approval-program"]
+    )
+    app["params"]["clear-state-program"] = base64.b64decode(
+        app["params"]["clear-state-program"]
+    )
+    return app

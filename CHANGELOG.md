@@ -1,5 +1,39 @@
 # Changelog
 
+# 1.10.0
+
+## Added:
+
+- New keyreg txn field (#244)
+- C2C Feature and Testing (#268)
+- Add App creator to account balances (#277)
+- Add ABI and ATC to Sphinx (#289)
+
+## Changed:
+
+- Change __init__.py to include v2client import (#243)
+- Updates to pipeline (#279)
+- Add CircleCI build step to generate docsets (#285)
+- revert to point testing harness to sdk testing's master branch (#288)
+- Partially fix types for atomic transaction composer (#290)
+- Update `langspec.json` for Teal6 (#292)
+
+## 1.9.0
+### Added
+
+- Create dryrun (#259)
+- Support Foreign objects as ABI arguments and address ARC-4 changes (#251)
+- Add requirement to fetch behave source code and update readme (#262)
+- Fix wait for confirmation function (#263)
+- Add a default User-Agent header to the v2 algod client (#260)
+- ABI Interaction Support for Python SDK (#247)
+- ABI Type encoding support (#238)
+- Add type hints and clean up ABI code (#253)
+- Add CircleCI configs to the Python SDK repo (#246)
+
+### Changed
+- Re-format local and global state to work with correct msgpack encoding (#274)
+
 ## 1.9.0b2
 ### Added
 
@@ -77,7 +111,7 @@
 
 ## 1.4.0
 ## Added
-- Support for Applications 
+- Support for Applications
 ## Bugfix
 - Now content-type is set when sending transactions
 - indexer client now allows no token for local development environment
@@ -87,7 +121,7 @@
 
 ## 1.2.0
 ### Added
-- Added support for Algorand Smart Contracts (ASC) 
+- Added support for Algorand Smart Contracts (ASC)
     - Dynamic fee contract
     - Limit order contract
     - Periodic payment contract
@@ -101,8 +135,8 @@
 ## 1.1.0
 ### Added
 - Added support for Algorand Standardized Assets (ASA)
-- Added support for Algorand Smart Contracts (ASC) 
-    - Added support for Hashed Time Lock Contract (HTLC) 
+- Added support for Algorand Smart Contracts (ASC)
+    - Added support for Hashed Time Lock Contract (HTLC)
     - Added support for Split contract
 - Added support for Group Transactions
 - Added support for leases
