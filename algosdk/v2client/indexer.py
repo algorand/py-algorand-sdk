@@ -145,7 +145,7 @@ class IndexerClient:
             query["limit"] = limit
         if next_page:
             query["next"] = next_page
-        if not min_balance is None:
+        if min_balance is not None:
             query["currency-greater-than"] = min_balance
         if max_balance:
             query["currency-less-than"] = max_balance
@@ -202,7 +202,7 @@ class IndexerClient:
             query["limit"] = limit
         if next_page:
             query["next"] = next_page
-        if not min_balance is None:
+        if min_balance is not None:
             query["currency-greater-than"] = min_balance
         if max_balance:
             query["currency-less-than"] = max_balance
