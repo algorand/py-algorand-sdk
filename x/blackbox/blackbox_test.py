@@ -41,25 +41,6 @@ def fac_with_overflow(n):
     return n * fac_with_overflow(n - 1)
 
 
-def fac_scratch(args, actual):
-    n = args[0]
-    fac = fac_with_overflow(n)
-    app_case = {0: n, 1: fac} if n < 21 else {0: 21, 1: fac}
-    return first_contains_second(app_case, actual)
-
-
-def string_mult_status(args, actual):
-    _, n = args
-    if n == 0:
-        return "REJECT"
-    if n < 45:
-        return "PASS"
-    return actual in (
-        "PASS",
-        f"cost budget exceeded: budget is 700 but program cost was {30 + 15 * n}",
-    )
-
-
 def fib(n):
     a, b = 0, 1
     for _ in range(n):
@@ -141,10 +122,14 @@ APP_SCENARIOS = {
         "assertions": {
             DRA.cost: 27,
             DRA.lastLog: lightly_encode_output(1337, logs=True),
-            DRA.finalScratch: lambda args, actual: first_contains_second(
-                Counter(actual.values()),
-                {scratch_encode(args[0]): 2, scratch_encode(args[1]): 1},
-            ),
+            DRA.finalScratch: lambda args: {
+                0: 4,
+                1: 5,
+                2: scratch_encode(args[0]),
+                3: 1337,
+                4: scratch_encode(args[1]),
+                5: scratch_encode(args[0]),
+            },
             DRA.stackTop: 1337,
             DRA.maxStackHeight: 2,
             DRA.status: "PASS",
@@ -162,23 +147,31 @@ APP_SCENARIOS = {
                 if args[1]
                 else None
             ),
-            DRA.finalScratch: lambda args, actual: {
-                args[1] + 1,
-                scratch_encode(args[0]),
-                scratch_encode(args[0] * (args[1] or 1)),
-            }.issubset(set(actual.values())),
-            DRA.stackTop: lambda args: args[1] * 4,
+            # due to dryrun 0-scratchvar artifact, special case for i == 0:
+            DRA.finalScratch: lambda args: (
+                {
+                    0: 5,
+                    1: args[1],
+                    2: args[1] + 1,
+                    3: scratch_encode(args[0]),
+                    4: scratch_encode(args[0] * args[1]),
+                    5: scratch_encode(args[0] * args[1]),
+                }
+                if args[1]
+                else {
+                    0: 5,
+                    2: args[1] + 1,
+                    3: scratch_encode(args[0]),
+                }
+            ),
+            DRA.stackTop: lambda args: len(args[0] * args[1]),
             DRA.maxStackHeight: lambda args: 3 if args[1] else 2,
-            DRA.status: string_mult_status,
-            # to handle the nuance between logicsigs and apps would need to separate the next two:
-            DRA.passed: (
-                lambda args, actual: (0 < args[1] < 45 and actual is True)
-                or (args[1] == 0 and actual is False)
-                or (args[1] >= 45)
+            DRA.status: lambda args: (
+                "PASS" if 0 < args[1] < 45 else "REJECT"
             ),
-            DRA.rejected: (
-                lambda args, actual: (args[1] == 0 and actual is True) or True
-            ),
+            DRA.passed: lambda args: 0 < args[1] < 45,
+            DRA.rejected: lambda args: 0 >= args[1] or args[1] >= 45,
+            DRA.noError: True,
         },
     },
     "app_oldfac": {
@@ -187,18 +180,27 @@ APP_SCENARIOS = {
             DRA.cost: lambda args, actual: (
                 actual - 40 <= 17 * args[0] <= actual + 40
             ),
-            DRA.lastLog: lambda args, actual: (actual is None)
-            or (int(actual, base=16) == fac_with_overflow(args[0])),
-            DRA.finalScratch: fac_scratch,
+            DRA.lastLog: lambda args: (
+                lightly_encode_output(fac_with_overflow(args[0]), logs=True)
+                if args[0] < 21
+                else None
+            ),
+            DRA.finalScratch: lambda args: (
+                {0: args[0], 1: fac_with_overflow(args[0])}
+                if 0 < args[0] < 21
+                else (
+                    {0: min(21, args[0])}
+                    if args[0]
+                    else {1: fac_with_overflow(args[0])}
+                )
+            ),
             DRA.stackTop: lambda args: fac_with_overflow(args[0]),
             DRA.maxStackHeight: lambda args: max(2, 2 * args[0]),
-            DRA.status: lambda args, actual: (
-                actual == "PASS" if args[0] < 21 else "overflowed" in actual
-            ),
+            DRA.status: lambda args: "PASS" if args[0] < 21 else "REJECT",
             DRA.passed: lambda args: args[0] < 21,
-            DRA.rejected: False,
+            DRA.rejected: lambda args: args[0] >= 21,
             DRA.noError: lambda args, actual: (
-                True if args[0] < 21 else "overflowed" in actual
+                actual is True if args[0] < 21 else "overflowed" in actual
             ),
         },
     },
@@ -344,10 +346,12 @@ LOGICSIG_SCENARIOS = {
         "assertions": {
             # DRA.cost: 27,
             # DRA.lastLog: lightly_encode_output(1337, logs=True),
-            DRA.finalScratch: lambda args, actual: first_contains_second(
-                Counter(actual.values()),
-                {scratch_encode(args[0]): 2, scratch_encode(args[1]): 1},
-            ),
+            DRA.finalScratch: lambda args: {
+                0: scratch_encode(args[1]),
+                1: scratch_encode(args[0]),
+                3: 1,
+                4: scratch_encode(args[0]),
+            },
             DRA.stackTop: 1337,
             DRA.maxStackHeight: 2,
             DRA.status: "PASS",
@@ -361,23 +365,25 @@ LOGICSIG_SCENARIOS = {
         "assertions": {
             # DRA.cost: lambda args: 30 + 15 * args[1],
             # DRA.lastLog: lambda args: lightly_encode_output(args[0] * args[1]) if args[1] else None,
-            DRA.finalScratch: lambda args, actual: {
-                args[1] + 1,
-                scratch_encode(args[0]),
-                scratch_encode(args[0] * (args[1] or 1)),
-            }.issubset(set(actual.values())),
-            DRA.stackTop: lambda args: args[1] * 4,
+            DRA.finalScratch: lambda args: (
+                {
+                    0: scratch_encode(args[0] * args[1]),
+                    2: args[1],
+                    3: args[1] + 1,
+                    4: scratch_encode(args[0]),
+                }
+                if args[1]
+                else {
+                    3: args[1] + 1,
+                    4: scratch_encode(args[0]),
+                }
+            ),
+            DRA.stackTop: lambda args: len(args[0] * args[1]),
             DRA.maxStackHeight: lambda args: 3 if args[1] else 2,
-            DRA.status: string_mult_status,
-            # to handle the nuance between logicsigs and apps would need to separate the next two:
-            DRA.passed: (
-                lambda args, actual: (0 < args[1] < 45 and actual is True)
-                or (args[1] == 0 and actual is False)
-                or (args[1] >= 45)
-            ),
-            DRA.rejected: (
-                lambda args, actual: (args[1] == 0 and actual is True) or True
-            ),
+            DRA.status: lambda args: "PASS" if args[1] else "REJECT",
+            DRA.passed: lambda args: bool(args[1]),
+            DRA.rejected: lambda args: not bool(args[1]),
+            DRA.noError: True,
         },
     },
     "lsig_oldfac": {
@@ -385,16 +391,18 @@ LOGICSIG_SCENARIOS = {
         "assertions": {
             # DRA.cost: lambda args, actual: actual - 40 <= 17 * args[0] <= actual + 40,
             # DRA.lastLog: lambda args, actual: (actual is None) or (int(actual, base=16) == fac_with_overflow(args[0])),
-            DRA.finalScratch: fac_scratch,
+            DRA.finalScratch: lambda args: (
+                {0: min(args[0], 21)} if args[0] else {}
+            ),
             DRA.stackTop: lambda args: fac_with_overflow(args[0]),
             DRA.maxStackHeight: lambda args: max(2, 2 * args[0]),
-            DRA.status: lambda args, actual: (
-                actual == "PASS" if args[0] < 21 else "overflowed" in actual
-            ),
+            DRA.status: lambda args: "PASS" if args[0] < 21 else "REJECT",
             DRA.passed: lambda args: args[0] < 21,
-            DRA.rejected: False,
+            DRA.rejected: lambda args: args[0] >= 21,
             DRA.noError: lambda args, actual: (
-                True if args[0] < 21 else "overflowed" in actual
+                actual is True
+                if args[0] < 21
+                else "logic 0 failed at line 21: * overflowed" in actual
             ),
         },
     },
