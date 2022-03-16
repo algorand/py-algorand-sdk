@@ -27,7 +27,6 @@ from algosdk import (
     abi,
     account,
     atomic_transaction_composer,
-    dryrun_results,
     encoding,
     error,
     logic,
@@ -2982,40 +2981,6 @@ def serialize_contract_to_json(context):
 def deserialize_json_to_contract(context):
     actual = abi.Contract.undictify(context.json_output)
     assert actual == context.abi_contract
-
-
-@given(
-    'a dryrun response file "{dryrun_response_file}" and a transaction id "{txn_id}"'
-)
-def parse_dryrun_response_object(context, dryrun_response_file, txn_id):
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
-    with open(
-        dir_path + "/test/features/resources/" + dryrun_response_file, "r"
-    ) as f:
-        drr_dict = json.loads(f.read())
-
-    context.dryrun_response_object = dryrun_results.DryrunResponse(drr_dict)
-    context.dryrun_txn_result = context.dryrun_response_object.txns[
-        int(txn_id)
-    ]
-
-
-@when("I call app trace")
-def dryrun_app_trace(context):
-    context.dryrun_trace = context.dryrun_txn_result.app_trace()
-
-
-@then('the output should equal "{golden_file}"')
-def dryrun_compare_golden(context, golden_file):
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
-    with open(dir_path + "/test/features/resources/" + golden_file, "r") as f:
-        golden_expected = f.read()
-
-    assert (
-        golden_expected == context.dryrun_trace
-    ), "Expected '{}' got '{}'".format(golden_expected, context.dryrun_trace)
 
 
 @then(
