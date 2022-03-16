@@ -49,10 +49,7 @@ def _msg_if(msg):
 
 
 def _fail(msg):
-    try:
-        pytest.fail(msg)
-    except AttributeError:
-        raise AssertionError(msg)
+    assert False, msg
 
 
 def _assert_in(status, msgs, msg=None, enforce=True):
