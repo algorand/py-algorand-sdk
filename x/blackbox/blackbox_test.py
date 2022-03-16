@@ -5,13 +5,13 @@ import pytest
 
 from algosdk.testing.dryrun import Helper as DryRunHelper
 from algosdk.testing.teal_blackbox import (
+    csv_from_dryrun_apps,
     csv_from_dryrun_logicsigs,
     dryrun_assert,
+    get_blackbox_scenario_components,
     lightly_encode_args,
     lightly_encode_output,
     mode_has_assertion,
-    csv_from_dryrun_apps,
-    csv_from_dryrun_logicsigs,
     DryRunAssertionType as DRA,
     Mode,
     SequenceAssertion,
@@ -87,12 +87,15 @@ def fib_cost(args):
 
 APP_SCENARIOS = {
     "app_exp": {
-        "inputs": [[]],
+        "inputs": [()],
+        # since only a single input, just assert a constant in each case
         "assertions": {
             DRA.cost: 11,
+            # int assertions on log outputs need encoding to varuint-hex:
             DRA.lastLog: lightly_encode_output(2 ** 10, logs=True),
-            DRA.finalScratch: lambda _, actual: not actual
-            or actual == {0: 1024},
+            # dicts have a special meaning as assertions. So in the case of "finalScratch"
+            # which is supposed to _ALSO_ output a dict, we need to use a lambda as a work-around
+            DRA.finalScratch: lambda _: {0: 1024},
             DRA.stackTop: 1024,
             DRA.maxStackHeight: 2,
             DRA.status: "PASS",
@@ -136,7 +139,7 @@ APP_SCENARIOS = {
         },
     },
     "app_swap": {
-        "inputs": [[1, 2], [1, "two"], ["one", 2], ["one", "two"]],
+        "inputs": [(1, 2), (1, "two"), ("one", 2), ("one", "two")],
         "assertions": {
             DRA.cost: 27,
             DRA.lastLog: lightly_encode_output(1337, logs=True),
@@ -153,7 +156,7 @@ APP_SCENARIOS = {
         },
     },
     "app_string_mult": {
-        "inputs": [["xyzw", i] for i in range(100)],
+        "inputs": [("xyzw", i) for i in range(100)],
         "assertions": {
             DRA.cost: lambda args: 30 + 15 * args[1],
             DRA.lastLog: (
@@ -181,7 +184,7 @@ APP_SCENARIOS = {
         },
     },
     "app_oldfac": {
-        "inputs": [[i] for i in range(25)],
+        "inputs": [(i,) for i in range(25)],
         "assertions": {
             DRA.cost: lambda args, actual: (
                 actual - 40 <= 17 * args[0] <= actual + 40
@@ -202,7 +205,7 @@ APP_SCENARIOS = {
         },
     },
     "app_slow_fibonacci": {
-        "inputs": [[i] for i in range(15)],
+        "inputs": [(i,) for i in range(15)],
         "assertions": {
             DRA.cost: fib_cost,
             DRA.lastLog: fib_last_log,
@@ -238,6 +241,7 @@ APP_SCENARIOS = {
 @pytest.mark.parametrize("filebase", APP_SCENARIOS.keys())
 def test_app_with_report(filebase: str):
     mode, scenario = Mode.Application, APP_SCENARIOS[filebase]
+    inputs, assertions = get_blackbox_scenario_components(scenario, mode)
 
     algod = get_algod()
 
@@ -256,16 +260,7 @@ def test_app_with_report(filebase: str):
     )
 
     # 2. Build the Dryrun requests:
-
-    # drbuilder = (
-    #     DryRunHelper.build_simple_app_request
-    #     if is_app
-    #     else DryRunHelper.build_simple_lsig_request
-    # )
     drbuilder = DryRunHelper.build_simple_app_request
-    # TODO: Z ^^^^
-
-    inputs = scenario["inputs"]
     dryrun_reqs = list(
         map(lambda a: drbuilder(teal, lightly_encode_args(a)), inputs)
     )
@@ -273,13 +268,12 @@ def test_app_with_report(filebase: str):
     # 2. Run the requests to obtain sequence of Dryrun resonses:
     dryrun_resps = list(map(algod.dryrun, dryrun_reqs))
 
-    # 3. Generate statiscal report of all the runs:
+    # 3. Generate statistical report of all the runs:
     csvpath = path / f"{filebase}.csv"
     with open(csvpath, "w") as f:
         f.write(csv_from_dryrun_apps(inputs, dryrun_resps))
 
     # 4. Sequential assertions (if provided any)
-    assertions = scenario.get("assertions", {})
     for i, type_n_assertion in enumerate(assertions.items()):
         assert_type, assertion = type_n_assertion
 
@@ -296,16 +290,15 @@ def test_app_with_report(filebase: str):
         dryrun_assert(inputs, dryrun_resps, assert_type, assertion)
 
 
-# NOTE: logic sig dry runs are missing some information when compared with app dry runs. Therefore, certain assertions don't make sense
-# for logic sigs and ths explains why some of the assertions are commented out:
+# NOTE: logic sig dry runs are missing some information when compared with app dry runs.
+# Therefore, certain assertions don't make sense for logic sigs explaining why some of the below are commented out:
 LOGICSIG_SCENARIOS = {
     "lsig_exp": {
-        "inputs": [[]],
+        "inputs": [()],
         "assertions": {
             # DRA.cost: 11,
             # DRA.lastLog: lightly_encode_output(2 ** 10, logs=True),
-            DRA.finalScratch: lambda _, actual: not actual
-            or actual == {0: 1024},
+            DRA.finalScratch: lambda _: {},
             DRA.stackTop: 1024,
             DRA.maxStackHeight: 2,
             DRA.status: "PASS",
@@ -345,7 +338,7 @@ LOGICSIG_SCENARIOS = {
         },
     },
     "lsig_swap": {
-        "inputs": [[1, 2], [1, "two"], ["one", 2], ["one", "two"]],
+        "inputs": [(1, 2), (1, "two"), ("one", 2), ("one", "two")],
         "assertions": {
             # DRA.cost: 27,
             # DRA.lastLog: lightly_encode_output(1337, logs=True),
@@ -362,7 +355,7 @@ LOGICSIG_SCENARIOS = {
         },
     },
     "lsig_string_mult": {
-        "inputs": [["xyzw", i] for i in range(100)],
+        "inputs": [("xyzw", i) for i in range(100)],
         "assertions": {
             # DRA.cost: lambda args: 30 + 15 * args[1],
             # DRA.lastLog: lambda args: lightly_encode_output(args[0] * args[1]) if args[1] else None,
@@ -386,7 +379,7 @@ LOGICSIG_SCENARIOS = {
         },
     },
     "lsig_oldfac": {
-        "inputs": [[i] for i in range(25)],
+        "inputs": [(i,) for i in range(25)],
         "assertions": {
             # DRA.cost: lambda args, actual: actual - 40 <= 17 * args[0] <= actual + 40,
             # DRA.lastLog: lambda args, actual: (actual is None) or (int(actual, base=16) == fac_with_overflow(args[0])),
@@ -404,7 +397,7 @@ LOGICSIG_SCENARIOS = {
         },
     },
     "lsig_slow_fibonacci": {
-        "inputs": [[i] for i in range(15)],
+        "inputs": [(i,) for i in range(15)],
         "assertions": {
             # DRA.cost: fib_cost,
             # DRA.lastLog: fib_last_log,
@@ -440,6 +433,7 @@ LOGICSIG_SCENARIOS = {
 @pytest.mark.parametrize("filebase", LOGICSIG_SCENARIOS.keys())
 def test_logicsig_with_report(filebase: str):
     mode, scenario = Mode.Signature, LOGICSIG_SCENARIOS[filebase]
+    inputs, assertions = get_blackbox_scenario_components(scenario, mode)
 
     algod = get_algod()
 
@@ -458,9 +452,7 @@ def test_logicsig_with_report(filebase: str):
     )
 
     # 2. Build the Dryrun requests:
-    drbuilder = DryRunHelper.build_simple_lsig_request
-
-    inputs = scenario["inputs"]
+    drbuilder = DryRunHelper.build_simple_logicsig_request
     dryrun_reqs = list(
         map(lambda a: drbuilder(teal, lightly_encode_args(a)), inputs)
     )
@@ -468,7 +460,7 @@ def test_logicsig_with_report(filebase: str):
     # 2. Run the requests to obtain sequence of Dryrun resonses:
     dryrun_resps = list(map(algod.dryrun, dryrun_reqs))
 
-    # 3. Generate statiscal report of all the runs:
+    # 3. Generate statistical report of all the runs:
     csvpath = path / f"{filebase}.csv"
     with open(csvpath, "w") as f:
         f.write(csv_from_dryrun_logicsigs(inputs, dryrun_resps))
@@ -476,7 +468,6 @@ def test_logicsig_with_report(filebase: str):
     print(f"Saved Dry Run CSV report to {csvpath}")
 
     # 4. Sequential assertions (if provided any)
-    assertions = scenario.get("assertions", {})
     for i, type_n_assertion in enumerate(assertions.items()):
         assert_type, assertion = type_n_assertion
 

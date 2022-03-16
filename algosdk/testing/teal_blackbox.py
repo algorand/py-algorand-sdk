@@ -297,6 +297,32 @@ def scrape_the_black_box(
     return bbr
 
 
+def get_blackbox_scenario_components(
+    scenario: Dict[str, Union[list, dict]], mode: Mode
+) -> Tuple[List[tuple], Dict[DRA, Any]]:
+    assert isinstance(
+        scenario, dict
+    ), f"a Blackbox Scenario should be a dict but got a {type(scenario)}"
+
+    inputs = scenario.get("inputs")
+    assert (
+        inputs
+        and isinstance(inputs, list)
+        and all(isinstance(args, tuple) for args in inputs)
+    ), "need a list of inputs with at least one args and all args must be tuples"
+
+    assertions = scenario.get("assertions", {})
+    if assertions:
+        assert isinstance(assertions, dict), f"assertions must be a dict"
+
+        for key in assertions:
+            assert isinstance(key, DRA) and mode_has_assertion(
+                mode, key
+            ), "each key must be a DryrunAssertionTypes appropriate to {mode}. This is not the case for key {key}"
+
+    return inputs, assertions
+
+
 class SequenceAssertion:
     def __init__(
         self,

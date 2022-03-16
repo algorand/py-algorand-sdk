@@ -15,7 +15,7 @@ def get_algod(force_retry: bool = False) -> AlgodClient:
     try:
         if force_retry or not LIVE_ALGOD:
             algod = AlgodClient(DEVNET_TOKEN, f"http://localhost:{ALGOD_PORT}")
-            assert algod.status(), "alod.status() did not produce any results"
+            assert algod.status(), "algod.status() did not produce any results"
             LIVE_ALGOD = algod
         return LIVE_ALGOD
     except Exception as e:
