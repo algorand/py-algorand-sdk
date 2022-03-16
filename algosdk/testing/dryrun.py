@@ -55,8 +55,15 @@ def _fail(msg):
         raise AssertionError(msg)
 
 
-def _assert_in(status, msgs, msg=None):
-    assert status in msgs, f"{status} should be in {msgs}" + _msg_if(msg)
+def _assert_in(status, msgs, msg=None, enforce=True):
+    ok = status in msgs
+    result = None
+    if not ok:
+        result = f"{status} should be in {msgs}" + _msg_if(msg)
+        if enforce:
+            assert status in msgs, result
+
+    return ok, result
 
 
 def assert_pass(txn_index, msg, txns_res):
@@ -67,7 +74,7 @@ def assert_reject(txn_index, msg, txns_res):
     assert_status("REJECT", txn_index, msg, txns_res)
 
 
-def assert_status(status, txn_index, msg, txns_res):
+def assert_status(status, txn_index, msg, txns_res, enforce=True):
     if txn_index is not None and (txn_index < 0 or txn_index >= len(txns_res)):
         _fail(f"txn index {txn_index} is out of range [0, {len(txns_res)})")
 
@@ -101,19 +108,36 @@ def assert_status(status, txn_index, msg, txns_res):
         all_msgs.extend(msgs)
 
     if not assert_all:
-        _assert_in(status, all_msgs, msg=msg)
+        return _assert_in(status, all_msgs, msg=msg, enforce=enforce)
+
+    return True, None
 
 
-def assert_error(drr, pattern=None, txn_index=None, msg=None):
+def assert_error(drr, pattern=None, txn_index=None, msg=None, enforce=True):
     error = Helper.find_error(drr, txn_index=txn_index)
-    assert error, f"expected truthy error but got {error}" + _msg_if(msg)
+    ok = bool(error)
+    result = None
+    if not ok:
+        result = f"expected truthy error but got {error}" + _msg_if(msg)
+        if enforce:
+            assert error, result
+        return ok, result
     if pattern is not None:
-        _assert_in(pattern, error)
+        return _assert_in(pattern, error, enforce=enforce)
+
+    return True, None
 
 
-def assert_no_error(drr, txn_index=None, msg=None):
+def assert_no_error(drr, txn_index=None, msg=None, enforce=True):
     error = Helper.find_error(drr, txn_index=txn_index)
-    assert not error, f"{msg}: {error}" + _msg_if(msg)
+    ok = not bool(error)
+    result = None
+    if not ok:
+        result = f"{msg}: {error}" + _msg_if(msg)
+        if enforce:
+            assert not error, result
+
+    return ok, result
 
 
 def assert_global_state_contains(delta_value, txn_index, txns_res, msg=None):

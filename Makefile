@@ -3,15 +3,14 @@ unit:
 	behave --tags=$(UNITS) test -f progress2
 
 INTEGRATIONS = "@abi or @algod or @applications or @applications.verified or @assets or @auction or @c2c or @compile or @dryrun or @dryrun.testing or @indexer or @indexer.231 or @indexer.applications or @kmd or @rekey or @send.keyregtxn or @send"
-integration:
+integration: dryrun
 	behave --tags=$(INTEGRATIONS) test -f progress2
+
+dryrun:
+	pytest -sv x/blackbox/dryrun_mixin_docs_test.py
 
 docker-test:
 	./run_integration.sh
 
-# The following only works if you have the sandbox dev private network up.
-# EG, after going into the sandbox repo and running
-# ./sandbox up dev
-# the following command should then work
 blackbox-test:
 	pytest -sv x/blackbox/blackbox_test.py

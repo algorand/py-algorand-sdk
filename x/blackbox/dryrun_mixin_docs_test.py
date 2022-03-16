@@ -8,7 +8,6 @@ import unittest
 from algosdk.constants import PAYMENT_TXN, APPCALL_TXN
 from algosdk.future import transaction
 from algosdk.encoding import decode_address, checksum
-from algosdk.v2client.algod import AlgodClient
 from algosdk.v2client.models import (
     Account,
     Application,
@@ -20,7 +19,7 @@ from algosdk.v2client.models import (
 )
 from algosdk.testing.dryrun import DryrunTestCaseMixin, Helper as DryRunHelper
 
-from x.blackbox.blacksand import get_account_addresses, get_creator, get_algod
+from x.testnet import get_algod
 
 
 def b64_encode_hack(s, b=None):
@@ -346,15 +345,6 @@ return
                     ),
                 ),
             ],
-            # apps_local_state=[
-            #     ApplicationLocalState(
-            #         id=42,
-            #         schema=ApplicationStateSchema(
-            #             num_uint=64, num_byte_slice=64
-            #         ),
-            #         key_value=[TealKeyValue(key="hello", value="world")],
-            #     )
-            # ],
         )
 
         accounts = [creator_data]
@@ -412,8 +402,6 @@ return
             value=DryRunHelper.build_bytes_delta_value("test"),
         )
         self.assertLocalStateContains(drr, sender, value)
-        # with self.assertRaises(AssertionError):
-        #     self.assertLocalStateContains(drr, creator, value)
 
         value = dict(key=b64_encode_hack("test"), value=dict(action=2, uint=1))
         self.assertGlobalStateContains(drr, value)
@@ -617,7 +605,6 @@ retsub"""
                 0
             ]["cost"]
 
-        # print([f"cost({i}) = {get_cost(i)}" for i in range(25)])
         print(
             tabulate(
                 [(i, get_cost(i)) for i in range(45)], headers=["n", "Cost(n)"]
