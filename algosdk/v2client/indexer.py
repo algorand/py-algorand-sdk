@@ -227,7 +227,13 @@ class IndexerClient:
         return self.indexer_request("GET", req, **kwargs)
 
     def account_info(
-        self, address, block=None, round_num=None, include_all=False, exclude=None, **kwargs
+        self,
+        address,
+        block=None,
+        round_num=None,
+        include_all=False,
+        exclude=None,
+        **kwargs
     ):
         """
         Return account information.
