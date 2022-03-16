@@ -239,6 +239,8 @@ APP_SCENARIOS = {
 @pytest.mark.parametrize("filebase", APP_SCENARIOS.keys())
 def test_app_with_report(filebase: str):
     mode, scenario = Mode.Application, APP_SCENARIOS[filebase]
+
+    # 0. Validate that the scenarios are well defined:
     inputs, assertions = get_blackbox_scenario_components(scenario, mode)
 
     algod = get_algod()
@@ -263,15 +265,15 @@ def test_app_with_report(filebase: str):
         map(lambda a: drbuilder(teal, lightly_encode_args(a)), inputs)
     )
 
-    # 2. Run the requests to obtain sequence of Dryrun resonses:
+    # 3. Run the requests to obtain sequence of Dryrun resonses:
     dryrun_resps = list(map(algod.dryrun, dryrun_reqs))
 
-    # 3. Generate statistical report of all the runs:
+    # 4. Generate statistical report of all the runs:
     csvpath = path / f"{filebase}.csv"
     with open(csvpath, "w") as f:
         f.write(csv_from_dryrun_apps(inputs, dryrun_resps))
 
-    # 4. Sequential assertions (if provided any)
+    # 5. Sequential assertions (if provided any)
     for i, type_n_assertion in enumerate(assertions.items()):
         assert_type, assertion = type_n_assertion
 
@@ -433,6 +435,8 @@ LOGICSIG_SCENARIOS = {
 @pytest.mark.parametrize("filebase", LOGICSIG_SCENARIOS.keys())
 def test_logicsig_with_report(filebase: str):
     mode, scenario = Mode.Signature, LOGICSIG_SCENARIOS[filebase]
+
+    # 0. Validate that the scenarios are well defined:
     inputs, assertions = get_blackbox_scenario_components(scenario, mode)
 
     algod = get_algod()
@@ -457,17 +461,17 @@ def test_logicsig_with_report(filebase: str):
         map(lambda a: drbuilder(teal, lightly_encode_args(a)), inputs)
     )
 
-    # 2. Run the requests to obtain sequence of Dryrun resonses:
+    # 3. Run the requests to obtain sequence of Dryrun resonses:
     dryrun_resps = list(map(algod.dryrun, dryrun_reqs))
 
-    # 3. Generate statistical report of all the runs:
+    # 4. Generate statistical report of all the runs:
     csvpath = path / f"{filebase}.csv"
     with open(csvpath, "w") as f:
         f.write(csv_from_dryrun_logicsigs(inputs, dryrun_resps))
 
     print(f"Saved Dry Run CSV report to {csvpath}")
 
-    # 4. Sequential assertions (if provided any)
+    # 5. Sequential assertions (if provided any)
     for i, type_n_assertion in enumerate(assertions.items()):
         assert_type, assertion = type_n_assertion
 
