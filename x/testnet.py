@@ -27,7 +27,7 @@ def get_kmd() -> KMDClient:
     return KMDClient(DEVNET_TOKEN, f"http://localhost:{KMD_PORT}")
 
 
-def get_indexer(port: int) -> AlgodClient:
+def get_indexer(port: int) -> IndexerClient:
     assert (
         port in INDEXER_PORTS
     ), f"port for available indexers must be in {INDEXER_PORTS} but was provided {port}"
