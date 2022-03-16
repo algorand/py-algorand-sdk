@@ -529,7 +529,8 @@ def dryrun_report_row(
     return {
         " Run": row_num,
         " cost": extracts["cost"],
-        " final_log": logs[-1] if logs else None,
+        # back-tick needed to keep Excel/Google sheets from stumbling over hex
+        " final_log": f"`{logs[-1]}" if logs else None,
         " final_message": extracts["messages"][-1],
         **extracts["bbr"].final_as_row(),
         **{f"Arg_{i:02}": arg for i, arg in enumerate(args)},

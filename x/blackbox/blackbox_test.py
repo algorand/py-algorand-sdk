@@ -48,12 +48,6 @@ def fac_scratch(args, actual):
     return first_contains_second(app_case, actual)
 
 
-def square_scratch(args, actual):
-    n = args[0]
-    app_case = {0: n, 1: n * n} if n else {}
-    return first_contains_second(app_case, actual)
-
-
 def string_mult_status(args, actual):
     _, n = args
     if n == 0:
@@ -109,9 +103,11 @@ APP_SCENARIOS = {
         "assertions": {
             DRA.cost: lambda _, actual: 20 < actual < 22,
             DRA.lastLog: lightly_encode_output(1337, logs=True),
+            # due to dry-run artifact of not reporting 0-valued scratchvars,
+            # we have a special case for n=0:
             DRA.finalScratch: lambda args, actual: (
-                args[0] ** 2 in actual.values() if args[0] else True
-            ),
+                {2, 1337, (args[0] ** 2 if args[0] else 2)}
+            ).issubset(set(actual.values())),
             DRA.stackTop: 1337,
             DRA.maxStackHeight: 3,
             DRA.status: "PASS",
@@ -129,7 +125,9 @@ APP_SCENARIOS = {
                 (i,): lightly_encode_output(i * i, logs=True) if i else None
                 for i in range(100)
             },
-            DRA.finalScratch: square_scratch,
+            DRA.finalScratch: lambda args: (
+                {0: args[0], 1: args[0] ** 2} if args[0] else {}
+            ),
             DRA.stackTop: lambda args: args[0] ** 2,
             DRA.maxStackHeight: 2,
             DRA.status: lambda i: "PASS" if i[0] > 0 else "REJECT",
@@ -312,8 +310,10 @@ LOGICSIG_SCENARIOS = {
         "assertions": {
             # DRA.cost: lambda _, actual: 20 < actual < 22,
             # DRA.lastLog: lightly_encode_output(1337, logs=True),
-            DRA.finalScratch: lambda args, actual: (
-                args[0] ** 2 in actual.values() if args[0] else True
+            # due to dry-run artifact of not reporting 0-valued scratchvars,
+            # we have a special case for n=0:
+            DRA.finalScratch: lambda args: (
+                {0: args[0] ** 2} if args[0] else {}
             ),
             DRA.stackTop: 1337,
             DRA.maxStackHeight: 3,
@@ -328,7 +328,7 @@ LOGICSIG_SCENARIOS = {
         "assertions": {
             # DRA.cost: 14,
             # DRA.lastLog: {(i,): lightly_encode_output(i * i, logs=True) if i else None for i in range(100)},
-            DRA.finalScratch: square_scratch,
+            DRA.finalScratch: lambda args: ({0: args[0]} if args[0] else {}),
             DRA.stackTop: lambda args: args[0] ** 2,
             DRA.maxStackHeight: 2,
             DRA.status: lambda i: "PASS" if i[0] > 0 else "REJECT",
