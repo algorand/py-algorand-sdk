@@ -369,14 +369,13 @@ def check_asset_balance(context, numaccounts, account, isfrozen, amount):
 
 
 @when(
-    'we make a Lookup Asset Balances call against asset index {index} with limit {limit} afterAddress "{afterAddress:MaybeString}" round {block} currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan}'
+    'we make a Lookup Asset Balances call against asset index {index} with limit {limit} afterAddress "{afterAddress:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan}'
 )
 def asset_balance(
     context,
     index,
     limit,
     afterAddress,
-    block,
     currencyGreaterThan,
     currencyLessThan,
 ):
@@ -386,7 +385,6 @@ def asset_balance(
         next_page=None,
         min_balance=int(currencyGreaterThan),
         max_balance=int(currencyLessThan),
-        block=int(block),
     )
 
 
