@@ -151,6 +151,11 @@ def lightly_encode_args(args: List[Union[str, int]]) -> List[str]:
     return [encode(a, i) for i, a in enumerate(args)]
 
 
+def scratch_encode(x) -> str:
+    x = x.to_bytes(8, "big") if isinstance(x, int) else x.encode("utf-8")
+    return f"0x{x.hex()}"
+
+
 def _encoding_assertion(arg: Any, msg: str = "") -> None:
     assert isinstance(
         arg, (int, str)
@@ -478,9 +483,9 @@ def extract_cost(txn):
 
 def extract_status(mode, txn):
     return (
-        txn["logic-sig-messages"][-1]
+        txn["logic-sig-messages"][0]
         if mode == Mode.Signature
-        else txn["app-call-messages"][-1]
+        else txn["app-call-messages"][1]
     )
 
 
@@ -532,6 +537,7 @@ def dryrun_report_row(
         # back-tick needed to keep Excel/Google sheets from stumbling over hex
         " final_log": f"`{logs[-1]}" if logs else None,
         " final_message": extracts["messages"][-1],
+        " Status": extracts["messages"][1 if is_app else 0],
         **extracts["bbr"].final_as_row(),
         **{f"Arg_{i:02}": arg for i, arg in enumerate(args)},
     }
@@ -638,7 +644,7 @@ App Trace:
 MODE: {mode}
 TOTAL COST: {cost}
 ===============
-txn.app_call_rejected={messages[-1] != 'PASS'}
+FINAL MESSAGE: {messages[-1]}
 ===============
 Messages: {messages}
 Logs: {logs}

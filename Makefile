@@ -9,7 +9,7 @@ integration: blackbox
 	behave --tags=$(INTEGRATIONS) test -f progress2
 
 blackbox:
-	pytest -sv x/blackbox
+	pytest x/blackbox
 
 docker-test:
 	./run_integration.sh

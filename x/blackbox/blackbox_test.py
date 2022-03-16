@@ -12,25 +12,12 @@ from algosdk.testing.teal_blackbox import (
     lightly_encode_args,
     lightly_encode_output,
     mode_has_assertion,
+    scratch_encode,
     DryRunAssertionType as DRA,
     Mode,
     SequenceAssertion,
 )
 from x.testnet import get_algod
-
-
-# should this one be in `teal_blackbox.py` ?
-def first_contains_second(first, second):
-    for k, v in second.items():
-        if k not in first or v != first[k]:
-            return False
-    return True
-
-
-# should this one be in `teal_blackbox.py` ?
-def scratch_encode(x) -> str:
-    x = x.to_bytes(8, "big") if isinstance(x, int) else x.encode("utf-8")
-    return f"0x{x.hex()}"
 
 
 def fac_with_overflow(n):
@@ -46,11 +33,6 @@ def fib(n):
     for _ in range(n):
         a, b = b, a + b
     return a
-
-
-def fib_last_log(args):
-    n = args[0]
-    return lightly_encode_output(fib(n), logs=True) if n else None
 
 
 def fib_cost(args):
@@ -205,33 +187,36 @@ APP_SCENARIOS = {
         },
     },
     "app_slow_fibonacci": {
-        "inputs": [(i,) for i in range(15)],
+        "inputs": [(i,) for i in range(18)],
         "assertions": {
-            DRA.cost: fib_cost,
-            DRA.lastLog: fib_last_log,
+            DRA.cost: lambda args: (
+                fib_cost(args) if args[0] < 17 else 70_000
+            ),
+            DRA.lastLog: lambda args: (
+                lightly_encode_output(fib(args[0]), logs=True)
+                if 0 < args[0] < 17
+                else None
+            ),
             DRA.finalScratch: lambda args, actual: (
-                args[0] == 0
-                or first_contains_second({0: args[0], 1: fib(args[0])}, actual)
+                actual == {0: args[0], 1: fib(args[0])}
+                if 0 < args[0] < 17
+                else (True if args[0] >= 17 else actual == {})
             ),
-            DRA.stackTop: lambda args: fib(args[0]),
-            DRA.maxStackHeight: lambda args: max(2, 2 * args[0]),
-            DRA.status: lambda args, actual: (
-                actual == "REJECT"
-                if args[0] == 0
-                else (actual == "PASS" if args[0] < 8 else True)
+            # we declare to "not care" about the top of the stack for n >= 17
+            DRA.stackTop: lambda args, actual: (
+                actual == fib(args[0]) if args[0] < 17 else True
             ),
-            DRA.passed: lambda args, actual: (
-                actual is False
-                if args[0] == 0
-                else (actual is True if args[0] < 8 else True)
+            # similarly, we don't care about max stack height for n >= 17
+            DRA.maxStackHeight: lambda args, actual: (
+                actual == max(2, 2 * args[0]) if args[0] < 17 else True
             ),
-            DRA.rejected: lambda args, actual: (
-                actual is True
-                if args[0] == 0
-                else (actual is False if args[0] < 8 else True)
-            ),
+            DRA.status: lambda args: "PASS" if 0 < args[0] < 8 else "REJECT",
+            DRA.passed: lambda args: 0 < args[0] < 8,
+            DRA.rejected: lambda args: 0 >= args[0] or args[0] >= 8,
             DRA.noError: lambda args, actual: (
-                actual if 0 < args[0] < 8 else True
+                actual is True
+                if args[0] < 17
+                else "dynamic cost budget exceeded" in actual
             ),
         },
     },
@@ -407,33 +392,29 @@ LOGICSIG_SCENARIOS = {
         },
     },
     "lsig_slow_fibonacci": {
-        "inputs": [(i,) for i in range(15)],
+        "inputs": [(i,) for i in range(18)],
         "assertions": {
             # DRA.cost: fib_cost,
             # DRA.lastLog: fib_last_log,
+            # by returning True for n >= 15, we're declaring that we don't care about the scratchvar's for such cases:
             DRA.finalScratch: lambda args, actual: (
-                args[0] == 0
-                or first_contains_second({0: args[0], 1: fib(args[0])}, actual)
+                actual == {0: args[0]}
+                if 0 < args[0] < 15
+                else (True if args[0] else actual == {})
             ),
-            DRA.stackTop: lambda args: fib(args[0]),
-            DRA.maxStackHeight: lambda args: max(2, 2 * args[0]),
-            DRA.status: lambda args, actual: (
-                actual == "REJECT"
-                if args[0] == 0
-                else (actual == "PASS" if args[0] < 8 else True)
+            DRA.stackTop: lambda args, actual: (
+                actual == fib(args[0]) if args[0] < 15 else True
             ),
-            DRA.passed: lambda args, actual: (
-                actual is False
-                if args[0] == 0
-                else (actual is True if args[0] < 8 else True)
+            DRA.maxStackHeight: lambda args, actual: (
+                actual == max(2, 2 * args[0]) if args[0] < 15 else True
             ),
-            DRA.rejected: lambda args, actual: (
-                actual is True
-                if args[0] == 0
-                else (actual is False if args[0] < 8 else True)
-            ),
+            DRA.status: lambda args: "PASS" if 0 < args[0] < 15 else "REJECT",
+            DRA.passed: lambda args: 0 < args[0] < 15,
+            DRA.rejected: lambda args: not (0 < args[0] < 15),
             DRA.noError: lambda args, actual: (
-                actual if 0 < args[0] < 8 else True
+                actual is True
+                if args[0] < 15
+                else "dynamic cost budget exceeded" in actual
             ),
         },
     },
