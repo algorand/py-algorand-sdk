@@ -227,7 +227,7 @@ class IndexerClient:
         return self.indexer_request("GET", req, **kwargs)
 
     def account_info(
-        self, address, block=None, round_num=None, include_all=False, **kwargs
+        self, address, block=None, round_num=None, include_all=False, exclude=None, **kwargs
     ):
         """
         Return account information.
@@ -247,6 +247,8 @@ class IndexerClient:
         _specify_round(query, block, round_num)
         if include_all:
             query["include-all"] = include_all
+        if exclude:
+            query["exclude"] = exclude
 
         return self.indexer_request("GET", req, query, **kwargs)
 
@@ -281,15 +283,15 @@ class IndexerClient:
         """
         req = "/accounts/" + address + "/assets"
         query = dict()
+        if asset_id:
+            query["asset-id"] = asset_id
         _specify_round(query, block, round_num)
         if include_all:
-            query["include-all"] = include_all
+            query["include-all"] = "true"
         if limit:
             query["limit"] = limit
         if next_page:
             query["next"] = next_page
-        if asset_id:
-            query["asset-id"] = asset_id
 
         return self.indexer_request("GET", req, query, **kwargs)
 
@@ -324,15 +326,15 @@ class IndexerClient:
         """
         req = "/accounts/" + address + "/created-assets"
         query = dict()
+        if asset_id:
+            query["asset-id"] = asset_id
         _specify_round(query, block, round_num)
         if include_all:
-            query["include-all"] = include_all
+            query["include-all"] = "true"
         if limit:
             query["limit"] = limit
         if next_page:
             query["next"] = next_page
-        if asset_id:
-            query["asset-id"] = asset_id
 
         return self.indexer_request("GET", req, query, **kwargs)
 
@@ -366,15 +368,15 @@ class IndexerClient:
         """
         req = "/accounts/" + address + "/apps-local-state"
         query = dict()
+        if application_id:
+            query["application-id"] = application_id
         _specify_round(query, block, round_num)
         if include_all:
-            query["include-all"] = include_all
+            query["include-all"] = "true"
         if limit:
             query["limit"] = limit
         if next_page:
             query["next"] = next_page
-        if application_id:
-            query["application-id"] = application_id
 
         return self.indexer_request("GET", req, query, **kwargs)
 
@@ -408,15 +410,15 @@ class IndexerClient:
         """
         req = "/accounts/" + address + "/created-applications"
         query = dict()
+        if application_id:
+            query["application-id"] = application_id
         _specify_round(query, block, round_num)
         if include_all:
-            query["include-all"] = include_all
+            query["include-all"] = "true"
         if limit:
             query["limit"] = limit
         if next_page:
             query["next"] = next_page
-        if application_id:
-            query["application-id"] = application_id
 
         return self.indexer_request("GET", req, query, **kwargs)
 
@@ -840,6 +842,7 @@ class IndexerClient:
     def search_applications(
         self,
         application_id=None,
+        creator=None,
         round=None,
         limit=None,
         next_page=None,
@@ -865,6 +868,8 @@ class IndexerClient:
         query = dict()
         if application_id:
             query["application-id"] = application_id
+        if creator:
+            query["creator"] = creator
         _specify_round(query, round, round_num)
         if limit:
             query["limit"] = limit

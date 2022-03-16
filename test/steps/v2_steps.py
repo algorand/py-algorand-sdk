@@ -294,6 +294,11 @@ def parse_ledger(context, tot, online, roundNum):
     assert context.response["current_round"] == int(roundNum)
 
 
+@when('we make an Account Information call against account "{account}" with exclude "{exclude:MaybeString}"')
+def acc_info(context, account, exclude):
+    context.response = context.acl.account_info(account, exclude=exclude)
+
+
 @when('we make an Account Information call against account "{account}"')
 def acc_info(context, account):
     context.response = context.acl.account_info(account)
@@ -314,21 +319,14 @@ def parse_acc_info(context, address):
 
 
 @when(
-    "we make an Account Information call against account {account} with exclude {exclude}"
-)
-def acc_info_exclude(context, account, exclude):
-    context.response = context.acl.account_info(account, exclude)
-
-
-@when(
-    "we make an Account Asset Information call against account {account} with assetID {assetID}"
+    'we make an Account Asset Information call against account "{account}" assetID {assetID}'
 )
 def acc_asset_info(context, account, assetID):
     context.response = context.acl.account_asset_info(account, assetID)
 
 
 @when(
-    "we make an Account Application Information call against account {account} with applicationID {applicationID}"
+    'we make an Account Application Information call against account "{account}" applicationID {applicationID}'
 )
 def acc_application_info(context, account, applicationID):
     context.response = context.acl.account_application_info(
@@ -432,44 +430,44 @@ def parse_asset_balance(
 
 
 @when(
-    "we make a LookupAccountAssets call with accountID {account} assetID {asset_id} includeAll {includeAll} limit {limit} next {next}"
+    'we make a LookupAccountAssets call with accountID "{account}" assetID {asset_id} includeAll "{includeAll:MaybeBool}" limit {limit} next "{next:MaybeString}"'
 )
 def lookup_account_assets(context, account, asset_id, includeAll, limit, next):
-    context.response = context.icls.lookup_account_assets(
-        account, asset_id, includeAll, limit, next
+    context.response = context.icl.lookup_account_assets(
+        account, asset_id=int(asset_id), include_all=includeAll, limit=int(limit), next_page=next
     )
 
 
 @when(
-    "we make a LookupAccountCreatedAssets call with accountID {account} assetID {asset_id} includeAll {includeAll} limit {limit} next {next}"
+    'we make a LookupAccountCreatedAssets call with accountID "{account}" assetID {asset_id} includeAll "{includeAll:MaybeBool}" limit {limit} next "{next:MaybeString}"'
 )
 def lookup_account_created_assets(
     context, account, asset_id, includeAll, limit, next
 ):
-    context.response = context.icls.lookup_account_asset_by_creator(
-        account, asset_id, includeAll, limit, next
+    context.response = context.icl.lookup_account_asset_by_creator(
+        account, asset_id=int(asset_id), include_all=includeAll, limit=int(limit), next_page=next
     )
 
 
 @when(
-    "we make a LookupAccountAppLocalStates call with accountID {account} applicationID {application_id} includeAll {includeAll} limit {limit} next {next}"
+    'we make a LookupAccountAppLocalStates call with accountID "{account}" applicationID {application_id} includeAll "{includeAll:MaybeBool}" limit {limit} next "{next:MaybeString}"'
 )
 def lookup_account_applications(
     context, account, application_id, includeAll, limit, next
 ):
-    context.response = context.icls.lookup_account_application_local_state(
-        account, application_id, includeAll, limit, next
+    context.response = context.icl.lookup_account_application_local_state(
+        account, application_id=int(application_id), include_all=includeAll, limit=int(limit), next_page=next
     )
 
 
 @when(
-    "we make a LookupAccountCreatedApplications call with accountID {account} applicationID {application_id} includeAll {includeAll} limit {limit} next {next}"
+    'we make a LookupAccountCreatedApplications call with accountID "{account}" applicationID {application_id} includeAll "{includeAll:MaybeBool}" limit {limit} next "{next:MaybeString}"'
 )
 def lookup_account_created_applications(
     context, account, application_id, includeAll, limit, next
 ):
-    context.response = context.icls.lookup_account_application_by_creator(
-        account, application_id, includeAll, limit, next
+    context.response = context.icl.lookup_account_application_by_creator(
+        account, application_id=int(application_id), include_all=includeAll, limit=int(limit), next_page=next
     )
 
 
@@ -852,6 +850,12 @@ def icl_lookup_account_at_round(context, indexer, account, round):
 def lookup_account(context, account, block):
     context.response = context.icl.account_info(account, int(block))
 
+@when(
+    'we make a Lookup Account by ID call against account "{account}" with exclude "{exclude:MaybeString}"'
+)
+def lookup_account(context, account, exclude):
+    context.response = context.icl.account_info(account, exclude=exclude)
+
 
 @when("we make any LookupAccountByID call")
 def lookup_account_any(context):
@@ -958,6 +962,10 @@ def lookup_application_logs(
 def search_application(context, app_id):
     context.response = context.icl.search_applications(int(app_id))
 
+@when('we make a SearchForApplications call with creator "{creator}"')
+def search_application(context, creator):
+    context.response = context.icl.search_applications(creator=creator)
+
 
 @when(
     "we make a Search Accounts call with assetID {index} limit {limit} currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} and round {block}"
@@ -998,6 +1006,15 @@ def search_accounts(
         block=int(block),
         auth_addr=authAddr,
     )
+
+@when(
+    'we make a Search Accounts call with exclude "{exclude:MaybeString}"'
+)
+def search_accounts(
+    context,
+    exclude,
+):
+    context.response = context.icl.accounts(exclude=exclude)
 
 
 @when(

@@ -93,15 +93,18 @@ class AlgodClient:
         else:
             return resp.read()
 
-    def account_info(self, address, **kwargs):
+    def account_info(self, address, exclude=None, **kwargs):
         """
         Return account information.
 
         Args:
             address (str): account public key
         """
+        query = {}
+        if exclude:
+            query["exclude"] = exclude
         req = "/accounts/" + address
-        return self.algod_request("GET", req, **kwargs)
+        return self.algod_request("GET", req, query, **kwargs)
 
     def asset_info(self, asset_id, **kwargs):
         """
@@ -131,8 +134,9 @@ class AlgodClient:
             address (str): account public key
             asset_id (int): The ID of the asset to look up.
         """
+        query = {}
         req = "/accounts/" + address + "/assets/" + str(asset_id)
-        return self.algod_request("GET", req, **kwargs)
+        return self.algod_request("GET", req, query, **kwargs)
 
     def account_application_info(self, address, application_id, **kwargs):
         """
@@ -142,8 +146,9 @@ class AlgodClient:
             address (str): account public key
             application_id (int): The ID of the application to look up.
         """
+        query = {}
         req = "/accounts/" + address + "/applications/" + str(application_id)
-        return self.algod_request("GET", req, **kwargs)
+        return self.algod_request("GET", req, query, **kwargs)
 
     def pending_transactions_by_address(
         self, address, limit=0, response_format="json", **kwargs
