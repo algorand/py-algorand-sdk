@@ -2339,6 +2339,31 @@ class TestLogic(unittest.TestCase):
         # byte "a"; byte "b"; byte "c"; cover 2; uncover 2; concat; concat; log; int 1
         self.assertTrue(logic.check_program(program, None))
 
+    def test_check_program_teal_6(self):
+        # check TEAL v6 opcodes
+
+        self.assertIsNotNone(
+            logic.spec, "Must be called after any of logic.check_program"
+        )
+        self.assertTrue(logic.spec["EvalMaxVersion"] >= 6)
+
+        # bsqrt
+        program = b"\x06\x80\x01\x90\x96\x80\x01\x0c\xa8"
+        # byte 0x90; bsqrt; byte 0x0c; b==
+        self.assertTrue(logic.check_program(program, None))
+
+        # divw
+        program = b"\x06\x81\x09\x81\xec\xff\xff\xff\xff\xff\xff\xff\xff\x01\x81\x0a\x97\x81\xfe\xff\xff\xff\xff\xff\xff\xff\xff\x01\x12"
+        # int 9; int 18446744073709551596; int 10; divw; int 18446744073709551614; ==
+        self.assertTrue(logic.check_program(program, None))
+
+        # txn fields
+        program = (
+            b"\x06\x31\x3f\x15\x81\x40\x12\x33\x00\x3e\x15\x81\x0a\x12\x10"
+        )
+        # txn StateProofPK; len; int 64; ==; gtxn 0 LastLog; len; int 10; ==; &&
+        self.assertTrue(logic.check_program(program, None))
+
 
 class TestLogicSig(unittest.TestCase):
     def test_basic(self):

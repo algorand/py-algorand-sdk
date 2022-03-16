@@ -1,5 +1,23 @@
 # Changelog
 
+# 1.10.0
+
+## Added:
+
+- New keyreg txn field (#244)
+- C2C Feature and Testing (#268)
+- Add App creator to account balances (#277)
+- Add ABI and ATC to Sphinx (#289)
+
+## Changed:
+
+- Change __init__.py to include v2client import (#243)
+- Updates to pipeline (#279)
+- Add CircleCI build step to generate docsets (#285)
+- revert to point testing harness to sdk testing's master branch (#288)
+- Partially fix types for atomic transaction composer (#290)
+- Update `langspec.json` for Teal6 (#292)
+
 ## 1.9.0
 ### Added
 
