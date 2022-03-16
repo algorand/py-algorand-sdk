@@ -1,0 +1,26 @@
+#pragma version 6
+arg 0
+store 0
+arg 1
+store 1
+pushint 0 // 0
+pushint 1 // 1
+callsub swap_0
+pushint 1337 // 1337
+return
+
+// swap
+swap_0:
+store 3
+store 2
+load 2
+loads
+store 4
+load 2
+load 3
+loads
+stores
+load 3
+load 4
+stores
+retsub

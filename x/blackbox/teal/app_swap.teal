@@ -1,0 +1,31 @@
+#pragma version 6
+txna ApplicationArgs 0
+store 4
+txna ApplicationArgs 1
+store 5
+pushint 4 // 4
+pushint 5 // 5
+callsub swap_0
+pushint 1337 // 1337
+store 3
+load 3
+itob
+log
+load 3
+return
+
+// swap
+swap_0:
+store 1
+store 0
+load 0
+loads
+store 2
+load 0
+load 1
+loads
+stores
+load 1
+load 2
+stores
+retsub

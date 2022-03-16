@@ -1,0 +1,41 @@
+#pragma version 6
+intcblock 1
+txna ApplicationArgs 0
+btoi
+callsub slowfibonacci_0
+store 1
+load 1
+itob
+log
+load 1
+return
+
+// slow_fibonacci
+slowfibonacci_0:
+store 0
+load 0
+intc_0 // 1
+<=
+bnz slowfibonacci_0_l2
+load 0
+pushint 2 // 2
+-
+load 0
+swap
+callsub slowfibonacci_0
+swap
+store 0
+load 0
+intc_0 // 1
+-
+load 0
+swap
+callsub slowfibonacci_0
+swap
+store 0
++
+b slowfibonacci_0_l3
+slowfibonacci_0_l2:
+load 0
+slowfibonacci_0_l3:
+retsub

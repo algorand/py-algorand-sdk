@@ -1,0 +1,43 @@
+#pragma version 6
+intcblock 1
+arg 0
+store 0
+pushint 0 // 0
+arg 1
+btoi
+callsub stringmult_0
+len
+return
+
+// string_mult
+stringmult_0:
+store 2
+store 1
+intc_0 // 1
+store 3
+load 1
+loads
+store 4
+load 1
+pushbytes 0x // ""
+stores
+stringmult_0_l1:
+load 3
+load 2
+<=
+bz stringmult_0_l3
+load 1
+load 1
+loads
+load 4
+concat
+stores
+load 3
+intc_0 // 1
++
+store 3
+b stringmult_0_l1
+stringmult_0_l3:
+load 1
+loads
+retsub

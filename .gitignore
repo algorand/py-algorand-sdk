@@ -122,3 +122,6 @@ py-algorand-sdk-*
 
 # Pycharm
 .idea
+
+# Comma Seperated Value report files
+*.csv
