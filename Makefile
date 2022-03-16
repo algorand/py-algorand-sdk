@@ -13,4 +13,3 @@ blackbox:
 
 docker-test:
 	./run_integration.sh
-
