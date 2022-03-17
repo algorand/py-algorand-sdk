@@ -95,6 +95,7 @@ In the case that one of the assertions fails, an execution stack trace will be p
 ```
 
 If we run the test we'll get the following at the top
+
 ```sh
 ❯ pytest x/blackbox/blackbox_test.py
 
@@ -104,8 +105,9 @@ rootdir: /Users/zeph/github/algorand/py-algorand-sdk
 plugins: typeguard-2.13.3
 collected 14 items                                                                                                                                                                                                
 
-x/blackbox/blackbox_test.py .........F....```
+x/blackbox/blackbox_test.py .........F....
 ```
+
 so we can see that we have a failure. The main details look like:
 
 ```sh
