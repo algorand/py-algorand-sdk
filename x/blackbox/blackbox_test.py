@@ -5,8 +5,7 @@ import pytest
 
 from algosdk.testing.dryrun import Helper as DryRunHelper
 from algosdk.testing.teal_blackbox import (
-    csv_from_dryrun_apps,
-    csv_from_dryrun_logicsigs,
+    csv_from_dryruns,
     dryrun_assert,
     get_blackbox_scenario_components,
     lightly_encode_args,
@@ -258,7 +257,7 @@ def test_app_with_report(filebase: str):
     # 4. Generate statistical report of all the runs:
     csvpath = path / f"{filebase}.csv"
     with open(csvpath, "w") as f:
-        f.write(csv_from_dryrun_apps(inputs, dryrun_resps))
+        f.write(csv_from_dryruns(inputs, dryrun_resps))
 
     # 5. Sequential assertions (if provided any)
     for i, type_n_assertion in enumerate(assertions.items()):
@@ -456,7 +455,7 @@ def test_logicsig_with_report(filebase: str):
     # 4. Generate statistical report of all the runs:
     csvpath = path / f"{filebase}.csv"
     with open(csvpath, "w") as f:
-        f.write(csv_from_dryrun_logicsigs(inputs, dryrun_resps))
+        f.write(csv_from_dryruns(inputs, dryrun_resps))
 
     print(f"Saved Dry Run CSV report to {csvpath}")
 

@@ -559,9 +559,34 @@ def extract_all(txn: dict, is_app: bool, decode_logs: bool = True) -> dict:
     }
 
 
+def guess_txn_mode(txn: dict, enforce: bool = True) -> Mode:
+    """
+    Guess the mode based on location of traces. If no luck, just return None
+    """
+    akey, lskey = "app-call-trace", "logic-sig-trace"
+    if akey in txn:
+        return Mode.Application
+
+    if lskey in txn:
+        return Mode.Signature
+
+    if enforce:
+        raise AssertionError(
+            f"transaction's Mode cannot be guessed as it doesn't contain any of {(akey, lskey)}"
+        )
+
+    return None
+
+
 def dryrun_report_row(
-    row_num: int, args: List[Union[int, str]], txn: dict, is_app: bool
+    row_num: int, args: List[Union[int, str]], txn: dict, is_app: bool = None
 ) -> dict:
+    """
+    when is_app is not supplied, attempt to auto-detect whether dry run is a logic sig or an app
+    """
+    if is_app is None:
+        is_app = guess_txn_mode(txn) == Mode.Application
+
     extracts = extract_all(txn, is_app)
     logs = extracts["logs"]
     return {
@@ -576,21 +601,7 @@ def dryrun_report_row(
     }
 
 
-def csv_from_dryrun_logicsigs(
-    inputs: List[Tuple[Union[int, str]]], dr_resps: List[dict]
-) -> str:
-    return drresps_as_csv(inputs, dr_resps, False)
-
-
-def csv_from_dryrun_apps(
-    inputs: List[Tuple[Union[int, str]]], dr_resps: List[dict]
-) -> str:
-    return drresps_as_csv(inputs, dr_resps, True)
-
-
-def drresps_as_csv(
-    inputs: List[tuple], dr_resps: List[dict], is_app: bool
-) -> str:
+def csv_from_dryruns(inputs: List[tuple], dr_resps: List[dict]) -> str:
     N = len(inputs)
     assert N == len(
         dr_resps
@@ -605,10 +616,10 @@ def drresps_as_csv(
 
         txns.append(_txns[0])
 
-    return txns_as_csv(inputs, txns, is_app)
+    return txns_as_csv(inputs, txns)
 
 
-def txns_as_csv(inputs: List[tuple], txns: List[dict], is_app: bool) -> str:
+def txns_as_csv(inputs: List[tuple], txns: List[dict]) -> str:
     N = len(inputs)
     assert N == len(
         txns
@@ -616,8 +627,7 @@ def txns_as_csv(inputs: List[tuple], txns: List[dict], is_app: bool) -> str:
     assert txns, "cannot produce CSV from an empty list"
 
     txns = [
-        dryrun_report_row(i + 1, inputs[i], txn, is_app)
-        for i, txn in enumerate(txns)
+        dryrun_report_row(i + 1, inputs[i], txn) for i, txn in enumerate(txns)
     ]
     with io.StringIO() as csv_str:
         fields = sorted(set().union(*(txn.keys() for txn in txns)))
