@@ -330,7 +330,7 @@ def get_blackbox_scenario_components(
     * functions which take _two_ variables. These are useuful when your assertion is more
         subtle that out-and-out equality. For example, suppose you want to assert that the
         `cost` of the dry run is `2*n` plus/minus 5 where `n` is the first arg of the input. Then
-        you could use `lambda args, actual: actual - 5 <= args[0] <= actual + 5`
+        you could use `lambda args, actual: 2*args[0] - 5 <= actual <= 2*args[0] + 5`
     ```
     """
     assert isinstance(
