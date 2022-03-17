@@ -7,20 +7,9 @@ ALGOD_PORT = 60000
 KMD_PORT = 60001
 INDEXER_PORTS = range(59_996, 60_000)
 
-LIVE_ALGOD: AlgodClient = None
-
 
 def get_algod(force_retry: bool = False) -> AlgodClient:
-    global LIVE_ALGOD
-    try:
-        if force_retry or not LIVE_ALGOD:
-            algod = AlgodClient(DEVNET_TOKEN, f"http://localhost:{ALGOD_PORT}")
-            assert algod.status(), "algod.status() did not produce any results"
-            LIVE_ALGOD = algod
-        return LIVE_ALGOD
-    except Exception as e:
-        LIVE_ALGOD = None
-        raise Exception("algod is missing from environment") from e
+    return AlgodClient(DEVNET_TOKEN, f"http://localhost:{ALGOD_PORT}")
 
 
 def get_kmd() -> KMDClient:
