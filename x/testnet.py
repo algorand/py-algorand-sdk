@@ -8,7 +8,7 @@ KMD_PORT = 60001
 INDEXER_PORTS = range(59_996, 60_000)
 
 
-def get_algod(force_retry: bool = False) -> AlgodClient:
+def get_algod() -> AlgodClient:
     return AlgodClient(DEVNET_TOKEN, f"http://localhost:{ALGOD_PORT}")
 
 
