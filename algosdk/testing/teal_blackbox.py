@@ -305,11 +305,44 @@ def scrape_the_black_box(
 def get_blackbox_scenario_components(
     scenario: Dict[str, Union[list, dict]], mode: Mode
 ) -> Tuple[List[tuple], Dict[DRA, Any]]:
+    """
+    Validate that a Blackbox Test Scenario has been properly constructed, and return back
+    its components which consist of **inputs** and _optional_ **assertions**.
+
+    A scenario should adhere to the following schema:
+    ```
+    {
+        "inputs":       List[Tuple[Union[str, int]]],
+        "assertions":   Dict[DryRunAssertionType, ...an assertion...]
+    }
+
+    Each assertion is a map from _assertion type_  to be made on a dry run,
+    to the actual assertion. Actual assertions can be:
+    * simple python types - these are useful in the case of _constant_ assertions.
+        For example, if you want to assert that the `maxStackHeight` is 3, just use `3`.
+    * dictionaries of type Dict[Tuple, Any] - these are useful when you just want to assert
+        a discrete set of input-output pairs.
+        For example, if you have 4 inputs that you want to assert are being squared,
+        you could use `{(2,): 4, (7,): 49, (13,): 169, (11,): 121}`
+    * functions which take a single variable. These are useful when you have a python "simulator"
+        for the assertions.
+        In the square example you could use `lambda args: args[0]**2`
+    * functions which take _two_ variables. These are useuful when your assertion is more
+        subtle that out-and-out equality. For example, suppose you want to assert that the
+        `cost` of the dry run is `2*n` plus/minus 5 where `n` is the first arg of the input. Then
+        you could use `lambda args, actual: actual - 5 <= args[0] <= actual + 5`
+    ```
+    """
     assert isinstance(
         scenario, dict
     ), f"a Blackbox Scenario should be a dict but got a {type(scenario)}"
 
     inputs = scenario.get("inputs")
+    # TODO: we can be more flexible here and allow arbitrary iterable `args`. Because
+    # assertions are allowed to be dicts, and therefore each `args` needs to be
+    # hashable in that case, we are restricting to tuples currently.
+    # However, this function could be friendlier and just _convert_ each of the
+    # `args` to a tuple, thus eliminating any downstream issues.
     assert (
         inputs
         and isinstance(inputs, list)
