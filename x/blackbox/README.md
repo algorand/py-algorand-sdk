@@ -69,7 +69,7 @@ In English, letting $`x`$ be the input variable for our square function, the abo
 * provides a list of 100 tuples of the form $`(x)`$ that will serve as args. 
   * IE: $`(0), (1), (2), ... , (99)`$
 * establishes 7 different _sequence assertions_ as follows:
-  * the **final scratch** will have $`x`$ stored at slot `0` (except for the case $`x=0`$ which is an artificat of dryrun not producing any information on slots containing 0)
+  * the **final scratch** will have $`x`$ stored at slot `0` (except for the case $`x=0`$ which is an artifact of dryrun not producing any information on slots containing 0)
   * the **stack's top** will contain $`x^2`$
   * the **max stack height** during execution is always 2
   * the executions' **status** is **PASS** except for the case $`x=0`$
