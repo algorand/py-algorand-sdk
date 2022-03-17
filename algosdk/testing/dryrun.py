@@ -538,7 +538,7 @@ class Helper:
         cls, program: str, args: List[bytes], sender=ZERO_ADDRESS
     ):
         return cls.build_dryrun_request(
-            program, lsig=LSig(args), sender=sender
+            program, lsig=LSig(args=args), sender=sender
         )
 
     @classmethod
