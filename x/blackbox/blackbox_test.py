@@ -250,7 +250,7 @@ def test_app_with_report(filebase: str):
         map(lambda a: drbuilder(teal, lightly_encode_args(a)), inputs)
     )
 
-    # 3. Run the requests to obtain sequence of Dryrun resonses:
+    # 3. Run the requests to obtain sequence of Dryrun responses:
     dryrun_resps = list(map(algod.dryrun, dryrun_reqs))
 
     # 4. Generate statistical report of all the runs:
