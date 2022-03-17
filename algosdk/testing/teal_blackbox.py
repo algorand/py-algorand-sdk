@@ -561,7 +561,8 @@ def extract_all(txn: dict, is_app: bool, decode_logs: bool = True) -> dict:
 
 def guess_txn_mode(txn: dict, enforce: bool = True) -> Mode:
     """
-    Guess the mode based on location of traces. If no luck, just return None
+    Guess the mode based on location of traces. If no luck, raise an AssertionError
+    (or just return None if not enforce)
     """
     akey, lskey = "app-call-trace", "logic-sig-trace"
     if akey in txn:
@@ -659,7 +660,7 @@ def dryrun_assert(
         txns = resp["txns"]
         assert (
             len(txns) == 1
-        ), f"expecting exactly 1 transaction but got {len(txns)}"
+        ), f"expecting exactly 1 transaction but got {len(txns)} for dryrun_resps[{i}]"
         txn = txns[0]
         mode = (
             Mode.Signature if "logic-sig-messages" in txn else Mode.Application
