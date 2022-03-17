@@ -30,6 +30,7 @@ Even better, before making assertions, you'd like to get a sense of what the pro
   * **inputs** are lists of tuples, each tuple representing the `args` to be fed into a single dry run execution
   *  **assertions** are dicts that map [DryRunAsssertionType](https://github.com/algorand/py-algorand-sdk/blob/350ba0c158e9bcadd7347b0907c53c6e9bf7c9be/algosdk/testing/teal_blackbox.py#L14)'s to actual assertions
   * here is an [example such scenario](https://github.com/algorand/py-algorand-sdk/blob/20de2cd2e98409cf89a5f3208833db1564c266f6/x/blackbox/blackbox_test.py#L314) for $`x^2`$
+  * **NOTE**: assertions are ***totally optional*** for this example. Omitting them will skip specific assertions at the end but sill attempt the dry run sequence and CSV report generation
 6. Now you're ready to generate a report from your scenario for analysis purposes. You can see the [test_logicsig_with_report()](https://github.com/algorand/py-algorand-sdk/blob/20de2cd2e98409cf89a5f3208833db1564c266f6/x/blackbox/blackbox_test.py#L424) unit test as an example. In particular:
  * `# 0.` validates the scenarios and digs out `inputs` and `assertions` using `get_blackbox_scenario_components()`
  * `# 1.` reads the TEAL source
