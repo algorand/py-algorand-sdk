@@ -12,7 +12,7 @@ from algosdk.testing.teal_blackbox import (
     mode_has_assertion,
     scratch_encode,
     DryRunAssertionType as DRA,
-    Mode,
+    ExecutionMode,
     SequenceAssertion,
 )
 from x.testnet import get_algod
@@ -223,7 +223,7 @@ APP_SCENARIOS = {
 
 @pytest.mark.parametrize("filebase", APP_SCENARIOS.keys())
 def test_app_with_report(filebase: str):
-    mode, scenario = Mode.Application, APP_SCENARIOS[filebase]
+    mode, scenario = ExecutionMode.Application, APP_SCENARIOS[filebase]
 
     # 0. Validate that the scenarios are well defined:
     inputs, assertions = get_blackbox_scenario_components(scenario, mode)
@@ -421,7 +421,7 @@ LOGICSIG_SCENARIOS = {
 
 @pytest.mark.parametrize("filebase", LOGICSIG_SCENARIOS.keys())
 def test_logicsig_with_report(filebase: str):
-    mode, scenario = Mode.Signature, LOGICSIG_SCENARIOS[filebase]
+    mode, scenario = ExecutionMode.Signature, LOGICSIG_SCENARIOS[filebase]
 
     # 0. Validate that the scenarios are well defined:
     inputs, assertions = get_blackbox_scenario_components(scenario, mode)

@@ -8,8 +8,7 @@ from typing import Any, Callable, Dict, List, Tuple, Union
 
 from algosdk.testing.dryrun import assert_error, assert_no_error
 
-# Note: = this type _shadows_ PyTeal's Mode and should  adhere to the same API:
-Mode = Enum("Mode", "Signature Application")
+ExecutionMode = Enum("ExecutionMode", "Signature Application")
 
 DryRunAssertionType = Enum(
     "DryRunAssertionType",
@@ -303,7 +302,7 @@ def scrape_the_black_box(
 
 
 def get_blackbox_scenario_components(
-    scenario: Dict[str, Union[list, dict]], mode: Mode
+    scenario: Dict[str, Union[list, dict]], mode: ExecutionMode
 ) -> Tuple[List[tuple], Dict[DRA, Any]]:
     """
     Validate that a Blackbox Test Scenario has been properly constructed, and return back
@@ -423,14 +422,14 @@ class SequenceAssertion:
 
 
 def mode_has_assertion(
-    mode: Mode, assertion_type: DryRunAssertionType
+    mode: ExecutionMode, assertion_type: DryRunAssertionType
 ) -> bool:
     missing = {
-        Mode.Signature: {
+        ExecutionMode.Signature: {
             DryRunAssertionType.cost,
             DryRunAssertionType.lastLog,
         },
-        Mode.Application: set(),
+        ExecutionMode.Application: set(),
     }
     if assertion_type in missing[mode]:
         return False
@@ -448,13 +447,17 @@ def dig_actual(
         len(txns) == 1
     ), f"expecting exactly 1 transaction but got {len(txns)}"
     txn = txns[0]
-    mode = Mode.Signature if "logic-sig-messages" in txn else Mode.Application
-    is_app = mode == Mode.Application
+    mode = (
+        ExecutionMode.Signature
+        if "logic-sig-messages" in txn
+        else ExecutionMode.Application
+    )
+    is_app = mode == ExecutionMode.Application
 
     assert mode_has_assertion(
         mode, assert_type
     ), f"{mode} cannot handle dig information from txn for assertion type {assert_type}"
-    is_app = mode == Mode.Application
+    is_app = mode == ExecutionMode.Application
 
     if assert_type == DryRunAssertionType.cost:
         return txn["cost"]
@@ -517,7 +520,7 @@ def extract_cost(txn):
 def extract_status(mode, txn):
     return (
         txn["logic-sig-messages"][0]
-        if mode == Mode.Signature
+        if mode == ExecutionMode.Signature
         else txn["app-call-messages"][1]
     )
 
@@ -559,17 +562,17 @@ def extract_all(txn: dict, is_app: bool, decode_logs: bool = True) -> dict:
     }
 
 
-def guess_txn_mode(txn: dict, enforce: bool = True) -> Mode:
+def guess_txn_mode(txn: dict, enforce: bool = True) -> ExecutionMode:
     """
     Guess the mode based on location of traces. If no luck, raise an AssertionError
     (or just return None if not enforce)
     """
     akey, lskey = "app-call-trace", "logic-sig-trace"
     if akey in txn:
-        return Mode.Application
+        return ExecutionMode.Application
 
     if lskey in txn:
-        return Mode.Signature
+        return ExecutionMode.Signature
 
     if enforce:
         raise AssertionError(
@@ -586,7 +589,7 @@ def dryrun_report_row(
     when is_app is not supplied, attempt to auto-detect whether dry run is a logic sig or an app
     """
     if is_app is None:
-        is_app = guess_txn_mode(txn) == Mode.Application
+        is_app = guess_txn_mode(txn) == ExecutionMode.Application
 
     extracts = extract_all(txn, is_app)
     logs = extracts["logs"]
@@ -663,9 +666,11 @@ def dryrun_assert(
         ), f"expecting exactly 1 transaction but got {len(txns)} for dryrun_resps[{i}]"
         txn = txns[0]
         mode = (
-            Mode.Signature if "logic-sig-messages" in txn else Mode.Application
+            ExecutionMode.Signature
+            if "logic-sig-messages" in txn
+            else ExecutionMode.Application
         )
-        is_app = mode == Mode.Application
+        is_app = mode == ExecutionMode.Application
 
         actual = dig_actual(resp, assert_type)
         ok, msg = test(args, actual)
