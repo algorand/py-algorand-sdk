@@ -13,5 +13,3 @@ blackbox:
 
 docker-test:
 	./run_integration.sh
-
-include z.Makefile
