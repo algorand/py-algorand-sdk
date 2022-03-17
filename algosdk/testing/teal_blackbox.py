@@ -355,7 +355,7 @@ def get_blackbox_scenario_components(
         for key in assertions:
             assert isinstance(key, DRA) and mode_has_assertion(
                 mode, key
-            ), "each key must be a DryrunAssertionTypes appropriate to {mode}. This is not the case for key {key}"
+            ), f"each key must be a DryrunAssertionTypes appropriate to {mode}. This is not the case for key {key}"
 
     return inputs, assertions
 
