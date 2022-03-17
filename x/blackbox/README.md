@@ -48,7 +48,7 @@ Perusing the above, it looks right. In particular, the top of the stack does ind
 
 ### Part 2. Making Assertions
 
-Now that we're satisfied with the results, we'd like to make some assertions. For example, this would be useful if you are planning to tweak or optimize the TEAL source and want to ensure that no regressions will occur, or if you want make assertions on an even bigger set of inputs that can be readily eyeballed in a spreadsheet. Or you may be a practitioner of TTDD (TEAL Test Driven Development), in which case, beginning with some such assertions is crucial before you even write a single line of TEAL.
+Now that we're satisfied with the results, we'd like to make some assertions. For example, this would be useful if you are planning to tweak or optimize the TEAL source and want to ensure that no regressions will occur, or if you want make assertions on an even bigger set of inputs that can't be readily eyeballed in a spreadsheet. Or you may be a practitioner of TTDD (TEAL Test Driven Development), in which case, beginning with some such assertions is crucial before you even write a single line of TEAL.
 
 Let's look at some sample assertions for our `lsig_square` TEAL program:
 ```python
