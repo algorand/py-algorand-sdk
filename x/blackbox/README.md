@@ -156,11 +156,11 @@ E               ===============
 algosdk/testing/teal_blackbox.py:681: AssertionError
 ```
 In particular, we can:
-* Track the program execution by viewing it's **App Trace**
-  * 2 was assigned to **scratch slot #0** at step #5
+* Track the program execution by viewing its **App Trace**
+  * 2 was assigned to **scratch slot #0** at step 5
   * the stack ended up with **4** on top
   * the run **PASS**'ed
-* Read exactly what was expected and what actaully happened:
+* Read exactly what was expected versus what actually occurred:
 ```plain
 SequenceAssertion for 'lsig_square[1]@Mode.Signature-DryRunAssertionType.stackTop' failed for for args (2,): actual is [4] BUT expected [8]
                        ^^^^^^^^^^^                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^                 ^^^^^^^^^             ^                ^
