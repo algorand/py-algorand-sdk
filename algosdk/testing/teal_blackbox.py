@@ -452,7 +452,6 @@ def dig_actual(
         if "logic-sig-messages" in txn
         else ExecutionMode.Application
     )
-    is_app = mode == ExecutionMode.Application
 
     assert mode_has_assertion(
         mode, assert_type
