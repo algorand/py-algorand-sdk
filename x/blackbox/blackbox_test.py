@@ -245,7 +245,7 @@ def test_app_with_report(filebase: str):
     )
 
     # 2. Build the Dryrun requests:
-    drbuilder = DryRunHelper.build_simple_app_request
+    drbuilder = DryRunHelper.singleton_app_request
     dryrun_reqs = list(
         map(lambda a: drbuilder(teal, lightly_encode_args(a)), inputs)
     )
@@ -443,7 +443,7 @@ def test_logicsig_with_report(filebase: str):
     )
 
     # 2. Build the Dryrun requests:
-    drbuilder = DryRunHelper.build_simple_logicsig_request
+    drbuilder = DryRunHelper.singleton_logicsig_request
     dryrun_reqs = list(
         map(lambda a: drbuilder(teal, lightly_encode_args(a)), inputs)
     )

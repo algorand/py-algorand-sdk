@@ -534,7 +534,7 @@ class Helper:
     """Utility functions for dryrun"""
 
     @classmethod
-    def build_simple_logicsig_request(
+    def singleton_logicsig_request(
         cls, program: str, args: List[bytes], sender=ZERO_ADDRESS
     ):
         return cls.build_dryrun_request(
@@ -542,7 +542,7 @@ class Helper:
         )
 
     @classmethod
-    def build_simple_app_request(
+    def singleton_app_request(
         cls, program: str, args: List[bytes], sender=ZERO_ADDRESS
     ):
         return cls.build_dryrun_request(

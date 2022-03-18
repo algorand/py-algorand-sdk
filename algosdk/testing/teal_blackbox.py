@@ -508,7 +508,7 @@ def dig_actual(
     raise Exception(f"Unknown assert_type {assert_type}")
 
 
-def extract_logs(txn, decode_logs: bool = True):
+def extract_logs(txn):
     return [b64decode(log).hex() for log in txn.get("logs", [])]
 
 
@@ -544,14 +544,14 @@ def extract_global_delta(txn):
     return txn.get("global-delta", [])
 
 
-def extract_all(txn: dict, is_app: bool, decode_logs: bool = True) -> dict:
+def extract_all(txn: dict, is_app: bool) -> dict:
     trace = extract_trace(txn, is_app)
     lines = extract_lines(txn, is_app)
     bbr = scrape_the_black_box(trace, lines)
 
     return {
         "cost": extract_cost(txn),
-        "logs": extract_logs(txn, decode_logs=decode_logs),
+        "logs": extract_logs(txn),
         "gdelta": extract_global_delta(txn),
         "ldeltas": extract_local_deltas(txn),
         "messages": extract_messages(txn, is_app),
