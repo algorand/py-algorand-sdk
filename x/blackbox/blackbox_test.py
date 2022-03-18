@@ -264,7 +264,7 @@ def test_app_with_report(filebase: str):
 
         assert mode_has_assertion(
             mode, assert_type
-        ), f"assert_type {assert_type} is not applicable for {mode}. Please REMOVE of MODIFY"
+        ), f"assert_type {assert_type} is not applicable for {mode}. Please REMOVE or MODIFY"
 
         assertion = SequenceAssertion(
             assertion, name=f"{case_name}[{i}]@{mode}-{assert_type}"
