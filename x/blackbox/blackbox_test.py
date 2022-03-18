@@ -1,7 +1,4 @@
 from pathlib import Path
-from signal import Signals
-from webbrowser import get
-from prompt_toolkit import Application
 
 import pytest
 
