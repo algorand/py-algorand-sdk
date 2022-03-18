@@ -326,7 +326,7 @@ def get_blackbox_scenario_components(
     * functions which take a single variable. These are useful when you have a python "simulator"
         for the assertions.
         In the square example you could use `lambda args: args[0]**2`
-    * functions which take _two_ variables. These are useuful when your assertion is more
+    * functions which take _two_ variables. These are useful when your assertion is more
         subtle that out-and-out equality. For example, suppose you want to assert that the
         `cost` of the dry run is `2*n` plus/minus 5 where `n` is the first arg of the input. Then
         you could use `lambda args, actual: 2*args[0] - 5 <= actual <= 2*args[0] + 5`
