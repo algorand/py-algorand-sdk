@@ -6,15 +6,21 @@ import io
 from tabulate import tabulate
 from typing import Any, Callable, Dict, Iterable, List, Tuple, Union
 
-from algosdk.testing.dryrun import assert_error, assert_no_error
+from algosdk.v2client.algod import AlgodClient
+from algosdk.testing.dryrun import (
+    ZERO_ADDRESS,
+    assert_error,
+    assert_no_error,
+    Helper as DryRunHelper,
+)
 
 ExecutionMode = Enum("ExecutionMode", "Signature Application")
 
-DryRunAssertionType = Enum(
-    "DryRunAssertionType",
+DryRunProperty = Enum(
+    "DryRunProperty",
     "cost lastLog finalScratch stackTop maxStackHeight status rejected passed error noError globalStateHas localStateHas",
 )
-DRA = DryRunAssertionType
+DRProp = DryRunProperty
 
 from inspect import signature
 
@@ -44,7 +50,7 @@ class TealVal:
         assert (
             self.is_b is not None
         ), f"can't handle StackVariable with empty type"
-        return "0x" + b64decode(self.b).hex() if self.is_b else str(self.i)
+        return f"0x{b64decode(self.b).hex()}" if self.is_b else str(self.i)
 
     def as_python_type(self) -> Union[int, str, None]:
         if self.is_b is None:
@@ -117,7 +123,7 @@ class BlackBoxResults:
         }
 
 
-def lightly_encode_output(out: Union[int, str], logs=False) -> str:
+def dryrun_encode_out(out: Union[int, str], logs=False) -> str:
     """
     Encoding convention for Black Box Testing.
 
@@ -133,7 +139,7 @@ def lightly_encode_output(out: Union[int, str], logs=False) -> str:
         return bytes(out, "utf-8").hex()
 
 
-def lightly_encode_args(args: Iterable[Union[str, int]]) -> List[str]:
+def dryrun_encode_args(args: Iterable[Union[str, int]]) -> List[str]:
     """
     Encoding convention for Black Box Testing.
 
@@ -150,7 +156,7 @@ def lightly_encode_args(args: Iterable[Union[str, int]]) -> List[str]:
     return [encode(a, i) for i, a in enumerate(args)]
 
 
-def scratch_encode(x) -> str:
+def dryrun_encode_scratch(x) -> str:
     x = x.to_bytes(8, "big") if isinstance(x, int) else x.encode("utf-8")
     return f"0x{x.hex()}"
 
@@ -303,7 +309,7 @@ def scrape_the_black_box(
 
 def get_blackbox_scenario_components(
     scenario: Dict[str, Union[list, dict]], mode: ExecutionMode
-) -> Tuple[List[tuple], Dict[DRA, Any]]:
+) -> Tuple[List[tuple], Dict[DRProp, Any]]:
     """
     Validate that a Blackbox Test Scenario has been properly constructed, and return back
     its components which consist of **inputs** and _optional_ **assertions**.
@@ -353,7 +359,7 @@ def get_blackbox_scenario_components(
         assert isinstance(assertions, dict), f"assertions must be a dict"
 
         for key in assertions:
-            assert isinstance(key, DRA) and mode_has_assertion(
+            assert isinstance(key, DRProp) and mode_has_assertion(
                 mode, key
             ), f"each key must be a DryrunAssertionTypes appropriate to {mode}. This is not the case for key {key}"
 
@@ -422,12 +428,12 @@ class SequenceAssertion:
 
 
 def mode_has_assertion(
-    mode: ExecutionMode, assertion_type: DryRunAssertionType
+    mode: ExecutionMode, assertion_type: DryRunProperty
 ) -> bool:
     missing = {
         ExecutionMode.Signature: {
-            DryRunAssertionType.cost,
-            DryRunAssertionType.lastLog,
+            DryRunProperty.cost,
+            DryRunProperty.lastLog,
         },
         ExecutionMode.Application: set(),
     }
@@ -437,10 +443,8 @@ def mode_has_assertion(
     return True
 
 
-def dig_actual(
-    dryrun_resp: dict,
-    assert_type: DryRunAssertionType,
-    assertion_arg: Any = None,
+def _dig_impl(
+    dryrun_resp: dict, property: DryRunProperty, **kwargs: Dict[str, Any]
 ) -> Union[str, int, bool]:
     txns = dryrun_resp["txns"]
     assert (
@@ -454,20 +458,20 @@ def dig_actual(
     )
 
     assert mode_has_assertion(
-        mode, assert_type
-    ), f"{mode} cannot handle dig information from txn for assertion type {assert_type}"
+        mode, property
+    ), f"{mode} cannot handle dig information from txn for assertion type {property}"
     is_app = mode == ExecutionMode.Application
 
-    if assert_type == DryRunAssertionType.cost:
+    if property == DryRunProperty.cost:
         return txn["cost"]
 
-    if assert_type == DryRunAssertionType.lastLog:
+    if property == DryRunProperty.lastLog:
         last_log = txn.get("logs", [None])[-1]
         if last_log is None:
             return last_log
         return b64decode(last_log).hex()
 
-    if assert_type == DryRunAssertionType.finalScratch:
+    if property == DryRunProperty.finalScratch:
         trace = extract_trace(txn, is_app)
         lines = extract_lines(txn, is_app)
         bbr = scrape_the_black_box(trace, lines)
@@ -475,7 +479,7 @@ def dig_actual(
             k: v.as_python_type() for k, v in bbr.final_scratch_state.items()
         }
 
-    if assert_type == DryRunAssertionType.stackTop:
+    if property == DryRunProperty.stackTop:
         trace = extract_trace(txn, is_app)
         stack = trace[-1]["stack"]
         if not stack:
@@ -483,29 +487,30 @@ def dig_actual(
         tv = TealVal.from_scratch(stack[-1])
         return tv.as_python_type()
 
-    if assert_type == DryRunAssertionType.maxStackHeight:
+    if property == DryRunProperty.maxStackHeight:
         return max(len(t["stack"]) for t in extract_trace(txn, is_app))
 
-    if assert_type == DryRunAssertionType.status:
+    if property == DryRunProperty.status:
         return extract_status(mode, txn)
 
-    if assert_type == DryRunAssertionType.passed:
+    if property == DryRunProperty.passed:
         return extract_status(mode, txn) == "PASS"
 
-    if assert_type == DryRunAssertionType.rejected:
+    if property == DryRunProperty.rejected:
         return extract_status(mode, txn) == "REJECT"
 
-    if assert_type == DryRunAssertionType.error:
-        ok, msg = assert_error(
-            dryrun_resp, pattern=assertion_arg, enforce=False
-        )
-        return ok or msg
+    if property == DryRunProperty.error:
+        pattern = kwargs.get("pattern")
+        ok, msg = assert_error(dryrun_resp, pattern=pattern, enforce=False)
+        # when there WAS an error, we return its msg, else False
+        return ok
 
-    if assert_type == DryRunAssertionType.noError:
+    if property == DryRunProperty.noError:
         ok, msg = assert_no_error(dryrun_resp, enforce=False)
+        # when there was NO error, we return True, else return its msg
         return ok or msg
 
-    raise Exception(f"Unknown assert_type {assert_type}")
+    raise Exception(f"Unknown assert_type {property}")
 
 
 def extract_logs(txn):
@@ -581,7 +586,7 @@ def guess_txn_mode(txn: dict, enforce: bool = True) -> ExecutionMode:
     return None
 
 
-def dryrun_report_row(
+def _dryrun_report_row(
     row_num: int, args: List[Union[int, str]], txn: dict, is_app: bool = None
 ) -> dict:
     """
@@ -619,10 +624,10 @@ def csv_from_dryruns(inputs: List[tuple], dr_resps: List[dict]) -> str:
 
         txns.append(_txns[0])
 
-    return txns_as_csv(inputs, txns)
+    return _txns_as_csv(inputs, txns)
 
 
-def txns_as_csv(inputs: List[tuple], txns: List[dict]) -> str:
+def _txns_as_csv(inputs: List[tuple], txns: List[dict]) -> str:
     N = len(inputs)
     assert N == len(
         txns
@@ -630,7 +635,7 @@ def txns_as_csv(inputs: List[tuple], txns: List[dict]) -> str:
     assert txns, "cannot produce CSV from an empty list"
 
     txns = [
-        dryrun_report_row(i + 1, inputs[i], txn) for i, txn in enumerate(txns)
+        _dryrun_report_row(i + 1, inputs[i], txn) for i, txn in enumerate(txns)
     ]
     with io.StringIO() as csv_str:
         fields = sorted(set().union(*(txn.keys() for txn in txns)))
@@ -645,7 +650,7 @@ def txns_as_csv(inputs: List[tuple], txns: List[dict]) -> str:
 def dryrun_assert(
     inputs: List[list],
     dryrun_resps: List[dict],
-    assert_type: DryRunAssertionType,
+    assert_type: DryRunProperty,
     test: SequenceAssertion,
 ):
     N = len(inputs)
@@ -654,7 +659,7 @@ def dryrun_assert(
     ), f"inputs (len={N}) and dryrun responses (len={len(dryrun_resps)}) must have the same length"
 
     assert isinstance(
-        assert_type, DryRunAssertionType
+        assert_type, DryRunProperty
     ), f"assertions types must be DryRunAssertionType's but got [{assert_type}] which is a {type(assert_type)}"
 
     for i, args in enumerate(inputs):
@@ -671,7 +676,7 @@ def dryrun_assert(
         )
         is_app = mode == ExecutionMode.Application
 
-        actual = dig_actual(resp, assert_type)
+        actual = _dig_impl(resp, assert_type)
         ok, msg = test(args, actual)
         if not ok:
             extracts = extract_all(txn, is_app)
@@ -712,8 +717,135 @@ Global Delta:
 Local Delta:
 {ldelta}
 ===============
-TXN AS ROW: {dryrun_report_row(i+1, args, txn, is_app)}
+TXN AS ROW: {_dryrun_report_row(i+1, args, txn, is_app)}
 ===============
 <<<<<<<<<<<{msg}>>>>>>>>>>>>>
 ===============
 """
+
+
+def execute_singleton_app(
+    algod: AlgodClient,
+    teal: str,
+    args: Iterable[Union[str, int]],
+    sender: str = ZERO_ADDRESS,
+) -> "DryRunTransactionResult":
+    return execute_singleton_dryrun(
+        algod, teal, args, ExecutionMode.Application, sender=sender
+    )
+
+
+def execute_singleton_logicsig(
+    algod: AlgodClient,
+    teal: str,
+    args: Iterable[Union[str, int]],
+    sender: str = ZERO_ADDRESS,
+) -> "DryRunTransactionResult":
+    return execute_singleton_dryrun(
+        algod, teal, args, ExecutionMode.Signature, sender
+    )
+
+
+def execute_singleton_dryrun(
+    algod: AlgodClient,
+    teal: str,
+    args: Iterable[Union[str, int]],
+    mode: ExecutionMode,
+    sender: str = ZERO_ADDRESS,
+) -> "DryRunTransactionResult":
+    assert (
+        len(ExecutionMode) == 2
+    ), f"assuming only 2 ExecutionMode's but have {len(ExecutionMode)}"
+    assert mode in ExecutionMode, f"unknown mode {mode} of type {type(mode)}"
+    is_app = mode == ExecutionMode.Application
+
+    args = dryrun_encode_args(args)
+    builder = (
+        DryRunHelper.singleton_app_request
+        if is_app
+        else DryRunHelper.singleton_logicsig_request
+    )
+    dryrun_req = builder(teal, args, sender=sender)
+    dryrun_resp = algod.dryrun(dryrun_req)
+    return DryRunTransactionResult.singleton(dryrun_resp)
+
+
+class DryRunTransactionResult:
+    """
+    TODO: merge this with @barnjamin's class of PR #283
+    """
+
+    def __init__(self, dryrun_resp: dict, txn_index: int):
+        txns = dryrun_resp.get("txns", [])
+        assert txns, "Dry Run response is missing transactions"
+
+        assert (
+            0 <= txn_index < len(txns)
+        ), f"Out of bounds txn_index {txn_index} when there are only {len(txns)} transactions in the Dry Run response"
+
+        txn = txns[txn_index]
+
+        self.mode: ExecutionMode = self.get_txn_mode(txn)
+        self.parent_dryrun_response: dict = dryrun_resp
+        self.txn: dict = txn
+
+    @classmethod
+    def get_txn_mode(cls, txn: dict) -> ExecutionMode:
+        """
+        Guess the mode based on location of traces. If no luck, raise an AssertionError
+        """
+        keyset = set(txn.keys())
+        akey, lskey = "app-call-trace", "logic-sig-trace"
+        assert (
+            len({akey, lskey} & keyset) == 1
+        ), f"ambiguous mode for dry run transaction: expected exactly one of '{akey}', '{lskey}' to be in keyset {keyset}"
+
+        if akey in keyset:
+            return ExecutionMode.Application
+
+        return ExecutionMode.Signature
+
+    @classmethod
+    def singleton(cls, dryrun_resp: dict) -> "DryRunTransactionResult":
+        txns = dryrun_resp.get("txns") or []
+        assert (
+            len(txns) == 1
+        ), f"require exactly 1 dry run transaction to create a singleton but had {len(txns)} instead"
+
+        return cls(dryrun_resp, 0)
+
+    def dig(self, property: DryRunProperty, **kwargs: Dict[str, Any]) -> Any:
+        return _dig_impl(self.parent_dryrun_response, property, **kwargs)
+
+    def cost(self) -> int:
+        return self.dig(DRProp.cost)
+
+    def last_log(self) -> str:
+        return self.dig(DRProp.lastLog)
+
+    def final_scratch(self) -> Dict[int, Union[int, str]]:
+        return self.dig(DRProp.finalScratch)
+
+    def max_stack_height(self) -> int:
+        return self.dig(DRProp.maxStackHeight)
+
+    def stack_top(self) -> int:
+        return self.dig(DRProp.stackTop)
+
+    def status(self) -> str:
+        return self.dig(DRProp.status)
+
+    def passed(self) -> bool:
+        return self.dig(DRProp.passed)
+
+    def rejected(self) -> bool:
+        return self.dig(DRProp.rejected)
+
+    def error(self, pattern=None) -> bool:
+        return self.dig(DRProp.error, pattern=pattern)
+
+    def noError(self) -> Union[bool, str]:
+        """
+        Returns error message in the case there was actualluy an erorr
+        """
+        return self.dig(DRProp.noError)
