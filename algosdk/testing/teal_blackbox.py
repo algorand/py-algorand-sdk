@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 import io
 from tabulate import tabulate
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Tuple, Union
 
 from algosdk.testing.dryrun import assert_error, assert_no_error
 
@@ -133,7 +133,7 @@ def lightly_encode_output(out: Union[int, str], logs=False) -> str:
         return bytes(out, "utf-8").hex()
 
 
-def lightly_encode_args(args: List[Union[str, int]]) -> List[str]:
+def lightly_encode_args(args: Iterable[Union[str, int]]) -> List[str]:
     """
     Encoding convention for Black Box Testing.
 
