@@ -114,11 +114,12 @@ def assert_error(drr, pattern=None, txn_index=None, msg=None, enforce=True):
     error = Helper.find_error(drr, txn_index=txn_index)
     ok = bool(error)
     result = None
-    if not ok:
+    if not ok:  # the expected error did NOT occur
         result = f"expected truthy error but got {error}" + _msg_if(msg)
         if enforce:
             assert error, result
         return ok, result
+    # got here? Must have error
     if pattern is not None:
         return _assert_in(pattern, error, enforce=enforce)
 
