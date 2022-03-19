@@ -182,8 +182,8 @@ APP_SCENARIOS = {
             DRProp.lastLog: dryrun_encode_out(2 ** 10, logs=True),
             # dicts have a special meaning as assertions. So in the case of "finalScratch"
             # which is supposed to _ALSO_ output a dict, we need to use a lambda as a work-around
-            DRProp.finalScratch: lambda _: {0: 1024},
-            DRProp.stackTop: 1024,
+            DRProp.finalScratch: lambda _: {0: 2 ** 10},
+            DRProp.stackTop: 2 ** 10,
             DRProp.maxStackHeight: 2,
             DRProp.status: "PASS",
             DRProp.passed: True,
