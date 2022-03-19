@@ -212,6 +212,8 @@ class BlackBoxResults:
 
 
 class DryRunEncoder:
+    """Encoding utilities for dry run executions and results"""
+
     @classmethod
     def encode_args(cls, args: Iterable[Union[str, int]]) -> List[str]:
         """
@@ -264,6 +266,8 @@ class DryRunEncoder:
 
 
 class DryRunExecutor:
+    """Methods to package up and kick off dry run executions"""
+
     @classmethod
     def dryrun_app(
         cls,
@@ -341,7 +345,7 @@ class DryRunExecutor:
 
 
 class DryRunTransactionResult:
-    """
+    """Methods to extract information from a single dry run transaction.
     TODO: merge this with @barnjamin's class of PR #283
     """
 
@@ -694,6 +698,8 @@ class DryRunTransactionResult:
 
 
 class SequenceAssertion:
+    """Enable asserting invariants on a sequence of dry run executions"""
+
     def __init__(
         self,
         predicate: Union[Dict[Tuple, Union[str, int]], Callable],
