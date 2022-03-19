@@ -43,7 +43,7 @@ def fib_cost(args):
     return cost
 
 
-def test_execute_singleton():
+def test_singleton_assertions():
     algod = get_algod()
     algod_status = algod.status()
     assert algod_status
@@ -117,6 +117,7 @@ load 1""",
     )
 
     assert app_resp.last_log() is None
+    assert app_log_resp.last_log() == (x ** 2).to_bytes(8, "big").hex()
     assert app_log_resp.last_log() == dryrun_encode_out(x ** 2, logs=True)
     with pytest.raises(AssertionError) as e:
         lsig_resp.last_log()
