@@ -6,14 +6,12 @@ from algosdk.testing.dryrun import Helper as DryRunHelper
 from algosdk.testing.teal_blackbox import (
     DryRunTransactionResult,
     csv_from_dryruns,
-    # dryrun_app_executions,
     dryrun_assert,
     dryrun_app_executions,
     dryrun_logicsig_executions,
     execute_singleton_app,
     execute_singleton_logicsig,
     get_blackbox_scenario_components,
-    dryrun_encode_args,
     dryrun_encode_out,
     mode_has_assertion,
     dryrun_encode_scratch,
@@ -382,24 +380,17 @@ def test_app_with_report(filebase: str):
 -------"""
     )
 
-    # 2. Build the Dryrun requests:
-    # drbuilder = DryRunHelper.singleton_app_request
-    # dryrun_reqs = list(
-    #     map(lambda a: drbuilder(teal, dryrun_encode_args(a)), inputs)
-    # )
-
-    # # 3. Run the requests to obtain sequence of Dryrun responses:
-    # dryrun_results = list(map(algod.dryrun, dryrun_reqs))
+    # 2. Run the requests to obtain sequence of Dryrun responses:
     dryrun_results = dryrun_app_executions(algod, teal, inputs)
 
-    # 4. Generate statistical report of all the runs:
+    # 3. Generate statistical report of all the runs:
     csvpath = path / f"{filebase}.csv"
     with open(csvpath, "w") as f:
         f.write(csv_from_dryruns(inputs, dryrun_results))
 
     print(f"Saved Dry Run CSV report to {csvpath}")
 
-    # 5. Sequential assertions (if provided any)
+    # 4. Sequential assertions (if provided any)
     for i, type_n_assertion in enumerate(assertions.items()):
         assert_type, assertion = type_n_assertion
 
@@ -587,25 +578,17 @@ def test_logicsig_with_report(filebase: str):
 -------"""
     )
 
-    # # 2. Build the Dryrun requests:
-    # drbuilder = DryRunHelper.singleton_logicsig_request
-    # dryrun_reqs = list(
-    #     map(lambda a: drbuilder(teal, dryrun_encode_args(a)), inputs)
-    # )
-
-    # # 3. Run the requests to obtain sequence of Dryrun resonses:
-    # dryrun_resps = list(map(algod.dryrun, dryrun_reqs))
-
+    # 2. Run the requests to obtain sequence of Dryrun resonses:
     dryrun_results = dryrun_logicsig_executions(algod, teal, inputs)
 
-    # 4. Generate statistical report of all the runs:
+    # 3. Generate statistical report of all the runs:
     csvpath = path / f"{filebase}.csv"
     with open(csvpath, "w") as f:
         f.write(csv_from_dryruns(inputs, dryrun_results))
 
     print(f"Saved Dry Run CSV report to {csvpath}")
 
-    # 5. Sequential assertions (if provided any)
+    # 4. Sequential assertions (if provided any)
     for i, type_n_assertion in enumerate(assertions.items()):
         assert_type, assertion = type_n_assertion
 

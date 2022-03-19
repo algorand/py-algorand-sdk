@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 import io
 from tabulate import tabulate
-from typing import Any, Callable, Dict, Iterable, List, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 from algosdk.v2client.algod import AlgodClient
 from algosdk.testing.dryrun import (
@@ -167,60 +167,6 @@ def _encoding_assertion(arg: Any, msg: str = "") -> None:
     ), f"{msg +': ' if msg else ''}can't handle arg [{arg}] of type {type(arg)}"
     if isinstance(arg, int):
         assert arg >= 0, f"can't handle negative arguments but was given {arg}"
-
-
-def make_table(
-    black_box_result: BlackBoxResults,
-    col_max: int,
-    scratch_verbose: bool = False,
-    scratch_before_stack: bool = True,
-):
-    assert not (
-        scratch_verbose and scratch_before_stack
-    ), "Cannot request scratch columns before stack when verbose"
-
-    def empty_hack(se):
-        return se if se else [""]
-
-    rows = [
-        list(
-            map(
-                str,
-                [
-                    i + 1,
-                    black_box_result.program_counters[i],
-                    black_box_result.teal_line_numbers[i],
-                    black_box_result.teal_source_lines[i],
-                    black_box_result.stack_evolution[i],
-                    *empty_hack(black_box_result.scratch_evolution[i]),
-                ],
-            )
-        )
-        for i in range(black_box_result.steps_executed)
-    ]
-    if col_max and col_max > 0:
-        rows = [[x[:col_max] for x in row] for row in rows]
-    headers = [
-        "step",
-        "PC#",
-        "L#",
-        "Teal",
-        "Stack",
-        *(
-            [f"S@{s}" for s in black_box_result.slots_used]
-            if scratch_verbose
-            else ["Scratch"]
-        ),
-    ]
-    if scratch_before_stack:
-        # with assertion above, we know that there is only one
-        # scratch column and it's at the very end
-        headers[-1], headers[-2] = headers[-2], headers[-1]
-        for i in range(len(rows)):
-            rows[i][-1], rows[i][-2] = rows[i][-2], rows[i][-1]
-
-    table = tabulate(rows, headers=headers, tablefmt="presto")
-    return table
 
 
 def scrape_the_black_box(
@@ -443,76 +389,6 @@ def mode_has_assertion(
     return True
 
 
-def _dig_impl(
-    dryrun_resp: dict, property: DryRunProperty, **kwargs: Dict[str, Any]
-) -> Union[str, int, bool]:
-    txns = dryrun_resp["txns"]
-    assert (
-        len(txns) == 1
-    ), f"expecting exactly 1 transaction but got {len(txns)}"
-    txn = txns[0]
-    mode = (
-        ExecutionMode.Signature
-        if "logic-sig-messages" in txn
-        else ExecutionMode.Application
-    )
-
-    assert mode_has_assertion(
-        mode, property
-    ), f"{mode} cannot handle dig information from txn for assertion type {property}"
-    is_app = mode == ExecutionMode.Application
-
-    if property == DryRunProperty.cost:
-        return txn["cost"]
-
-    if property == DryRunProperty.lastLog:
-        last_log = txn.get("logs", [None])[-1]
-        if last_log is None:
-            return last_log
-        return b64decode(last_log).hex()
-
-    if property == DryRunProperty.finalScratch:
-        trace = extract_trace(txn, is_app)
-        lines = extract_lines(txn, is_app)
-        bbr = scrape_the_black_box(trace, lines)
-        return {
-            k: v.as_python_type() for k, v in bbr.final_scratch_state.items()
-        }
-
-    if property == DryRunProperty.stackTop:
-        trace = extract_trace(txn, is_app)
-        stack = trace[-1]["stack"]
-        if not stack:
-            return None
-        tv = TealVal.from_scratch(stack[-1])
-        return tv.as_python_type()
-
-    if property == DryRunProperty.maxStackHeight:
-        return max(len(t["stack"]) for t in extract_trace(txn, is_app))
-
-    if property == DryRunProperty.status:
-        return extract_status(mode, txn)
-
-    if property == DryRunProperty.passed:
-        return extract_status(mode, txn) == "PASS"
-
-    if property == DryRunProperty.rejected:
-        return extract_status(mode, txn) == "REJECT"
-
-    if property == DryRunProperty.error:
-        pattern = kwargs.get("pattern")
-        ok, msg = assert_error(dryrun_resp, pattern=pattern, enforce=False)
-        # when there WAS an error, we return its msg, else False
-        return ok
-
-    if property == DryRunProperty.noError:
-        ok, msg = assert_no_error(dryrun_resp, enforce=False)
-        # when there was NO error, we return True, else return its msg
-        return ok or msg
-
-    raise Exception(f"Unknown assert_type {property}")
-
-
 def extract_logs(txn):
     return [b64decode(log).hex() for log in txn.get("logs", [])]
 
@@ -521,20 +397,11 @@ def extract_cost(txn):
     return txn.get("cost")
 
 
-def extract_status(mode, txn):
-    return (
-        txn["logic-sig-messages"][0]
-        if mode == ExecutionMode.Signature
-        else txn["app-call-messages"][1]
+def extract_status(txn, is_app: bool):
+    key, idx = (
+        ("app-call-messages", 1) if is_app else ("logic-sig-messages", 0)
     )
-
-
-def extract_lines(txn, is_app):
-    return txn["disassembly" if is_app else "logic-sig-disassembly"]
-
-
-def extract_trace(txn, is_app):
-    return txn["app-call-trace" if is_app else "logic-sig-trace"]
+    return txn[key][idx]
 
 
 def extract_messages(txn, is_app):
@@ -549,21 +416,29 @@ def extract_global_delta(txn):
     return txn.get("global-delta", [])
 
 
-def extract_all(txn: dict, is_app: bool) -> dict:
-    trace = extract_trace(txn, is_app)
-    lines = extract_lines(txn, is_app)
-    bbr = scrape_the_black_box(trace, lines)
+def extract_lines(txn, is_app):
+    return txn["disassembly" if is_app else "logic-sig-disassembly"]
 
-    return {
-        "cost": extract_cost(txn),
+
+def extract_trace(txn, is_app):
+    return txn["app-call-trace" if is_app else "logic-sig-trace"]
+
+
+def extract_all(txn: dict, is_app: bool) -> dict:
+    result = {
         "logs": extract_logs(txn),
-        "gdelta": extract_global_delta(txn),
-        "ldeltas": extract_local_deltas(txn),
+        "cost": extract_cost(txn),
+        "status": extract_status(txn, is_app),
         "messages": extract_messages(txn, is_app),
-        "trace": trace,
-        "lines": lines,
-        "bbr": bbr,
+        "ldeltas": extract_local_deltas(txn),
+        "gdelta": extract_global_delta(txn),
+        "lines": extract_lines(txn, is_app),
+        "trace": extract_trace(txn, is_app),
     }
+
+    result["bbr"] = scrape_the_black_box(result["trace"], result["lines"])
+
+    return result
 
 
 def guess_txn_mode(txn: dict, enforce: bool = True) -> ExecutionMode:
@@ -586,62 +461,22 @@ def guess_txn_mode(txn: dict, enforce: bool = True) -> ExecutionMode:
     return None
 
 
-def _dryrun_report_row(
-    row_num: int, args: List[Union[int, str]], txn: dict, is_app: bool = None
-) -> dict:
-    """
-    when is_app is not supplied, attempt to auto-detect whether dry run is a logic sig or an app
-    """
-    if is_app is None:
-        is_app = guess_txn_mode(txn) == ExecutionMode.Application
-
-    extracts = extract_all(txn, is_app)
-    logs = extracts["logs"]
-    return {
-        " Run": row_num,
-        " cost": extracts["cost"],
-        # back-tick needed to keep Excel/Google sheets from stumbling over hex
-        " final_log": f"`{logs[-1]}" if logs else None,
-        " final_message": extracts["messages"][-1],
-        " Status": extracts["messages"][1 if is_app else 0],
-        **extracts["bbr"].final_as_row(),
-        **{f"Arg_{i:02}": arg for i, arg in enumerate(args)},
-    }
-
-
-def csv_from_dryruns(inputs: List[tuple], dr_resps: List[dict]) -> str:
+def csv_from_dryruns(
+    inputs: List[tuple], dr_resps: List["DryRunTransactionResult"]
+) -> str:
     N = len(inputs)
     assert N == len(
         dr_resps
     ), f"cannot produce CSV with unmatching size of inputs ({len(inputs)}) v. drresps ({len(dr_resps)})"
 
-    txns = []
-    for i, dr_resp in enumerate(dr_resps):
-        _txns = dr_resp.get("txns", [])
-        assert (
-            len(_txns) == 1
-        ), f"need exactly one txn per dr_resp but got {len(_txns)} at index {i}"
-
-        txns.append(_txns[0])
-
-    return _txns_as_csv(inputs, txns)
-
-
-def _txns_as_csv(inputs: List[tuple], txns: List[dict]) -> str:
-    N = len(inputs)
-    assert N == len(
-        txns
-    ), f"cannot produce CSV with unmatching size of inputs ({len(inputs)}) v. txns ({len(txns)})"
-    assert txns, "cannot produce CSV from an empty list"
-
-    txns = [
-        _dryrun_report_row(i + 1, inputs[i], txn) for i, txn in enumerate(txns)
+    dr_resps = [
+        resp.csv_row(i + 1, inputs[i]) for i, resp in enumerate(dr_resps)
     ]
     with io.StringIO() as csv_str:
-        fields = sorted(set().union(*(txn.keys() for txn in txns)))
+        fields = sorted(set().union(*(txn.keys() for txn in dr_resps)))
         writer = csv.DictWriter(csv_str, fieldnames=fields)
         writer.writeheader()
-        for txn in txns:
+        for txn in dr_resps:
             writer.writerow(txn)
 
         return csv_str.getvalue()
@@ -649,58 +484,40 @@ def _txns_as_csv(inputs: List[tuple], txns: List[dict]) -> str:
 
 def dryrun_assert(
     inputs: List[list],
-    dryrun_resps: List[dict],
+    dryrun_results: List["DryRunTransactionResult"],
     assert_type: DryRunProperty,
     test: SequenceAssertion,
 ):
     N = len(inputs)
     assert N == len(
-        dryrun_resps
-    ), f"inputs (len={N}) and dryrun responses (len={len(dryrun_resps)}) must have the same length"
+        dryrun_results
+    ), f"inputs (len={N}) and dryrun responses (len={len(dryrun_results)}) must have the same length"
 
     assert isinstance(
         assert_type, DryRunProperty
     ), f"assertions types must be DryRunAssertionType's but got [{assert_type}] which is a {type(assert_type)}"
 
     for i, args in enumerate(inputs):
-        resp = dryrun_resps[i]
-        txns = resp["txns"]
-        assert (
-            len(txns) == 1
-        ), f"expecting exactly 1 transaction but got {len(txns)} for dryrun_resps[{i}]"
-        txn = txns[0]
-        mode = (
-            ExecutionMode.Signature
-            if "logic-sig-messages" in txn
-            else ExecutionMode.Application
-        )
-        is_app = mode == ExecutionMode.Application
-
-        actual = _dig_impl(resp, assert_type)
+        res = dryrun_results[i]
+        actual = res.dig(assert_type)
         ok, msg = test(args, actual)
         if not ok:
-            extracts = extract_all(txn, is_app)
-            cost = extracts["cost"]
-            logs = extracts["logs"]
-            gdelta = extracts["gdelta"]
-            ldelta = extracts["ldeltas"]
-            messages = extracts["messages"]
-            bbr = extracts["bbr"]
-            table = make_table(bbr, -1)
+            extracts = res.extracts
+            bbr = res.black_box_results
 
             assert ok, f"""===============
 <<<<<<<<<<<{msg}>>>>>>>>>>>>>
 ===============
 App Trace:
-{table}
+{res.tabulate(-1)}
 ===============
-MODE: {mode}
-TOTAL COST: {cost}
+MODE: {res.mode}
+TOTAL COST: {res.cost()}
 ===============
-FINAL MESSAGE: {messages[-1]}
+FINAL MESSAGE: {res.last_message()}
 ===============
-Messages: {messages}
-Logs: {logs}
+Messages: {res.messages()}
+Logs: {res.logs()}
 ===============
 -----{bbr}-----
 TOTAL STEPS: {bbr.steps()}
@@ -712,12 +529,12 @@ SLOTS USED: {bbr.slots()}
 FINAL AS ROW: {bbr.final_as_row()}
 ===============
 Global Delta:
-{gdelta}
+{res.global_delta()}
 ===============
 Local Delta:
-{ldelta}
+{res.local_deltas()}
 ===============
-TXN AS ROW: {_dryrun_report_row(i+1, args, txn, is_app)}
+TXN AS ROW: {res.csv_row(i+1, args)}
 ===============
 <<<<<<<<<<<{msg}>>>>>>>>>>>>>
 ===============
@@ -732,6 +549,38 @@ def execute_singleton_app(
 ) -> "DryRunTransactionResult":
     return execute_singleton_dryrun(
         algod, teal, args, ExecutionMode.Application, sender=sender
+    )
+
+
+def dryrun_app_executions(
+    algod: AlgodClient,
+    teal: str,
+    inputs: List[Iterable[Union[str, int]]],
+    sender: str = ZERO_ADDRESS,
+) -> List["DryRunTransactionResult"]:
+    return list(
+        map(
+            lambda args: execute_singleton_app(
+                algod, teal, args, sender=sender
+            ),
+            inputs,
+        )
+    )
+
+
+def dryrun_logicsig_executions(
+    algod: AlgodClient,
+    teal: str,
+    inputs: List[Iterable[Union[str, int]]],
+    sender: str = ZERO_ADDRESS,
+) -> List["DryRunTransactionResult"]:
+    return list(
+        map(
+            lambda args: execute_singleton_logicsig(
+                algod, teal, args, sender=sender
+            ),
+            inputs,
+        )
     )
 
 
@@ -788,6 +637,11 @@ class DryRunTransactionResult:
         self.mode: ExecutionMode = self.get_txn_mode(txn)
         self.parent_dryrun_response: dict = dryrun_resp
         self.txn: dict = txn
+        self.extracts: dict = extract_all(self.txn, self.is_app())
+        self.black_box_results: BlackBoxResults = self.extracts["bbr"]
+
+    def is_app(self) -> bool:
+        return self.mode == ExecutionMode.Application
 
     @classmethod
     def get_txn_mode(cls, txn: dict) -> ExecutionMode:
@@ -815,13 +669,73 @@ class DryRunTransactionResult:
         return cls(dryrun_resp, 0)
 
     def dig(self, property: DryRunProperty, **kwargs: Dict[str, Any]) -> Any:
-        return _dig_impl(self.parent_dryrun_response, property, **kwargs)
+        txn = self.txn
+        bbr = self.black_box_results
 
-    def cost(self) -> int:
-        return self.dig(DRProp.cost)
+        assert mode_has_assertion(
+            self.mode, property
+        ), f"{self.mode} cannot handle dig information from txn for assertion type {property}"
 
-    def last_log(self) -> str:
-        return self.dig(DRProp.lastLog)
+        if property == DryRunProperty.cost:
+            return txn["cost"]
+
+        if property == DryRunProperty.lastLog:
+            last_log = txn.get("logs", [None])[-1]
+            if last_log is None:
+                return last_log
+            return b64decode(last_log).hex()
+
+        if property == DryRunProperty.finalScratch:
+            return {
+                k: v.as_python_type()
+                for k, v in bbr.final_scratch_state.items()
+            }
+
+        if property == DryRunProperty.stackTop:
+            trace = self.extracts["trace"]
+            stack = trace[-1]["stack"]
+            if not stack:
+                return None
+            tv = TealVal.from_scratch(stack[-1])
+            return tv.as_python_type()
+
+        if property == DryRunProperty.maxStackHeight:
+            return max(len(t["stack"]) for t in self.extracts["trace"])
+
+        if property == DryRunProperty.status:
+            return self.extracts["status"]
+
+        if property == DryRunProperty.passed:
+            return self.extracts["status"] == "PASS"
+
+        if property == DryRunProperty.rejected:
+            return self.extracts["status"] == "REJECT"
+
+        if property == DryRunProperty.error:
+            pattern = kwargs.get("pattern")
+            ok, msg = assert_error(
+                self.parent_dryrun_response, pattern=pattern, enforce=False
+            )
+            # when there WAS an error, we return its msg, else False
+            return ok
+
+        if property == DryRunProperty.noError:
+            ok, msg = assert_no_error(
+                self.parent_dryrun_response, enforce=False
+            )
+            # when there was NO error, we return True, else return its msg
+            return ok or msg
+
+        raise Exception(f"Unknown assert_type {property}")
+
+    def cost(self) -> Optional[int]:
+        return self.dig(DRProp.cost) if self.is_app() else None
+
+    def last_log(self) -> Optional[str]:
+        return self.dig(DRProp.lastLog) if self.is_app() else None
+
+    def logs(self) -> Optional[List[str]]:
+        return self.extracts["logs"]
 
     def final_scratch(self) -> Dict[int, Union[int, str]]:
         return self.dig(DRProp.finalScratch)
@@ -849,3 +763,83 @@ class DryRunTransactionResult:
         Returns error message in the case there was actualluy an erorr
         """
         return self.dig(DRProp.noError)
+
+    def messages(self) -> List[str]:
+        return self.extracts["messages"]
+
+    def last_message(self) -> Optional[str]:
+        return self.messages()[-1] if self.messages() else None
+
+    def local_deltas(self) -> dict:
+        return self.extracts["ldeltas"]
+
+    def global_delta(self) -> dict:
+        return self.extracts["gdelta"]
+
+    def csv_row(
+        self, row_num: int, args: Iterable[Union[int, str]]
+    ) -> Dict[str, Union[str, int]]:
+        return {
+            " Run": row_num,
+            " cost": self.cost(),
+            # back-tick needed to keep Excel/Google sheets from stumbling over hex
+            " last_log": f"`{self.last_log()}",
+            " final_message": self.last_message(),
+            " Status": self.status(),
+            **self.black_box_results.final_as_row(),
+            **{f"Arg_{i:02}": arg for i, arg in enumerate(args)},
+        }
+
+    def tabulate(
+        self,
+        col_max: int,
+        scratch_verbose: bool = False,
+        scratch_before_stack: bool = True,
+    ):
+        assert not (
+            scratch_verbose and scratch_before_stack
+        ), "Cannot request scratch columns before stack when verbose"
+        bbr = self.black_box_results
+
+        def empty_hack(se):
+            return se if se else [""]
+
+        rows = [
+            list(
+                map(
+                    str,
+                    [
+                        i + 1,
+                        bbr.program_counters[i],
+                        bbr.teal_line_numbers[i],
+                        bbr.teal_source_lines[i],
+                        bbr.stack_evolution[i],
+                        *empty_hack(bbr.scratch_evolution[i]),
+                    ],
+                )
+            )
+            for i in range(bbr.steps_executed)
+        ]
+        if col_max and col_max > 0:
+            rows = [[x[:col_max] for x in row] for row in rows]
+        headers = [
+            "step",
+            "PC#",
+            "L#",
+            "Teal",
+            "Stack",
+            *(
+                [f"S@{s}" for s in bbr.slots_used]
+                if scratch_verbose
+                else ["Scratch"]
+            ),
+        ]
+        if scratch_before_stack:
+            # with assertion above, we know that there is only one
+            # scratch column and it's at the very end
+            headers[-1], headers[-2] = headers[-2], headers[-1]
+            for i in range(len(rows)):
+                rows[i][-1], rows[i][-2] = rows[i][-2], rows[i][-1]
+
+        table = tabulate(rows, headers=headers, tablefmt="presto")
+        return table
