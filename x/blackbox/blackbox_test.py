@@ -77,92 +77,92 @@ load 1""",
     x = 9
     args = [x]
 
-    app_resp, app_log_resp = list(
+    app_res, app_log_res = list(
         map(
             lambda teal: Executor.dryrun_app(algod, teal, args),
             [teal_app, teal_app_log],
         )
     )
-    lsig_resp, bad_lsig_resp = list(
+    lsig_res, bad_lsig_res = list(
         map(
             lambda teal: Executor.dryrun_logicsig(algod, teal, args),
             [teal_lsig, bad_teal_lsig],
         )
     )
 
-    assert isinstance(app_resp, DryRunTransactionResult)
-    assert isinstance(app_log_resp, DryRunTransactionResult)
-    assert isinstance(lsig_resp, DryRunTransactionResult)
-    assert isinstance(bad_lsig_resp, DryRunTransactionResult)
+    assert isinstance(app_res, DryRunTransactionResult)
+    assert isinstance(app_log_res, DryRunTransactionResult)
+    assert isinstance(lsig_res, DryRunTransactionResult)
+    assert isinstance(bad_lsig_res, DryRunTransactionResult)
 
-    assert app_resp.mode == ExecutionMode.Application
-    assert app_log_resp.mode == ExecutionMode.Application
-    assert lsig_resp.mode == ExecutionMode.Signature
-    assert bad_lsig_resp.mode == ExecutionMode.Signature
+    assert app_res.mode == ExecutionMode.Application
+    assert app_log_res.mode == ExecutionMode.Application
+    assert lsig_res.mode == ExecutionMode.Signature
+    assert bad_lsig_res.mode == ExecutionMode.Signature
 
-    assert app_resp.cost() == 9
-    assert app_log_resp.cost() == 14
-    assert lsig_resp.cost() is None
+    assert app_res.cost() == 9
+    assert app_log_res.cost() == 14
+    assert lsig_res.cost() is None
 
-    assert app_resp.last_log() is None
-    assert app_log_resp.last_log() == (x ** 2).to_bytes(8, "big").hex()
-    assert app_log_resp.last_log() == Encoder.hex(x ** 2)
-    assert lsig_resp.last_log() is None
+    assert app_res.last_log() is None
+    assert app_log_res.last_log() == (x ** 2).to_bytes(8, "big").hex()
+    assert app_log_res.last_log() == Encoder.hex(x ** 2)
+    assert lsig_res.last_log() is None
 
-    assert app_resp.final_scratch() == {0: x}
-    assert app_log_resp.final_scratch() == {0: x, 1: x ** 2}
-    assert lsig_resp.final_scratch() == {0: x}
-    assert bad_lsig_resp.final_scratch() == {0: x, 1: x ** 2}
+    assert app_res.final_scratch() == {0: x}
+    assert app_log_res.final_scratch() == {0: x, 1: x ** 2}
+    assert lsig_res.final_scratch() == {0: x}
+    assert bad_lsig_res.final_scratch() == {0: x, 1: x ** 2}
 
-    assert app_resp.stack_top() == x ** 2
-    assert app_log_resp.stack_top() == x ** 2
-    assert lsig_resp.stack_top() == x ** 2
-    assert bad_lsig_resp.stack_top() == Encoder.hex0x(x ** 2)
+    assert app_res.stack_top() == x ** 2
+    assert app_log_res.stack_top() == x ** 2
+    assert lsig_res.stack_top() == x ** 2
+    assert bad_lsig_res.stack_top() == Encoder.hex0x(x ** 2)
 
-    assert app_resp.max_stack_height() == 2
-    assert app_log_resp.max_stack_height() == 2
-    assert lsig_resp.max_stack_height() == 2
-    assert bad_lsig_resp.max_stack_height() == 2
+    assert app_res.max_stack_height() == 2
+    assert app_log_res.max_stack_height() == 2
+    assert lsig_res.max_stack_height() == 2
+    assert bad_lsig_res.max_stack_height() == 2
 
-    assert app_resp.status() == "PASS"
-    assert app_log_resp.status() == "PASS"
-    assert lsig_resp.status() == "PASS"
-    assert bad_lsig_resp.status() == "REJECT"
+    assert app_res.status() == "PASS"
+    assert app_log_res.status() == "PASS"
+    assert lsig_res.status() == "PASS"
+    assert bad_lsig_res.status() == "REJECT"
 
-    assert app_resp.passed() is True
-    assert app_log_resp.passed() is True
-    assert lsig_resp.passed() is True
-    assert bad_lsig_resp.passed() is False
+    assert app_res.passed() is True
+    assert app_log_res.passed() is True
+    assert lsig_res.passed() is True
+    assert bad_lsig_res.passed() is False
 
-    assert app_resp.rejected() is False
-    assert app_log_resp.rejected() is False
-    assert lsig_resp.rejected() is False
-    assert bad_lsig_resp.rejected() is True
+    assert app_res.rejected() is False
+    assert app_log_res.rejected() is False
+    assert lsig_res.rejected() is False
+    assert bad_lsig_res.rejected() is True
 
-    assert app_resp.rejected() is False
-    assert app_log_resp.rejected() is False
-    assert lsig_resp.rejected() is False
-    assert bad_lsig_resp.rejected() is True
+    assert app_res.rejected() is False
+    assert app_log_res.rejected() is False
+    assert lsig_res.rejected() is False
+    assert bad_lsig_res.rejected() is True
 
-    assert app_resp.error() is False
-    assert app_log_resp.error() is False
-    assert lsig_resp.error() is False
-    assert bad_lsig_resp.error() is True
+    assert app_res.error() is False
+    assert app_log_res.error() is False
+    assert lsig_res.error() is False
+    assert bad_lsig_res.error() is True
     assert (
-        bad_lsig_resp.error(
+        bad_lsig_res.error(
             pattern="logic 0 failed at line 7: log not allowed in current mode"
         )
         is True
     )
-    assert bad_lsig_resp.error(pattern="log not allowed") is True
-    assert bad_lsig_resp.error(pattern="WRONG PATTERN") is False
+    assert bad_lsig_res.error(pattern="log not allowed") is True
+    assert bad_lsig_res.error(pattern="WRONG PATTERN") is False
 
-    assert app_resp.noError() is True
-    assert app_log_resp.noError() is True
-    assert lsig_resp.noError() is True
+    assert app_res.noError() is True
+    assert app_log_res.noError() is True
+    assert lsig_res.noError() is True
     assert (
         "logic 0 failed at line 7: log not allowed in current mode"
-        in bad_lsig_resp.noError()
+        in bad_lsig_res.noError()
     )
 
 
@@ -373,7 +373,7 @@ def test_app_with_report(filebase: str):
     )
 
     # 2. Run the requests to obtain sequence of Dryrun responses:
-    dryrun_results = Executor.dryrun_app_sequence(algod, teal, inputs)
+    dryrun_results = Executor.dryrun_app_on_sequence(algod, teal, inputs)
 
     # 3. Generate statistical report of all the runs:
     csvpath = path / f"{filebase}.csv"
@@ -408,7 +408,7 @@ LOGICSIG_SCENARIOS = {
             # DRA.cost: 11,
             # DRA.lastLog: lightly_encode_output(2 ** 10, logs=True),
             DRProp.finalScratch: lambda _: {},
-            DRProp.stackTop: 1024,
+            DRProp.stackTop: 2 ** 10,
             DRProp.maxStackHeight: 2,
             DRProp.status: "PASS",
             DRProp.passed: True,
@@ -573,7 +573,7 @@ def test_logicsig_with_report(filebase: str):
     )
 
     # 2. Run the requests to obtain sequence of Dryrun resonses:
-    dryrun_results = Executor.dryrun_logicsig_sequence(algod, teal, inputs)
+    dryrun_results = Executor.dryrun_logicsig_on_sequence(algod, teal, inputs)
 
     # 3. Generate statistical report of all the runs:
     csvpath = path / f"{filebase}.csv"

@@ -293,7 +293,7 @@ class DryRunExecutor:
         )
 
     @classmethod
-    def dryrun_app_sequence(
+    def dryrun_app_on_sequence(
         cls,
         algod: AlgodClient,
         teal: str,
@@ -303,7 +303,7 @@ class DryRunExecutor:
         return cls._map(cls.dryrun_app, algod, teal, inputs, sender)
 
     @classmethod
-    def dryrun_logicsig_sequence(
+    def dryrun_logicsig_on_sequence(
         cls,
         algod: AlgodClient,
         teal: str,
@@ -346,7 +346,55 @@ class DryRunExecutor:
 
 class DryRunTransactionResult:
     """Methods to extract information from a single dry run transaction.
-    TODO: merge this with @barnjamin's class of PR #283
+    TODO: merge this with @barnjamin's similarly named class of PR #283
+
+    The class contains convenience methods and properties for inspecting
+    dry run execution results on a _single transaction_ and for making
+    assertions in tests.
+
+    For example, let's execute a dry run for a logic sig teal program that purportedly computes $`x^2`$
+    (see [lsig_square.teal](../../x/blackbox/teal/lsig_square.teal) for one such example).
+    So assume you have a string `teal` containing that TEAL source and run the following:
+
+    ```python
+    >>> algod = get_algod()
+    >>> x = 9
+    >>> args = (x,)
+    >>> dryrun_result = DryRunExecutor.dryrun_logicsig(algod, teal, args)
+    >>> assert dryrun_result.status() == "PASS"
+    >>> assert dryrun_result.stack_stop() == x ** 2
+    ```
+    In the above we have asserted the the program has succesfully exited with
+    status "PASS" and that the top of the stack contained $`x^2 = 9`$.
+    The _assertable properties_ were `status()` and `stack_top()`.
+
+    DryRunTransactionResult provides the following **assertable properties**:
+    * `cost`
+        - total opcode cost utilized during execution
+        - only available for apps
+    * `last_log`
+        - the final hex bytes that was logged during execution (apps only)
+        - only available for apps
+    * `logs`
+        - similar to `last_log` but a list of _all_ the printed logs
+    * `final_scratch`
+        - the final scratch slot state contents represented as a dictionary
+        - CAVEAT: slots containing a type's zero-value (0 or "") are not reported
+    * `max_stack_height`
+        - the maximum height of stack had during execution
+    * `stack_top`
+        - the contents of the top of the stack and the end of execution
+    * `status`
+        - either "PASS" when the execution succeeded or "REJECT" otherwise
+    * `passed`
+        - shorthand for `status() == "PASS"`
+    * `rejected`
+        - shorthand for `status() == "REJECT"`
+    * `error` with optional `pattern` matching
+        - when no pattern is provided, returns True exactly when execution fails due to error
+        - when pattern given, only return True if an error occured which matched the pattern
+    * `noError`
+        - returns True if there was no error, or the actual error when an error occured
     """
 
     def __init__(self, dryrun_resp: dict, txn_index: int):
@@ -396,6 +444,7 @@ class DryRunTransactionResult:
         return cls(dryrun_resp, 0)
 
     def dig(self, property: DryRunProperty, **kwargs: Dict[str, Any]) -> Any:
+        """Main router for assertable properties"""
         txn = self.txn
         bbr = self.black_box_results
 
@@ -456,38 +505,83 @@ class DryRunTransactionResult:
         raise Exception(f"Unknown assert_type {property}")
 
     def cost(self) -> Optional[int]:
+        """Assertable property for the total opcode cost that was used during dry run execution
+        return type: int
+        available Mode: Application only
+        """
         return self.dig(DRProp.cost) if self.is_app() else None
 
     def last_log(self) -> Optional[str]:
+        """Assertable property for the last log that was printed during dry run execution
+        return type: string representing the hex bytes of the final log
+        available Mode: Application only
+        """
         return self.dig(DRProp.lastLog) if self.is_app() else None
 
     def logs(self) -> Optional[List[str]]:
+        """Assertable property for all the logs that were printed during dry run execution
+        return type: list of strings representing hex bytes of the logs
+        available Mode: Application only
+        """
         return self.extracts["logs"]
 
     def final_scratch(self) -> Dict[int, Union[int, str]]:
+        """Assertable property for the scratch slots and their contents at the end of dry run execution
+        return type: dictionary from strings to int's or strings
+        available: all modes
+        CAVEAT: slots containing a type's zero-value (0 or "") are not reported
+        """
         return self.dig(DRProp.finalScratch)
 
     def max_stack_height(self) -> int:
+        """Assertable property for the maximum height the stack had during a dry run execution
+        return type: int
+        available: all modes
+        """
         return self.dig(DRProp.maxStackHeight)
 
-    def stack_top(self) -> int:
+    def stack_top(self) -> Union[int, str]:
+        """Assertable property for the contents of the top of the stack and the end of a dry run execution
+        return type: int or string
+        available: all modes
+        """
         return self.dig(DRProp.stackTop)
 
     def status(self) -> str:
+        """Assertable property for the program run status at the end of dry run execution
+        return type: string (either "PASS" or "REJECT")
+        available: all modes
+        """
         return self.dig(DRProp.status)
 
     def passed(self) -> bool:
+        """Assertable property for the program's dry run execution having SUCCEEDED
+        return type: bool
+        available: all modes
+        """
         return self.dig(DRProp.passed)
 
     def rejected(self) -> bool:
+        """Assertable property for the program's dry run execution having FAILED
+        return type: bool
+        available: all modes
+        """
         return self.dig(DRProp.rejected)
 
     def error(self, pattern=None) -> bool:
+        """Assertable property for a program having failed during dry run execution due to an error.
+        The optional `pattern` parameter allows specifying a particular string
+        expected to be a _substring_ of the error's message. In case the program errors, but
+        the pattern did not match the actual error, False is returned.
+            return type: bool
+            available: all modes
+        """
         return self.dig(DRProp.error, pattern=pattern)
 
     def noError(self) -> Union[bool, str]:
-        """
-        Returns error message in the case there was actualluy an erorr
+        """Assertable property for a program having NOT failed and when failing, producing the failure message.
+        return type: bool True (in the case of no error) or string with the error message, in case of error
+        available: all modes
         """
         return self.dig(DRProp.noError)
 
@@ -603,13 +697,14 @@ class DryRunTransactionResult:
         """Produce a Comma Separated Values report string capturing important statistics
         for a sequence of dry runs.
 
-        For example, assuming you have a string `teal` containing TEAL source,
-        and you run the following python (here using the x^2 program x/blackbox/teal/app_square.teal):
+        For example, assuming you have a string `teal` which is a TEAL program computing $`x^2`$
+        such as this [example program](x/blackbox/teal/app_square.teal).
+        Let's run some Exploratory Dry Run Analysis (EDRA) for $`x`$ in the range $`[0, 10]`$:
 
         ```python
         >>> algod = get_algod()
         >>> inputs = [(x,) for x in range(11)]  # [(0), (1), ... , (10)]
-        >>> dryrun_results = dryrun_app_executions(algod, teal, inputs)
+        >>> dryrun_results = DryRunExecutor.dryrun_app_on_sequence(algod, teal, inputs)
         >>> csv = DryRunTransactionResult.csv_report(inputs, dryrun_results)
         >>> print(csv)
         ```
