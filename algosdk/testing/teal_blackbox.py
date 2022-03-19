@@ -760,50 +760,56 @@ class SequenceAssertion:
         return inputs, assertions
 
 
-def dryrun_encode_out(out: Union[int, str], logs=False) -> str:
-    """
-    Encoding convention for Black Box Testing.
+class DryRunEncoder:
+    @classmethod
+    def encode_args(cls, args: Iterable[Union[str, int]]) -> List[str]:
+        """
+        Encoding convention for Black Box Testing.
 
-    * Assumes int's are uint64 and encodes them into hex str's
-    *
-    """
-    _encoding_assertion(out)
+        * Assumes int's are uint64 and encodes them as such
+        * Leaves str's alone
+        """
+        return [cls._encode_arg(a, i) for i, a in enumerate(args)]
 
-    if isinstance(out, int):
-        return out.to_bytes(8, "big").hex() if logs else out
+    @classmethod
+    def hex0x(cls, x) -> str:
+        return f"0x{cls.hex(x)}"
 
-    if isinstance(out, str):
-        return bytes(out, "utf-8").hex()
+    @classmethod
+    def hex(cls, out: Union[int, str]) -> str:
+        """
+        Encoding convention for Black Box Testing.
 
+        * Assumes int's are uint64
+        * Assumes everything else is a str
+        * Encodes them into hex str's
+        """
+        cls._assert_encodable(out)
+        return cls._to_bytes(out).hex()
 
-def dryrun_encode_args(args: Iterable[Union[str, int]]) -> List[str]:
-    """
-    Encoding convention for Black Box Testing.
+    @classmethod
+    def _to_bytes(cls, x, only_ints=False):
+        is_int = isinstance(x, int)
+        if only_ints and not is_int:
+            return x
+        return x.to_bytes(8, "big") if is_int else bytes(x, "utf-8")
 
-    * Assumes int's are uint64 and encodes them as such
-    * Leaves str's alone
-    """
-
-    def encode(arg, idx):
-        _encoding_assertion(arg, f"problem at args index {idx}")
-        return (
-            arg if isinstance(arg, str) else arg.to_bytes(8, byteorder="big")
+    @classmethod
+    def _encode_arg(cls, arg, idx):
+        cls._assert_encodable(
+            arg, f"problem encoding arg ({arg}) at index ({idx})"
         )
+        return cls._to_bytes(arg, only_ints=True)
 
-    return [encode(a, i) for i, a in enumerate(args)]
-
-
-def dryrun_encode_scratch(x) -> str:
-    x = x.to_bytes(8, "big") if isinstance(x, int) else x.encode("utf-8")
-    return f"0x{x.hex()}"
-
-
-def _encoding_assertion(arg: Any, msg: str = "") -> None:
-    assert isinstance(
-        arg, (int, str)
-    ), f"{msg +': ' if msg else ''}can't handle arg [{arg}] of type {type(arg)}"
-    if isinstance(arg, int):
-        assert arg >= 0, f"can't handle negative arguments but was given {arg}"
+    @classmethod
+    def _assert_encodable(cls, arg: Any, msg: str = "") -> None:
+        assert isinstance(
+            arg, (int, str)
+        ), f"{msg +': ' if msg else ''}can't handle arg [{arg}] of type {type(arg)}"
+        if isinstance(arg, int):
+            assert (
+                arg >= 0
+            ), f"can't handle negative arguments but was given {arg}"
 
 
 def execute_singleton_app(
@@ -873,7 +879,7 @@ def execute_singleton_dryrun(
     assert mode in ExecutionMode, f"unknown mode {mode} of type {type(mode)}"
     is_app = mode == ExecutionMode.Application
 
-    args = dryrun_encode_args(args)
+    args = DryRunEncoder.encode_args(args)
     builder = (
         DryRunHelper.singleton_app_request
         if is_app
