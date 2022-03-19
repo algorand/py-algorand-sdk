@@ -6,7 +6,10 @@ from algosdk.testing.dryrun import Helper as DryRunHelper
 from algosdk.testing.teal_blackbox import (
     DryRunTransactionResult,
     csv_from_dryruns,
+    # dryrun_app_executions,
     dryrun_assert,
+    dryrun_app_executions,
+    dryrun_logicsig_executions,
     execute_singleton_app,
     execute_singleton_logicsig,
     get_blackbox_scenario_components,
@@ -109,22 +112,12 @@ load 1""",
 
     assert app_resp.cost() == 9
     assert app_log_resp.cost() == 14
-    with pytest.raises(AssertionError) as e:
-        lsig_resp.cost()
-    assert (
-        "cannot handle dig information from txn for assertion type DryRunProperty.cost"
-        in e.value.args[0]
-    )
+    assert lsig_resp.cost() is None
 
     assert app_resp.last_log() is None
     assert app_log_resp.last_log() == (x ** 2).to_bytes(8, "big").hex()
     assert app_log_resp.last_log() == dryrun_encode_out(x ** 2, logs=True)
-    with pytest.raises(AssertionError) as e:
-        lsig_resp.last_log()
-    assert (
-        "cannot handle dig information from txn for assertion type DryRunProperty.lastLog"
-        in e.value.args[0]
-    )
+    assert lsig_resp.last_log() is None
 
     assert app_resp.final_scratch() == {0: x}
     assert app_log_resp.final_scratch() == {0: x, 1: x ** 2}
@@ -171,12 +164,16 @@ load 1""",
         )
         is True
     )
+    assert bad_lsig_resp.error(pattern="log not allowed") is True
     assert bad_lsig_resp.error(pattern="WRONG PATTERN") is False
 
     assert app_resp.noError() is True
     assert app_log_resp.noError() is True
     assert lsig_resp.noError() is True
-    "logic 0 failed at line 7: log not allowed in current mode" in bad_lsig_resp.noError()
+    assert (
+        "logic 0 failed at line 7: log not allowed in current mode"
+        in bad_lsig_resp.noError()
+    )
 
 
 APP_SCENARIOS = {
@@ -386,18 +383,21 @@ def test_app_with_report(filebase: str):
     )
 
     # 2. Build the Dryrun requests:
-    drbuilder = DryRunHelper.singleton_app_request
-    dryrun_reqs = list(
-        map(lambda a: drbuilder(teal, dryrun_encode_args(a)), inputs)
-    )
+    # drbuilder = DryRunHelper.singleton_app_request
+    # dryrun_reqs = list(
+    #     map(lambda a: drbuilder(teal, dryrun_encode_args(a)), inputs)
+    # )
 
-    # 3. Run the requests to obtain sequence of Dryrun responses:
-    dryrun_resps = list(map(algod.dryrun, dryrun_reqs))
+    # # 3. Run the requests to obtain sequence of Dryrun responses:
+    # dryrun_results = list(map(algod.dryrun, dryrun_reqs))
+    dryrun_results = dryrun_app_executions(algod, teal, inputs)
 
     # 4. Generate statistical report of all the runs:
     csvpath = path / f"{filebase}.csv"
     with open(csvpath, "w") as f:
-        f.write(csv_from_dryruns(inputs, dryrun_resps))
+        f.write(csv_from_dryruns(inputs, dryrun_results))
+
+    print(f"Saved Dry Run CSV report to {csvpath}")
 
     # 5. Sequential assertions (if provided any)
     for i, type_n_assertion in enumerate(assertions.items()):
@@ -413,7 +413,7 @@ def test_app_with_report(filebase: str):
         print(
             f"{i+1}. Semantic assertion for {case_name}-{mode}: {assert_type} <<{assertion}>>"
         )
-        dryrun_assert(inputs, dryrun_resps, assert_type, assertion)
+        dryrun_assert(inputs, dryrun_results, assert_type, assertion)
 
 
 # NOTE: logic sig dry runs are missing some information when compared with app dry runs.
@@ -587,19 +587,21 @@ def test_logicsig_with_report(filebase: str):
 -------"""
     )
 
-    # 2. Build the Dryrun requests:
-    drbuilder = DryRunHelper.singleton_logicsig_request
-    dryrun_reqs = list(
-        map(lambda a: drbuilder(teal, dryrun_encode_args(a)), inputs)
-    )
+    # # 2. Build the Dryrun requests:
+    # drbuilder = DryRunHelper.singleton_logicsig_request
+    # dryrun_reqs = list(
+    #     map(lambda a: drbuilder(teal, dryrun_encode_args(a)), inputs)
+    # )
 
-    # 3. Run the requests to obtain sequence of Dryrun resonses:
-    dryrun_resps = list(map(algod.dryrun, dryrun_reqs))
+    # # 3. Run the requests to obtain sequence of Dryrun resonses:
+    # dryrun_resps = list(map(algod.dryrun, dryrun_reqs))
+
+    dryrun_results = dryrun_logicsig_executions(algod, teal, inputs)
 
     # 4. Generate statistical report of all the runs:
     csvpath = path / f"{filebase}.csv"
     with open(csvpath, "w") as f:
-        f.write(csv_from_dryruns(inputs, dryrun_resps))
+        f.write(csv_from_dryruns(inputs, dryrun_results))
 
     print(f"Saved Dry Run CSV report to {csvpath}")
 
@@ -617,4 +619,4 @@ def test_logicsig_with_report(filebase: str):
         print(
             f"{i+1}. Semantic assertion for {case_name}-{mode}: {assert_type} <<{assertion}>>"
         )
-        dryrun_assert(inputs, dryrun_resps, assert_type, assertion)
+        dryrun_assert(inputs, dryrun_results, assert_type, assertion)
