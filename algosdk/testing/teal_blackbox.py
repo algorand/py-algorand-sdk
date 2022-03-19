@@ -70,6 +70,95 @@ class BlackBoxResults:
     slots_used: List[int]
     raw_stacks: List[list]
 
+    @classmethod
+    def scrape(
+        cls,
+        trace,
+        lines,
+        scratch_colon: str = "->",
+        scratch_verbose: bool = False,
+    ) -> "BlackBoxResults":
+        pcs = [t["pc"] for t in trace]
+        line_nums = [t["line"] for t in trace]
+
+        def line_or_err(i, ln):
+            line = lines[ln - 1]
+            err = trace[i].get("error")
+            return err if err else line
+
+        tls = [line_or_err(i, ln) for i, ln in enumerate(line_nums)]
+        N = len(pcs)
+        assert N == len(
+            tls
+        ), f"mismatch of lengths in pcs v. tls ({N} v. {len(tls)})"
+
+        # process stack var's
+        raw_stacks = [
+            [TealVal.from_stack(s) for s in x]
+            for x in [t["stack"] for t in trace]
+        ]
+        stacks = [f"[{', '.join(map(str,stack))}]" for stack in raw_stacks]
+        assert N == len(
+            stacks
+        ), f"mismatch of lengths in tls v. stacks ({N} v. {len(stacks)})"
+
+        # process scratch var's
+        scratches = [
+            [TealVal.from_scratch(s) for s in x]
+            for x in [t.get("scratch", []) for t in trace]
+        ]
+        scratches = [
+            {i: s for i, s in enumerate(scratch) if not s.is_empty()}
+            for scratch in scratches
+        ]
+        slots_used = sorted(set().union(*(s.keys() for s in scratches)))
+        final_scratch_state = scratches[-1]
+        if not scratch_verbose:
+
+            def compute_delta(prev, curr):
+                pks, cks = set(prev.keys()), set(curr.keys())
+                new_keys = cks - pks
+                if new_keys:
+                    return {k: curr[k] for k in new_keys}
+                return {k: v for k, v in curr.items() if prev[k] != v}
+
+            scratch_deltas = [scratches[0]]
+            for i in range(1, len(scratches)):
+                scratch_deltas.append(
+                    compute_delta(scratches[i - 1], scratches[i])
+                )
+
+            scratches = [
+                [f"{i}{scratch_colon}{v}" for i, v in scratch.items()]
+                for scratch in scratch_deltas
+            ]
+        else:
+            scratches = [
+                [
+                    f"{i}{scratch_colon}{scratch[i]}" if i in scratch else ""
+                    for i in slots_used
+                ]
+                for scratch in scratches
+            ]
+
+        assert N == len(
+            scratches
+        ), f"mismatch of lengths in tls v. scratches ({N} v. {len(scratches)})"
+
+        bbr = cls(
+            N,
+            pcs,
+            line_nums,
+            tls,
+            stacks,
+            scratches,
+            final_scratch_state,
+            slots_used,
+            raw_stacks,
+        )
+        bbr.assert_well_defined()
+        return bbr
+
     def assert_well_defined(self):
         assert all(
             self.steps_executed == len(x)
@@ -123,502 +212,6 @@ class BlackBoxResults:
         }
 
 
-def dryrun_encode_out(out: Union[int, str], logs=False) -> str:
-    """
-    Encoding convention for Black Box Testing.
-
-    * Assumes int's are uint64 and encodes them into hex str's
-    *
-    """
-    _encoding_assertion(out)
-
-    if isinstance(out, int):
-        return out.to_bytes(8, "big").hex() if logs else out
-
-    if isinstance(out, str):
-        return bytes(out, "utf-8").hex()
-
-
-def dryrun_encode_args(args: Iterable[Union[str, int]]) -> List[str]:
-    """
-    Encoding convention for Black Box Testing.
-
-    * Assumes int's are uint64 and encodes them as such
-    * Leaves str's alone
-    """
-
-    def encode(arg, idx):
-        _encoding_assertion(arg, f"problem at args index {idx}")
-        return (
-            arg if isinstance(arg, str) else arg.to_bytes(8, byteorder="big")
-        )
-
-    return [encode(a, i) for i, a in enumerate(args)]
-
-
-def dryrun_encode_scratch(x) -> str:
-    x = x.to_bytes(8, "big") if isinstance(x, int) else x.encode("utf-8")
-    return f"0x{x.hex()}"
-
-
-def _encoding_assertion(arg: Any, msg: str = "") -> None:
-    assert isinstance(
-        arg, (int, str)
-    ), f"{msg +': ' if msg else ''}can't handle arg [{arg}] of type {type(arg)}"
-    if isinstance(arg, int):
-        assert arg >= 0, f"can't handle negative arguments but was given {arg}"
-
-
-def scrape_the_black_box(
-    trace, lines, scratch_colon: str = "->", scratch_verbose: bool = False
-) -> BlackBoxResults:
-    pcs = [t["pc"] for t in trace]
-    line_nums = [t["line"] for t in trace]
-
-    def line_or_err(i, ln):
-        line = lines[ln - 1]
-        err = trace[i].get("error")
-        return err if err else line
-
-    tls = [line_or_err(i, ln) for i, ln in enumerate(line_nums)]
-    N = len(pcs)
-    assert N == len(
-        tls
-    ), f"mismatch of lengths in pcs v. tls ({N} v. {len(tls)})"
-
-    # process stack var's
-    raw_stacks = [
-        [TealVal.from_stack(s) for s in x] for x in [t["stack"] for t in trace]
-    ]
-    stacks = [f"[{', '.join(map(str,stack))}]" for stack in raw_stacks]
-    assert N == len(
-        stacks
-    ), f"mismatch of lengths in tls v. stacks ({N} v. {len(stacks)})"
-
-    # process scratch var's
-    scratches = [
-        [TealVal.from_scratch(s) for s in x]
-        for x in [t.get("scratch", []) for t in trace]
-    ]
-    scratches = [
-        {i: s for i, s in enumerate(scratch) if not s.is_empty()}
-        for scratch in scratches
-    ]
-    slots_used = sorted(set().union(*(s.keys() for s in scratches)))
-    final_scratch_state = scratches[-1]
-    if not scratch_verbose:
-
-        def compute_delta(prev, curr):
-            pks, cks = set(prev.keys()), set(curr.keys())
-            new_keys = cks - pks
-            if new_keys:
-                return {k: curr[k] for k in new_keys}
-            return {k: v for k, v in curr.items() if prev[k] != v}
-
-        scratch_deltas = [scratches[0]]
-        for i in range(1, len(scratches)):
-            scratch_deltas.append(
-                compute_delta(scratches[i - 1], scratches[i])
-            )
-
-        scratches = [
-            [f"{i}{scratch_colon}{v}" for i, v in scratch.items()]
-            for scratch in scratch_deltas
-        ]
-    else:
-        scratches = [
-            [
-                f"{i}{scratch_colon}{scratch[i]}" if i in scratch else ""
-                for i in slots_used
-            ]
-            for scratch in scratches
-        ]
-
-    assert N == len(
-        scratches
-    ), f"mismatch of lengths in tls v. scratches ({N} v. {len(scratches)})"
-
-    bbr = BlackBoxResults(
-        N,
-        pcs,
-        line_nums,
-        tls,
-        stacks,
-        scratches,
-        final_scratch_state,
-        slots_used,
-        raw_stacks,
-    )
-    bbr.assert_well_defined()
-    return bbr
-
-
-def get_blackbox_scenario_components(
-    scenario: Dict[str, Union[list, dict]], mode: ExecutionMode
-) -> Tuple[List[tuple], Dict[DRProp, Any]]:
-    """
-    Validate that a Blackbox Test Scenario has been properly constructed, and return back
-    its components which consist of **inputs** and _optional_ **assertions**.
-
-    A scenario should adhere to the following schema:
-    ```
-    {
-        "inputs":       List[Tuple[Union[str, int]]],
-        "assertions":   Dict[DryRunAssertionType, ...an assertion...]
-    }
-
-    Each assertion is a map from _assertion type_  to be made on a dry run,
-    to the actual assertion. Actual assertions can be:
-    * simple python types - these are useful in the case of _constant_ assertions.
-        For example, if you want to assert that the `maxStackHeight` is 3, just use `3`.
-    * dictionaries of type Dict[Tuple, Any] - these are useful when you just want to assert
-        a discrete set of input-output pairs.
-        For example, if you have 4 inputs that you want to assert are being squared,
-        you could use `{(2,): 4, (7,): 49, (13,): 169, (11,): 121}`
-    * functions which take a single variable. These are useful when you have a python "simulator"
-        for the assertions.
-        In the square example you could use `lambda args: args[0]**2`
-    * functions which take _two_ variables. These are useful when your assertion is more
-        subtle that out-and-out equality. For example, suppose you want to assert that the
-        `cost` of the dry run is `2*n` plus/minus 5 where `n` is the first arg of the input. Then
-        you could use `lambda args, actual: 2*args[0] - 5 <= actual <= 2*args[0] + 5`
-    ```
-    """
-    assert isinstance(
-        scenario, dict
-    ), f"a Blackbox Scenario should be a dict but got a {type(scenario)}"
-
-    inputs = scenario.get("inputs")
-    # TODO: we can be more flexible here and allow arbitrary iterable `args`. Because
-    # assertions are allowed to be dicts, and therefore each `args` needs to be
-    # hashable in that case, we are restricting to tuples currently.
-    # However, this function could be friendlier and just _convert_ each of the
-    # `args` to a tuple, thus eliminating any downstream issues.
-    assert (
-        inputs
-        and isinstance(inputs, list)
-        and all(isinstance(args, tuple) for args in inputs)
-    ), "need a list of inputs with at least one args and all args must be tuples"
-
-    assertions = scenario.get("assertions", {})
-    if assertions:
-        assert isinstance(assertions, dict), f"assertions must be a dict"
-
-        for key in assertions:
-            assert isinstance(key, DRProp) and mode_has_assertion(
-                mode, key
-            ), f"each key must be a DryrunAssertionTypes appropriate to {mode}. This is not the case for key {key}"
-
-    return inputs, assertions
-
-
-class SequenceAssertion:
-    def __init__(
-        self,
-        predicate: Union[Dict[Tuple, Union[str, int]], Callable],
-        enforce: bool = False,
-        name: str = None,
-    ):
-        self.definition = predicate
-        self.predicate, self._expected = self.prepare_predicate(predicate)
-        self.enforce = enforce
-        self.name = name
-
-    def __repr__(self):
-        return f"SequenceAssertion({self.definition})"[:100]
-
-    def __call__(
-        self, args: list, actual: Union[str, int]
-    ) -> Tuple[bool, str]:
-        assertion = self.predicate(args, actual)
-        msg = ""
-        if not assertion:
-            msg = f"SequenceAssertion for '{self.name}' failed for for args {args}: actual is [{actual}] BUT expected [{self.expected(args)}]"
-            if self.enforce:
-                assert assertion, msg
-
-        return assertion, msg
-
-    def expected(self, args: list) -> Union[str, int]:
-        return self._expected(args)
-
-    @classmethod
-    def prepare_predicate(cls, predicate):
-        if isinstance(predicate, dict):
-            return (
-                lambda args, actual: predicate[args] == actual,
-                lambda args: predicate[args],
-            )
-
-        if not isinstance(predicate, Callable):
-            # constant function in this case:
-            return lambda _, actual: predicate == actual, lambda _: predicate
-
-        try:
-            sig = signature(predicate)
-        except Exception as e:
-            raise Exception(
-                f"callable predicate {predicate} must have a signature"
-            ) from e
-
-        N = len(sig.parameters)
-        assert N in (1, 2), f"predicate has the wrong number of paramters {N}"
-
-        if N == 2:
-            return predicate, lambda _: predicate
-
-        # N == 1:
-        return lambda args, actual: predicate(
-            args
-        ) == actual, lambda args: predicate(args)
-
-
-def mode_has_assertion(
-    mode: ExecutionMode, assertion_type: DryRunProperty
-) -> bool:
-    missing = {
-        ExecutionMode.Signature: {
-            DryRunProperty.cost,
-            DryRunProperty.lastLog,
-        },
-        ExecutionMode.Application: set(),
-    }
-    if assertion_type in missing[mode]:
-        return False
-
-    return True
-
-
-def extract_logs(txn):
-    return [b64decode(log).hex() for log in txn.get("logs", [])]
-
-
-def extract_cost(txn):
-    return txn.get("cost")
-
-
-def extract_status(txn, is_app: bool):
-    key, idx = (
-        ("app-call-messages", 1) if is_app else ("logic-sig-messages", 0)
-    )
-    return txn[key][idx]
-
-
-def extract_messages(txn, is_app):
-    return txn["app-call-messages" if is_app else "logic-sig-messages"]
-
-
-def extract_local_deltas(txn):
-    return txn.get("local-deltas", [])
-
-
-def extract_global_delta(txn):
-    return txn.get("global-delta", [])
-
-
-def extract_lines(txn, is_app):
-    return txn["disassembly" if is_app else "logic-sig-disassembly"]
-
-
-def extract_trace(txn, is_app):
-    return txn["app-call-trace" if is_app else "logic-sig-trace"]
-
-
-def extract_all(txn: dict, is_app: bool) -> dict:
-    result = {
-        "logs": extract_logs(txn),
-        "cost": extract_cost(txn),
-        "status": extract_status(txn, is_app),
-        "messages": extract_messages(txn, is_app),
-        "ldeltas": extract_local_deltas(txn),
-        "gdelta": extract_global_delta(txn),
-        "lines": extract_lines(txn, is_app),
-        "trace": extract_trace(txn, is_app),
-    }
-
-    result["bbr"] = scrape_the_black_box(result["trace"], result["lines"])
-
-    return result
-
-
-def guess_txn_mode(txn: dict, enforce: bool = True) -> ExecutionMode:
-    """
-    Guess the mode based on location of traces. If no luck, raise an AssertionError
-    (or just return None if not enforce)
-    """
-    akey, lskey = "app-call-trace", "logic-sig-trace"
-    if akey in txn:
-        return ExecutionMode.Application
-
-    if lskey in txn:
-        return ExecutionMode.Signature
-
-    if enforce:
-        raise AssertionError(
-            f"transaction's Mode cannot be guessed as it doesn't contain any of {(akey, lskey)}"
-        )
-
-    return None
-
-
-def csv_from_dryruns(
-    inputs: List[tuple], dr_resps: List["DryRunTransactionResult"]
-) -> str:
-    N = len(inputs)
-    assert N == len(
-        dr_resps
-    ), f"cannot produce CSV with unmatching size of inputs ({len(inputs)}) v. drresps ({len(dr_resps)})"
-
-    dr_resps = [
-        resp.csv_row(i + 1, inputs[i]) for i, resp in enumerate(dr_resps)
-    ]
-    with io.StringIO() as csv_str:
-        fields = sorted(set().union(*(txn.keys() for txn in dr_resps)))
-        writer = csv.DictWriter(csv_str, fieldnames=fields)
-        writer.writeheader()
-        for txn in dr_resps:
-            writer.writerow(txn)
-
-        return csv_str.getvalue()
-
-
-def dryrun_assert(
-    inputs: List[list],
-    dryrun_results: List["DryRunTransactionResult"],
-    assert_type: DryRunProperty,
-    test: SequenceAssertion,
-):
-    N = len(inputs)
-    assert N == len(
-        dryrun_results
-    ), f"inputs (len={N}) and dryrun responses (len={len(dryrun_results)}) must have the same length"
-
-    assert isinstance(
-        assert_type, DryRunProperty
-    ), f"assertions types must be DryRunAssertionType's but got [{assert_type}] which is a {type(assert_type)}"
-
-    for i, args in enumerate(inputs):
-        res = dryrun_results[i]
-        actual = res.dig(assert_type)
-        ok, msg = test(args, actual)
-        if not ok:
-            extracts = res.extracts
-            bbr = res.black_box_results
-
-            assert ok, f"""===============
-<<<<<<<<<<<{msg}>>>>>>>>>>>>>
-===============
-App Trace:
-{res.tabulate(-1)}
-===============
-MODE: {res.mode}
-TOTAL COST: {res.cost()}
-===============
-FINAL MESSAGE: {res.last_message()}
-===============
-Messages: {res.messages()}
-Logs: {res.logs()}
-===============
------{bbr}-----
-TOTAL STEPS: {bbr.steps()}
-FINAL STACK: {bbr.final_stack()}
-FINAL STACK TOP: {bbr.final_stack_top()}
-MAX STACK HEIGHT: {bbr.max_stack_height()}
-FINAL SCRATCH: {bbr.final_scratch()}
-SLOTS USED: {bbr.slots()}
-FINAL AS ROW: {bbr.final_as_row()}
-===============
-Global Delta:
-{res.global_delta()}
-===============
-Local Delta:
-{res.local_deltas()}
-===============
-TXN AS ROW: {res.csv_row(i+1, args)}
-===============
-<<<<<<<<<<<{msg}>>>>>>>>>>>>>
-===============
-"""
-
-
-def execute_singleton_app(
-    algod: AlgodClient,
-    teal: str,
-    args: Iterable[Union[str, int]],
-    sender: str = ZERO_ADDRESS,
-) -> "DryRunTransactionResult":
-    return execute_singleton_dryrun(
-        algod, teal, args, ExecutionMode.Application, sender=sender
-    )
-
-
-def dryrun_app_executions(
-    algod: AlgodClient,
-    teal: str,
-    inputs: List[Iterable[Union[str, int]]],
-    sender: str = ZERO_ADDRESS,
-) -> List["DryRunTransactionResult"]:
-    return list(
-        map(
-            lambda args: execute_singleton_app(
-                algod, teal, args, sender=sender
-            ),
-            inputs,
-        )
-    )
-
-
-def dryrun_logicsig_executions(
-    algod: AlgodClient,
-    teal: str,
-    inputs: List[Iterable[Union[str, int]]],
-    sender: str = ZERO_ADDRESS,
-) -> List["DryRunTransactionResult"]:
-    return list(
-        map(
-            lambda args: execute_singleton_logicsig(
-                algod, teal, args, sender=sender
-            ),
-            inputs,
-        )
-    )
-
-
-def execute_singleton_logicsig(
-    algod: AlgodClient,
-    teal: str,
-    args: Iterable[Union[str, int]],
-    sender: str = ZERO_ADDRESS,
-) -> "DryRunTransactionResult":
-    return execute_singleton_dryrun(
-        algod, teal, args, ExecutionMode.Signature, sender
-    )
-
-
-def execute_singleton_dryrun(
-    algod: AlgodClient,
-    teal: str,
-    args: Iterable[Union[str, int]],
-    mode: ExecutionMode,
-    sender: str = ZERO_ADDRESS,
-) -> "DryRunTransactionResult":
-    assert (
-        len(ExecutionMode) == 2
-    ), f"assuming only 2 ExecutionMode's but have {len(ExecutionMode)}"
-    assert mode in ExecutionMode, f"unknown mode {mode} of type {type(mode)}"
-    is_app = mode == ExecutionMode.Application
-
-    args = dryrun_encode_args(args)
-    builder = (
-        DryRunHelper.singleton_app_request
-        if is_app
-        else DryRunHelper.singleton_logicsig_request
-    )
-    dryrun_req = builder(teal, args, sender=sender)
-    dryrun_resp = algod.dryrun(dryrun_req)
-    return DryRunTransactionResult.singleton(dryrun_resp)
-
-
 class DryRunTransactionResult:
     """
     TODO: merge this with @barnjamin's class of PR #283
@@ -637,7 +230,7 @@ class DryRunTransactionResult:
         self.mode: ExecutionMode = self.get_txn_mode(txn)
         self.parent_dryrun_response: dict = dryrun_resp
         self.txn: dict = txn
-        self.extracts: dict = extract_all(self.txn, self.is_app())
+        self.extracts: dict = self.extract_all(self.txn, self.is_app())
         self.black_box_results: BlackBoxResults = self.extracts["bbr"]
 
     def is_app(self) -> bool:
@@ -660,7 +253,9 @@ class DryRunTransactionResult:
         return ExecutionMode.Signature
 
     @classmethod
-    def singleton(cls, dryrun_resp: dict) -> "DryRunTransactionResult":
+    def from_single_response(
+        cls, dryrun_resp: dict
+    ) -> "DryRunTransactionResult":
         txns = dryrun_resp.get("txns") or []
         assert (
             len(txns) == 1
@@ -672,7 +267,7 @@ class DryRunTransactionResult:
         txn = self.txn
         bbr = self.black_box_results
 
-        assert mode_has_assertion(
+        assert SequenceAssertion.mode_has_assertion(
             self.mode, property
         ), f"{self.mode} cannot handle dig information from txn for assertion type {property}"
 
@@ -776,20 +371,6 @@ class DryRunTransactionResult:
     def global_delta(self) -> dict:
         return self.extracts["gdelta"]
 
-    def csv_row(
-        self, row_num: int, args: Iterable[Union[int, str]]
-    ) -> Dict[str, Union[str, int]]:
-        return {
-            " Run": row_num,
-            " cost": self.cost(),
-            # back-tick needed to keep Excel/Google sheets from stumbling over hex
-            " last_log": f"`{self.last_log()}",
-            " final_message": self.last_message(),
-            " Status": self.status(),
-            **self.black_box_results.final_as_row(),
-            **{f"Arg_{i:02}": arg for i, arg in enumerate(args)},
-        }
-
     def tabulate(
         self,
         col_max: int,
@@ -843,3 +424,412 @@ class DryRunTransactionResult:
 
         table = tabulate(rows, headers=headers, tablefmt="presto")
         return table
+
+    def csv_row(
+        self, row_num: int, args: Iterable[Union[int, str]]
+    ) -> Dict[str, Union[str, int]]:
+        return {
+            " Run": row_num,
+            " cost": self.cost(),
+            # back-tick needed to keep Excel/Google sheets from stumbling over hex
+            " last_log": f"`{self.last_log()}",
+            " final_message": self.last_message(),
+            " Status": self.status(),
+            **self.black_box_results.final_as_row(),
+            **{f"Arg_{i:02}": arg for i, arg in enumerate(args)},
+        }
+
+    @classmethod
+    def csv_report(
+        cls, inputs: List[tuple], dr_resps: List["DryRunTransactionResult"]
+    ) -> str:
+        N = len(inputs)
+        assert N == len(
+            dr_resps
+        ), f"cannot produce CSV with unmatching size of inputs ({len(inputs)}) v. drresps ({len(dr_resps)})"
+
+        dr_resps = [
+            resp.csv_row(i + 1, inputs[i]) for i, resp in enumerate(dr_resps)
+        ]
+        with io.StringIO() as csv_str:
+            fields = sorted(set().union(*(txn.keys() for txn in dr_resps)))
+            writer = csv.DictWriter(csv_str, fieldnames=fields)
+            writer.writeheader()
+            for txn in dr_resps:
+                writer.writerow(txn)
+
+            return csv_str.getvalue()
+
+    @classmethod
+    def extract_logs(cls, txn):
+        return [b64decode(log).hex() for log in txn.get("logs", [])]
+
+    @classmethod
+    def extract_cost(cls, txn):
+        return txn.get("cost")
+
+    @classmethod
+    def extract_status(cls, txn, is_app: bool):
+        key, idx = (
+            ("app-call-messages", 1) if is_app else ("logic-sig-messages", 0)
+        )
+        return txn[key][idx]
+
+    @classmethod
+    def extract_messages(cls, txn, is_app):
+        return txn["app-call-messages" if is_app else "logic-sig-messages"]
+
+    @classmethod
+    def extract_local_deltas(cls, txn):
+        return txn.get("local-deltas", [])
+
+    @classmethod
+    def extract_global_delta(cls, txn):
+        return txn.get("global-delta", [])
+
+    @classmethod
+    def extract_lines(cls, txn, is_app):
+        return txn["disassembly" if is_app else "logic-sig-disassembly"]
+
+    @classmethod
+    def extract_trace(cls, txn, is_app):
+        return txn["app-call-trace" if is_app else "logic-sig-trace"]
+
+    @classmethod
+    def extract_all(cls, txn: dict, is_app: bool) -> dict:
+        result = {
+            "logs": cls.extract_logs(txn),
+            "cost": cls.extract_cost(txn),
+            "status": cls.extract_status(txn, is_app),
+            "messages": cls.extract_messages(txn, is_app),
+            "ldeltas": cls.extract_local_deltas(txn),
+            "gdelta": cls.extract_global_delta(txn),
+            "lines": cls.extract_lines(txn, is_app),
+            "trace": cls.extract_trace(txn, is_app),
+        }
+
+        result["bbr"] = BlackBoxResults.scrape(
+            result["trace"], result["lines"]
+        )
+
+        return result
+
+
+class SequenceAssertion:
+    def __init__(
+        self,
+        predicate: Union[Dict[Tuple, Union[str, int]], Callable],
+        enforce: bool = False,
+        name: str = None,
+    ):
+        self.definition = predicate
+        self.predicate, self._expected = self.prepare_predicate(predicate)
+        self.enforce = enforce
+        self.name = name
+
+    def __repr__(self):
+        return f"SequenceAssertion({self.definition})"[:100]
+
+    def __call__(
+        self, args: list, actual: Union[str, int]
+    ) -> Tuple[bool, str]:
+        assertion = self.predicate(args, actual)
+        msg = ""
+        if not assertion:
+            msg = f"SequenceAssertion for '{self.name}' failed for for args {args}: actual is [{actual}] BUT expected [{self.expected(args)}]"
+            if self.enforce:
+                assert assertion, msg
+
+        return assertion, msg
+
+    def expected(self, args: list) -> Union[str, int]:
+        return self._expected(args)
+
+    def dryrun_assert(
+        self,
+        inputs: List[list],
+        dryrun_results: List["DryRunTransactionResult"],
+        assert_type: DryRunProperty,
+    ):
+        N = len(inputs)
+        assert N == len(
+            dryrun_results
+        ), f"inputs (len={N}) and dryrun responses (len={len(dryrun_results)}) must have the same length"
+
+        assert isinstance(
+            assert_type, DryRunProperty
+        ), f"assertions types must be DryRunAssertionType's but got [{assert_type}] which is a {type(assert_type)}"
+
+        for i, args in enumerate(inputs):
+            res = dryrun_results[i]
+            actual = res.dig(assert_type)
+            ok, msg = self(args, actual)
+            if not ok:
+                extracts = res.extracts
+                bbr = res.black_box_results
+
+                assert ok, f"""===============
+    <<<<<<<<<<<{msg}>>>>>>>>>>>>>
+    ===============
+    App Trace:
+    {res.tabulate(-1)}
+    ===============
+    MODE: {res.mode}
+    TOTAL COST: {res.cost()}
+    ===============
+    FINAL MESSAGE: {res.last_message()}
+    ===============
+    Messages: {res.messages()}
+    Logs: {res.logs()}
+    ===============
+    -----{bbr}-----
+    TOTAL STEPS: {bbr.steps()}
+    FINAL STACK: {bbr.final_stack()}
+    FINAL STACK TOP: {bbr.final_stack_top()}
+    MAX STACK HEIGHT: {bbr.max_stack_height()}
+    FINAL SCRATCH: {bbr.final_scratch()}
+    SLOTS USED: {bbr.slots()}
+    FINAL AS ROW: {bbr.final_as_row()}
+    ===============
+    Global Delta:
+    {res.global_delta()}
+    ===============
+    Local Delta:
+    {res.local_deltas()}
+    ===============
+    TXN AS ROW: {res.csv_row(i+1, args)}
+    ===============
+    <<<<<<<<<<<{msg}>>>>>>>>>>>>>
+    ===============
+    """
+
+    @classmethod
+    def prepare_predicate(cls, predicate):
+        if isinstance(predicate, dict):
+            return (
+                lambda args, actual: predicate[args] == actual,
+                lambda args: predicate[args],
+            )
+
+        if not isinstance(predicate, Callable):
+            # constant function in this case:
+            return lambda _, actual: predicate == actual, lambda _: predicate
+
+        try:
+            sig = signature(predicate)
+        except Exception as e:
+            raise Exception(
+                f"callable predicate {predicate} must have a signature"
+            ) from e
+
+        N = len(sig.parameters)
+        assert N in (1, 2), f"predicate has the wrong number of paramters {N}"
+
+        if N == 2:
+            return predicate, lambda _: predicate
+
+        # N == 1:
+        return lambda args, actual: predicate(
+            args
+        ) == actual, lambda args: predicate(args)
+
+    @classmethod
+    def mode_has_assertion(
+        cls, mode: ExecutionMode, assertion_type: DryRunProperty
+    ) -> bool:
+        missing = {
+            ExecutionMode.Signature: {
+                DryRunProperty.cost,
+                DryRunProperty.lastLog,
+            },
+            ExecutionMode.Application: set(),
+        }
+        if assertion_type in missing[mode]:
+            return False
+
+        return True
+
+    @classmethod
+    def inputs_and_assertions(
+        cls, scenario: Dict[str, Union[list, dict]], mode: ExecutionMode
+    ) -> Tuple[List[tuple], Dict[DRProp, Any]]:
+        """
+        Validate that a Blackbox Test Scenario has been properly constructed, and return back
+        its components which consist of **inputs** and _optional_ **assertions**.
+
+        A scenario should adhere to the following schema:
+        ```
+        {
+            "inputs":       List[Tuple[Union[str, int]]],
+            "assertions":   Dict[DryRunAssertionType, ...an assertion...]
+        }
+
+        Each assertion is a map from _assertion type_  to be made on a dry run,
+        to the actual assertion. Actual assertions can be:
+        * simple python types - these are useful in the case of _constant_ assertions.
+            For example, if you want to assert that the `maxStackHeight` is 3, just use `3`.
+        * dictionaries of type Dict[Tuple, Any] - these are useful when you just want to assert
+            a discrete set of input-output pairs.
+            For example, if you have 4 inputs that you want to assert are being squared,
+            you could use `{(2,): 4, (7,): 49, (13,): 169, (11,): 121}`
+        * functions which take a single variable. These are useful when you have a python "simulator"
+            for the assertions.
+            In the square example you could use `lambda args: args[0]**2`
+        * functions which take _two_ variables. These are useful when your assertion is more
+            subtle that out-and-out equality. For example, suppose you want to assert that the
+            `cost` of the dry run is `2*n` plus/minus 5 where `n` is the first arg of the input. Then
+            you could use `lambda args, actual: 2*args[0] - 5 <= actual <= 2*args[0] + 5`
+        ```
+        """
+        assert isinstance(
+            scenario, dict
+        ), f"a Blackbox Scenario should be a dict but got a {type(scenario)}"
+
+        inputs = scenario.get("inputs")
+        # TODO: we can be more flexible here and allow arbitrary iterable `args`. Because
+        # assertions are allowed to be dicts, and therefore each `args` needs to be
+        # hashable in that case, we are restricting to tuples currently.
+        # However, this function could be friendlier and just _convert_ each of the
+        # `args` to a tuple, thus eliminating any downstream issues.
+        assert (
+            inputs
+            and isinstance(inputs, list)
+            and all(isinstance(args, tuple) for args in inputs)
+        ), "need a list of inputs with at least one args and all args must be tuples"
+
+        assertions = scenario.get("assertions", {})
+        if assertions:
+            assert isinstance(assertions, dict), f"assertions must be a dict"
+
+            for key in assertions:
+                assert isinstance(
+                    key, DRProp
+                ) and SequenceAssertion.mode_has_assertion(
+                    mode, key
+                ), f"each key must be a DryrunAssertionTypes appropriate to {mode}. This is not the case for key {key}"
+
+        return inputs, assertions
+
+
+def dryrun_encode_out(out: Union[int, str], logs=False) -> str:
+    """
+    Encoding convention for Black Box Testing.
+
+    * Assumes int's are uint64 and encodes them into hex str's
+    *
+    """
+    _encoding_assertion(out)
+
+    if isinstance(out, int):
+        return out.to_bytes(8, "big").hex() if logs else out
+
+    if isinstance(out, str):
+        return bytes(out, "utf-8").hex()
+
+
+def dryrun_encode_args(args: Iterable[Union[str, int]]) -> List[str]:
+    """
+    Encoding convention for Black Box Testing.
+
+    * Assumes int's are uint64 and encodes them as such
+    * Leaves str's alone
+    """
+
+    def encode(arg, idx):
+        _encoding_assertion(arg, f"problem at args index {idx}")
+        return (
+            arg if isinstance(arg, str) else arg.to_bytes(8, byteorder="big")
+        )
+
+    return [encode(a, i) for i, a in enumerate(args)]
+
+
+def dryrun_encode_scratch(x) -> str:
+    x = x.to_bytes(8, "big") if isinstance(x, int) else x.encode("utf-8")
+    return f"0x{x.hex()}"
+
+
+def _encoding_assertion(arg: Any, msg: str = "") -> None:
+    assert isinstance(
+        arg, (int, str)
+    ), f"{msg +': ' if msg else ''}can't handle arg [{arg}] of type {type(arg)}"
+    if isinstance(arg, int):
+        assert arg >= 0, f"can't handle negative arguments but was given {arg}"
+
+
+def execute_singleton_app(
+    algod: AlgodClient,
+    teal: str,
+    args: Iterable[Union[str, int]],
+    sender: str = ZERO_ADDRESS,
+) -> "DryRunTransactionResult":
+    return execute_singleton_dryrun(
+        algod, teal, args, ExecutionMode.Application, sender=sender
+    )
+
+
+def dryrun_app_executions(
+    algod: AlgodClient,
+    teal: str,
+    inputs: List[Iterable[Union[str, int]]],
+    sender: str = ZERO_ADDRESS,
+) -> List["DryRunTransactionResult"]:
+    return list(
+        map(
+            lambda args: execute_singleton_app(
+                algod, teal, args, sender=sender
+            ),
+            inputs,
+        )
+    )
+
+
+def dryrun_logicsig_executions(
+    algod: AlgodClient,
+    teal: str,
+    inputs: List[Iterable[Union[str, int]]],
+    sender: str = ZERO_ADDRESS,
+) -> List["DryRunTransactionResult"]:
+    return list(
+        map(
+            lambda args: execute_singleton_logicsig(
+                algod, teal, args, sender=sender
+            ),
+            inputs,
+        )
+    )
+
+
+def execute_singleton_logicsig(
+    algod: AlgodClient,
+    teal: str,
+    args: Iterable[Union[str, int]],
+    sender: str = ZERO_ADDRESS,
+) -> "DryRunTransactionResult":
+    return execute_singleton_dryrun(
+        algod, teal, args, ExecutionMode.Signature, sender
+    )
+
+
+def execute_singleton_dryrun(
+    algod: AlgodClient,
+    teal: str,
+    args: Iterable[Union[str, int]],
+    mode: ExecutionMode,
+    sender: str = ZERO_ADDRESS,
+) -> "DryRunTransactionResult":
+    assert (
+        len(ExecutionMode) == 2
+    ), f"assuming only 2 ExecutionMode's but have {len(ExecutionMode)}"
+    assert mode in ExecutionMode, f"unknown mode {mode} of type {type(mode)}"
+    is_app = mode == ExecutionMode.Application
+
+    args = dryrun_encode_args(args)
+    builder = (
+        DryRunHelper.singleton_app_request
+        if is_app
+        else DryRunHelper.singleton_logicsig_request
+    )
+    dryrun_req = builder(teal, args, sender=sender)
+    dryrun_resp = algod.dryrun(dryrun_req)
+    return DryRunTransactionResult.from_single_response(dryrun_resp)

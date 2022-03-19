@@ -5,15 +5,13 @@ import pytest
 from algosdk.testing.dryrun import Helper as DryRunHelper
 from algosdk.testing.teal_blackbox import (
     DryRunTransactionResult,
-    csv_from_dryruns,
-    dryrun_assert,
+    # dryrun_assert,
     dryrun_app_executions,
     dryrun_logicsig_executions,
     execute_singleton_app,
     execute_singleton_logicsig,
-    get_blackbox_scenario_components,
     dryrun_encode_out,
-    mode_has_assertion,
+    SequenceAssertion,
     dryrun_encode_scratch,
     DryRunProperty as DRProp,
     ExecutionMode,
@@ -362,7 +360,9 @@ def test_app_with_report(filebase: str):
     mode, scenario = ExecutionMode.Application, APP_SCENARIOS[filebase]
 
     # 0. Validate that the scenarios are well defined:
-    inputs, assertions = get_blackbox_scenario_components(scenario, mode)
+    inputs, assertions = SequenceAssertion.inputs_and_assertions(
+        scenario, mode
+    )
 
     algod = get_algod()
 
@@ -386,7 +386,7 @@ def test_app_with_report(filebase: str):
     # 3. Generate statistical report of all the runs:
     csvpath = path / f"{filebase}.csv"
     with open(csvpath, "w") as f:
-        f.write(csv_from_dryruns(inputs, dryrun_results))
+        f.write(DryRunTransactionResult.csv_report(inputs, dryrun_results))
 
     print(f"Saved Dry Run CSV report to {csvpath}")
 
@@ -394,7 +394,7 @@ def test_app_with_report(filebase: str):
     for i, type_n_assertion in enumerate(assertions.items()):
         assert_type, assertion = type_n_assertion
 
-        assert mode_has_assertion(
+        assert SequenceAssertion.mode_has_assertion(
             mode, assert_type
         ), f"assert_type {assert_type} is not applicable for {mode}. Please REMOVE or MODIFY"
 
@@ -404,7 +404,7 @@ def test_app_with_report(filebase: str):
         print(
             f"{i+1}. Semantic assertion for {case_name}-{mode}: {assert_type} <<{assertion}>>"
         )
-        dryrun_assert(inputs, dryrun_results, assert_type, assertion)
+        assertion.dryrun_assert(inputs, dryrun_results, assert_type)
 
 
 # NOTE: logic sig dry runs are missing some information when compared with app dry runs.
@@ -560,7 +560,9 @@ def test_logicsig_with_report(filebase: str):
     mode, scenario = ExecutionMode.Signature, LOGICSIG_SCENARIOS[filebase]
 
     # 0. Validate that the scenarios are well defined:
-    inputs, assertions = get_blackbox_scenario_components(scenario, mode)
+    inputs, assertions = SequenceAssertion.inputs_and_assertions(
+        scenario, mode
+    )
 
     algod = get_algod()
 
@@ -584,7 +586,7 @@ def test_logicsig_with_report(filebase: str):
     # 3. Generate statistical report of all the runs:
     csvpath = path / f"{filebase}.csv"
     with open(csvpath, "w") as f:
-        f.write(csv_from_dryruns(inputs, dryrun_results))
+        f.write(DryRunTransactionResult.csv_report(inputs, dryrun_results))
 
     print(f"Saved Dry Run CSV report to {csvpath}")
 
@@ -592,7 +594,7 @@ def test_logicsig_with_report(filebase: str):
     for i, type_n_assertion in enumerate(assertions.items()):
         assert_type, assertion = type_n_assertion
 
-        assert mode_has_assertion(
+        assert SequenceAssertion.mode_has_assertion(
             mode, assert_type
         ), f"assert_type {assert_type} is not applicable for {mode}. Please REMOVE of MODIFY"
 
@@ -602,4 +604,4 @@ def test_logicsig_with_report(filebase: str):
         print(
             f"{i+1}. Semantic assertion for {case_name}-{mode}: {assert_type} <<{assertion}>>"
         )
-        dryrun_assert(inputs, dryrun_results, assert_type, assertion)
+        assertion.dryrun_assert(inputs, dryrun_results, assert_type)
