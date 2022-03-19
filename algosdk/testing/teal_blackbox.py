@@ -3,6 +3,7 @@ import csv
 from dataclasses import dataclass
 from enum import Enum
 import io
+from inspect import signature
 from tabulate import tabulate
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
@@ -21,8 +22,6 @@ DryRunProperty = Enum(
     "cost lastLog finalScratch stackTop maxStackHeight status rejected passed error noError globalStateHas localStateHas",
 )
 DRProp = DryRunProperty
-
-from inspect import signature
 
 
 @dataclass
@@ -377,6 +376,31 @@ class DryRunTransactionResult:
         scratch_verbose: bool = False,
         scratch_before_stack: bool = True,
     ):
+        """Produce a string that when printed shows the evolution of a dry run.
+
+        This is similar to DryrunTestCaseMixin's `pprint()` but also includes scratch
+        variable evolution.
+
+        For example, calling `tabulate()` with default values produces something like:
+
+           step |   PC# |   L# | Teal                   | Scratch   | Stack
+        --------+-------+------+------------------------+-----------+----------------------
+              1 |     1 |    1 | #pragma version 6      |           | []
+              2 |     4 |    2 | txna ApplicationArgs 0 |           | [0x0000000000000002]
+              3 |     5 |    3 | btoi                   |           | [2]
+              4 |    17 |   11 | label1:                |           | [2]
+              5 |    19 |   12 | store 0                | 0->2      | []
+              6 |    21 |   13 | load 0                 |           | [2]
+              7 |    23 |   14 | pushint 2              |           | [2, 2]
+              8 |    24 |   15 | exp                    |           | [4]
+              9 |     8 |    4 | callsub label1         |           | [4]
+             10 |    10 |    5 | store 1                | 1->4      | []
+             11 |    12 |    6 | load 1                 |           | [4]
+             12 |    13 |    7 | itob                   |           | [0x0000000000000004]
+             13 |    14 |    8 | log                    |           | []
+             14 |    16 |    9 | load 1                 |           | [4]
+             15 |    25 |   16 | retsub                 |           | [4]
+        """
         assert not (
             scratch_verbose and scratch_before_stack
         ), "Cannot request scratch columns before stack when verbose"
@@ -443,6 +467,31 @@ class DryRunTransactionResult:
     def csv_report(
         cls, inputs: List[tuple], dr_resps: List["DryRunTransactionResult"]
     ) -> str:
+        """Produce a Comma Separated Values report string capturing important statistics
+        for a sequence of dry runs.
+
+        For example, assuming you have a string `teal` containing TEAL source,
+        and you run the following python (here using the x^2 program x/blackbox/teal/app_square.teal):
+
+        ```python
+        >>> algod = get_algod()
+        >>> inputs = [(x,) for x in range(11)]  # [(0), (1), ... , (10)]
+        >>> dryrun_results = dryrun_app_executions(algod, teal, inputs)
+        >>> csv = DryRunTransactionResult.csv_report(inputs, dryrun_results)
+        >>> print(csv)
+        ```
+        Then you would get the following output:
+         Run, Status, cost, final_message, last_log, top_of_stack,Arg_00,max_stack_height,s@000,s@001,steps
+        1,REJECT,14,REJECT,`None,0,0,2,,,15
+        2,PASS,14,PASS,`0000000000000001,1,1,2,1,1,15
+        3,PASS,14,PASS,`0000000000000004,4,2,2,2,4,15
+        4,PASS,14,PASS,`0000000000000009,9,3,2,3,9,15
+        5,PASS,14,PASS,`0000000000000010,16,4,2,4,16,15
+        6,PASS,14,PASS,`0000000000000019,25,5,2,5,25,15
+        7,PASS,14,PASS,`0000000000000024,36,6,2,6,36,15
+        8,PASS,14,PASS,`0000000000000031,49,7,2,7,49,15
+        9,PASS,14,PASS,`0000000000000040,64,8,2,8,64,15
+        10,PASS,14,PASS,`0000000000000051,81,9,2,9,81,15"""
         N = len(inputs)
         assert N == len(
             dr_resps
