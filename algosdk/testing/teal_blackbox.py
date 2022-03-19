@@ -211,6 +211,135 @@ class BlackBoxResults:
         }
 
 
+class DryRunEncoder:
+    @classmethod
+    def encode_args(cls, args: Iterable[Union[str, int]]) -> List[str]:
+        """
+        Encoding convention for Black Box Testing.
+
+        * Assumes int's are uint64 and encodes them as such
+        * Leaves str's alone
+        """
+        return [cls._encode_arg(a, i) for i, a in enumerate(args)]
+
+    @classmethod
+    def hex0x(cls, x) -> str:
+        return f"0x{cls.hex(x)}"
+
+    @classmethod
+    def hex(cls, out: Union[int, str]) -> str:
+        """
+        Encoding convention for Black Box Testing.
+
+        * Assumes int's are uint64
+        * Assumes everything else is a str
+        * Encodes them into hex str's
+        """
+        cls._assert_encodable(out)
+        return cls._to_bytes(out).hex()
+
+    @classmethod
+    def _to_bytes(cls, x, only_ints=False):
+        is_int = isinstance(x, int)
+        if only_ints and not is_int:
+            return x
+        return x.to_bytes(8, "big") if is_int else bytes(x, "utf-8")
+
+    @classmethod
+    def _encode_arg(cls, arg, idx):
+        cls._assert_encodable(
+            arg, f"problem encoding arg ({arg}) at index ({idx})"
+        )
+        return cls._to_bytes(arg, only_ints=True)
+
+    @classmethod
+    def _assert_encodable(cls, arg: Any, msg: str = "") -> None:
+        assert isinstance(
+            arg, (int, str)
+        ), f"{msg +': ' if msg else ''}can't handle arg [{arg}] of type {type(arg)}"
+        if isinstance(arg, int):
+            assert (
+                arg >= 0
+            ), f"can't handle negative arguments but was given {arg}"
+
+
+class DryRunExecutor:
+    @classmethod
+    def dryrun_app(
+        cls,
+        algod: AlgodClient,
+        teal: str,
+        args: Iterable[Union[str, int]],
+        sender: str = ZERO_ADDRESS,
+    ) -> "DryRunTransactionResult":
+        return cls.execute_one_dryrun(
+            algod, teal, args, ExecutionMode.Application, sender=sender
+        )
+
+    @classmethod
+    def dryrun_logicsig(
+        cls,
+        algod: AlgodClient,
+        teal: str,
+        args: Iterable[Union[str, int]],
+        sender: str = ZERO_ADDRESS,
+    ) -> "DryRunTransactionResult":
+        return cls.execute_one_dryrun(
+            algod, teal, args, ExecutionMode.Signature, sender
+        )
+
+    @classmethod
+    def dryrun_app_sequence(
+        cls,
+        algod: AlgodClient,
+        teal: str,
+        inputs: List[Iterable[Union[str, int]]],
+        sender: str = ZERO_ADDRESS,
+    ) -> List["DryRunTransactionResult"]:
+        return cls._map(cls.dryrun_app, algod, teal, inputs, sender)
+
+    @classmethod
+    def dryrun_logicsig_sequence(
+        cls,
+        algod: AlgodClient,
+        teal: str,
+        inputs: List[Iterable[Union[str, int]]],
+        sender: str = ZERO_ADDRESS,
+    ) -> List["DryRunTransactionResult"]:
+        return cls._map(cls.dryrun_logicsig, algod, teal, inputs, sender)
+
+    @classmethod
+    def _map(cls, f, algod, teal, inps, sndr):
+        return list(map(lambda args: f(algod, teal, args, sender=sndr), inps))
+
+    @classmethod
+    def execute_one_dryrun(
+        cls,
+        algod: AlgodClient,
+        teal: str,
+        args: Iterable[Union[str, int]],
+        mode: ExecutionMode,
+        sender: str = ZERO_ADDRESS,
+    ) -> "DryRunTransactionResult":
+        assert (
+            len(ExecutionMode) == 2
+        ), f"assuming only 2 ExecutionMode's but have {len(ExecutionMode)}"
+        assert (
+            mode in ExecutionMode
+        ), f"unknown mode {mode} of type {type(mode)}"
+        is_app = mode == ExecutionMode.Application
+
+        args = DryRunEncoder.encode_args(args)
+        builder = (
+            DryRunHelper.singleton_app_request
+            if is_app
+            else DryRunHelper.singleton_logicsig_request
+        )
+        dryrun_req = builder(teal, args, sender=sender)
+        dryrun_resp = algod.dryrun(dryrun_req)
+        return DryRunTransactionResult.from_single_response(dryrun_resp)
+
+
 class DryRunTransactionResult:
     """
     TODO: merge this with @barnjamin's class of PR #283
@@ -758,140 +887,3 @@ class SequenceAssertion:
                 ), f"each key must be a DryrunAssertionTypes appropriate to {mode}. This is not the case for key {key}"
 
         return inputs, assertions
-
-
-class DryRunEncoder:
-    @classmethod
-    def encode_args(cls, args: Iterable[Union[str, int]]) -> List[str]:
-        """
-        Encoding convention for Black Box Testing.
-
-        * Assumes int's are uint64 and encodes them as such
-        * Leaves str's alone
-        """
-        return [cls._encode_arg(a, i) for i, a in enumerate(args)]
-
-    @classmethod
-    def hex0x(cls, x) -> str:
-        return f"0x{cls.hex(x)}"
-
-    @classmethod
-    def hex(cls, out: Union[int, str]) -> str:
-        """
-        Encoding convention for Black Box Testing.
-
-        * Assumes int's are uint64
-        * Assumes everything else is a str
-        * Encodes them into hex str's
-        """
-        cls._assert_encodable(out)
-        return cls._to_bytes(out).hex()
-
-    @classmethod
-    def _to_bytes(cls, x, only_ints=False):
-        is_int = isinstance(x, int)
-        if only_ints and not is_int:
-            return x
-        return x.to_bytes(8, "big") if is_int else bytes(x, "utf-8")
-
-    @classmethod
-    def _encode_arg(cls, arg, idx):
-        cls._assert_encodable(
-            arg, f"problem encoding arg ({arg}) at index ({idx})"
-        )
-        return cls._to_bytes(arg, only_ints=True)
-
-    @classmethod
-    def _assert_encodable(cls, arg: Any, msg: str = "") -> None:
-        assert isinstance(
-            arg, (int, str)
-        ), f"{msg +': ' if msg else ''}can't handle arg [{arg}] of type {type(arg)}"
-        if isinstance(arg, int):
-            assert (
-                arg >= 0
-            ), f"can't handle negative arguments but was given {arg}"
-
-
-class DryRunExecutor:
-    @classmethod
-    def dryrun_app(
-        cls,
-        algod: AlgodClient,
-        teal: str,
-        args: Iterable[Union[str, int]],
-        sender: str = ZERO_ADDRESS,
-    ) -> "DryRunTransactionResult":
-        return cls.execute_singleton_dryrun(
-            algod, teal, args, ExecutionMode.Application, sender=sender
-        )
-
-    @classmethod
-    def dryrun_app_sequence(
-        cls,
-        algod: AlgodClient,
-        teal: str,
-        inputs: List[Iterable[Union[str, int]]],
-        sender: str = ZERO_ADDRESS,
-    ) -> List["DryRunTransactionResult"]:
-        return list(
-            map(
-                lambda args: cls.dryrun_app(algod, teal, args, sender=sender),
-                inputs,
-            )
-        )
-
-    @classmethod
-    def dryrun_logicsig_sequence(
-        cls,
-        algod: AlgodClient,
-        teal: str,
-        inputs: List[Iterable[Union[str, int]]],
-        sender: str = ZERO_ADDRESS,
-    ) -> List["DryRunTransactionResult"]:
-        return list(
-            map(
-                lambda args: cls.dryrun_logicsig(
-                    algod, teal, args, sender=sender
-                ),
-                inputs,
-            )
-        )
-
-    @classmethod
-    def dryrun_logicsig(
-        cls,
-        algod: AlgodClient,
-        teal: str,
-        args: Iterable[Union[str, int]],
-        sender: str = ZERO_ADDRESS,
-    ) -> "DryRunTransactionResult":
-        return cls.execute_singleton_dryrun(
-            algod, teal, args, ExecutionMode.Signature, sender
-        )
-
-    @classmethod
-    def execute_singleton_dryrun(
-        cls,
-        algod: AlgodClient,
-        teal: str,
-        args: Iterable[Union[str, int]],
-        mode: ExecutionMode,
-        sender: str = ZERO_ADDRESS,
-    ) -> "DryRunTransactionResult":
-        assert (
-            len(ExecutionMode) == 2
-        ), f"assuming only 2 ExecutionMode's but have {len(ExecutionMode)}"
-        assert (
-            mode in ExecutionMode
-        ), f"unknown mode {mode} of type {type(mode)}"
-        is_app = mode == ExecutionMode.Application
-
-        args = DryRunEncoder.encode_args(args)
-        builder = (
-            DryRunHelper.singleton_app_request
-            if is_app
-            else DryRunHelper.singleton_logicsig_request
-        )
-        dryrun_req = builder(teal, args, sender=sender)
-        dryrun_resp = algod.dryrun(dryrun_req)
-        return DryRunTransactionResult.from_single_response(dryrun_resp)
