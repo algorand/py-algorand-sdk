@@ -4,14 +4,10 @@ import pytest
 
 from algosdk.testing.dryrun import Helper as DryRunHelper
 from algosdk.testing.teal_blackbox import (
-    DryRunEncoder as DRE,
-    DryRunTransactionResult,
-    dryrun_app_executions,
-    dryrun_logicsig_executions,
-    execute_singleton_app,
-    execute_singleton_logicsig,
-    SequenceAssertion,
+    DryRunEncoder as Encoder,
+    DryRunExecutor as Executor,
     DryRunProperty as DRProp,
+    DryRunTransactionResult,
     ExecutionMode,
     SequenceAssertion,
 )
@@ -83,13 +79,13 @@ load 1""",
 
     app_resp, app_log_resp = list(
         map(
-            lambda teal: execute_singleton_app(algod, teal, args),
+            lambda teal: Executor.dryrun_app(algod, teal, args),
             [teal_app, teal_app_log],
         )
     )
     lsig_resp, bad_lsig_resp = list(
         map(
-            lambda teal: execute_singleton_logicsig(algod, teal, args),
+            lambda teal: Executor.dryrun_logicsig(algod, teal, args),
             [teal_lsig, bad_teal_lsig],
         )
     )
@@ -110,7 +106,7 @@ load 1""",
 
     assert app_resp.last_log() is None
     assert app_log_resp.last_log() == (x ** 2).to_bytes(8, "big").hex()
-    assert app_log_resp.last_log() == DRE.hex(x ** 2)
+    assert app_log_resp.last_log() == Encoder.hex(x ** 2)
     assert lsig_resp.last_log() is None
 
     assert app_resp.final_scratch() == {0: x}
@@ -121,7 +117,7 @@ load 1""",
     assert app_resp.stack_top() == x ** 2
     assert app_log_resp.stack_top() == x ** 2
     assert lsig_resp.stack_top() == x ** 2
-    assert bad_lsig_resp.stack_top() == DRE.hex0x(x ** 2)
+    assert bad_lsig_resp.stack_top() == Encoder.hex0x(x ** 2)
 
     assert app_resp.max_stack_height() == 2
     assert app_log_resp.max_stack_height() == 2
@@ -177,7 +173,7 @@ APP_SCENARIOS = {
         "assertions": {
             DRProp.cost: 11,
             # int assertions on log outputs need encoding to varuint-hex:
-            DRProp.lastLog: DRE.hex(2 ** 10),
+            DRProp.lastLog: Encoder.hex(2 ** 10),
             # dicts have a special meaning as assertions. So in the case of "finalScratch"
             # which is supposed to _ALSO_ output a dict, we need to use a lambda as a work-around
             DRProp.finalScratch: lambda _: {0: 2 ** 10},
@@ -193,7 +189,7 @@ APP_SCENARIOS = {
         "inputs": [(i,) for i in range(100)],
         "assertions": {
             DRProp.cost: lambda _, actual: 20 < actual < 22,
-            DRProp.lastLog: DRE.hex(1337),
+            DRProp.lastLog: Encoder.hex(1337),
             # due to dry-run artifact of not reporting 0-valued scratchvars,
             # we have a special case for n=0:
             DRProp.finalScratch: lambda args, actual: (
@@ -213,7 +209,7 @@ APP_SCENARIOS = {
             DRProp.cost: 14,
             DRProp.lastLog: {
                 # since execution REJECTS for 0, expect last log for this case to be None
-                (i,): DRE.hex(i * i) if i else None
+                (i,): Encoder.hex(i * i) if i else None
                 for i in range(100)
             },
             DRProp.finalScratch: lambda args: (
@@ -231,14 +227,14 @@ APP_SCENARIOS = {
         "inputs": [(1, 2), (1, "two"), ("one", 2), ("one", "two")],
         "assertions": {
             DRProp.cost: 27,
-            DRProp.lastLog: DRE.hex(1337),
+            DRProp.lastLog: Encoder.hex(1337),
             DRProp.finalScratch: lambda args: {
                 0: 4,
                 1: 5,
-                2: DRE.hex0x(args[0]),
+                2: Encoder.hex0x(args[0]),
                 3: 1337,
-                4: DRE.hex0x(args[1]),
-                5: DRE.hex0x(args[0]),
+                4: Encoder.hex0x(args[1]),
+                5: Encoder.hex0x(args[0]),
             },
             DRProp.stackTop: 1337,
             DRProp.maxStackHeight: 2,
@@ -253,7 +249,9 @@ APP_SCENARIOS = {
         "assertions": {
             DRProp.cost: lambda args: 30 + 15 * args[1],
             DRProp.lastLog: (
-                lambda args: DRE.hex(args[0] * args[1]) if args[1] else None
+                lambda args: Encoder.hex(args[0] * args[1])
+                if args[1]
+                else None
             ),
             # due to dryrun 0-scratchvar artifact, special case for i == 0:
             DRProp.finalScratch: lambda args: (
@@ -261,15 +259,15 @@ APP_SCENARIOS = {
                     0: 5,
                     1: args[1],
                     2: args[1] + 1,
-                    3: DRE.hex0x(args[0]),
-                    4: DRE.hex0x(args[0] * args[1]),
-                    5: DRE.hex0x(args[0] * args[1]),
+                    3: Encoder.hex0x(args[0]),
+                    4: Encoder.hex0x(args[0] * args[1]),
+                    5: Encoder.hex0x(args[0] * args[1]),
                 }
                 if args[1]
                 else {
                     0: 5,
                     2: args[1] + 1,
-                    3: DRE.hex0x(args[0]),
+                    3: Encoder.hex0x(args[0]),
                 }
             ),
             DRProp.stackTop: lambda args: len(args[0] * args[1]),
@@ -289,7 +287,9 @@ APP_SCENARIOS = {
                 actual - 40 <= 17 * args[0] <= actual + 40
             ),
             DRProp.lastLog: lambda args: (
-                DRE.hex(fac_with_overflow(args[0])) if args[0] < 21 else None
+                Encoder.hex(fac_with_overflow(args[0]))
+                if args[0] < 21
+                else None
             ),
             DRProp.finalScratch: lambda args: (
                 {0: args[0], 1: fac_with_overflow(args[0])}
@@ -317,7 +317,7 @@ APP_SCENARIOS = {
                 fib_cost(args) if args[0] < 17 else 70_000
             ),
             DRProp.lastLog: lambda args: (
-                DRE.hex(fib(args[0])) if 0 < args[0] < 17 else None
+                Encoder.hex(fib(args[0])) if 0 < args[0] < 17 else None
             ),
             DRProp.finalScratch: lambda args, actual: (
                 actual == {0: args[0], 1: fib(args[0])}
@@ -373,7 +373,7 @@ def test_app_with_report(filebase: str):
     )
 
     # 2. Run the requests to obtain sequence of Dryrun responses:
-    dryrun_results = dryrun_app_executions(algod, teal, inputs)
+    dryrun_results = Executor.dryrun_app_sequence(algod, teal, inputs)
 
     # 3. Generate statistical report of all the runs:
     csvpath = path / f"{filebase}.csv"
@@ -456,10 +456,10 @@ LOGICSIG_SCENARIOS = {
             # DRA.cost: 27,
             # DRA.lastLog: lightly_encode_output(1337, logs=True),
             DRProp.finalScratch: lambda args: {
-                0: DRE.hex0x(args[1]),
-                1: DRE.hex0x(args[0]),
+                0: Encoder.hex0x(args[1]),
+                1: Encoder.hex0x(args[0]),
                 3: 1,
-                4: DRE.hex0x(args[0]),
+                4: Encoder.hex0x(args[0]),
             },
             DRProp.stackTop: 1337,
             DRProp.maxStackHeight: 2,
@@ -476,15 +476,15 @@ LOGICSIG_SCENARIOS = {
             # DRA.lastLog: lambda args: lightly_encode_output(args[0] * args[1]) if args[1] else None,
             DRProp.finalScratch: lambda args: (
                 {
-                    0: DRE.hex0x(args[0] * args[1]),
+                    0: Encoder.hex0x(args[0] * args[1]),
                     2: args[1],
                     3: args[1] + 1,
-                    4: DRE.hex0x(args[0]),
+                    4: Encoder.hex0x(args[0]),
                 }
                 if args[1]
                 else {
                     3: args[1] + 1,
-                    4: DRE.hex0x(args[0]),
+                    4: Encoder.hex0x(args[0]),
                 }
             ),
             DRProp.stackTop: lambda args: len(args[0] * args[1]),
@@ -573,7 +573,7 @@ def test_logicsig_with_report(filebase: str):
     )
 
     # 2. Run the requests to obtain sequence of Dryrun resonses:
-    dryrun_results = dryrun_logicsig_executions(algod, teal, inputs)
+    dryrun_results = Executor.dryrun_logicsig_sequence(algod, teal, inputs)
 
     # 3. Generate statistical report of all the runs:
     csvpath = path / f"{filebase}.csv"

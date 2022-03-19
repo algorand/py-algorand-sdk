@@ -812,79 +812,86 @@ class DryRunEncoder:
             ), f"can't handle negative arguments but was given {arg}"
 
 
-def execute_singleton_app(
-    algod: AlgodClient,
-    teal: str,
-    args: Iterable[Union[str, int]],
-    sender: str = ZERO_ADDRESS,
-) -> "DryRunTransactionResult":
-    return execute_singleton_dryrun(
-        algod, teal, args, ExecutionMode.Application, sender=sender
-    )
-
-
-def dryrun_app_executions(
-    algod: AlgodClient,
-    teal: str,
-    inputs: List[Iterable[Union[str, int]]],
-    sender: str = ZERO_ADDRESS,
-) -> List["DryRunTransactionResult"]:
-    return list(
-        map(
-            lambda args: execute_singleton_app(
-                algod, teal, args, sender=sender
-            ),
-            inputs,
+class DryRunExecutor:
+    @classmethod
+    def dryrun_app(
+        cls,
+        algod: AlgodClient,
+        teal: str,
+        args: Iterable[Union[str, int]],
+        sender: str = ZERO_ADDRESS,
+    ) -> "DryRunTransactionResult":
+        return cls.execute_singleton_dryrun(
+            algod, teal, args, ExecutionMode.Application, sender=sender
         )
-    )
 
-
-def dryrun_logicsig_executions(
-    algod: AlgodClient,
-    teal: str,
-    inputs: List[Iterable[Union[str, int]]],
-    sender: str = ZERO_ADDRESS,
-) -> List["DryRunTransactionResult"]:
-    return list(
-        map(
-            lambda args: execute_singleton_logicsig(
-                algod, teal, args, sender=sender
-            ),
-            inputs,
+    @classmethod
+    def dryrun_app_sequence(
+        cls,
+        algod: AlgodClient,
+        teal: str,
+        inputs: List[Iterable[Union[str, int]]],
+        sender: str = ZERO_ADDRESS,
+    ) -> List["DryRunTransactionResult"]:
+        return list(
+            map(
+                lambda args: cls.dryrun_app(algod, teal, args, sender=sender),
+                inputs,
+            )
         )
-    )
 
+    @classmethod
+    def dryrun_logicsig_sequence(
+        cls,
+        algod: AlgodClient,
+        teal: str,
+        inputs: List[Iterable[Union[str, int]]],
+        sender: str = ZERO_ADDRESS,
+    ) -> List["DryRunTransactionResult"]:
+        return list(
+            map(
+                lambda args: cls.dryrun_logicsig(
+                    algod, teal, args, sender=sender
+                ),
+                inputs,
+            )
+        )
 
-def execute_singleton_logicsig(
-    algod: AlgodClient,
-    teal: str,
-    args: Iterable[Union[str, int]],
-    sender: str = ZERO_ADDRESS,
-) -> "DryRunTransactionResult":
-    return execute_singleton_dryrun(
-        algod, teal, args, ExecutionMode.Signature, sender
-    )
+    @classmethod
+    def dryrun_logicsig(
+        cls,
+        algod: AlgodClient,
+        teal: str,
+        args: Iterable[Union[str, int]],
+        sender: str = ZERO_ADDRESS,
+    ) -> "DryRunTransactionResult":
+        return cls.execute_singleton_dryrun(
+            algod, teal, args, ExecutionMode.Signature, sender
+        )
 
+    @classmethod
+    def execute_singleton_dryrun(
+        cls,
+        algod: AlgodClient,
+        teal: str,
+        args: Iterable[Union[str, int]],
+        mode: ExecutionMode,
+        sender: str = ZERO_ADDRESS,
+    ) -> "DryRunTransactionResult":
+        assert (
+            len(ExecutionMode) == 2
+        ), f"assuming only 2 ExecutionMode's but have {len(ExecutionMode)}"
+        assert (
+            mode in ExecutionMode
+        ), f"unknown mode {mode} of type {type(mode)}"
+        is_app = mode == ExecutionMode.Application
 
-def execute_singleton_dryrun(
-    algod: AlgodClient,
-    teal: str,
-    args: Iterable[Union[str, int]],
-    mode: ExecutionMode,
-    sender: str = ZERO_ADDRESS,
-) -> "DryRunTransactionResult":
-    assert (
-        len(ExecutionMode) == 2
-    ), f"assuming only 2 ExecutionMode's but have {len(ExecutionMode)}"
-    assert mode in ExecutionMode, f"unknown mode {mode} of type {type(mode)}"
-    is_app = mode == ExecutionMode.Application
-
-    args = DryRunEncoder.encode_args(args)
-    builder = (
-        DryRunHelper.singleton_app_request
-        if is_app
-        else DryRunHelper.singleton_logicsig_request
-    )
-    dryrun_req = builder(teal, args, sender=sender)
-    dryrun_resp = algod.dryrun(dryrun_req)
-    return DryRunTransactionResult.from_single_response(dryrun_resp)
+        args = DryRunEncoder.encode_args(args)
+        builder = (
+            DryRunHelper.singleton_app_request
+            if is_app
+            else DryRunHelper.singleton_logicsig_request
+        )
+        dryrun_req = builder(teal, args, sender=sender)
+        dryrun_resp = algod.dryrun(dryrun_req)
+        return DryRunTransactionResult.from_single_response(dryrun_resp)
