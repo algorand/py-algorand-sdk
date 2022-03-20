@@ -14,8 +14,8 @@ pytest x/blackbox/blackbox_test.py
 
 ### What is TEAL Blackbox Testing?
 
-TEAL Blackbox Testing lets you treat your TEAL programs as black boxes that receive inputs against and that produce outputs and
-other observable effects. 
+TEAL Blackbox Testing lets you treat your TEAL programs as black boxes that receive inputs and that produce outputs and other observable effects. You can create reports that summarize those effects,
+and turn the _reports_ into _program invariant conjectures_ which you then check with _sequence assertions_.
 
 ### Why Blackbox Testing?
 
