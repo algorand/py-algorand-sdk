@@ -193,7 +193,7 @@ In particular, we can:
   * 2 was assigned to **scratch slot #0** at step 5
   * the stack ended up with **4** on top
   * the run **PASS**'ed
-* Read the message that was passed and explains in English what went wrong: `<<<<<<<<<<<expected 8 but got 4>>>>>>>>>>>>>`
+* Read the message parameter that was provided and which explains in English what went wrong: `<<<<<<<<<<<expected 8 but got 4>>>>>>>>>>>>>`
 
 ### EDRA: Exploratory Dry Run Analysis
 
@@ -222,7 +222,7 @@ Perusing the above, it looks right:
 
 * column `D` **Arg 00** has the input $`x`$ (it's the argument at index 0)
 * column `A` contains the **Run** number
-* column `E`  **top of stack** does indeed store $`x^2`$ at the end of the calculation
+* column `E`  **top of stack** does indeed store $`x^2`$ at the program's termination
 * column `B` **Status** of each runs **PASS**es _except for **Run 1** with **Arg 00** = 0_. (The first run **REJECT**s because $`0^2 = 0`$ and TEAL programs reject when the top of the stack is 0)
 * column `G` shows scratch slot **s@000** which stores the value of $`x`$ (except for the case $`x = 0`$ in which appears empty; in fact, slots always default to the zero value and an **<a name="0val-artifact">artifact</a>** of dry-runs is that they do not report when 0-values get stored into previously empty slots as no state change actually occurs)
 * column `F` **max stack height** is always 2. The final observation makes sense because there is no branching or looping in the program.
@@ -236,7 +236,7 @@ Perusing the above, it looks right:
 
 ### Advanced: Asserting Invariants on a Dry Run Sequence
 
-The final and most advanced topic of this Howto is to turn _program invariant conjections_ into
+The final and most advanced topic of this Howto is to turn _program invariant conjectures_ into
 **sequence assertions**. That is, let's take the information we gleaned in our EDRA CSV report, 
 and create an integration test out of it. There are two ways to achieve this goal:
 
@@ -266,7 +266,7 @@ for i, dryrun_result in enumerate(dryrun_results):
 
 #### Declarative Blackbox Dry Run Sequence Assertions
 
-** STEP 9**. The TEAL Blackbox Toolkit also allows for declarative style test writing. 
+**STEP 9**. The TEAL Blackbox Toolkit also allows for declarative style test writing. 
 Let's look at some sample assertions for our `lsig_square` TEAL program:
 
 ```python
