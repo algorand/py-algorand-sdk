@@ -49,7 +49,7 @@ You'd like to write some unit tests to validate that it computes what you think 
 Even better, before making fine-grained assertions you'd like to get a sense of what the program is doing on a large set of inputs so you can discover program invariants. The TEAL Blackbox Toolkit's recommended approach for enabling these goals is to:
 
 * start by making basic assertions and validate them using dry runs (see "**Basic Assertions**" section below)
-* execute the program on a run-sequence of inputs and explore the results (see "**EDRA: Exploratory Dry Run Analysis**" section below)
+* execute the program on a run-sequence of inputs and explore the results (see "**EDRProp: Exploratory Dry Run Analysis**" section below)
 * create invariants for the entire run-sequence and assert that the invariants hold (see "**Advanced: Asserting Invariants on a Dry Run Sequence**" section below)
 
 > Becoming a TEAL Blackbox Toolkit Ninja involves 10 steps as described below
@@ -195,7 +195,7 @@ In particular, we can:
   * the run **PASS**'ed
 * Read the message parameter that was provided and which explains in English what went wrong: `<<<<<<<<<<<expected 8 but got 4>>>>>>>>>>>>>`
 
-### EDRA: Exploratory Dry Run Analysis
+### EDRProp: Exploratory Dry Run Analysis
 
 Let's expand our investigation from a single dry-run to to multiple runs or a **run sequence**. In other words, given a sequence of inputs, observe _assertable properties_ for the corresponding
 executions, and conjecture some program invariants. To aid in the investigation we'll generate a report in CSV format (Comma Separated Values) where:
@@ -237,7 +237,7 @@ Perusing the above, it looks right:
 ### Advanced: Asserting Invariants on a Dry Run Sequence
 
 The final and most advanced topic of this Howto is to turn _program invariant conjectures_ into
-**sequence assertions**. That is, let's take the information we gleaned in our EDRA CSV report, 
+**sequence assertions**. That is, let's take the information we gleaned in our EDRProp CSV report, 
 and create an integration test out of it. There are two ways to achieve this goal:
 
 * Procedural sequence assertions
@@ -273,10 +273,10 @@ Let's look at some sample assertions for our `lsig_square` TEAL program:
     "lsig_square": {
         "inputs": [(i,) for i in range(100)],
         "assertions": {
-            DRA.stackTop: lambda args: args[0] ** 2,
-            DRA.maxStackHeight: 2,
-            DRA.status: lambda i: "REJECT" if i[0] = 0 else "PASS",
-            DRA.finalScratch: lambda args: ({} if args[0] else {0: args[0]}),
+            DRProp.stackTop: lambda args: args[0] ** 2,
+            DRProp.maxStackHeight: 2,
+            DRProp.status: lambda i: "REJECT" if i[0] = 0 else "PASS",
+            DRProp.finalScratch: lambda args: ({} if args[0] else {0: args[0]}),
         },
     },
 ```
@@ -297,19 +297,56 @@ In English, letting $`x`$ be the input variable for our square function, the abo
   * the **max stack height** during execution is always 2
   * the executions' **status** is **PASS** except for the case $`x=0`$
   * the **final scratch** will have $`x`$ stored at slot `0` except for that strange $`x=0`$ case (recall the [0-val scratch slot artifact](#0val-artifact))
+
+Declarative sequence assertions make use of the following:
+
+* `DryRunProperty` (aka `DRProp`): an enum that acts as a key in a scenario's assertions dict
+* class `SequenceAssertion`
+  * its constructor takes in a predicate (there are [4 kinds of predicates](#predicate)) and returns a callable that is used for runtime assertions
+  * method `inputs_and_assertions()` validates a scenario and extracts out its assertions
+  * method `dryrun_assert()` evaluates the dry-run sequence using the constructed `SequenceAssertion`
+
+To employ the declarative test scenarios above write the following:
+
+```python
+algod = get_algod()
+
+scenario = {
+    "inputs": [(i,) for i in range(100)],
+    "assertions": {
+        DRProp.stackTop: lambda args: args[0] ** 2,
+        DRProp.maxStackHeight: 2,
+        DRProp.status: lambda i: "REJECT" if i[0] = 0 else "PASS",
+        DRProp.finalScratch: lambda args: ({} if args[0] else {0: args[0]}),
+    },
+},
+mode = ExecutionMode.Signature
+
+# Validate the scenario and dig out inputs/assertions:
+inputs, assertions = SequenceAssertion.inputs_and_assertions(scenario, mode)
+
+# Run the requests to obtain sequence of Dryrun responses:
+dryrun_results = Executor.dryrun_logicsig_on_sequence(algod, teal, inputs)
+
+# Sequence assertions:
+for i, type_n_assertion in enumerate(assertions.items()):
+    assert_type, predicate = type_n_assertion
+    assertion = SequenceAssertion(predicate)
+    assertion.dryrun_assert(inputs, dryrun_results, assert_type)
+```
   
 **STEP 10**. _**Deep Dive into Sequence Assertion via Exercises**_
 
-There are 4 kinds of Sequence Assertions
+There are <a name="predicate">4 kinds of Sequence Assertions _aka_ predicates</a>
 
 1. _simple python types_ - these are useful in the case of _constant_ assertions. For example above, it was
-asserted that `maxStackHeight` was _**ALWAYS**_ 2 by just using `2` in the declaration `DRA.maxStackHeight: 2,`
+asserted that `maxStackHeight` was _**ALWAYS**_ 2 by just using `2` in the declaration `DRProp.maxStackHeight: 2,`
 2. _1-variable functions_ -these are useful when you have a python "simulator" for the assertable property. For example above it was asserted that `stackTop` was
-$`x^2`$ by using a lambda expression for $`x^2`$ in the declaration `DRA.stackTop: lambda args: args[0] ** 2,`
+$`x^2`$ by using a lambda expression for $`x^2`$ in the declaration `DRProp.stackTop: lambda args: args[0] ** 2,`
 3. _dictionaries_ of type `Dict[Tuple, Any]` - these are useful when you want to assert a discrete set of input-output pairs. For example, if you have 4 inputs that you want to assert are being squared, you could use
 
 ```python
-DRA.stackTop: {
+DRProp.stackTop: {
   (2,): 4,
   (7,): 49,
   (13,): 169,
@@ -320,7 +357,7 @@ DRA.stackTop: {
 >Note that this case illustrates why `args` should be tuples intead of lists. In order to specify a map from args to expected, we need to make `args` a key
 >in a dictionary: Python dictionary keys must be hashable and lists are **not hashable** while tuples _are_ hashable.
 
-4. _2-variable functions_ -these are useful when your assertion is more subtle than out-and-out equality. For example, suppose you want to assert that the `cost` of each run is _between_ $`2n \pm 5`$ where $`n`$ is the first arg of the input. Then you could declare `DRA.cost: lambda args, actual: 2*args[0] - 5 <= actual <= 2*args[0] + 5`
+4. _2-variable functions_ -these are useful when your assertion is more subtle than out-and-out equality. For example, suppose you want to assert that the `cost` of each run is _between_ $`2n \pm 5`$ where $`n`$ is the first arg of the input. Then you could declare `DRProp.cost: lambda args, actual: 2*args[0] - 5 <= actual <= 2*args[0] + 5`
 
 #### **EXERCISE A**
 Convert each of the lambda expressions used above to dictionaries that assert the same thing.
@@ -330,16 +367,16 @@ weird $`x=0`$ cases above.
 
 #### _PARTIAL SOLUTIONS to EXERCISES_
 
-**Exercise A Partial Solution**. For `DRA.status`'s declaration you could define the `dict` using dictionary comprehension syntax as follows:
+**Exercise A Partial Solution**. For `DRProp.status`'s declaration you could define the `dict` using dictionary comprehension syntax as follows:
 
 ```python
-DRA.status: {(x,): "PASS" if x else "REJECT" for x in range(100)},
+DRProp.status: {(x,): "PASS" if x else "REJECT" for x in range(100)},
 ```
 
-**Exercise B Partial Solution**. For `DRA.status`'s declaration you could ignore the case $`x=0`$ as follows:
+**Exercise B Partial Solution**. For `DRProp.status`'s declaration you could ignore the case $`x=0`$ as follows:
 
 ```python
-DRA.status: lambda args, actual: "PASS" == actual if args[0] else True,
+DRProp.status: lambda args, actual: "PASS" == actual if args[0] else True,
 ```
 
 ## Slow and Bad Fibonacci - Another Example Report
