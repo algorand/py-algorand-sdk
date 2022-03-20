@@ -162,10 +162,8 @@ for i, dryrun_result in enumerate(dryrun_results):
 
 #### Declarative Blackbox Dry Run Sequence Assertions
 
-The TEAL Blackbox Toolkit also allows for a declarative test style writing approach.
-
-Let's look at some sample assertions for our `lsig_square` TEAL program.
-(You can also check out the [actual assertion definition](https://github.com/algorand/py-algorand-sdk/blob/c6e91b86acf545b66a94d27581d6cfa6318206fc/x/blackbox/blackbox_test.py#L442)):
+8. The TEAL Blackbox Toolkit also allows for declarative style test writing. 
+Let's look at some sample assertions for our `lsig_square` TEAL program:
 
 ```python
     "lsig_square": {
@@ -179,32 +177,13 @@ Let's look at some sample assertions for our `lsig_square` TEAL program.
     },
 ```
 
-
-* `# 4.` generate the comma separated report for the dry run sequence using `csv_from_dryruns()`, and save it to `csvpath`
-
-**NOTE:** similar logic is used for tesing apps instead of logic sigs, but you would use:
-
-* `DryRunHelper.build_simple_app_request` (instead of `DryRunHelper.build_simple_logicsig_request`)
-
-
-
-
-We'll be stepping through an explanation
-of this blackbox integration test:
-
-
-* `# 0.` validates the scenarios and digs out `inputs` and `assertions` using `get_blackbox_scenario_components()`
-* `# 1.` reads the TEAL source
-* `# 2.` builds up a sequence of dry run requests by applying `DryRunHelper.build_simple_logicsig_request` to the `inputs`
-* `# 3.` run `algod.dryrun` on the sequence obtaining the responses vector `dryrun_resps`
-
-
-5. Provide a test definition for the TEAL source. In the parlance of this PR, this is called a **test scenario**. Scenarios are dict's containing two keys `inputs` and `assertions` which follow [certain conventions](https://github.com/algorand/py-algorand-sdk/blob/350ba0c158e9bcadd7347b0907c53c6e9bf7c9be/algosdk/testing/teal_blackbox.py#L312). In particular:
+In the parlance of the TEAL Blackbox Toolkit, a set of such declarative assertions
+is called a **test scenario**. Scenarios are dict's containing two keys `inputs` and `assertions` and which follow [certain conventions](https://github.com/algorand/py-algorand-sdk/blob/3d3992ccc9b3758f28e68d2c00408d2e1363a3bb/algosdk/testing/teal_blackbox.py#L942). In particular:
 
 * **inputs** are lists of tuples, each tuple representing the `args` to be fed into a single dry run execution
-* **assertions** are dicts that map [DryRunAsssertionType](https://github.com/algorand/py-algorand-sdk/blob/350ba0c158e9bcadd7347b0907c53c6e9bf7c9be/algosdk/testing/teal_blackbox.py#L14)'s to actual assertions
-* here is an [example such scenario](https://github.com/algorand/py-algorand-sdk/blob/20de2cd2e98409cf89a5f3208833db1564c266f6/x/blackbox/blackbox_test.py#L314) for $`x^2`$
-* **NOTE**: assertions are ***totally optional*** for this example. Omitting them will skip specific assertions at the end but still attempt the dry run sequence and CSV report generation
+* **assertions** are dicts that map [DryRunProperty](https://github.com/algorand/py-algorand-sdk/blob/3d3992ccc9b3758f28e68d2c00408d2e1363a3bb/algosdk/testing/teal_blackbox.py#L20)'s to actual assertions
+* here is an [actual such scenario](https://github.com/algorand/py-algorand-sdk/blob/c6e91b86acf545b66a94d27581d6cfa6318206fc/x/blackbox/blackbox_test.py#L442) for $`x^2`$
+
 
 In English, letting $`x`$ be the input variable for our square function, the above **test scenario**:
 
