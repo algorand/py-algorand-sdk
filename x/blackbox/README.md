@@ -95,7 +95,7 @@ The TEAL Blackbox Toolkit comes with the following utility classes:
 When executing a dry run using  `DryRunExecutor` you'll get back `DryRunTransactionResult` objects. Such objects have
 **assertable properties** which can be used to validate the dry run.
 
-4. Back to our $`x^2`$ example, and assuming our `teal`  variable is defined [as above](#teal). You can run the following:
+4. Back to our $`x^2`$ example, and assuming the `teal`  variable is defined [as above](#teal). You can run the following:
 
 ```python
 algod = get_algod()
@@ -120,8 +120,8 @@ See the [DryRunTransactionResult class comment](https://github.com/algorand/py-a
 
 ### Printing out the TEAL Stack Trace for a Failing Assertion
 
-5. The `DryRunTransactionResult.report()` method lets you print out
-a handy report in the case of a failing assertion. Let's intentionally break the test case above by claiming that $`x^2 = x^3`$ for $`x=2`$ and print out this `report()` when our silly assertion fails:
+5. The `DryRunTransactionResult`'s `report()` method lets you print out
+a handy report in the case of a failing assertion. Let's intentionally break the test case above by claiming that $`x^2 = x^3`$ for $`x=2`$ and print out this _report_ when our silly assertion fails:
 
 ```python
 algod = get_algod()
@@ -129,10 +129,13 @@ x = 2
 args = (x,)
 dryrun_result = DryRunExecutor.dryrun_logicsig(algod, teal, args)
 
-actual = dryrun_result.status()
-assert actual == "PASS", dryrun_result.report(args, f"expected PASS but got {actual}")
+# This one's ok
+expected, actual =  "PASS", dryrun_result.status()
+assert expected == actual, dryrun_result.report(args, f"expected {expected} but got {actual}")
 
-assert dryrun_result.stack_stop() == x ** 3, f"expected {x ** 3} but got {dryrun_result.stack_stop()}"
+# This one's absurd! x^3 != x^2
+expected, actual = x ** 3, dryrun_result.stack_stop()
+assert expected == actual, dryrun_result.report(args, f"expected {expected} but got {actual}")
 ```
 
 If we run the test we'll get the following printout (this is for pytest, but other testing frameworks should be similar):
@@ -181,7 +184,7 @@ E               TXN AS ROW: {' Run': 0, ' cost': None, ' final_log': None, ' fin
 E               ===============
 E               <<<<<<<<<<<expected 8 but got 4>>>>>>>>>>>>>
 E               ===============
-E       assert 4 == 8
+E       assert 8 == 4
 ```
 
 In particular, we can:
@@ -195,8 +198,7 @@ In particular, we can:
 ### EDRA: Exploratory Dry Run Analysis
 
 Let's expand our investigation from a single dry-run to to multiple runs or a **run sequence**. In other words, given a sequence of inputs, observe _assertable properties_ for the corresponding
-executions, and conjecture some program invariants. To aid in the investigation 
-we'll generate a report in CSV format (Comma Separated Values) where:
+executions, and conjecture some program invariants. To aid in the investigation we'll generate a report in CSV format (Comma Separated Values) where:
 
 * columns represent _assertable properties_ of dry-runs, and
 * rows represents dry-run executions for specific inputs
@@ -287,7 +289,6 @@ is called a **test scenario**. Scenarios are dict's containing two keys `inputs`
 * **assertions** are dicts that map [DryRunProperty](https://github.com/algorand/py-algorand-sdk/blob/3d3992ccc9b3758f28e68d2c00408d2e1363a3bb/algosdk/testing/teal_blackbox.py#L20)'s to actual assertions
 * here is an [live example scenario](https://github.com/algorand/py-algorand-sdk/blob/c6e91b86acf545b66a94d27581d6cfa6318206fc/x/blackbox/blackbox_test.py#L442) for $`x^2`$
 
-
 In English, letting $`x`$ be the input variable for our square function, the above **test scenario**:
 
 * provides a list of 100 tuples of the form $`(x)`$ that will serve as args.
@@ -298,6 +299,44 @@ In English, letting $`x`$ be the input variable for our square function, the abo
   * the executions' **status** is **PASS** except for the case $`x=0`$
   * the **final scratch** will have $`x`$ stored at slot `0` except for that strange $`x=0`$ case (recall the [0-val scratch slot artifact](#0val-artifact))
   
+**STEP 10**. _**Sequence Assertion Exercises**_
+
+There are 4 kinds of Sequence Assertions
+
+1. _simple python types_ - these are useful in the case of _constant_ assertions. For example above, it was
+asserted that `maxStackHeight` was _**ALWAYS**_ 2 by just using `2` in the declaration `DRA.maxStackHeight: 2,`
+2. _1-variable functions_ -these are useful when you have a python "simulator" for the assertable property. For example above it was asserted that `stackTop` was
+$`x^2`$ by using a lambda expression for $`x^2`$ in the declartion `DRA.stackTop: lambda args: args[0] ** 2,`
+3. _dictionaries_ of type `Dict[Tuple, Any]` - these are useful when you want to assert a discrete set of input-output pairs. For example, if you have 4 inputs that you want to assert are being squared, you could use
+```python
+{
+  (2,): 4,
+  (7,): 49,
+  (13,): 169,
+  (11,): 121
+}
+```
+4. _2-variable functions_ -these are useful when your assertion is more subtle than out-and-out equality. For example, suppose you want to assert that the `cost` of the a run is $`2n \pm 5`$ where $`n`$ is the first arg of the input. Then you could declare `DRA.cost: lambda args, actual: 2*args[0] - 5 <= actual <= 2*args[0] + 5`
+
+#### **EXERCISE A**
+Convert each of the lambda expressions used above to dictionaries that assert the same thing.
+#### **EXERCISE B**
+Use 2-variable functions in order to _ignore_ the
+weird $`x=0`$ cases above.
+
+#### _PARTIAL SOLUTIONS to EXERCISES_
+
+**Exercise A Partial Solution**. For `DRA.status`'s declaration you could define the `dict` using dictionary comprehension syntax as follows:
+
+```python
+DRA.status: {(x,): "PASS" if x else "REJECT" for x in range(100)}
+```
+
+**Exercise B Partial Solution**. For `DRA.status`'s declaration you could ignore the case $`x=0`$ as follows:
+
+```python
+DRA.status: lambda args, actual: "PASS" == actual if args[0] else True
+```
 
 ## Slow and Bad Fibonacci - Another Example Report
 
