@@ -132,16 +132,16 @@ Perusing the above, it looks right:
 
 ### Advanced: Asserting Invariants on a Dry Run Sequence
 
-The final and most advanced portion of this howto is to turn _program invariant conjections_ into
+The final and most advanced topic of this Howto is to turn _program invariant conjections_ into
 **sequence assertions**. That is, let's take the information we gleaned in our EDRA CSV report, 
 and create an integration test out of it. There are two ways to achieve this goal:
 
-1. Procedural sequence assertions
-2. Declerative sequence assertions
+* Procedural sequence assertions
+* Declarative sequence assertions
 
 #### Procedural Blackbox Dry Run Sequence Assertions
 
-The procedural approach takes the _program invariant conjectures_ and simply asserts them 
+7. The procedural approach takes the _program invariant conjectures_ and simply asserts them 
 inside of a for loop that iterates over the inputs and dry runs. One can call each dry run
 execution independently, or use  `DryRunExecutor` convenience methods `dryrun_app_on_sequence()` and
 `dryrun_logicsig_on_sequence()`. For example, let's assert that the above invariants hold for all
@@ -160,23 +160,21 @@ for i, dryrun_result in enumerate(dryrun_results):
     assert dryrun_result.final_scratch() == ({} if x == 0 else {0: x})
 ```
 
-#### Declerative Blackbox Dry Run Sequence Assertions
+#### Declarative Blackbox Dry Run Sequence Assertions
 
-The Teal Blackbox Toolkit also allows for a declarative way to write tests.
+The TEAL Blackbox Toolkit also allows for a declarative test style writing approach.
 
-Let's look at some sample assertions for our `lsig_square` TEAL program:
+Let's look at some sample assertions for our `lsig_square` TEAL program.
+(You can also check out the [actual assertion definition](https://github.com/algorand/py-algorand-sdk/blob/c6e91b86acf545b66a94d27581d6cfa6318206fc/x/blackbox/blackbox_test.py#L442)):
 
 ```python
     "lsig_square": {
         "inputs": [(i,) for i in range(100)],
         "assertions": {
-            DRA.finalScratch: lambda args: ({0: args[0]} if args[0] else {}),
             DRA.stackTop: lambda args: args[0] ** 2,
             DRA.maxStackHeight: 2,
-            DRA.status: lambda i: "PASS" if i[0] > 0 else "REJECT",
-            DRA.passed: lambda i: i[0] > 0,
-            DRA.rejected: lambda i: i[0] == 0,
-            DRA.noError: True,
+            DRA.status: lambda i: "REJECT" if i[0] = 0 else "PASS",
+            DRA.finalScratch: lambda args: ({} if args[0] else {0: args[0]}),
         },
     },
 ```
