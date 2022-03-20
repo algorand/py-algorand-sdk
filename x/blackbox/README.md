@@ -119,7 +119,7 @@ Perusing the above, it looks right:
 * column `A` contains the **Run** number
 * column `E`  **top of stack** does indeed store $`x^2`$ at the end of the calculation
 * column `B` **Status** of each runs **PASS**es _except for **Run 1** with **Arg 00** = 0_. (The first run **REJECT**s because $`0^2 = 0`$ and TEAL programs reject when the top of the stack is 0)
-* column `G` shows scratch slot **s@000** which stores the value of $`x`$ (except for the case $`x = 0`$ in which appears empty; in fact, slots always default to the zero value and an artifact of dry-runs is that they do not report when 0-values get stored into previously empty slots as no state change actually occurs)
+* column `G` shows scratch slot **s@000** which stores the value of $`x`$ (except for the case $`x = 0`$ in which appears empty; in fact, slots always default to the zero value and an **<a name="0val-artifact">artifact</a>** of dry-runs is that they do not report when 0-values get stored into previously empty slots as no state change actually occurs)
 * column `F` **max stack height** is always 2. The final obervation makes sense because there is no branching or looping in the program.
 
 6. We can re-cast these observed effects in `Columns E, B, G, F` as **program invariant conjectures** written in Python as follows:
@@ -178,25 +178,22 @@ Let's look at some sample assertions for our `lsig_square` TEAL program:
 ```
 
 In the parlance of the TEAL Blackbox Toolkit, a set of such declarative assertions
-is called a **test scenario**. Scenarios are dict's containing two keys `inputs` and `assertions` and which follow [certain conventions](https://github.com/algorand/py-algorand-sdk/blob/3d3992ccc9b3758f28e68d2c00408d2e1363a3bb/algosdk/testing/teal_blackbox.py#L942). In particular:
+is called a **test scenario**. Scenarios are dict's containing two keys `inputs` and `assertions` and follow [certain conventions](https://github.com/algorand/py-algorand-sdk/blob/3d3992ccc9b3758f28e68d2c00408d2e1363a3bb/algosdk/testing/teal_blackbox.py#L942). In particular:
 
 * **inputs** are lists of tuples, each tuple representing the `args` to be fed into a single dry run execution
 * **assertions** are dicts that map [DryRunProperty](https://github.com/algorand/py-algorand-sdk/blob/3d3992ccc9b3758f28e68d2c00408d2e1363a3bb/algosdk/testing/teal_blackbox.py#L20)'s to actual assertions
-* here is an [actual such scenario](https://github.com/algorand/py-algorand-sdk/blob/c6e91b86acf545b66a94d27581d6cfa6318206fc/x/blackbox/blackbox_test.py#L442) for $`x^2`$
+* here is an [live example scenario](https://github.com/algorand/py-algorand-sdk/blob/c6e91b86acf545b66a94d27581d6cfa6318206fc/x/blackbox/blackbox_test.py#L442) for $`x^2`$
 
 
 In English, letting $`x`$ be the input variable for our square function, the above **test scenario**:
 
 * provides a list of 100 tuples of the form $`(x)`$ that will serve as args.
   * IE: $`(0), (1), (2), ... , (99)`$
-* establishes 7 different _sequence assertions_ as follows:
-  * the **final scratch** will have $`x`$ stored at slot `0` (except for the case $`x=0`$ which is an artifact of dryrun not producing any information on slots containing 0)
+* establishes 4 different _sequence assertions_ as follows:
   * the **stack's top** will contain $`x^2`$
   * the **max stack height** during execution is always 2
   * the executions' **status** is **PASS** except for the case $`x=0`$
-  * the runs all **passed** except for the case $`x=0`$
-  * the runs **rejected** only for the case $`x=0`$
-  * all the runs prodced **no error**'s
+  * the **final scratch** will have $`x`$ stored at slot `0` (recall the [0-val scratch slot artifact](#0val-artifact))
   
 Let's continue on with [the unit test example](https://github.com/algorand/py-algorand-sdk/blob/20de2cd2e98409cf89a5f3208833db1564c266f6/x/blackbox/blackbox_test.py#L462). After generating the csv report, the test continues:
 
