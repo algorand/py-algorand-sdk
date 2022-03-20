@@ -95,7 +95,7 @@ The TEAL Blackbox Toolkit comes with the following utility classes:
 When executing a dry run using  `DryRunExecutor` you'll get back `DryRunTransactionResult` objects. Such objects have
 **assertable properties** which can be used to validate the dry run.
 
-4. Back to our $`x^2`$ example, and assuming the `teal`  variable is defined [as above](#teal). You can run the following:
+**STEP 4**. Back to our $`x^2`$ example, and assuming the `teal`  variable is defined [as above](#teal). You can run the following:
 
 ```python
 algod = get_algod()
@@ -120,7 +120,7 @@ See the [DryRunTransactionResult class comment](https://github.com/algorand/py-a
 
 ### Printing out the TEAL Stack Trace for a Failing Assertion
 
-5. The `DryRunTransactionResult`'s `report()` method lets you print out
+**STEP 5**. The `DryRunTransactionResult`'s `report()` method lets you print out
 a handy report in the case of a failing assertion. Let's intentionally break the test case above by claiming that $`x^2 = x^3`$ for $`x=2`$ and print out this _report_ when our silly assertion fails:
 
 ```python
@@ -203,7 +203,7 @@ executions, and conjecture some program invariants. To aid in the investigation 
 * columns represent _assertable properties_ of dry-runs, and
 * rows represents dry-run executions for specific inputs
 
-6. Back to our $`x^2`$ example, here's how to generate a report with 1 row for each of the inputs `0, 1, ... , 15`: 
+**STEP 6**. Back to our $`x^2`$ example, here's how to generate a report with 1 row for each of the inputs `0, 1, ... , 15`: 
 
 ```python
 algod = get_algod()
@@ -227,13 +227,12 @@ Perusing the above, it looks right:
 * column `G` shows scratch slot **s@000** which stores the value of $`x`$ (except for the case $`x = 0`$ in which appears empty; in fact, slots always default to the zero value and an **<a name="0val-artifact">artifact</a>** of dry-runs is that they do not report when 0-values get stored into previously empty slots as no state change actually occurs)
 * column `F` **max stack height** is always 2. The final observation makes sense because there is no branching or looping in the program.
 
-7. We can re-cast these observed effects in `Columns E, B, G, F` as **program invariant conjectures** written in Python as follows:
+**STEP 7**. We can re-cast these observed effects in `Columns E, B, G, F` as **program invariant conjectures** written in Python as follows:
 
 * `dryrun_result.stack_top() == x ** 2`
 * `dryrun_result.max_stack_height() == 2`
 * `dryrun_result.status() == ("REJECT" if x == 0 else "PASS")`
 * `dryrun_result.final_scratch() == ({} if x == 0 else {0: x})`
-
 
 ### Advanced: Asserting Invariants on a Dry Run Sequence
 
@@ -246,7 +245,7 @@ and create an integration test out of it. There are two ways to achieve this goa
 
 #### Procedural Blackbox Dry Run Sequence Assertions
 
-8. The procedural approach takes the _program invariant conjectures_ and simply asserts them 
+**STEP 8**. The procedural approach takes the _program invariant conjectures_ and simply asserts them 
 inside of a for loop that iterates over the inputs and dry runs. One can call each dry run
 execution independently, or use `DryRunExecutor`'s convenience methods `dryrun_app_on_sequence()` and
 `dryrun_logicsig_on_sequence()`. For example, let's assert that the above invariants hold for all
@@ -267,7 +266,7 @@ for i, dryrun_result in enumerate(dryrun_results):
 
 #### Declarative Blackbox Dry Run Sequence Assertions
 
-9. The TEAL Blackbox Toolkit also allows for declarative style test writing. 
+** STEP 9**. The TEAL Blackbox Toolkit also allows for declarative style test writing. 
 Let's look at some sample assertions for our `lsig_square` TEAL program:
 
 ```python
