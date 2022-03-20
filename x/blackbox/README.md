@@ -309,18 +309,18 @@ $`x^2`$ by using a lambda expression for $`x^2`$ in the declaration `DRA.stackTo
 3. _dictionaries_ of type `Dict[Tuple, Any]` - these are useful when you want to assert a discrete set of input-output pairs. For example, if you have 4 inputs that you want to assert are being squared, you could use
 
 ```python
-{
+DRA.stackTop: {
   (2,): 4,
   (7,): 49,
   (13,): 169,
   (11,): 121
-}
+},
 ```
 
 >Note that this case illustrates why `args` should be tuples intead of lists. In order to specify a map from args to expected, we need to make `args` a key
 >in a dictionary: Python dictionary keys must be hashable and lists are **not hashable** while tuples _are_ hashable.
 
-4. _2-variable functions_ -these are useful when your assertion is more subtle than out-and-out equality. For example, suppose you want to assert that the `cost` of each run is $`2n \pm 5`$ where $`n`$ is the first arg of the input. Then you could declare `DRA.cost: lambda args, actual: 2*args[0] - 5 <= actual <= 2*args[0] + 5`
+4. _2-variable functions_ -these are useful when your assertion is more subtle than out-and-out equality. For example, suppose you want to assert that the `cost` of each run is _between_ $`2n \pm 5`$ where $`n`$ is the first arg of the input. Then you could declare `DRA.cost: lambda args, actual: 2*args[0] - 5 <= actual <= 2*args[0] + 5`
 
 #### **EXERCISE A**
 Convert each of the lambda expressions used above to dictionaries that assert the same thing.
@@ -333,13 +333,13 @@ weird $`x=0`$ cases above.
 **Exercise A Partial Solution**. For `DRA.status`'s declaration you could define the `dict` using dictionary comprehension syntax as follows:
 
 ```python
-DRA.status: {(x,): "PASS" if x else "REJECT" for x in range(100)}
+DRA.status: {(x,): "PASS" if x else "REJECT" for x in range(100)},
 ```
 
 **Exercise B Partial Solution**. For `DRA.status`'s declaration you could ignore the case $`x=0`$ as follows:
 
 ```python
-DRA.status: lambda args, actual: "PASS" == actual if args[0] else True
+DRA.status: lambda args, actual: "PASS" == actual if args[0] else True,
 ```
 
 ## Slow and Bad Fibonacci - Another Example Report
@@ -348,12 +348,12 @@ DRA.status: lambda args, actual: "PASS" == actual if args[0] else True
 <img width="1231" alt="image" src="https://user-images.githubusercontent.com/291133/158705149-302d755f-afcc-4380-976a-ca14800c138f.png">
 A few items to take note of:
 
-* the app was **REJECT**ed for `n = 0` because `fibonacci(0) == 0` is left at the top of the stack
-* the app was **REJECT**ed for `n > 7` because of exceeding budget
-* the app **errored** only for `n > 16` because of exceeding _dynamic_ budget
-* the **cost** is growing exponentially (bad algorithm design)
-* the **top of stack** contains the `fibonacci(n)` except in the error case
-* the **final_log** contains `hex(fibonacci(n))` except in the error and reject cases
 * `n` is given by **Arg_00**
-* **max stack height** `= 2*n` except for `n=0` and the error case
-* you can see the final values of scratch slots **s@000** and **s@001**
+* the app was **REJECT**ed for $`n = 0`$ because `fibonacci(0) == 0` is left at the top of the stack
+* the app was **REJECT**ed for $`n > 7`$ because of exceeding budget
+* the app **errored** only for $`n > 16`$ because of exceeding _dynamic_ budget
+* the **cost** is growing exponentially (poor algorithm design)
+* the **top of stack** contains `fibonacci(n)` except in the error case
+* the **final_log** contains `hex(fibonacci(n))` except in the error and reject cases
+* **max stack height** is $`2n`$ except for $`n=0`$ and the error case
+* you can see the final values of scratch slots **s@000** and **s@001** which respectivel are $`n`$ and `fibonacci(n)`
