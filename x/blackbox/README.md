@@ -329,10 +329,10 @@ inputs, assertions = SequenceAssertion.inputs_and_assertions(scenario, mode)
 dryrun_results = Executor.dryrun_logicsig_on_sequence(algod, teal, inputs)
 
 # Sequence assertions:
-for i, type_n_assertion in enumerate(assertions.items()):
-    assert_type, predicate = type_n_assertion
+for i, prop_n_predicate in enumerate(assertions.items()):
+    property, predicate = prop_n_predicate
     assertion = SequenceAssertion(predicate)
-    assertion.dryrun_assert(inputs, dryrun_results, assert_type)
+    assertion.dryrun_assert(inputs, dryrun_results, property)
 ```
   
 **STEP 10**. _**Deep Dive into Sequence Assertion via Exercises**_
