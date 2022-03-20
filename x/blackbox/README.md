@@ -281,21 +281,3 @@ A few items to take note of:
 * `n` is given by **Arg_00**
 * **max stack height** `= 2*n` except for `n=0` and the error case
 * you can see the final values of scratch slots **s@000** and **s@001**
-
-## TODO's (not in this PR)
-
-* handle statefulness and non-determinism
-
-## FORMERLY TODO's
-
-* [x]  Figure out how to integrate this (if at all) with the existing [DryRunContext](https://github.com/algorand/py-algorand-sdk/blob/develop/algosdk/testing/dryrun.py#L45). See usage examples [here](https://github.com/algorand/docs/blob/bbd379df193399f82686e9f6d5c2bcb9d676d2d7/docs/features/asc1/teal_test.md#basic-setup-and-simple-tests)
-  * **UPSHOT**: ditches DryRunContext. It's too heavy.
-* [x]  Allow CSV outputs?
-  * **UPSHOT**: yes!
-* [x]  Don't require logic sigs?
-  * **UPSHOT**: yes, not needed. However, the ability to _test_ logic sigs is crucial, and so logic-sigs are considered as first-class citizens.
-* [x]  See if we can simplify the roundtrips using the approach taken in PytealUtils:
-  * [assert_output](https://github.com/algorand/pyteal-utils/blob/main/pytealutils/strings/test_string.py#L17)
-  * [execute_app](https://github.com/algorand/pyteal-utils/blob/550b998e33985896607512992aef0e9c53680ea9/tests/helpers.py#L312)
-  * [get_stats_from_dryrun](https://github.com/algorand/pyteal-utils/blob/550b998e33985896607512992aef0e9c53680ea9/tests/helpers.py#L360)
-  * **UPSHOT**: no round trips at all
