@@ -49,7 +49,7 @@ You'd like to write some unit tests to validate that it computes what you think 
 Even better, before making fine-grained assertions you'd like to get a sense of what the program is doing on a large set of inputs so you can discover program invariants. The TEAL Blackbox Toolkit's recommended approach for enabling these goals is to:
 
 * start by making basic assertions and validate them using dry runs (see "**Basic Assertions**" section below)
-* execute the program on a run-sequence of inputs and explore the results (see "**EDRProp: Exploratory Dry Run Analysis**" section below)
+* execute the program on a run-sequence of inputs and explore the results (see "**EDRA: Exploratory Dry Run Analysis**" section below)
 * create invariants for the entire run-sequence and assert that the invariants hold (see "**Advanced: Asserting Invariants on a Dry Run Sequence**" section below)
 
 > Becoming a TEAL Blackbox Toolkit Ninja involves 10 steps as described below
@@ -195,7 +195,7 @@ In particular, we can:
   * the run **PASS**'ed
 * Read the message parameter that was provided and which explains in English what went wrong: `<<<<<<<<<<<expected 8 but got 4>>>>>>>>>>>>>`
 
-### EDRProp: Exploratory Dry Run Analysis
+### EDRA: Exploratory Dry Run Analysis
 
 Let's expand our investigation from a single dry-run to to multiple runs or a **run sequence**. In other words, given a sequence of inputs, observe _assertable properties_ for the corresponding
 executions, and conjecture some program invariants. To aid in the investigation we'll generate a report in CSV format (Comma Separated Values) where:
@@ -237,7 +237,7 @@ Perusing the above, it looks right:
 ### Advanced: Asserting Invariants on a Dry Run Sequence
 
 The final and most advanced topic of this Howto is to turn _program invariant conjectures_ into
-**sequence assertions**. That is, let's take the information we gleaned in our EDRProp CSV report, 
+**sequence assertions**. That is, let's take the information we gleaned in our EDRA CSV report, 
 and create an integration test out of it. There are two ways to achieve this goal:
 
 * Procedural sequence assertions
