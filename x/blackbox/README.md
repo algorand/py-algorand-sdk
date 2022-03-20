@@ -286,7 +286,7 @@ is called a **test scenario**. Scenarios are dict's containing two keys `inputs`
 
 * **inputs** are lists of tuples, each tuple representing the `args` to be fed into a single dry run execution
 * **assertions** are dicts that map [DryRunProperty](https://github.com/algorand/py-algorand-sdk/blob/3d3992ccc9b3758f28e68d2c00408d2e1363a3bb/algosdk/testing/teal_blackbox.py#L20)'s to actual assertions
-* here is an [live example scenario](https://github.com/algorand/py-algorand-sdk/blob/c6e91b86acf545b66a94d27581d6cfa6318206fc/x/blackbox/blackbox_test.py#L442) for $`x^2`$
+* here is a [live example scenario](https://github.com/algorand/py-algorand-sdk/blob/c6e91b86acf545b66a94d27581d6cfa6318206fc/x/blackbox/blackbox_test.py#L442) for $`x^2`$
 
 In English, letting $`x`$ be the input variable for our square function, the above **test scenario**:
 
@@ -298,15 +298,16 @@ In English, letting $`x`$ be the input variable for our square function, the abo
   * the executions' **status** is **PASS** except for the case $`x=0`$
   * the **final scratch** will have $`x`$ stored at slot `0` except for that strange $`x=0`$ case (recall the [0-val scratch slot artifact](#0val-artifact))
   
-**STEP 10**. _**Sequence Assertion Exercises**_
+**STEP 10**. _**Deep Dive into Sequence Assertion via Exercises**_
 
 There are 4 kinds of Sequence Assertions
 
 1. _simple python types_ - these are useful in the case of _constant_ assertions. For example above, it was
 asserted that `maxStackHeight` was _**ALWAYS**_ 2 by just using `2` in the declaration `DRA.maxStackHeight: 2,`
 2. _1-variable functions_ -these are useful when you have a python "simulator" for the assertable property. For example above it was asserted that `stackTop` was
-$`x^2`$ by using a lambda expression for $`x^2`$ in the declartion `DRA.stackTop: lambda args: args[0] ** 2,`
+$`x^2`$ by using a lambda expression for $`x^2`$ in the declaration `DRA.stackTop: lambda args: args[0] ** 2,`
 3. _dictionaries_ of type `Dict[Tuple, Any]` - these are useful when you want to assert a discrete set of input-output pairs. For example, if you have 4 inputs that you want to assert are being squared, you could use
+
 ```python
 {
   (2,): 4,
@@ -315,7 +316,11 @@ $`x^2`$ by using a lambda expression for $`x^2`$ in the declartion `DRA.stackTop
   (11,): 121
 }
 ```
-4. _2-variable functions_ -these are useful when your assertion is more subtle than out-and-out equality. For example, suppose you want to assert that the `cost` of the a run is $`2n \pm 5`$ where $`n`$ is the first arg of the input. Then you could declare `DRA.cost: lambda args, actual: 2*args[0] - 5 <= actual <= 2*args[0] + 5`
+
+>Note that this case illustrates why `args` should be tuples intead of lists. In order to specify a map from args to expected, we need to make `args` a key
+>in a dictionary: Python dictionary keys must be hashable and lists are **not hashable** while tuples _are_ hashable.
+
+4. _2-variable functions_ -these are useful when your assertion is more subtle than out-and-out equality. For example, suppose you want to assert that the `cost` of each run is $`2n \pm 5`$ where $`n`$ is the first arg of the input. Then you could declare `DRA.cost: lambda args, actual: 2*args[0] - 5 <= actual <= 2*args[0] + 5`
 
 #### **EXERCISE A**
 Convert each of the lambda expressions used above to dictionaries that assert the same thing.
