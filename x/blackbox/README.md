@@ -92,8 +92,7 @@ See the [DryRunTransactionResult class comment](https://github.com/algorand/py-a
 ### Printing out the Stack Trace for a Failing Assertion
 
 The `DryRunTransactionResult.report()` method lets you print out
-a handy report in the case of a failing assertion. Let's intentionally break the test case above by claiming that 
-$`x^2 == x^3`$ for $`x=2`$ and print out this `report()` when our silly assertion fails:
+a handy report in the case of a failing assertion. Let's intentionally break the test case above by claiming that $`x^2 = x^3`$ for $`x=2`$ and print out this `report()` when our silly assertion fails:
 
 ```python
 algod = get_algod()
