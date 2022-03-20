@@ -2,20 +2,11 @@
 
 **NOTE: to get math formulas to render here using Chrome, add the [xhub extension](https://chrome.google.com/webstore/detail/xhub/anidddebgkllnnnnjfkmjcaallemhjee/related) and reload**
 
-## TLDR; Dry Run a Sequence of Inputs on Apps/LogicSigs, View Stats, and make Assertions on Behavior
-
-### Trying out the new test
-
-```sh
-pytest x/blackbox/blackbox_test.py 
-```
-
 ## Blackbox Testing Howto
 
 ### What is TEAL Blackbox Testing?
 
-TEAL Blackbox Testing lets you treat your TEAL programs as black boxes that receive inputs and that produce outputs and other observable effects. You can create reports that summarize those effects,
-and turn the _reports_ into _program invariant conjectures_ which you then check with _sequence assertions_.
+TEAL Blackbox Testing lets you treat your TEAL program as a black boxes that receives an inputs produces an output and other observable effects. You can create reports that summarize those effects, and turn the _reports_ into _program invariant conjectures_ which you then check with _sequence assertions_.
 
 ### Why Blackbox Testing?
 
@@ -27,46 +18,84 @@ Here are some use cases:
 
 ## Simple TEAL Blackbox Toolkit Example: Program for $`x^2`$
 
-Suppose you have a [TEAL program](https://github.com/algorand/py-algorand-sdk/blob/23c21170cfb19652d5da854e499dca47eabb20e8/x/blackbox/teal/lsig_square.teal) that purportedly computes $`x^2`$. You'd like to write some unit tests to validate that it computes what you think it should, and also make **assertions** regarding:
+Consider the following [TEAL program](https://github.com/algorand/py-algorand-sdk/blob/23c21170cfb19652d5da854e499dca47eabb20e8/x/blackbox/teal/lsig_square.teal) that purportedly computes $`x^2`$:
 
-* the total program cost
-* the contents at the stack's top at the end of execution
-* the maximum height of the stack during execution
-* the contents of the scratch variables at the end
-* the contents of the final log message (this is especially useful for [ABI-compliant programs](https://developer.algorand.org/docs/get-details/dapps/smart-contracts/ABI/))
-* the status of the program (**PASS**, **REJECT** or _erroring_)
-* error conditions that are and are not encountered
+```plain
+#pragma version 6
+arg 0
+btoi
+callsub square_0
+return
 
-Even better, before making fine-grained assertions you'd like to get a sense of what the program is doing on a large set of inputs so you can discover program invariants to assert. One recommended approach for solving this problem is to:
+// square
+square_0:
+store 0
+load 0
+pushint 2 // 2
+exp
+retsub
+```
+
+You'd like to write some unit tests to validate that it computes what you think it should, and also make **assertions** about the:
+
+* program's opcode cost
+* program's stack
+* stack's height
+* scratch variables
+* final log message (this is especially useful for [ABI-compliant programs](https://developer.algorand.org/docs/get-details/dapps/smart-contracts/ABI/))
+* status (**PASS**, **REJECT** or _erroring_)
+* error conditions that are and aren't encountered
+
+Even better, before making fine-grained assertions you'd like to get a sense of what the program is doing on a large set of inputs so you can discover program invariants. The TEAL Blackbox Toolkit's recommended approach for enabling these goals is to:
 
 * start by making basic assertions and validate them using dry runs (see "**Basic Assertions**" section below)
 * execute the program on a run-sequence of inputs and explore the results (see "**EDRA: Exploratory Dry Run Analysis**" section below)
 * create invariants for the entire run-sequence and assert that the invariants hold (see "**Advanced: Asserting Invariants on a Dry Run Sequence**" section below)
 
+> Becoming a TEAL Blackbox Toolkit Ninja involves 10 steps as described below
 ### Dry Run Environment Setup
 
-1. Start with a running local node and make note of Algod's port number (for our [standard sandbox](https://github.com/algorand/sandbox) this is `4001`)
-2. Set the `ALGOD_PORT` value in [x/testnet.py](https://github.com/algorand/py-algorand-sdk/blob/5faf79ddb56327a0e036ff4e21a39b52535751ae/x/testnet.py#L6) to this port number. (The port is set to `60000` by default because [SDK-testing](https://github.com/algorand/algorand-sdk-testing) bootstraps with this setting on Circle and also to avoid conflicting locally with the typical sandbox setup)
+**STEP 1**. Start with a running local node and make note of Algod's port number (for our [standard sandbox](https://github.com/algorand/sandbox) this is `4001`)
+
+**STEP 2**. Set the `ALGOD_PORT` value in [x/testnet.py](https://github.com/algorand/py-algorand-sdk/blob/5faf79ddb56327a0e036ff4e21a39b52535751ae/x/testnet.py#L6) to this port number. (The port is set to `60000` by default because [SDK-testing](https://github.com/algorand/algorand-sdk-testing) bootstraps with this setting on Circle and also to avoid conflicting locally with the typical sandbox setup)
 
 ### TEAL Program for Testing: Logic Sig v. App
 
-3. Next, you'll need to figure out if your TEAL program should be a Logic Signature or an Application. Each of these program _modes_ has its merits, but I won't get into the pros/cons here. From a Blackbox Test's perspective, the main difference is how each receives its arguments from the program executor. Logic sigs rely on the [arg opcode](https://developer.algorand.org/docs/get-details/dapps/avm/teal/opcodes/#arg-n) while apps rely on [txna ApplicationArgs i](https://developer.algorand.org/docs/get-details/dapps/avm/teal/opcodes/#txna-f-i). In our $`x^2`$ **logic sig** example, you can see on [line 2](https://github.com/algorand/py-algorand-sdk/blob/23c21170cfb19652d5da854e499dca47eabb20e8/x/blackbox/teal/lsig_square.teal#L2) that the `arg` opcode is used. Because argument each opcode (`arg` versus `ApplicationArgs`) is exclusive to one mode, any program that takes input will execute succesfully in _one mode only_.
-4. Save the TEAL program you want to test. You can inline them in your test or follow the approach of `x/blackbox/blackbox_test.py` and save in `x/blackbox/teal`
+**STEP 3**. Next, you'll need to figure out if your TEAL program should be a Logic Signature or an Application. Each of these program _modes_ has its merits, but I won't get into the pros/cons here. From a Blackbox Test's perspective, the main difference is how each receives its arguments from the program executor. Logic sigs rely on the [arg opcode](https://developer.algorand.org/docs/get-details/dapps/avm/teal/opcodes/#arg-n) while apps rely on [txna ApplicationArgs i](https://developer.algorand.org/docs/get-details/dapps/avm/teal/opcodes/#txna-f-i). In our $`x^2`$ **logic sig** example, you can see on [line 2](https://github.com/algorand/py-algorand-sdk/blob/23c21170cfb19652d5da854e499dca47eabb20e8/x/blackbox/teal/lsig_square.teal#L2) that the `arg` opcode is used. Because each argument opcode (`arg` versus `ApplicationArgs`) is exclusive to one mode, any program that takes input will execute succesfully in _one mode only_.
 
-### The TEAL Blackbox Toolkit
+**STEP 4**. Write the TEAL program that you want to test. You can inline the test as described here or follow the approach of `x/blackbox/blackbox_test.py` and save under `x/blackbox/teal`. So following the inline
+appraoch we begin our TEAL Blackbox script with an <a name="teal">inline teal source variable</a>:
+
+```python
+teal = """#pragma version 6
+arg 0
+btoi
+callsub square_0
+return
+
+// square
+square_0:
+store 0
+load 0
+pushint 2 // 2
+exp
+retsub"""
+```
+
+### The TEAL Blackbox Toolkit's Utitlity Classes
 
 The TEAL Blackbox Toolkit comes with the following utility classes:
 
-* `DryRunExecutor` - facility to execute dry run's for apps and logic sigs
+* `DryRunExecutor` - facility to execute dry run's on apps and logic sigs
 * `DryRunTransactionResult` - class encapsulating a single app or logic sig dry run transaction and for making assertions about the dry run
-* `SequenceAssertion` - class for asserting invariants about a _sequence_ of dry run executions
+* `SequenceAssertion` - class for asserting invariants about a _sequence_ of dry run executions in a declarative fashion
 
 ### Basic Assertions
 
 When executing a dry run using  `DryRunExecutor` you'll get back `DryRunTransactionResult` objects. Such objects have
-**assertable properties** that can be used to validate the dry run.
+**assertable properties** which can be used to validate the dry run.
 
-4. Back to our $`x^2`$ example, assume you have a variable `teal` containing the TEAL source as a string. You can run the following:
+4. Back to our $`x^2`$ example, and assuming our `teal`  variable is defined [as above](#teal). You can run the following:
 
 ```python
 algod = get_algod()
@@ -213,13 +242,13 @@ and create an integration test out of it. There are two ways to achieve this goa
 
 8. The procedural approach takes the _program invariant conjectures_ and simply asserts them 
 inside of a for loop that iterates over the inputs and dry runs. One can call each dry run
-execution independently, or use  `DryRunExecutor` convenience methods `dryrun_app_on_sequence()` and
+execution independently, or use `DryRunExecutor`'s convenience methods `dryrun_app_on_sequence()` and
 `dryrun_logicsig_on_sequence()`. For example, let's assert that the above invariants hold for all
 $`x \leq 100`$:
 
 ```python
 algod = get_algod()
-inputs = [(x,) for x in range(100)]
+inputs = [(x,) for x in range(101)]
 dryrun_results = DryRunExecutor.dryrun_logicsig_on_sequence(algod, teal, inputs)
 for i, dryrun_result in enumerate(dryrun_results):
     args = inputs[i]
