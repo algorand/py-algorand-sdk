@@ -348,7 +348,7 @@ DRA.status: lambda args, actual: "PASS" == actual if args[0] else True,
 <img width="1231" alt="image" src="https://user-images.githubusercontent.com/291133/158705149-302d755f-afcc-4380-976a-ca14800c138f.png">
 A few items to take note of:
 
-* `n` is given by **Arg_00**
+* $`n`$ is given by **Arg_00**
 * the app was **REJECT**ed for $`n = 0`$ because `fibonacci(0) == 0` is left at the top of the stack
 * the app was **REJECT**ed for $`n > 7`$ because of exceeding budget
 * the app **errored** only for $`n > 16`$ because of exceeding _dynamic_ budget
@@ -356,4 +356,6 @@ A few items to take note of:
 * the **top of stack** contains `fibonacci(n)` except in the error case
 * the **final_log** contains `hex(fibonacci(n))` except in the error and reject cases
 * **max stack height** is $`2n`$ except for $`n=0`$ and the error case
-* you can see the final values of scratch slots **s@000** and **s@001** which respectivel are $`n`$ and `fibonacci(n)`
+* you can see the final values of scratch slots **s@000** and **s@001** which are respectively $`n`$ and `fibonacci(n)`
+
+You can see how [sequence assertions can be made](https://github.com/algorand/py-algorand-sdk/blob/77addfc236e78e41e2fd761fd59b506d8d344346/x/blackbox/blackbox_test.py#L324) on this function.
