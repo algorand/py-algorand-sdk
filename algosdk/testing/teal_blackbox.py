@@ -676,6 +676,45 @@ class DryRunTransactionResult:
         table = tabulate(rows, headers=headers, tablefmt="presto")
         return table
 
+    def report(
+        self, args: Iterable[Union[str, int]], msg: str, row: int = 0
+    ) -> str:
+        bbr = self.black_box_results
+        return f"""===============
+    <<<<<<<<<<<{msg}>>>>>>>>>>>>>
+    ===============
+    App Trace:
+    {self.tabulate(-1)}
+    ===============
+    MODE: {self.mode}
+    TOTAL COST: {self.cost()}
+    ===============
+    FINAL MESSAGE: {self.last_message()}
+    ===============
+    Messages: {self.messages()}
+    Logs: {self.logs()}
+    ===============
+    -----{bbr}-----
+    TOTAL STEPS: {bbr.steps()}
+    FINAL STACK: {bbr.final_stack()}
+    FINAL STACK TOP: {bbr.final_stack_top()}
+    MAX STACK HEIGHT: {bbr.max_stack_height()}
+    FINAL SCRATCH: {bbr.final_scratch()}
+    SLOTS USED: {bbr.slots()}
+    FINAL AS ROW: {bbr.final_as_row()}
+    ===============
+    Global Delta:
+    {self.global_delta()}
+    ===============
+    Local Delta:
+    {self.local_deltas()}
+    ===============
+    TXN AS ROW: {self.csv_row(row, args)}
+    ===============
+    <<<<<<<<<<<{msg}>>>>>>>>>>>>>
+    ===============
+    """
+
     def csv_row(
         self, row_num: int, args: Iterable[Union[int, str]]
     ) -> Dict[str, Union[str, int]]:
@@ -846,44 +885,7 @@ class SequenceAssertion:
             res = dryrun_results[i]
             actual = res.dig(assert_type)
             ok, msg = self(args, actual)
-            if not ok:
-                extracts = res.extracts
-                bbr = res.black_box_results
-
-                assert ok, f"""===============
-    <<<<<<<<<<<{msg}>>>>>>>>>>>>>
-    ===============
-    App Trace:
-    {res.tabulate(-1)}
-    ===============
-    MODE: {res.mode}
-    TOTAL COST: {res.cost()}
-    ===============
-    FINAL MESSAGE: {res.last_message()}
-    ===============
-    Messages: {res.messages()}
-    Logs: {res.logs()}
-    ===============
-    -----{bbr}-----
-    TOTAL STEPS: {bbr.steps()}
-    FINAL STACK: {bbr.final_stack()}
-    FINAL STACK TOP: {bbr.final_stack_top()}
-    MAX STACK HEIGHT: {bbr.max_stack_height()}
-    FINAL SCRATCH: {bbr.final_scratch()}
-    SLOTS USED: {bbr.slots()}
-    FINAL AS ROW: {bbr.final_as_row()}
-    ===============
-    Global Delta:
-    {res.global_delta()}
-    ===============
-    Local Delta:
-    {res.local_deltas()}
-    ===============
-    TXN AS ROW: {res.csv_row(i+1, args)}
-    ===============
-    <<<<<<<<<<<{msg}>>>>>>>>>>>>>
-    ===============
-    """
+            assert ok, res.report(args, msg, row=i + 1)
 
     @classmethod
     def prepare_predicate(cls, predicate):

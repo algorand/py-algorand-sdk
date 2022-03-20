@@ -101,12 +101,12 @@ When executing a dry run using  `DryRunExecutor` you'll get back `DryRunTransact
 algod = get_algod()
 x = 9
 args = (x,)
-dryrun_result = DryRunExecutor.dryrun_app(algod, teal, args)
+dryrun_result = DryRunExecutor.dryrun_logicsig(algod, teal, args)
 assert dryrun_result.status() == "PASS"
-assert dryrun_result.stack_stop() == x ** 2
+assert dryrun_result.stack_top() == x ** 2
 ```
 
-Some of the main available _assertable properties_ are:
+Some available _assertable properties_ are:
 
 * `stack_top()`
 * `last_log()`
@@ -118,7 +118,7 @@ Some of the main available _assertable properties_ are:
 
 See the [DryRunTransactionResult class comment](https://github.com/algorand/py-algorand-sdk/blob/b2a3366b7bc976e0610429c186b7968a7f1bbc76/algosdk/testing/teal_blackbox.py#L371) for more assertable properties and details.
 
-### Printing out the Stack Trace for a Failing Assertion
+### Printing out the TEAL Stack Trace for a Failing Assertion
 
 5. The `DryRunTransactionResult.report()` method lets you print out
 a handy report in the case of a failing assertion. Let's intentionally break the test case above by claiming that $`x^2 = x^3`$ for $`x=2`$ and print out this `report()` when our silly assertion fails:
@@ -127,8 +127,11 @@ a handy report in the case of a failing assertion. Let's intentionally break the
 algod = get_algod()
 x = 2
 args = (x,)
-dryrun_result = DryRunExecutor.dryrun_app(algod, teal, args)
-assert dryrun_result.status() == "PASS", dryrun_result.report(args, f"expected PASS but got {dryrun_result.status()}")
+dryrun_result = DryRunExecutor.dryrun_logicsig(algod, teal, args)
+
+actual = dryrun_result.status()
+assert actual == "PASS", dryrun_result.report(args, f"expected PASS but got {actual}")
+
 assert dryrun_result.stack_stop() == x ** 3, f"expected {x ** 3} but got {dryrun_result.stack_stop()}"
 ```
 
@@ -174,10 +177,11 @@ E               ===============
 E               Local Delta:
 E               []
 E               ===============
-E               TXN AS ROW: {' Run': 3, ' cost': None, ' final_log': None, ' final_message': 'PASS', ' Status': 'PASS', 'steps': 10, ' top_of_stack': 4, 'max_stack_height': 2, 's@000': 2, 'Arg_00': 2}
+E               TXN AS ROW: {' Run': 0, ' cost': None, ' final_log': None, ' final_message': 'PASS', ' Status': 'PASS', 'steps': 10, ' top_of_stack': 4, 'max_stack_height': 2, 's@000': 2, 'Arg_00': 2}
 E               ===============
 E               <<<<<<<<<<<expected 8 but got 4>>>>>>>>>>>>>
 E               ===============
+E       assert 4 == 8
 ```
 
 In particular, we can:
