@@ -190,7 +190,7 @@ Perusing the above, it looks right:
 * column `E`  **top of stack** does indeed store $`x^2`$ at the end of the calculation
 * column `B` **Status** of each runs **PASS**es _except for **Run 1** with **Arg 00** = 0_. (The first run **REJECT**s because $`0^2 = 0`$ and TEAL programs reject when the top of the stack is 0)
 * column `G` shows scratch slot **s@000** which stores the value of $`x`$ (except for the case $`x = 0`$ in which appears empty; in fact, slots always default to the zero value and an **<a name="0val-artifact">artifact</a>** of dry-runs is that they do not report when 0-values get stored into previously empty slots as no state change actually occurs)
-* column `F` **max stack height** is always 2. The final obervation makes sense because there is no branching or looping in the program.
+* column `F` **max stack height** is always 2. The final observation makes sense because there is no branching or looping in the program.
 
 7. We can re-cast these observed effects in `Columns E, B, G, F` as **program invariant conjectures** written in Python as follows:
 
