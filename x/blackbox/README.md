@@ -89,6 +89,77 @@ Some of the main available _assertable properties_ are:
 
 See the [DryRunTransactionResult class comment](https://github.com/algorand/py-algorand-sdk/blob/b2a3366b7bc976e0610429c186b7968a7f1bbc76/algosdk/testing/teal_blackbox.py#L371) for more assertable properties and details.
 
+### Printing out the Stack Trace for a Failing Assertion
+
+The `DryRunTransactionResult.report()` method lets you print out
+a handy report in the case of a failing assertion. Let's intentionally break the test case above by claiming that 
+$`x^2 == x^3`$ for $`x=2`$ and print out this `report()` when our silly assertion fails:
+
+```python
+algod = get_algod()
+x = 2
+args = (x,)
+dryrun_result = DryRunExecutor.dryrun_app(algod, teal, args)
+assert dryrun_result.status() == "PASS", dryrun_result.report(args, f"expected PASS but got {dryrun_result.status()}")
+assert dryrun_result.stack_stop() == x ** 3, f"expected {x ** 3} but got {dryrun_result.stack_stop()}"
+```
+
+If we run the test we'll get the following printout (this is for pytest, but other testing frameworks should be similar):
+```sh
+E               AssertionError: ===============
+E               <<<<<<<<<<<expected 8 but got 4>>>>>>>>>>>>>
+E               ===============
+E               App Trace:
+E                  step |   PC# |   L# | Teal              | Scratch   | Stack
+E               --------+-------+------+-------------------+-----------+----------------------
+E                     1 |     1 |    1 | #pragma version 6 |           | []
+E                     2 |     2 |    2 | arg_0             |           | [0x0000000000000002]
+E                     3 |     3 |    3 | btoi              |           | [2]
+E                     4 |     7 |    6 | label1:           |           | [2]
+E                     5 |     9 |    7 | store 0           | 0->2      | []
+E                     6 |    11 |    8 | load 0            |           | [2]
+E                     7 |    13 |    9 | pushint 2         |           | [2, 2]
+E                     8 |    14 |   10 | exp               |           | [4]
+E                     9 |     6 |    4 | callsub label1    |           | [4]
+E                    10 |    15 |   11 | retsub            |           | [4]
+E               ===============
+E               MODE: Mode.Signature
+E               TOTAL COST: None
+E               ===============
+E               FINAL MESSAGE: PASS
+E               ===============
+E               Messages: ['PASS']
+E               Logs: []
+E               ===============
+E               -----BlackBoxResult(steps_executed=10)-----
+E               TOTAL STEPS: 10
+E               FINAL STACK: [4]
+E               FINAL STACK TOP: 4
+E               MAX STACK HEIGHT: 2
+E               FINAL SCRATCH: {0: 2}
+E               SLOTS USED: [0]
+E               FINAL AS ROW: {'steps': 10, ' top_of_stack': 4, 'max_stack_height': 2, 's@000': 2}
+E               ===============
+E               Global Delta:
+E               []
+E               ===============
+E               Local Delta:
+E               []
+E               ===============
+E               TXN AS ROW: {' Run': 3, ' cost': None, ' final_log': None, ' final_message': 'PASS', ' Status': 'PASS', 'steps': 10, ' top_of_stack': 4, 'max_stack_height': 2, 's@000': 2, 'Arg_00': 2}
+E               ===============
+E               <<<<<<<<<<<expected 8 but got 4>>>>>>>>>>>>>
+E               ===============
+```
+
+In particular, we can:
+
+* Track the program execution by viewing its **App Trace**
+  * 2 was assigned to **scratch slot #0** at step 5
+  * the stack ended up with **4** on top
+  * the run **PASS**'ed
+* Read the message that was passed and explains in English what went wrong: `<<<<<<<<<<<expected 8 but got 4>>>>>>>>>>>>>`
+
 ### EDRA: Exploratory Dry Run Analysis
 
 Let's expand our investigation from a single dry-run to to multiple runs or a **run sequence**. In other words, given a sequence of inputs, observe _assertable properties_ for the corresponding
@@ -193,106 +264,10 @@ In English, letting $`x`$ be the input variable for our square function, the abo
   * the **stack's top** will contain $`x^2`$
   * the **max stack height** during execution is always 2
   * the executions' **status** is **PASS** except for the case $`x=0`$
-  * the **final scratch** will have $`x`$ stored at slot `0` (recall the [0-val scratch slot artifact](#0val-artifact))
+  * the **final scratch** will have $`x`$ stored at slot `0` except for that strange $`x=0`$ case (recall the [0-val scratch slot artifact](#0val-artifact))
   
-Let's continue on with [the unit test example](https://github.com/algorand/py-algorand-sdk/blob/20de2cd2e98409cf89a5f3208833db1564c266f6/x/blackbox/blackbox_test.py#L462). After generating the csv report, the test continues:
 
-* `# 5. Sequential assertions`
-Basically, now each assertion is picked up from the **test scenario**, some basic validations are done to ensure that the assertion makes sense for the program type, and the assertion then proceeds.
-
-In the case that one of the assertions fails, an execution stack trace will be printed out. For example, let's break one of our assertions and see what happens:
-
-```python
-    "lsig_square": {
-        "inputs": [(i,) for i in range(100)],
-        "assertions": {
-            ... same as before, but let's assert x^3 instead of x^2:
-            DRA.stackTop: lambda args: args[0] ** 3,
-            ... others same as before ...
-        },
-    },
-```
-
-If we run the test we'll get the following at the top
-
-```sh
-❯ pytest x/blackbox/blackbox_test.py
-
-=============================================================================================== test session starts ===============================================================================================
-platform darwin -- Python 3.9.10, pytest-6.2.5, py-1.11.0, pluggy-1.0.0
-rootdir: /Users/zeph/github/algorand/py-algorand-sdk
-plugins: typeguard-2.13.3
-collected 14 items                                                                                                                                                                                                
-
-x/blackbox/blackbox_test.py .........F....
-```
-
-so we can see that we have a failure. The main details look like:
-
-```sh
-E               AssertionError: ===============
-E               <<<<<<<<<<<SequenceAssertion for 'lsig_square[1]@Mode.Signature-DryRunAssertionType.stackTop' failed for for args (2,): actual is [4] BUT expected [8]>>>>>>>>>>>>>
-E               ===============
-E               App Trace:
-E                  step |   PC# |   L# | Teal              | Scratch   | Stack
-E               --------+-------+------+-------------------+-----------+----------------------
-E                     1 |     1 |    1 | #pragma version 6 |           | []
-E                     2 |     2 |    2 | arg_0             |           | [0x0000000000000002]
-E                     3 |     3 |    3 | btoi              |           | [2]
-E                     4 |     7 |    6 | label1:           |           | [2]
-E                     5 |     9 |    7 | store 0           | 0->2      | []
-E                     6 |    11 |    8 | load 0            |           | [2]
-E                     7 |    13 |    9 | pushint 2         |           | [2, 2]
-E                     8 |    14 |   10 | exp               |           | [4]
-E                     9 |     6 |    4 | callsub label1    |           | [4]
-E                    10 |    15 |   11 | retsub            |           | [4]
-E               ===============
-E               MODE: Mode.Signature
-E               TOTAL COST: None
-E               ===============
-E               FINAL MESSAGE: PASS
-E               ===============
-E               Messages: ['PASS']
-E               Logs: []
-E               ===============
-E               -----BlackBoxResult(steps_executed=10)-----
-E               TOTAL STEPS: 10
-E               FINAL STACK: [4]
-E               FINAL STACK TOP: 4
-E               MAX STACK HEIGHT: 2
-E               FINAL SCRATCH: {0: 2}
-E               SLOTS USED: [0]
-E               FINAL AS ROW: {'steps': 10, ' top_of_stack': 4, 'max_stack_height': 2, 's@000': 2}
-E               ===============
-E               Global Delta:
-E               []
-E               ===============
-E               Local Delta:
-E               []
-E               ===============
-E               TXN AS ROW: {' Run': 3, ' cost': None, ' final_log': None, ' final_message': 'PASS', ' Status': 'PASS', 'steps': 10, ' top_of_stack': 4, 'max_stack_height': 2, 's@000': 2, 'Arg_00': 2}
-E               ===============
-E               <<<<<<<<<<<SequenceAssertion for 'lsig_square[1]@Mode.Signature-DryRunAssertionType.stackTop' failed for for args (2,): actual is [4] BUT expected [8]>>>>>>>>>>>>>
-E               ===============
-
-algosdk/testing/teal_blackbox.py:681: AssertionError
-```
-
-In particular, we can:
-
-* Track the program execution by viewing its **App Trace**
-  * 2 was assigned to **scratch slot #0** at step 5
-  * the stack ended up with **4** on top
-  * the run **PASS**'ed
-* Read exactly what was expected versus what actually occurred:
-
-```plain
-SequenceAssertion for 'lsig_square[1]@Mode.Signature-DryRunAssertionType.stackTop' failed for for args (2,): actual is [4] BUT expected [8]
-                       ^^^^^^^^^^^                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^                 ^^^^^^^^^             ^                ^
-                       test case that failed         assertion type that was violated             the failing input     actual output    expected output
-```
-
-## Another Example Report
+## Slow and Bad Fibonacci - Another Example Report
 
 [This](https://docs.google.com/spreadsheets/d/1ax-jQdYCkKT61Z6SPeGm5BqAMybgkWJa-Dv0yVjgFSA/edit?usp=sharing) is an example of `app_slow_fibonacci.teal`'s Dryrun stats:
 <img width="1231" alt="image" src="https://user-images.githubusercontent.com/291133/158705149-302d755f-afcc-4380-976a-ca14800c138f.png">
