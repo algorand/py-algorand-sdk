@@ -306,7 +306,7 @@ Declarative sequence assertions make use of the following:
   * method `inputs_and_assertions()` validates a scenario and extracts out its assertions
   * method `dryrun_assert()` evaluates the dry-run sequence using the constructed `SequenceAssertion`
 
-To employ the declarative test scenarios above write the following:
+To employ the declarative test scenario above write the following:
 
 ```python
 algod = get_algod()
@@ -325,7 +325,7 @@ mode = ExecutionMode.Signature
 # Validate the scenario and dig out inputs/assertions:
 inputs, assertions = SequenceAssertion.inputs_and_assertions(scenario, mode)
 
-# Run the requests to obtain sequence of Dryrun responses:
+# Execute the dry runs and obtain sequence of DryRunTransactionResults:
 dryrun_results = Executor.dryrun_logicsig_on_sequence(algod, teal, inputs)
 
 # Sequence assertions:
