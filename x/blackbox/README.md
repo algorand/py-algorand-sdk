@@ -98,7 +98,7 @@ we'll generate a report in CSV format (Comma Separated Values) where:
 * columns represent _assertable properties_ of dry-runs, and
 * rows represents dry-run executions for specific inputs
 
-5. Back to our $`x^2`$ example, here's how to generate a report with 1 row for each of the `inputs 0, 1, ... , 15: 
+5. Back to our $`x^2`$ example, here's how to generate a report with 1 row for each of the inputs `0, 1, ... , 15`: 
 
 ```python
 algod = get_algod()
@@ -115,17 +115,14 @@ At this point, you'll be able to look at your [dry run sequence results](https:/
 
 Perusing the above, it looks right: 
 
-* the input $`x`$ is stored in column **Arg 00** (it's the argument at index 0)
-* the _top of the stack_ does indeed store $`x^2`$ at the end of the calculation
-* each of the runs _except for **Run 1** with **Arg 00** = 0_ **PASS**es. (The first run **REJECT**s because $`0^2 = 0`$ and TEAL programs reject when the top of the stack is 0)
-* Finally, the scratch slot ***s@000** always stores the value of $`x`$, except for the case $`x = 0`$ in which the slot appears to be empty. 
-(In fact, slots always default to the zero value and so an artifact of dry-runs is that they do not report when 0-values are stored as there is no change real state change occuring)
-* regardless of input, the _max stack height_ is always 2.
+* column `D` **Arg 00** has the input $`x`$ (it's the argument at index 0)
+* column `A` contains the **Run** number
+* column `E`  **top of stack** does indeed store $`x^2`$ at the end of the calculation
+* column `B` **Status** of each runs **PASS**es _except for **Run 1** with **Arg 00** = 0_. (The first run **REJECT**s because $`0^2 = 0`$ and TEAL programs reject when the top of the stack is 0)
+* column `G` shows scratch slot **s@000** which stores the value of $`x`$ (except for the case $`x = 0`$ in which appears empty; in fact, slots always default to the zero value and an artifact of dry-runs is that they do not report when 0-values get stored into previously empty slots as no state change actually occurs)
+* column `F` **max stack height** is always 2. The final obervation makes sense because there is no branching or looping in the program.
 
-The final obervation makes sense because there is no branching or looping in the program.
-
-
-We can re-cast all these observations as **program invariant conjectures** written in Python as follows:
+6. We can re-cast these observed effects in `Columns E, B, G, F` as **program invariant conjectures** written in Python as follows:
 
 * `dryrun_result.stack_top() == x ** 2`
 * `dryrun_result.max_stack_height() == 2`
