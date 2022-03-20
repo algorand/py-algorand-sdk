@@ -2,7 +2,7 @@
 
 **NOTE: to get math formulas to render here using Chrome, add the [xhub extension](https://chrome.google.com/webstore/detail/xhub/anidddebgkllnnnnjfkmjcaallemhjee/related) and reload**
 
-## TLDR; Dry Run Singleton Apps/LogicSigs, View Stats, and make Assertions on Behavior
+## TLDR; Dry Run a Sequence of Inputs on Apps/LogicSigs, View Stats, and make Assertions on Behavior
 
 ### Trying out the new test
 
@@ -50,7 +50,7 @@ Even better, before making fine-grained assertions you'd like to get a sense of 
 
 ### TEAL Program for Testing: Logic Sig v. App
 
-3. Next, you'll need to figure out if your TEAL program should be a Logic Signature or an Application. Each of these program _modes_ has its merits, but I won't get into the pros/cons here. From a Blackbox Test's perspective, the main difference is how each receives its arguments from the program executor. Logic sigs rely on the [arg opcode](https://developer.algorand.org/docs/get-details/dapps/avm/teal/opcodes/#arg-n) while apps rely on [txna ApplicationArgs i](https://developer.algorand.org/docs/get-details/dapps/avm/teal/opcodes/#txna-f-i). In our $`x^2`$ **logic sig** example, you can see on [line 2](https://github.com/algorand/py-algorand-sdk/blob/23c21170cfb19652d5da854e499dca47eabb20e8/x/blackbox/teal/lsig_square.teal#L2) that the `arg` opcode is used. Because argument opcodes (`arg` versus `ApplicationArgs`) is exclusive to one mode, any program that takes input will execute succesfully in _one mode only_.
+3. Next, you'll need to figure out if your TEAL program should be a Logic Signature or an Application. Each of these program _modes_ has its merits, but I won't get into the pros/cons here. From a Blackbox Test's perspective, the main difference is how each receives its arguments from the program executor. Logic sigs rely on the [arg opcode](https://developer.algorand.org/docs/get-details/dapps/avm/teal/opcodes/#arg-n) while apps rely on [txna ApplicationArgs i](https://developer.algorand.org/docs/get-details/dapps/avm/teal/opcodes/#txna-f-i). In our $`x^2`$ **logic sig** example, you can see on [line 2](https://github.com/algorand/py-algorand-sdk/blob/23c21170cfb19652d5da854e499dca47eabb20e8/x/blackbox/teal/lsig_square.teal#L2) that the `arg` opcode is used. Because argument each opcode (`arg` versus `ApplicationArgs`) is exclusive to one mode, any program that takes input will execute succesfully in _one mode only_.
 4. Save the TEAL program you want to test. You can inline them in your test or follow the approach of `x/blackbox/blackbox_test.py` and save in `x/blackbox/teal`
 
 ### The TEAL Blackbox Toolkit
@@ -66,7 +66,7 @@ The TEAL Blackbox Toolkit comes with the following utility classes:
 When executing a dry run using  `DryRunExecutor` you'll get back `DryRunTransactionResult` objects. Such objects have
 **assertable properties** that can be used to validate the dry run.
 
-4. For example, back to our $`x^2`$ example, assume you have a string `teal` containing the TEAL source. You can run the following:
+4. Back to our $`x^2`$ example, assume you have a variable `teal` containing the TEAL source as a string. You can run the following:
 
 ```python
 algod = get_algod()
@@ -93,12 +93,12 @@ See the [DryRunTransactionResult class comment](https://github.com/algorand/py-a
 
 Let's expand our investigation from a single dry-run to to multiple runs or a **run sequence**. In other words, given a sequence of inputs, observe _assertable properties_ for the corresponding
 executions, and conjecture some program invariants. To aid in the investigation 
-we'll generate a report in CSV (Comma Seperated Values) format where:
+we'll generate a report in CSV format (Comma Separated Values) where:
 
 * columns represent _assertable properties_ of dry-runs, and
-* rows represents an dry-run execution for a specific inputs
+* rows represents dry-run execution for specific inputs
 
-5. Back to our $`x^2`$ example, here's how to generate a report with 1 row for each of the inputs 0, 1, ... , 10: 
+5. Back to our $`x^2`$ example, here's how to generate a report with 1 row for each of the `inputs 0, 1, ... , 10: 
 
 ```python
 algod = get_algod()
@@ -108,17 +108,22 @@ csv = DryRunTransactionResult.csv_report(inputs, dryrun_results)
 print(csv)
 ```
 
-Note: that each of the inputs `(x,)` was a tuple as args given to a dry run execution need to be `Iterable`.
-At this point, you'll be able to look at your [dry run sequence results](https://github.com/algorand/py-algorand-sdk/blob/1bc7b8fcf21401608cece65507c36d1f6dbad531/algosdk/testing/teal_blackbox.py#L713) and conduct some analysis. For the $`x^2`$ example if you load the CSV in google sheets and reformat a bit it will look like:
+Note: that each element in the `inputs` array `(x,)` is itself a tuple as `args` given to a dry run execution need to be `Iterable` (remember, that these will be passed to a teal program which may take one, several, or no inputs at all).
+At this point, you'll be able to look at your [dry run sequence results](https://github.com/algorand/py-algorand-sdk/blob/1bc7b8fcf21401608cece65507c36d1f6dbad531/algosdk/testing/teal_blackbox.py#L713) and conduct some analysis. For the $`x^2`$ example if you load the CSV in Google sheets and reformat a bit it will look like:
 
 <img width="465" alt="image" src="https://user-images.githubusercontent.com/291133/158812699-318169e2-487c-4dac-b97b-a9db8148b638.png">
 
-Perusing the above, it looks right. In particular, the _top of the stack_ does indeed store $`x^2`$ at the end of the calculation. Each of the runs _except for **Run 1** with **Arg 00** = 0_ **PASS**es. (The first run **REJECT**s because $`0^2 = 0`$ and TEAL programs reject when the top of the stack is 0). Also, it
-looks like regardless the inpute, the _max stack height_ is always 2. That's not surprising since 
-there is no branching or looping in the program. Finally, the scratch slot ***s@000** always stores
-the value of $`x`$, except for the case $`x = 0`$ in which the slot appears to be empty. (In fact, slots
-always default to the zero value and so an artifact of dry-runs is that they do not report when
-0-values are stored as there is no change real state change occuring)
+Perusing the above, it looks right: 
+
+* the input $`x`$ is stored in column **Arg 00** (it's the argument at index 0)
+* the _top of the stack_ does indeed store $`x^2`$ at the end of the calculation
+* each of the runs _except for **Run 1** with **Arg 00** = 0_ **PASS**es. (The first run **REJECT**s because $`0^2 = 0`$ and TEAL programs reject when the top of the stack is 0)
+* Finally, the scratch slot ***s@000** always stores the value of $`x`$, except for the case $`x = 0`$ in which the slot appears to be empty. 
+(In fact, slots always default to the zero value and so an artifact of dry-runs is that they do not report when 0-values are stored as there is no change real state change occuring)
+* regardless of input, the _max stack height_ is always 2.
+
+The final obervation makes sense because there is no branching or looping in the program.
+
 
 We can re-cast all these observations as **program invariant conjectures** written in Python as follows:
 
