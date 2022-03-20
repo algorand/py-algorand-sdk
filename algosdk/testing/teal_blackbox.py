@@ -709,6 +709,7 @@ class DryRunTransactionResult:
         >>> print(csv)
         ```
         Then you would get the following output:
+        ```plain
          Run, Status, cost, final_message, last_log, top_of_stack,Arg_00,max_stack_height,s@000,s@001,steps
         1,REJECT,14,REJECT,`None,0,0,2,,,15
         2,PASS,14,PASS,`0000000000000001,1,1,2,1,1,15
@@ -719,7 +720,9 @@ class DryRunTransactionResult:
         7,PASS,14,PASS,`0000000000000024,36,6,2,6,36,15
         8,PASS,14,PASS,`0000000000000031,49,7,2,7,49,15
         9,PASS,14,PASS,`0000000000000040,64,8,2,8,64,15
-        10,PASS,14,PASS,`0000000000000051,81,9,2,9,81,15"""
+        10,PASS,14,PASS,`0000000000000051,81,9,2,9,81,15
+        ```
+        """
         N = len(inputs)
         assert N == len(
             dr_resps
