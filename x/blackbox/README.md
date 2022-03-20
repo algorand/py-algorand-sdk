@@ -96,19 +96,19 @@ executions, and conjecture some program invariants. To aid in the investigation
 we'll generate a report in CSV format (Comma Separated Values) where:
 
 * columns represent _assertable properties_ of dry-runs, and
-* rows represents dry-run execution for specific inputs
+* rows represents dry-run executions for specific inputs
 
-5. Back to our $`x^2`$ example, here's how to generate a report with 1 row for each of the `inputs 0, 1, ... , 10: 
+5. Back to our $`x^2`$ example, here's how to generate a report with 1 row for each of the `inputs 0, 1, ... , 15: 
 
 ```python
 algod = get_algod()
-inputs = [(x,) for x in range(11)]
+inputs = [(x,) for x in range(16)]
 dryrun_results = DryRunExecutor.dryrun_logicsig_on_sequence(algod, teal, inputs)
 csv = DryRunTransactionResult.csv_report(inputs, dryrun_results)
 print(csv)
 ```
 
-Note: that each element in the `inputs` array `(x,)` is itself a tuple as `args` given to a dry run execution need to be `Iterable` (remember, that these will be passed to a teal program which may take one, several, or no inputs at all).
+Note: that each element in the `inputs` array `(x,)` is itself a tuple as `args` given to a dry run execution need to be `Iterable` (remember, that these will be passed to a TEAL program which may take one, several, or no inputs at all).
 At this point, you'll be able to look at your [dry run sequence results](https://github.com/algorand/py-algorand-sdk/blob/1bc7b8fcf21401608cece65507c36d1f6dbad531/algosdk/testing/teal_blackbox.py#L713) and conduct some analysis. For the $`x^2`$ example if you load the CSV in Google sheets and reformat a bit it will look like:
 
 <img width="465" alt="image" src="https://user-images.githubusercontent.com/291133/158812699-318169e2-487c-4dac-b97b-a9db8148b638.png">
