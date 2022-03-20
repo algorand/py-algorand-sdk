@@ -21,11 +21,11 @@ and turn the _reports_ into _program invariant conjectures_ which you then check
 
 Here are some use cases:
 
-* by allowing you to assert that certain invariants hold over a large set of inputs gain greater confidence that your TEAL programs and AVM smart contracts work as designed
-* when tweaking, refactoring or optimize your TEAL source, ensure that no regressions have occured
+* by allowing you to assert that certain invariants hold over a large set of inputs you gain greater confidence that your TEAL programs and AVM smart contracts work as designed
+* when tweaking, refactoring or optimizing your TEAL source, ensure that no regressions have occured
 * allows AVM developers to practice the art of TTDD (TEAL Test Driven Development)
 
-## Full TEAL Blackbox Toolkit Example
+## Simple TEAL Blackbox Toolkit Example: Program for $`x^2`$
 
 Suppose you have a [TEAL program](https://github.com/algorand/py-algorand-sdk/blob/23c21170cfb19652d5da854e499dca47eabb20e8/x/blackbox/teal/lsig_square.teal) that purportedly computes $`x^2`$. You'd like to write some unit tests to validate that it computes what you think it should, and also make **assertions** regarding:
 
