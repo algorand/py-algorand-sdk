@@ -6,7 +6,7 @@
 
 ### What is TEAL Blackbox Testing?
 
-TEAL Blackbox Testing lets you treat your TEAL program as a black boxes that receives an inputs produces an output and other observable effects. You can create reports that summarize those effects, and turn the _reports_ into _program invariant conjectures_ which you then check with _sequence assertions_.
+TEAL Blackbox Testing lets you treat your TEAL program as a black box that for every received input produces an output and other observable effects. You can create reports that summarize those effects, and turn the _reports_ into _program invariant conjectures_ which you then check with _sequence assertions_.
 
 ### Why Blackbox Testing?
 
