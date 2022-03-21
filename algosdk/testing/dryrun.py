@@ -587,9 +587,9 @@ class Helper:
         run_mode = cls._get_run_mode(app)
 
         app_or_lsig = (
-            cls._prepare_lsig(lsig, sender)
+            cls._prepare_lsig(lsig)
             if run_mode == "lsig"
-            else cls._prepare_app(app, sender)
+            else cls._prepare_app(app)
         )
 
         del app
@@ -652,7 +652,7 @@ class Helper:
         return run_mode
 
     @classmethod
-    def _prepare_app(cls, app, sender):
+    def _prepare_app(cls, app):
         if isinstance(app, dict):
             app = App(**app)
 
@@ -675,7 +675,7 @@ class Helper:
         return app
 
     @classmethod
-    def _prepare_lsig(cls, lsig, sender):
+    def _prepare_lsig(cls, lsig):
         if lsig is None:
             lsig = LSig()
         elif isinstance(lsig, dict):
