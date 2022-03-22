@@ -959,7 +959,7 @@ class SequenceAssertion:
         A scenario should adhere to the following schema:
         ```
         {
-            "inputs":       List[Tuple[Union[str, int]]],
+            "inputs":       List[Tuple[Union[str, int], ...]],
             "assertions":   Dict[DryRunAssertionType, ...an assertion...]
         }
 
