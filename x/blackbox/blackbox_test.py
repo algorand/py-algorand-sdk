@@ -146,11 +146,6 @@ load 1""",
     prop_assert(lsig_res, lsig_res.rejected(), False)
     prop_assert(bad_lsig_res, bad_lsig_res.rejected(), True)
 
-    prop_assert(app_res, app_res.rejected(), False)
-    prop_assert(app_log_res, app_log_res.rejected(), False)
-    prop_assert(lsig_res, lsig_res.rejected(), False)
-    prop_assert(bad_lsig_res, bad_lsig_res.rejected(), True)
-
     prop_assert(app_res, app_res.error(), False)
     prop_assert(app_log_res, app_log_res.error(), False)
     prop_assert(lsig_res, lsig_res.error(), False)
