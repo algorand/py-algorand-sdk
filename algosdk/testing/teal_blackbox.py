@@ -1,7 +1,7 @@
 from base64 import b64decode
 import csv
 from dataclasses import dataclass
-from enum import Enum
+from enum import Enum, auto
 import io
 from inspect import signature
 from tabulate import tabulate
@@ -15,12 +15,27 @@ from algosdk.testing.dryrun import (
     Helper as DryRunHelper,
 )
 
-ExecutionMode = Enum("ExecutionMode", "Signature Application")
 
-DryRunProperty = Enum(
-    "DryRunProperty",
-    "cost lastLog finalScratch stackTop maxStackHeight status rejected passed error noError globalStateHas localStateHas",
-)
+class ExecutionMode(Enum):
+    Signature = auto()
+    Application = auto()
+
+
+class DryRunProperty(Enum):
+    cost = auto()
+    lastLog = auto()
+    finalScratch = auto()
+    stackTop = auto()
+    maxStackHeight = auto()
+    status = auto()
+    rejected = auto()
+    passed = auto()
+    error = auto()
+    noError = auto()
+    globalStateHas = auto()
+    localStateHas = auto()
+
+
 DRProp = DryRunProperty
 
 
