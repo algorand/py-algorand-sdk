@@ -160,12 +160,12 @@ load 1""",
         bad_lsig_res, bad_lsig_res.error(contains="WRONG PATTERN"), False
     )
 
-    prop_assert(app_res, app_res.noError(), True)
-    prop_assert(app_log_res, app_log_res.noError(), True)
-    prop_assert(lsig_res, lsig_res.noError(), True)
+    prop_assert(app_res, app_res.error_message(), None)
+    prop_assert(app_log_res, app_log_res.error_message(), None)
+    prop_assert(lsig_res, lsig_res.error_message(), None)
     assert (
         "logic 0 failed at line 7: log not allowed in current mode"
-        in bad_lsig_res.noError()
+        in bad_lsig_res.error_message()
     )
 
 
@@ -184,7 +184,7 @@ APP_SCENARIOS = {
             DRProp.status: "PASS",
             DRProp.passed: True,
             DRProp.rejected: False,
-            DRProp.noError: True,
+            DRProp.errorMessage: None,
         },
     },
     "app_square_byref": {
@@ -202,7 +202,7 @@ APP_SCENARIOS = {
             DRProp.status: "PASS",
             DRProp.passed: True,
             DRProp.rejected: False,
-            DRProp.noError: True,
+            DRProp.errorMessage: None,
         },
     },
     "app_square": {
@@ -222,7 +222,7 @@ APP_SCENARIOS = {
             DRProp.status: lambda i: "PASS" if i[0] > 0 else "REJECT",
             DRProp.passed: lambda i: i[0] > 0,
             DRProp.rejected: lambda i: i[0] == 0,
-            DRProp.noError: True,
+            DRProp.errorMessage: None,
         },
     },
     "app_swap": {
@@ -243,7 +243,7 @@ APP_SCENARIOS = {
             DRProp.status: "PASS",
             DRProp.passed: True,
             DRProp.rejected: False,
-            DRProp.noError: True,
+            DRProp.errorMessage: None,
         },
     },
     "app_string_mult": {
@@ -279,7 +279,7 @@ APP_SCENARIOS = {
             ),
             DRProp.passed: lambda args: 0 < args[1] < 45,
             DRProp.rejected: lambda args: 0 >= args[1] or args[1] >= 45,
-            DRProp.noError: True,
+            DRProp.errorMessage: None,
         },
     },
     "app_oldfac": {
@@ -307,8 +307,8 @@ APP_SCENARIOS = {
             DRProp.status: lambda args: "PASS" if args[0] < 21 else "REJECT",
             DRProp.passed: lambda args: args[0] < 21,
             DRProp.rejected: lambda args: args[0] >= 21,
-            DRProp.noError: lambda args, actual: (
-                actual is True if args[0] < 21 else "overflowed" in actual
+            DRProp.errorMessage: lambda args, actual: (
+                actual is None if args[0] < 21 else "overflowed" in actual
             ),
         },
     },
@@ -339,8 +339,8 @@ APP_SCENARIOS = {
             else "REJECT",
             DRProp.passed: lambda args: 0 < args[0] < 8,
             DRProp.rejected: lambda args: 0 >= args[0] or args[0] >= 8,
-            DRProp.noError: lambda args, actual: (
-                actual is True
+            DRProp.errorMessage: lambda args, actual: (
+                actual is None
                 if args[0] < 17
                 else "dynamic cost budget exceeded" in actual
             ),
@@ -415,7 +415,7 @@ LOGICSIG_SCENARIOS = {
             DRProp.status: "PASS",
             DRProp.passed: True,
             DRProp.rejected: False,
-            DRProp.noError: True,
+            DRProp.errorMessage: None,
         },
     },
     "lsig_square_byref": {
@@ -433,7 +433,7 @@ LOGICSIG_SCENARIOS = {
             DRProp.status: "PASS",
             DRProp.passed: True,
             DRProp.rejected: False,
-            DRProp.noError: True,
+            DRProp.errorMessage: None,
         },
     },
     "lsig_square": {
@@ -449,7 +449,7 @@ LOGICSIG_SCENARIOS = {
             DRProp.status: lambda i: "PASS" if i[0] > 0 else "REJECT",
             DRProp.passed: lambda i: i[0] > 0,
             DRProp.rejected: lambda i: i[0] == 0,
-            DRProp.noError: True,
+            DRProp.errorMessage: None,
         },
     },
     "lsig_swap": {
@@ -468,7 +468,7 @@ LOGICSIG_SCENARIOS = {
             DRProp.status: "PASS",
             DRProp.passed: True,
             DRProp.rejected: False,
-            DRProp.noError: True,
+            DRProp.errorMessage: None,
         },
     },
     "lsig_string_mult": {
@@ -494,7 +494,7 @@ LOGICSIG_SCENARIOS = {
             DRProp.status: lambda args: "PASS" if args[1] else "REJECT",
             DRProp.passed: lambda args: bool(args[1]),
             DRProp.rejected: lambda args: not bool(args[1]),
-            DRProp.noError: True,
+            DRProp.errorMessage: None,
         },
     },
     "lsig_oldfac": {
@@ -510,8 +510,8 @@ LOGICSIG_SCENARIOS = {
             DRProp.status: lambda args: "PASS" if args[0] < 21 else "REJECT",
             DRProp.passed: lambda args: args[0] < 21,
             DRProp.rejected: lambda args: args[0] >= 21,
-            DRProp.noError: lambda args, actual: (
-                actual is True
+            DRProp.errorMessage: lambda args, actual: (
+                actual is None
                 if args[0] < 21
                 else "logic 0 failed at line 21: * overflowed" in actual
             ),
@@ -539,8 +539,8 @@ LOGICSIG_SCENARIOS = {
             else "REJECT",
             DRProp.passed: lambda args: 0 < args[0] < 15,
             DRProp.rejected: lambda args: not (0 < args[0] < 15),
-            DRProp.noError: lambda args, actual: (
-                actual is True
+            DRProp.errorMessage: lambda args, actual: (
+                actual is None
                 if args[0] < 15
                 else "dynamic cost budget exceeded" in actual
             ),

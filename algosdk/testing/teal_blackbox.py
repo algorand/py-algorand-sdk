@@ -31,7 +31,7 @@ class DryRunProperty(Enum):
     rejected = auto()
     passed = auto()
     error = auto()
-    noError = auto()
+    errorMessage = auto()
     globalStateHas = auto()
     localStateHas = auto()
 
@@ -510,12 +510,12 @@ class DryRunTransactionResult:
             # when there WAS an error, we return its msg, else False
             return ok
 
-        if property == DryRunProperty.noError:
-            ok, msg = assert_no_error(
+        if property == DryRunProperty.errorMessage:
+            _, msg = assert_no_error(
                 self.parent_dryrun_response, enforce=False
             )
-            # when there was NO error, we return True, else return its msg
-            return ok or msg
+            # when there was no error, we return None, else return its msg
+            return msg if msg else None
 
         raise Exception(f"Unknown assert_type {property}")
 
@@ -593,12 +593,12 @@ class DryRunTransactionResult:
         """
         return self.dig(DRProp.error, contains=contains)
 
-    def noError(self) -> Union[bool, str]:
+    def error_message(self) -> Union[bool, str]:
         """Assertable property for a program having NOT failed and when failing, producing the failure message.
-        return type: bool True (in the case of no error) or string with the error message, in case of error
+        return type: None (in the case of no error) or string with the error message, in case of error
         available: all modes
         """
-        return self.dig(DRProp.noError)
+        return self.dig(DRProp.errorMessage)
 
     def messages(self) -> List[str]:
         return self.extracts["messages"]
