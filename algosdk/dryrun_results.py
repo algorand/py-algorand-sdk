@@ -183,7 +183,7 @@ class DryrunStackValue:
         self.int = v["uint"]
 
     def __str__(self) -> str:
-        if len(self.bytes)>0:
+        if len(self.bytes) > 0:
             return "0x" + base64.b64decode(self.bytes).hex()
         return str(self.int)
 
