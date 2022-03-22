@@ -405,9 +405,9 @@ class DryRunTransactionResult:
         - shorthand for `status() == "PASS"`
     * `rejected`
         - shorthand for `status() == "REJECT"`
-    * `error` with optional `pattern` matching
-        - when no pattern is provided, returns True exactly when execution fails due to error
-        - when pattern given, only return True if an error occured which matched the pattern
+    * `error` with optional `contains` matching
+        - when no contains is provided, returns True exactly when execution fails due to error
+        - when contains given, only return True if an error occured included contains
     * `noError`
         - returns True if there was no error, or the actual error when an error occured
     """
@@ -503,9 +503,9 @@ class DryRunTransactionResult:
             return self.extracts["status"] == "REJECT"
 
         if property == DryRunProperty.error:
-            pattern = kwargs.get("pattern")
+            contains = kwargs.get("contains")
             ok, msg = assert_error(
-                self.parent_dryrun_response, pattern=pattern, enforce=False
+                self.parent_dryrun_response, contains=contains, enforce=False
             )
             # when there WAS an error, we return its msg, else False
             return ok
@@ -583,15 +583,15 @@ class DryRunTransactionResult:
         """
         return self.dig(DRProp.rejected)
 
-    def error(self, pattern=None) -> bool:
+    def error(self, contains=None) -> bool:
         """Assertable property for a program having failed during dry run execution due to an error.
-        The optional `pattern` parameter allows specifying a particular string
+        The optional `contains` parameter allows specifying a particular string
         expected to be a _substring_ of the error's message. In case the program errors, but
-        the pattern did not match the actual error, False is returned.
+        the contains did not match the actual error, False is returned.
             return type: bool
             available: all modes
         """
-        return self.dig(DRProp.error, pattern=pattern)
+        return self.dig(DRProp.error, contains=contains)
 
     def noError(self) -> Union[bool, str]:
         """Assertable property for a program having NOT failed and when failing, producing the failure message.

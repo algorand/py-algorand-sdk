@@ -110,7 +110,7 @@ def assert_status(status, txn_index, msg, txns_res, enforce=True):
     return True, None
 
 
-def assert_error(drr, pattern=None, txn_index=None, msg=None, enforce=True):
+def assert_error(drr, contains=None, txn_index=None, msg=None, enforce=True):
     error = Helper.find_error(drr, txn_index=txn_index)
     ok = bool(error)
     result = None
@@ -120,8 +120,8 @@ def assert_error(drr, pattern=None, txn_index=None, msg=None, enforce=True):
             assert error, result
         return ok, result
     # got here? Must have error
-    if pattern is not None:
-        return _assert_in(pattern, error, enforce=enforce)
+    if contains is not None:
+        return _assert_in(contains, error, enforce=enforce)
 
     return True, None
 
@@ -351,7 +351,7 @@ class DryrunTestCaseMixin:
     def assertError(
         self,
         prog_drr_txns,
-        pattern=None,
+        contains=None,
         lsig=None,
         app=None,
         sender=ZERO_ADDRESS,
@@ -377,7 +377,7 @@ class DryrunTestCaseMixin:
         """
 
         drr = self._dryrun_request(prog_drr_txns, lsig, app, sender)
-        assert_error(drr, pattern=pattern, txn_index=txn_index, msg=msg)
+        assert_error(drr, contains=contains, txn_index=txn_index, msg=msg)
 
     def assertGlobalStateContains(
         self,

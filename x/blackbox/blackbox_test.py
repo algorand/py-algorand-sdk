@@ -152,15 +152,15 @@ load 1""",
     prop_assert(bad_lsig_res, bad_lsig_res.error(), True)
     assert (
         bad_lsig_res.error(
-            pattern="logic 0 failed at line 7: log not allowed in current mode"
+            contains="logic 0 failed at line 7: log not allowed in current mode"
         )
         is True
     )
     prop_assert(
-        bad_lsig_res, bad_lsig_res.error(pattern="log not allowed"), True
+        bad_lsig_res, bad_lsig_res.error(contains="log not allowed"), True
     )
     prop_assert(
-        bad_lsig_res, bad_lsig_res.error(pattern="WRONG PATTERN"), False
+        bad_lsig_res, bad_lsig_res.error(contains="WRONG PATTERN"), False
     )
 
     prop_assert(app_res, app_res.noError(), True)
