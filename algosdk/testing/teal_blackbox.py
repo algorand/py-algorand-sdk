@@ -594,7 +594,7 @@ class DryRunTransactionResult:
         return self.dig(DRProp.error, contains=contains)
 
     def error_message(self) -> Union[bool, str]:
-        """Assertable property for a program having NOT failed and when failing, producing the failure message.
+        """Assertable property for the error message that a program produces.
         return type: None (in the case of no error) or string with the error message, in case of error
         available: all modes
         """
