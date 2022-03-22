@@ -150,11 +150,8 @@ load 1""",
     prop_assert(app_log_res, app_log_res.error(), False)
     prop_assert(lsig_res, lsig_res.error(), False)
     prop_assert(bad_lsig_res, bad_lsig_res.error(), True)
-    assert (
-        bad_lsig_res.error(
-            contains="logic 0 failed at line 7: log not allowed in current mode"
-        )
-        is True
+    assert bad_lsig_res.error(
+        contains="logic 0 failed at line 7: log not allowed in current mode"
     )
     prop_assert(
         bad_lsig_res, bad_lsig_res.error(contains="log not allowed"), True
@@ -178,7 +175,6 @@ APP_SCENARIOS = {
         # since only a single input, just assert a constant in each case
         "assertions": {
             DRProp.cost: 11,
-            # int assertions on log outputs need encoding to varuint-hex:
             DRProp.lastLog: Encoder.hex(2 ** 10),
             # dicts have a special meaning as assertions. So in the case of "finalScratch"
             # which is supposed to _ALSO_ output a dict, we need to use a lambda as a work-around
