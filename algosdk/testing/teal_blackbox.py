@@ -696,7 +696,7 @@ class DryRunTransactionResult:
     ) -> str:
         bbr = self.black_box_results
         return f"""===============
-    <<<<<<<<<<<{msg}>>>>>>>>>>>>>
+    <<<<<<<<<<<{msg}>>>>>>>>>>>
     ===============
     App Trace:
     {self.tabulate(-1)}
@@ -726,7 +726,7 @@ class DryRunTransactionResult:
     ===============
     TXN AS ROW: {self.csv_row(row, args)}
     ===============
-    <<<<<<<<<<<{msg}>>>>>>>>>>>>>
+    <<<<<<<<<<<{msg}>>>>>>>>>>>
     ===============
     """
 
