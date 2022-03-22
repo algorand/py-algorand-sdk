@@ -1,11 +1,10 @@
-from typing import List
-
-import tabulate
-
-tabulate.MIN_PADDING = 0
-
-from tabulate import tabulate, TableFormat, DataRow
 import base64
+from typing import List
+import tabulate as tlib
+from tabulate import tabulate, TableFormat, DataRow
+
+
+tlib.MIN_PADDING = 0
 
 
 class StackPrinterConfig:
