@@ -1,6 +1,14 @@
 # Changelog
 
-# 1.10.0b1
+# v1.11.0b1
+
+## Added
+- Support unlimited assets REST API changes. (#295)
+
+## Changed
+- Fix the cucumber test wording around block rounds in indexer asset balance lookup (#301)
+
+# 1.10.0
 
 ## Added:
 

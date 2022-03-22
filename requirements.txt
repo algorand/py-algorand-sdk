@@ -2,4 +2,5 @@
 black==21.9b0
 glom==20.11.0
 pytest==6.2.5
+tabulate==0.8.9
 git+https://github.com/behave/behave

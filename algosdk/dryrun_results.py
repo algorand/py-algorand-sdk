@@ -1,5 +1,13 @@
 from typing import List
+from tabulate import tabulate, TableFormat, DataRow
 import base64
+
+class StackPrinterConfig:
+    DEFAULT_MAX_WIDTH: int = 30
+
+    def __init__(self, max_width=DEFAULT_MAX_WIDTH, top_of_stack_first=True):
+        self.max_width = max_width
+        self.top_of_stack_first = top_of_stack_first
 
 
 class DryrunResponse:
@@ -16,8 +24,6 @@ class DryrunResponse:
 
 
 class DryrunTransactionResult:
-    DEFAULT_TRACE_SPACES: int = 20
-
     def __init__(self, dr):
         assert (
             "disassembly" in dr
@@ -64,51 +70,62 @@ class DryrunTransactionResult:
         cls,
         dr_trace: "DryrunTrace",
         disassembly: List[str],
-        spaces: int = None,
+        spc: StackPrinterConfig,
     ) -> str:
-        if spaces is None:
-            spaces = cls.DEFAULT_TRACE_SPACES
-
-        # If 0, pad to the length of the longest line
-        if spaces == 0:
-            for line in disassembly:
-                if len(line) > spaces:
-                    spaces = len(line)
-            spaces += (
-                10  # 4 for line number + 1 for space between number and line
-            )
 
         # 16 for length of the header up to spaces
-        lines = ["pc# line# source" + " " * (spaces - 16) + "stack"]
+        headers = ["pc#", "ln#", "source", "scratch", "stack"]
+        lines = []
+        for idx in range(len(dr_trace.trace)):
 
-        for line, pc, stack in dr_trace.get_trace():
-            # Pad to 4 spaces since we don't expect programs to have > 9999 lines
-            line_number_padding = " " * (4 - len(str(line)))
-            pc_number_padding = " " * (4 - len(str(pc)))
+            trace_line = dr_trace.trace[idx]
 
-            src_line = "{}{} {}{} {}".format(
-                pc_number_padding,
-                pc,
-                line_number_padding,
-                line,
-                disassembly[line],
-            )
+            src = disassembly[trace_line.line]
+            if trace_line.error != "":
+                src = "!! {} !!".format(trace_line.error)
 
+            prev_scratch = []
+            if idx > 0:
+                prev_scratch = dr_trace.trace[idx - 1].scratch
+
+            scratch = scratch_to_string(prev_scratch, trace_line.scratch)
+            stack = stack_to_string(trace_line.stack, spc.top_of_stack_first)
             lines.append(
-                "{}{}{}".format(
-                    src_line, " " * (spaces - len(src_line)), stack
-                )
+                [
+                    "{}".format(trace_line.pc),
+                    "{}".format(trace_line.line),
+                    truncate(src, spc.max_width),
+                    truncate(scratch, spc.max_width),
+                    truncate(stack, spc.max_width),
+                ]
             )
 
-        return "\n".join(lines)
+        return tabulate(
+            lines,
+            headers,
+            disable_numparse=[True, True, True],
+            tablefmt=TableFormat(
+                headerrow=DataRow("", " |", ""),
+                datarow=DataRow("", " |", ""),
+                padding=0,
+                lineabove=None,
+                linebelowheader=None,
+                linebetweenrows=None,
+                linebelow=None,
+                with_header_hide=None,
+            ),
+        )
 
-    def app_trace(self, spaces: int = None) -> str:
+    def app_trace(self, spc: StackPrinterConfig = None) -> str:
         if not hasattr(self, "app_call_trace"):
             return ""
 
-        return self.trace(self.app_call_trace, self.disassembly, spaces=spaces)
+        if spc == None:
+            spc = StackPrinterConfig()
 
-    def lsig_trace(self, spaces: int = None) -> str:
+        return self.trace(self.app_call_trace, self.disassembly, spc=spc)
+
+    def lsig_trace(self, spc: StackPrinterConfig = None) -> str:
         if not hasattr(self, "logic_sig_trace"):
             return ""
 
@@ -118,8 +135,11 @@ class DryrunTransactionResult:
         ):
             return ""
 
+        if spc == None:
+            spc = StackPrinterConfig()
+
         return self.trace(
-            self.logic_sig_trace, self.logic_sig_disassembly, spaces=spaces
+            self.logic_sig_trace, self.logic_sig_disassembly, spaces=spc
         )
 
 
@@ -135,14 +155,16 @@ class DryrunTraceLine:
     def __init__(self, tl):
         self.line = tl["line"]
         self.pc = tl["pc"]
-        self.stack = [DryrunStackValue(sv) for sv in tl["stack"]]
 
-    def trace_line(self):
-        return (
-            self.line,
-            self.pc,
-            "[" + ", ".join([str(sv) for sv in self.stack]) + "]",
-        )
+        self.error = ""
+        if "error" in tl:
+            self.error = tl["error"]
+
+        self.scratch = []
+        if "scratch" in tl:
+            self.scratch = [DryrunStackValue(sv) for sv in tl["scratch"]]
+
+        self.stack = [DryrunStackValue(sv) for sv in tl["stack"]]
 
 
 class DryrunStackValue:
@@ -155,3 +177,43 @@ class DryrunStackValue:
         if self.type == 1:
             return "0x" + base64.b64decode(self.bytes).hex()
         return str(self.int)
+
+    def __eq__(self, other: "DryrunStackValue"):
+        return (
+            self.type == other.type
+            and self.bytes == other.bytes
+            and self.int == other.int
+        )
+
+
+def truncate(s: str, max_width: int) -> str:
+    if len(s) > max_width and max_width > 0:
+        return s[:max_width] + "..."
+    return s
+
+
+def scratch_to_string(
+    prev_scratch: List[DryrunStackValue], curr_scratch: List[DryrunStackValue]
+) -> str:
+    if len(curr_scratch) == 0:
+        return ""
+
+    new_idx = None
+    for idx in range(len(curr_scratch)):
+        if idx >= len(prev_scratch):
+            new_idx = idx
+            continue
+
+        if curr_scratch[idx] != prev_scratch[idx]:
+            new_idx = idx
+
+    if new_idx == None:
+        return ""
+
+    return "{} = {}".format(new_idx, str(curr_scratch[new_idx]))
+
+
+def stack_to_string(stack: List[DryrunStackValue], reverse: bool) -> str:
+    if reverse:
+        stack.reverse()
+    return "[{}]".format(", ".join([str(sv) for sv in stack]))
