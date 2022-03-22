@@ -1,6 +1,12 @@
 from typing import List
+
+import tabulate
+
+tabulate.MIN_PADDING = 0
+
 from tabulate import tabulate, TableFormat, DataRow
 import base64
+
 
 class StackPrinterConfig:
     DEFAULT_MAX_WIDTH: int = 30
@@ -100,20 +106,23 @@ class DryrunTransactionResult:
                 ]
             )
 
-        return tabulate(
-            lines,
-            headers,
-            disable_numparse=[True, True, True],
-            tablefmt=TableFormat(
-                headerrow=DataRow("", " |", ""),
-                datarow=DataRow("", " |", ""),
-                padding=0,
-                lineabove=None,
-                linebelowheader=None,
-                linebetweenrows=None,
-                linebelow=None,
-                with_header_hide=None,
-            ),
+        return (
+            tabulate(
+                lines,
+                headers,
+                disable_numparse=True,
+                tablefmt=TableFormat(
+                    headerrow=DataRow("", " |", ""),
+                    datarow=DataRow("", " |", ""),
+                    padding=0,
+                    lineabove=None,
+                    linebelowheader=None,
+                    linebetweenrows=None,
+                    linebelow=None,
+                    with_header_hide=None,
+                ),
+            )
+            + "\n"
         )
 
     def app_trace(self, spc: StackPrinterConfig = None) -> str:
@@ -121,7 +130,7 @@ class DryrunTransactionResult:
             return ""
 
         if spc == None:
-            spc = StackPrinterConfig()
+            spc = StackPrinterConfig(top_of_stack_first=False)
 
         return self.trace(self.app_call_trace, self.disassembly, spc=spc)
 
@@ -136,7 +145,7 @@ class DryrunTransactionResult:
             return ""
 
         if spc == None:
-            spc = StackPrinterConfig()
+            spc = StackPrinterConfig(top_of_stack_first=False)
 
         return self.trace(
             self.logic_sig_trace, self.logic_sig_disassembly, spaces=spc

@@ -3111,7 +3111,19 @@ def dryrun_compare_golden(context, app_trace_file):
 
     dryrun_trace = context.dryrun_txn_result.app_trace()
 
-    assert trace_expected == dryrun_trace, "Expected \n{}\n got \n{}\n".format(
+    got_lines = dryrun_trace.split("\n")
+    expected_lines = trace_expected.split("\n")
+
+    print("{} {}".format(len(got_lines), len(expected_lines)))
+    for idx in range(len(got_lines)):
+        if got_lines[idx] != expected_lines[idx]:
+            print(
+                "  {}  \n{}\n{}\n".format(
+                    idx, got_lines[idx], expected_lines[idx]
+                )
+            )
+
+    assert trace_expected == dryrun_trace, "Expected \n{}\ngot\n{}\n".format(
         trace_expected, dryrun_trace
     )
 
