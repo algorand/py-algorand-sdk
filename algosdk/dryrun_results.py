@@ -216,7 +216,7 @@ def scratch_to_string(
     if new_idx == None:
         return ""
 
-    return "{} = {}".format(new_idx, str(curr_scratch[new_idx]))
+    return "{} = {}".format(new_idx, curr_scratch[new_idx])
 
 
 def stack_to_string(stack: List[DryrunStackValue], reverse: bool) -> str:
