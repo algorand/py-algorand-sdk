@@ -56,7 +56,7 @@ class DryrunTransactionResult:
             if trace_field in dr:
                 setattr(
                     self,
-                    trace_field.replace("-", "_"),
+                    attrname(trace_field)
                     DryrunTrace(dr[trace_field]),
                 )
 
