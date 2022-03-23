@@ -1,7 +1,9 @@
 import base64
 import unittest
-from examples import tokens
 import os
+from pathlib import Path
+
+from examples import tokens
 from algosdk import kmd
 from algosdk.future import transaction
 from algosdk import encoding
@@ -422,11 +424,11 @@ class TestIntegration(unittest.TestCase):
         stx = txn.sign(private_key)
 
         # write to file
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        transaction.write_to_file([txn, stx], dir_path + "/raw.tx")
+        raw_path = Path.cwd() / "raw.tx"
+        transaction.write_to_file([txn, stx], raw_path)
 
         # read from file
-        txns = transaction.retrieve_from_file(dir_path + "/raw.tx")
+        txns = transaction.retrieve_from_file(raw_path)
 
         # check that the transactions are still the same
         self.assertEqual(
@@ -437,7 +439,7 @@ class TestIntegration(unittest.TestCase):
         )
 
         # delete the file
-        os.remove("raw.tx")
+        os.remove(raw_path)
 
     def test_health(self):
         result = self.acl.health()
