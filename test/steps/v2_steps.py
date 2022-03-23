@@ -3102,12 +3102,7 @@ def parse_dryrun_response_object(context, dryrun_response_file, txn_id):
 
 @then('calling app trace produces "{app_trace_file}"')
 def dryrun_compare_golden(context, app_trace_file):
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
-    with open(
-        dir_path + "/test/features/resources/" + app_trace_file, "r"
-    ) as f:
-        trace_expected = f.read()
+    trace_expected = load_resource(app_trace_file, is_binary=False)
 
     dryrun_trace = context.dryrun_txn_result.app_trace()
 
