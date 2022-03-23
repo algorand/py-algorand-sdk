@@ -16,7 +16,6 @@ jobs:
       - checkout
       - run: pip install -r requirements.txt
       - run: black --check .
-      - run: make local-unit
   integration-test:
     machine:
      image: "ubuntu-2004:202104-01"
