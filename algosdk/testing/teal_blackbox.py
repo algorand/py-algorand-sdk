@@ -73,7 +73,7 @@ class TealVal:
 
 
 @dataclass
-class BlackBoxResults:
+class BlackboxResults:
     steps_executed: int
     program_counters: List[int]
     teal_line_numbers: List[int]
@@ -91,7 +91,7 @@ class BlackBoxResults:
         lines,
         scratch_colon: str = "->",
         scratch_verbose: bool = False,
-    ) -> "BlackBoxResults":
+    ) -> "BlackboxResults":
         pcs = [t["pc"] for t in trace]
         line_nums = [t["line"] for t in trace]
 
@@ -426,7 +426,7 @@ class DryRunTransactionResult:
         self.parent_dryrun_response: dict = dryrun_resp
         self.txn: dict = txn
         self.extracts: dict = self.extract_all(self.txn, self.is_app())
-        self.black_box_results: BlackBoxResults = self.extracts["bbr"]
+        self.black_box_results: BlackboxResults = self.extracts["bbr"]
 
     def is_app(self) -> bool:
         return self.mode == ExecutionMode.Application
@@ -842,7 +842,7 @@ class DryRunTransactionResult:
             "trace": cls.extract_trace(txn, is_app),
         }
 
-        result["bbr"] = BlackBoxResults.scrape(
+        result["bbr"] = BlackboxResults.scrape(
             result["trace"], result["lines"]
         )
 
