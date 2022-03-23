@@ -44,8 +44,8 @@ from algosdk.v2client.models import (
 )
 from algosdk.testing.dryrun import DryrunTestCaseMixin
 
-from test.steps.steps import token as daemon_token
-from test.steps.steps import algod_port
+from test.cucumber.steps.steps import token as daemon_token
+from test.cucumber.steps.steps import algod_port
 
 
 @parse.with_pattern(r".*")

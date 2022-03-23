@@ -10,8 +10,8 @@ rm -rf test-harness
 git clone --single-branch --branch master https://github.com/algorand/algorand-sdk-testing.git test-harness
 
 ## Copy feature files into the project resources
-mkdir -p test/features
-cp -r test-harness/features/* test/features
+mkdir -p test/cucumber/features
+cp -r test-harness/features/* test/cucumber/features
 
 # Build SDK testing environment
 docker build -t py-sdk-testing -f Dockerfile "$(pwd)"

@@ -114,8 +114,10 @@ venv.bak/
 
 # Testing files
 *.feature
-test/features
+test/cucumber/features
 test-harness
+# this one should probably be removed going forward:
+test/features
 
 # Build files
 py-algorand-sdk-*
