@@ -201,7 +201,7 @@ def truncate(s: str, max_width: int) -> str:
 def scratch_to_string(
     prev_scratch: List[DryrunStackValue], curr_scratch: List[DryrunStackValue]
 ) -> str:
-    if len(curr_scratch) == 0:
+    if not curr_scratch:
         return ""
 
     new_idx = None
