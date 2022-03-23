@@ -141,7 +141,7 @@ class DryrunTransactionResult:
         ):
             return ""
 
-        if spc == None:
+        if spc is None:
             spc = StackPrinterConfig(top_of_stack_first=False)
 
         return self.trace(
