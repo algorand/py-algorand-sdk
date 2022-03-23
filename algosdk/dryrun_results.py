@@ -45,11 +45,11 @@ class DryrunTransactionResult:
             "logic-sig-disassembly",
             "logs",
         ]
+        def attrname(field):
+            return field.replace("-","_")
+            
         for field in optionals:
-            if field in dr:
-                setattr(self, field.replace("-", "_"), dr[field])
-            else:
-                setattr(self, field.replace("-", "_"), None)
+            setattr(self, attrname(field), dr.get(field))
 
         traces = ["app-call-trace", "logic-sig-trace"]
         for trace_field in traces:
