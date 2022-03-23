@@ -3,7 +3,7 @@ local-unit:
 	
 local-integ:
 	# is this working: test/integration/integration_test.py
-	python test/integration/integration_test.py
+	python -m test.integration.integration_test
 	pytest test/integration/blackbox_test.py test/integration/dryrun_mixin_docs_test.py
 	pytest test/integration/integration_test.py
 
@@ -21,3 +21,5 @@ integration: local-integ cuke-integ
 
 docker-test:
 	./run_integration.sh
+
+include z.Makefile
