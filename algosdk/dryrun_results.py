@@ -61,9 +61,7 @@ class DryrunTransactionResult:
                 )
 
     def app_call_rejected(self) -> bool:
-        if self.app_call_messages is not None:
-            return "REJECT" in self.app_call_messages
-        return False
+        return False if self.app_call_messages is None else "REJECT" in self.app_call_messages
 
     def logic_sig_rejected(self) -> bool:
         if self.logic_sig_messages is not None:
