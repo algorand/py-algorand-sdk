@@ -45,9 +45,10 @@ class DryrunTransactionResult:
             "logic-sig-disassembly",
             "logs",
         ]
+
         def attrname(field):
-            return field.replace("-","_")
-            
+            return field.replace("-", "_")
+
         for field in optionals:
             setattr(self, attrname(field), dr.get(field))
 
@@ -56,12 +57,16 @@ class DryrunTransactionResult:
             if trace_field in dr:
                 setattr(
                     self,
-                    attrname(trace_field)
+                    attrname(trace_field),
                     DryrunTrace(dr[trace_field]),
                 )
 
     def app_call_rejected(self) -> bool:
-        return False if self.app_call_messages is None else "REJECT" in self.app_call_messages
+        return (
+            False
+            if self.app_call_messages is None
+            else "REJECT" in self.app_call_messages
+        )
 
     def logic_sig_rejected(self) -> bool:
         if self.logic_sig_messages is not None:
