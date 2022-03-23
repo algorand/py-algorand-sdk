@@ -197,7 +197,7 @@ In particular, we can:
 
 ### EDRA: Exploratory Dry Run Analysis
 
-Let's expand our investigation from a single dry-run to to multiple runs or a **run sequence**. In other words, given a sequence of inputs, observe _assertable properties_ for the corresponding
+Let's expand our investigation from a single dry-run to multiple runs or a **run sequence**. In other words, given a sequence of inputs, observe _assertable properties_ for the corresponding
 executions, and conjecture some program invariants. To aid in the investigation we'll generate a report in CSV format (Comma Separated Values) where:
 
 * columns represent _assertable properties_ of dry-runs, and
