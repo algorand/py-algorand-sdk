@@ -19,7 +19,7 @@ from algosdk.v2client.models import (
 )
 from algosdk.testing.dryrun import DryrunTestCaseMixin, Helper as DryRunHelper
 
-from x.testnet import get_algod
+from test.integration.clients import get_algod
 
 
 def b64_encode_hack(s, b=None):

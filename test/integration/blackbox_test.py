@@ -11,7 +11,8 @@ from algosdk.testing.teal_blackbox import (
     ExecutionMode,
     SequenceAssertion,
 )
-from x.testnet import get_algod
+
+from test.integration.clients import get_algod
 
 
 def fac_with_overflow(n):
@@ -360,8 +361,8 @@ def test_app_with_report(filebase: str):
 
     algod = get_algod()
 
-    # 1. Read the TEAL from ./x/blackbox/teal/*.teal
-    path = Path.cwd() / "x" / "blackbox" / "teal"
+    # 1. Read the TEAL from ./test/integration/teal/*.teal
+    path = Path.cwd() / "test" / "integration" / "teal"
     case_name = filebase
     tealpath = path / f"{filebase}.teal"
     with open(tealpath, "r") as f:
@@ -560,8 +561,8 @@ def test_logicsig_with_report(filebase: str):
 
     algod = get_algod()
 
-    # 1. Read the TEAL from ./x/blackbox/teal/*.teal
-    path = Path.cwd() / "x" / "blackbox" / "teal"
+    # 1. Read the TEAL from ./test/integration/teal/*.teal
+    path = Path.cwd() / "test" / "integration" / "teal"
     case_name = filebase
     tealpath = path / f"{filebase}.teal"
     with open(tealpath, "r") as f:

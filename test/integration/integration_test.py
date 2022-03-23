@@ -1,8 +1,6 @@
 import base64
 import unittest
-from examples import tokens
 import os
-from algosdk import kmd
 from algosdk.future import transaction
 from algosdk import encoding
 from algosdk import algod
@@ -13,6 +11,7 @@ from algosdk import auction
 from algosdk import constants
 from algosdk import wallet
 
+from test.integration.clients import get_algod, get_kmd
 
 wallet_name = "unencrypted-default-wallet"
 wallet_pswd = ""
@@ -21,8 +20,8 @@ wallet_pswd = ""
 class TestIntegration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.acl = algod.AlgodClient(tokens.algod_token, tokens.algod_address)
-        cls.kcl = kmd.KMDClient(tokens.kmd_token, tokens.kmd_address)
+        cls.acl = get_algod()
+        cls.kcl = get_kmd()
         w = wallet.Wallet(wallet_name, wallet_pswd, cls.kcl)
         keys = w.list_keys()
         max_balance = 0
