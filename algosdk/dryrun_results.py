@@ -135,10 +135,7 @@ class DryrunTransactionResult:
         if not hasattr(self, "logic_sig_trace"):
             return ""
 
-        if (
-            not hasattr(self, "logic_sig_disassembly")
-            or self.logic_sig_disassembly is None
-        ):
+        if getattr(self, "logic_sig_disassembly", None) is None:
             return ""
 
         if spc is None:
