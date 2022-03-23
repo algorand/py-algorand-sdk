@@ -10,7 +10,7 @@ cuke-unit:
 	behave --tags=$(UNITS) test -f progress2
 
 INTEGS = "@abi or @algod or @applications or @applications.verified or @assets or @auction or @c2c or @compile or @dryrun or @dryrun.testing or @indexer or @indexer.231 or @indexer.applications or @kmd or @rekey or @send.keyregtxn or @send"
-cuke-integ: local-integration
+cuke-integ:
 	behave --tags=$(INTEGS) test -f progress2
 
 unit: local-unit cuke-unit
