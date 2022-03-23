@@ -22,4 +22,3 @@ integration: local-integ cuke-integ
 docker-test:
 	./run_integration.sh
 
-include z.Makefile
