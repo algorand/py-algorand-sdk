@@ -1,10 +1,5 @@
 import base64
 from typing import List
-import tabulate as tlib
-from tabulate import tabulate, TableFormat, DataRow
-
-
-tlib.MIN_PADDING = 0
 
 
 class StackPrinterConfig:
@@ -82,8 +77,7 @@ class DryrunTransactionResult:
     ) -> str:
 
         # 16 for length of the header up to spaces
-        headers = ["pc#", "ln#", "source", "scratch", "stack"]
-        lines = []
+        lines = [["pc#", "ln#", "source", "scratch", "stack"]]
         for idx in range(len(dr_trace.trace)):
 
             trace_line = dr_trace.trace[idx]
@@ -108,24 +102,22 @@ class DryrunTransactionResult:
                 ]
             )
 
-        return (
-            tabulate(
-                lines,
-                headers,
-                disable_numparse=True,
-                tablefmt=TableFormat(
-                    headerrow=DataRow("", " |", ""),
-                    datarow=DataRow("", " |", ""),
-                    padding=0,
-                    lineabove=None,
-                    linebelowheader=None,
-                    linebetweenrows=None,
-                    linebelow=None,
-                    with_header_hide=None,
-                ),
+        cols = len(lines[0])
+        max_widths = [0] * cols
+        for line in lines:
+            for i in range(cols):
+                if len(line[i]) > max_widths[i]:
+                    max_widths[i] = len(line[i])
+
+        trace = []
+        for line in lines:
+            trace.append(
+                " |".join(
+                    [str(line[i]).ljust(max_widths[i]) for i in range(cols)]
+                ).strip()
             )
-            + "\n"
-        )
+
+        return "\n".join(trace) + "\n"
 
     def app_trace(self, spc: StackPrinterConfig = None) -> str:
         if not hasattr(self, "app_call_trace"):
