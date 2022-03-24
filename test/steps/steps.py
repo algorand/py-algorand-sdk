@@ -626,6 +626,18 @@ def check_microalgos(context, microalgos):
     assert int(microalgos) == context.microalgos
 
 
+@when("I convert {ipfscid} ipfscid to bytes32 hex string and back")
+def convert_ipfscid(context, ipfscid):
+    context.ipfscid = util.byte32_to_ipfscidv0(
+        util.ipfscidv0_to_byte32(ipfscid)
+    )
+
+
+@then("it should still be the same ipfscid {ipfscid}")
+def check_ipfscid(context, ipfscid):
+    assert ipfscid == context.ipfscid
+
+
 @then("I get transactions by address and round")
 def txns_by_addr_round(context):
     txns = context.acl.transactions_by_address(
