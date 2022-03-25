@@ -2145,6 +2145,35 @@ class SignedTransaction:
         """
         return self.transaction.get_txid()
 
+    def verify_signature(self):
+        """
+        Verify the signature on the transaction is valid
+
+        Returns:
+            bool: whether or not the signature is valid
+        """
+
+        if self.signature is None or len(self.signature) == 0:
+            # TODO: exception?
+            return False
+
+        public_key = self.transaction.sender
+        if self.authorizing_address is not None:
+            public_key = self.authorizing_address
+
+        verify_key = VerifyKey(encoding.decode_address(public_key))
+
+        prefixed_message = constants.TXID_PREFIX + base64.b64decode(
+            encoding.msgpack_encode(self.transaction)
+        )
+        try:
+            verify_key.verify(
+                prefixed_message, base64.b64decode(self.signature)
+            )
+            return True
+        except BadSignatureError:
+            return False
+
     def dictify(self):
         od = OrderedDict()
         if self.signature:
