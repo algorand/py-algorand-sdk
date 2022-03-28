@@ -18,7 +18,7 @@ setuptools.setup(
     },
     install_requires=["pynacl", "pycryptodomex>=3.6.0", "msgpack"],
     packages=setuptools.find_packages(),
-    python_requires=">=3.5",
+    python_requires=">=3.7",
     package_data={"": ["data/langspec.json"]},
     include_package_data=True,
 )
