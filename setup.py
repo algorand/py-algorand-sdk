@@ -17,9 +17,9 @@ setuptools.setup(
         "Source": "https://github.com/algorand/py-algorand-sdk",
     },
     install_requires=[
-        "pynacl>=1.4.0,<=1.5.0",
-        "pycryptodomex>=3.9.8,<=3.14.1",
-        "msgpack>=1.0.2,<=1.0.3",
+        "pynacl",
+        "pycryptodomex>=3.6.0",
+        "msgpack",
     ],
     packages=setuptools.find_packages(),
     python_requires=">=3.5",
