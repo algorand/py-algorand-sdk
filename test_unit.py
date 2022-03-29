@@ -2127,6 +2127,8 @@ class TestSignBytes(unittest.TestCase):
         intarray[0] = (intarray[0] + 1) % 256
         changed_message = bytes(intarray)
         self.assertFalse(util.verify_bytes(changed_message, signature, pk))
+        # Check that wrong number of bytes returns false in verify function.
+        self.assertFalse(util.verify_bytes(bytes(), signature, pk))
 
 
 class TestLogic(unittest.TestCase):
@@ -2700,7 +2702,10 @@ class TestLogicSigAccount(unittest.TestCase):
         sigLsigAccount = encoding.future_msgpack_decode(sigEncoded)
         self.assertEqual(sigLsigAccount.verify(), True)
 
-        sigLsigAccount.lsig.sig = "AQ=="  # wrong sig
+        sigLsigAccount.lsig.sig = "AQ=="  # wrong length of bytes
+        self.assertEqual(sigLsigAccount.verify(), False)
+
+        sigLsigAccount.lsig.sig = 123  # wrong type (not bytes)
         self.assertEqual(sigLsigAccount.verify(), False)
 
         msigEncoded = "gaRsc2lng6NhcmeSxAEBxAICA6FsxAUBIAEBIqRtc2lng6ZzdWJzaWeTgqJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC8mKvrEiCairgXihc8RASRO4BdGefywQgPYzfhhUp87q7hDdvRNlhL+Tt18wYxWRyiMM7e8j0XQbUp2w/+83VNZG9LVh/Iu8LXtOY1y9AoKicGvEIAljMglTc4nwdWcRdzmRx9A+G3PIxPUr9q/wGqJc+cJxoXPEQGS8VdvtkaJB1Cq2YPfhSrmZmlKzsXFYzvw/T+fLIkEUrak9XoQFAgoXpmmDAyJOhqOLajbFVL4gUP/T7qizBAmBonBrxCDn8PhNBoEd+fMcjYeLEVX0Zx1RoYXCAJCGZ/RJWHBooaN0aHICoXYB"
