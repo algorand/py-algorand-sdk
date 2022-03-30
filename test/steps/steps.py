@@ -984,34 +984,34 @@ def add_rekey_to_address(context, rekey):
     context.txn.rekey_to = rekey
 
 
-@given(u'base64 encoded data to sign "{data_enc}"')
+@given('base64 encoded data to sign "{data_enc}"')
 def set_base64_encoded_data(context, data_enc):
     context.data = base64.b64decode(data_enc)
 
 
-@given(u'program hash "{contract_addr}"')
+@given('program hash "{contract_addr}"')
 def set_program_hash(context, contract_addr):
     context.address = contract_addr
 
 
-@when(u"I perform tealsign")
+@when("I perform tealsign")
 def perform_tealsign(context):
     context.sig = logic.teal_sign(context.sk, context.data, context.address)
 
 
-@then(u'the signature should be equal to "{sig_enc}"')
+@then('the signature should be equal to "{sig_enc}"')
 def check_tealsign(context, sig_enc):
     expected = base64.b64decode(sig_enc)
     assert expected == context.sig
 
 
-@given(u'base64 encoded program "{program_enc}"')
+@given('base64 encoded program "{program_enc}"')
 def set_program_hash_from_program(context, program_enc):
     program = base64.b64decode(program_enc)
     context.address = logic.address(program)
 
 
-@given(u'base64 encoded private key "{sk_enc}"')
+@given('base64 encoded private key "{sk_enc}"')
 def set_sk_from_encoded_seed(context, sk_enc):
     seed = base64.b64decode(sk_enc)
     key = SigningKey(seed)
