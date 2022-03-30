@@ -169,19 +169,7 @@ class Transaction:
             other, (Transaction, future.transaction.Transaction)
         ):
             return False
-        return (
-            self.sender == other.sender
-            and self.fee == other.fee
-            and self.first_valid_round == other.first_valid_round
-            and self.last_valid_round == other.last_valid_round
-            and self.genesis_hash == other.genesis_hash
-            and self.genesis_id == other.genesis_id
-            and self.note == other.note
-            and self.group == other.group
-            and self.lease == other.lease
-            and self.type == other.type
-            and self.rekey_to == other.rekey_to
-        )
+        return self.get_txid() == other.get_txid()
 
 
 class PaymentTxn(Transaction):
@@ -296,16 +284,6 @@ class PaymentTxn(Transaction):
         }
         return args
 
-    def __eq__(self, other):
-        if not isinstance(other, (PaymentTxn, future.transaction.PaymentTxn)):
-            return False
-        return (
-            super(PaymentTxn, self).__eq__(other)
-            and self.receiver == other.receiver
-            and self.amt == other.amt
-            and self.close_remainder_to == other.close_remainder_to
-        )
-
 
 class KeyregTxn(Transaction):
     """
@@ -415,18 +393,6 @@ class KeyregTxn(Transaction):
             "votekd": d["votekd"],
         }
         return args
-
-    def __eq__(self, other):
-        if not isinstance(other, (KeyregTxn, future.transaction.KeyregTxn)):
-            return False
-        return (
-            super(KeyregTxn, self).__eq__(self, other)
-            and self.votepk == other.votepk
-            and self.selkey == other.selkey
-            and self.votefst == other.votefst
-            and self.votelst == other.votelst
-            and self.votekd == other.votekd
-        )
 
 
 class AssetConfigTxn(Transaction):
@@ -684,27 +650,6 @@ class AssetConfigTxn(Transaction):
 
         return args
 
-    def __eq__(self, other):
-        if not isinstance(
-            other, (AssetConfigTxn, future.transaction.AssetConfigTxn)
-        ):
-            return False
-        return (
-            super(AssetConfigTxn, self).__eq__(other)
-            and self.index == other.index
-            and self.total == other.total
-            and self.default_frozen == other.default_frozen
-            and self.unit_name == other.unit_name
-            and self.asset_name == other.asset_name
-            and self.manager == other.manager
-            and self.reserve == other.reserve
-            and self.freeze == other.freeze
-            and self.clawback == other.clawback
-            and self.url == other.url
-            and self.metadata_hash == other.metadata_hash
-            and self.decimals == other.decimals
-        )
-
 
 class AssetFreezeTxn(Transaction):
     """
@@ -808,18 +753,6 @@ class AssetFreezeTxn(Transaction):
         }
 
         return args
-
-    def __eq__(self, other):
-        if not isinstance(
-            other, (AssetFreezeTxn, future.transaction.AssetFreezeTxn)
-        ):
-            return False
-        return (
-            super(AssetFreezeTxn, self).__eq__(other)
-            and self.index == other.index
-            and self.target == other.target
-            and self.new_freeze_state == other.new_freeze_state
-        )
 
 
 class AssetTransferTxn(Transaction):
@@ -958,20 +891,6 @@ class AssetTransferTxn(Transaction):
         }
 
         return args
-
-    def __eq__(self, other):
-        if not isinstance(
-            other, (AssetTransferTxn, future.transaction.AssetTransferTxn)
-        ):
-            return False
-        return (
-            super(AssetTransferTxn, self).__eq__(other)
-            and self.index == other.index
-            and self.amount == other.amount
-            and self.receiver == other.receiver
-            and self.close_assets_to == other.close_assets_to
-            and self.revocation_target == other.revocation_target
-        )
 
 
 class SignedTransaction:
