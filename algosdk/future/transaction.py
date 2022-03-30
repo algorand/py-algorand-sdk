@@ -1710,7 +1710,7 @@ class ApplicationCallTxn(Transaction):
     def _undictify(d):
         args = {
             "index": d["apid"] if "apid" in d else None,
-            "on_complete": d["apan"] if "apan" in d else None,
+            "on_complete": d["apan"] if "apan" in d else OnComplete.NoOpOC,
             "local_schema": StateSchema(**StateSchema.undictify(d["apls"]))
             if "apls" in d
             else None,
