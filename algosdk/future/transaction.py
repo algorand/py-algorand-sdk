@@ -1584,7 +1584,7 @@ class ApplicationCallTxn(Transaction):
         d = dict()
         if self.index:
             d["apid"] = self.index
-        d["apan"] = self.on_complete
+        d["apan"] = self.on_complete or OnComplete.NoOpOC
         if self.local_schema:
             d["apls"] = self.local_schema.dictify()
         if self.global_schema:
