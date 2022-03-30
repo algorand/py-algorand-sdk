@@ -1456,6 +1456,25 @@ class TestApplicationTransactions(unittest.TestCase):
         self.assertEqual(i.dictify(), call.dictify())
         self.assertEqual(i, call)
 
+    def test_msgpack_encoding_and_decoding(self):
+        # Issue #311 -  https://github.com/algorand/py-algorand-sdk/issues/311
+        # Encoded and decoded objects should be equal
+        params = transaction.SuggestedParams(0, 1, 100, self.genesis)
+        txn_a = transaction.ApplicationNoOpTxn(
+            index=1,
+            sender=self.sender,
+            sp=params,
+            app_args=[
+                "algorand",
+            ],
+            foreign_assets=[],
+            accounts=[],
+            note=b"algorand",
+        )
+        txn_b = encoding.future_msgpack_decode(encoding.msgpack_encode(txn_a))
+        self.assertEqual(txn_a, txn_b)
+        self.assertEqual(txn_a.on_complete, txn_b.on_complete)
+
 
 class TestMnemonic(unittest.TestCase):
     zero_bytes = bytes(
