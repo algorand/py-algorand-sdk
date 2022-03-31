@@ -5,7 +5,9 @@ from typing import List
 class StackPrinterConfig:
     DEFAULT_MAX_VALUE_WIDTH: int = 30
 
-    def __init__(self, max_value_width=DEFAULT_MAX_VALUE_WIDTH, top_of_stack_first=True):
+    def __init__(
+        self, max_value_width=DEFAULT_MAX_VALUE_WIDTH, top_of_stack_first=True
+    ):
         self.max_value_width = max_value_width
         self.top_of_stack_first = top_of_stack_first
 
