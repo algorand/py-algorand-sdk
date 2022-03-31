@@ -13,6 +13,8 @@ Run `$ pip3 install py-algorand-sdk` to install the package.
 
 Alternatively, choose a [distribution file](https://pypi.org/project/py-algorand-sdk/#files), and run `$ pip3 install [file name]`.
 
+The py-algorand-sdk requires Python `3.10` to be installed. Please upgrade your Python version or consider using tools to manage multiple Python versions like [pyenv](https://github.com/pyenv/pyenv).
+
 ## SDK Development
 
 Install dependencies
