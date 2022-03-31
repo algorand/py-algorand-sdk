@@ -69,7 +69,7 @@ def verify_bytes(message, signature, public_key):
     try:
         verify_key.verify(prefixed_message, base64.b64decode(signature))
         return True
-    except BadSignatureError:
+    except (BadSignatureError, ValueError, TypeError):
         return False
 
 

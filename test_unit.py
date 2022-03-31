@@ -2127,6 +2127,8 @@ class TestSignBytes(unittest.TestCase):
         intarray[0] = (intarray[0] + 1) % 256
         changed_message = bytes(intarray)
         self.assertFalse(util.verify_bytes(changed_message, signature, pk))
+        # Check that wrong number of bytes returns false in verify function.
+        self.assertFalse(util.verify_bytes(bytes(), signature, pk))
 
 
 class TestLogic(unittest.TestCase):
@@ -2700,7 +2702,10 @@ class TestLogicSigAccount(unittest.TestCase):
         sigLsigAccount = encoding.future_msgpack_decode(sigEncoded)
         self.assertEqual(sigLsigAccount.verify(), True)
 
-        sigLsigAccount.lsig.sig = "AQ=="  # wrong sig
+        sigLsigAccount.lsig.sig = "AQ=="  # wrong length of bytes
+        self.assertEqual(sigLsigAccount.verify(), False)
+
+        sigLsigAccount.lsig.sig = 123  # wrong type (not bytes)
         self.assertEqual(sigLsigAccount.verify(), False)
 
         msigEncoded = "gaRsc2lng6NhcmeSxAEBxAICA6FsxAUBIAEBIqRtc2lng6ZzdWJzaWeTgqJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC8mKvrEiCairgXihc8RASRO4BdGefywQgPYzfhhUp87q7hDdvRNlhL+Tt18wYxWRyiMM7e8j0XQbUp2w/+83VNZG9LVh/Iu8LXtOY1y9AoKicGvEIAljMglTc4nwdWcRdzmRx9A+G3PIxPUr9q/wGqJc+cJxoXPEQGS8VdvtkaJB1Cq2YPfhSrmZmlKzsXFYzvw/T+fLIkEUrak9XoQFAgoXpmmDAyJOhqOLajbFVL4gUP/T7qizBAmBonBrxCDn8PhNBoEd+fMcjYeLEVX0Zx1RoYXCAJCGZ/RJWHBooaN0aHICoXYB"
@@ -3693,7 +3698,7 @@ class TestABIEncoding(unittest.TestCase):
                 expected = val
                 self.assertEqual(actual, expected)
             # Test for the upper limit of each bit size
-            val = 2 ** uint_size - 1
+            val = 2**uint_size - 1
             uint_type = UintType(uint_size)
             actual = uint_type.encode(val)
             self.assertEqual(len(actual), uint_type.bit_size // 8)
@@ -3709,7 +3714,7 @@ class TestABIEncoding(unittest.TestCase):
             with self.assertRaises(error.ABIEncodingError) as e:
                 UintType(uint_size).encode(-1)
             with self.assertRaises(error.ABIEncodingError) as e:
-                UintType(uint_size).encode(2 ** uint_size)
+                UintType(uint_size).encode(2**uint_size)
             with self.assertRaises(error.ABIEncodingError) as e:
                 UintType(uint_size).decode("ZZZZ")
             with self.assertRaises(error.ABIEncodingError) as e:
@@ -3732,7 +3737,7 @@ class TestABIEncoding(unittest.TestCase):
                     expected = val
                     self.assertEqual(actual, expected)
             # Test for the upper limit of each bit size
-            val = 2 ** ufixed_size - 1
+            val = 2**ufixed_size - 1
             ufixed_type = UfixedType(ufixed_size, precision)
             actual = ufixed_type.encode(val)
             self.assertEqual(len(actual), ufixed_type.bit_size // 8)
@@ -3748,7 +3753,7 @@ class TestABIEncoding(unittest.TestCase):
             with self.assertRaises(error.ABIEncodingError) as e:
                 UfixedType(ufixed_size, 10).encode(-1)
             with self.assertRaises(error.ABIEncodingError) as e:
-                UfixedType(ufixed_size, 10).encode(2 ** ufixed_size)
+                UfixedType(ufixed_size, 10).encode(2**ufixed_size)
             with self.assertRaises(error.ABIEncodingError) as e:
                 UfixedType(ufixed_size, 10).decode("ZZZZ")
             with self.assertRaises(error.ABIEncodingError) as e:
