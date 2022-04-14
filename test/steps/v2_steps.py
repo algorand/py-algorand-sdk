@@ -27,6 +27,7 @@ from algosdk import (
     abi,
     account,
     atomic_transaction_composer,
+    dryrun_results,
     encoding,
     error,
     logic,
@@ -3080,6 +3081,46 @@ def serialize_contract_to_json(context):
 def deserialize_json_to_contract(context):
     actual = abi.Contract.undictify(context.json_output)
     assert actual == context.abi_contract
+
+
+@given(
+    'a dryrun response file "{dryrun_response_file}" and a transaction at index "{txn_id}"'
+)
+def parse_dryrun_response_object(context, dryrun_response_file, txn_id):
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    dir_path = os.path.dirname(os.path.dirname(dir_path))
+    with open(
+        dir_path + "/test/features/resources/" + dryrun_response_file, "r"
+    ) as f:
+        drr_dict = json.loads(f.read())
+
+    context.dryrun_response_object = dryrun_results.DryrunResponse(drr_dict)
+    context.dryrun_txn_result = context.dryrun_response_object.txns[
+        int(txn_id)
+    ]
+
+
+@then('calling app trace produces "{app_trace_file}"')
+def dryrun_compare_golden(context, app_trace_file):
+    trace_expected = load_resource(app_trace_file, is_binary=False)
+
+    dryrun_trace = context.dryrun_txn_result.app_trace()
+
+    got_lines = dryrun_trace.split("\n")
+    expected_lines = trace_expected.split("\n")
+
+    print("{} {}".format(len(got_lines), len(expected_lines)))
+    for idx in range(len(got_lines)):
+        if got_lines[idx] != expected_lines[idx]:
+            print(
+                "  {}  \n{}\n{}\n".format(
+                    idx, got_lines[idx], expected_lines[idx]
+                )
+            )
+
+    assert trace_expected == dryrun_trace, "Expected \n{}\ngot\n{}\n".format(
+        trace_expected, dryrun_trace
+    )
 
 
 @then(
