@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM python:3.7.9
 
 # Copy SDK code into the container
 RUN mkdir -p $HOME/py-algorand-sdk
