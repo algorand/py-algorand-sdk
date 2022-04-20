@@ -1,5 +1,13 @@
 # Changelog
 
+# v1.12.0
+## Changed
+- Bump up minimum Python version to 3.10
+## Fixed
+- Catch TypeError and ValueError in verify functions
+## Added
+- Dryrun response
+
 # v1.11.0
 ## Added
 - Support unlimited assets REST API changes. (#295)
