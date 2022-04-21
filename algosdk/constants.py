@@ -130,4 +130,3 @@ tx_group_limit = TX_GROUP_LIMIT
 max_asset_decimals = MAX_ASSET_DECIMALS
 logic_sig_max_cost = LOGIC_SIG_MAX_COST
 logic_sig_max_size = LOGIC_SIG_MAX_SIZE
-zero_address = ZERO_ADDRESS

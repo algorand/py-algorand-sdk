@@ -357,7 +357,7 @@ class PaymentTxn(Transaction):
         )
         if receiver:
             self.receiver = receiver
-        elif close_remainder_to is not None:
+        elif close_remainder_to and not amt:
             self.receiver = constants.ZERO_ADDRESS
         else:
             raise error.ZeroAddressError
@@ -1348,7 +1348,7 @@ class AssetTransferTxn(Transaction):
         )
         if receiver:
             self.receiver = receiver
-        elif close_assets_to is not None:
+        elif close_assets_to and not amt:
             self.receiver = constants.ZERO_ADDRESS
         else:
             raise error.ZeroAddressError
