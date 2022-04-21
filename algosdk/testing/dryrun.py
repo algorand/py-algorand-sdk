@@ -18,7 +18,6 @@ from algosdk.v2client.models import (
 )
 
 
-ZERO_ADDRESS = encode_address(bytes(32))
 PRINTABLE = frozenset(string.printable)
 
 
@@ -33,7 +32,7 @@ class LSig:
 class App:
     """Application program parameters"""
 
-    creator: str = ZERO_ADDRESS
+    creator: str = transaction.ZERO_ADDRESS
     round: int = None
     app_idx: int = 0
     on_complete: int = 0
@@ -54,7 +53,7 @@ class DryrunTestCaseMixin:
         prog_drr_txns,
         lsig=None,
         app=None,
-        sender=ZERO_ADDRESS,
+        sender=transaction.ZERO_ADDRESS,
         txn_index=None,
         msg=None,
     ):
@@ -90,7 +89,7 @@ class DryrunTestCaseMixin:
         prog_drr_txns,
         lsig=None,
         app=None,
-        sender=ZERO_ADDRESS,
+        sender=transaction.ZERO_ADDRESS,
         txn_index=None,
         msg=None,
     ):
@@ -127,7 +126,7 @@ class DryrunTestCaseMixin:
         status,
         lsig=None,
         app=None,
-        sender=ZERO_ADDRESS,
+        sender=transaction.ZERO_ADDRESS,
         txn_index=None,
         msg=None,
     ):
@@ -194,7 +193,7 @@ class DryrunTestCaseMixin:
         prog_drr_txns,
         lsig=None,
         app=None,
-        sender=ZERO_ADDRESS,
+        sender=transaction.ZERO_ADDRESS,
         txn_index=None,
         msg=None,
     ):
@@ -225,7 +224,7 @@ class DryrunTestCaseMixin:
         pattern=None,
         lsig=None,
         app=None,
-        sender=ZERO_ADDRESS,
+        sender=transaction.ZERO_ADDRESS,
         txn_index=None,
         msg=None,
     ):
@@ -258,7 +257,7 @@ class DryrunTestCaseMixin:
         prog_drr_txns,
         delta_value,
         app=None,
-        sender=ZERO_ADDRESS,
+        sender=transaction.ZERO_ADDRESS,
         txn_index=None,
         msg=None,
     ):
@@ -326,7 +325,7 @@ class DryrunTestCaseMixin:
         addr,
         delta_value,
         app=None,
-        sender=ZERO_ADDRESS,
+        sender=transaction.ZERO_ADDRESS,
         txn_index=None,
         msg=None,
     ):
@@ -398,7 +397,7 @@ class DryrunTestCaseMixin:
             self._fail(msg)
 
     def dryrun_request(
-        self, program, lsig=None, app=None, sender=ZERO_ADDRESS
+        self, program, lsig=None, app=None, sender=transaction.ZERO_ADDRESS
     ):
         """
         Helper function for creation DryrunRequest and making the REST request
@@ -463,7 +462,7 @@ class DryrunTestCaseMixin:
     @staticmethod
     def default_address():
         """Helper function returning default zero addr"""
-        return ZERO_ADDRESS
+        return transaction.ZERO_ADDRESS
 
     def _dryrun_request(self, prog_drr_txns, lsig, app, sender):
         """
@@ -478,7 +477,11 @@ class DryrunTestCaseMixin:
         return drr
 
     def _checked_request(
-        self, prog_drr_txns, lsig=None, app=None, sender=ZERO_ADDRESS
+        self,
+        prog_drr_txns,
+        lsig=None,
+        app=None,
+        sender=transaction.ZERO_ADDRESS,
     ):
         """
         Helper function to make a dryrun request and perform basic validation
@@ -504,7 +507,7 @@ class Helper:
 
     @classmethod
     def build_dryrun_request(
-        cls, program, lsig=None, app=None, sender=ZERO_ADDRESS
+        cls, program, lsig=None, app=None, sender=transaction.ZERO_ADDRESS
     ):
         """
         Helper function for creation DryrunRequest object from a program.

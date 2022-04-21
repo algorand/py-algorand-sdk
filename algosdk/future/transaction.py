@@ -13,6 +13,7 @@ from ..v2client import algod, models
 from nacl.signing import SigningKey, VerifyKey
 from nacl.exceptions import BadSignatureError
 
+# TODO: cant use encoding.encode_address(bytes(32)) because of circular import?
 ZERO_ADDRESS = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ"
 
 
