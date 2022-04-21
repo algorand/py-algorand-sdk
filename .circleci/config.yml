@@ -11,7 +11,7 @@ workflows:
 jobs:
   unit-test:
     docker:
-      - image: python:3.10
+      - image: python:3.7.9
     steps:
       - checkout
       - run: pip install -r requirements.txt
@@ -26,7 +26,7 @@ jobs:
   docset:
     docker:
       # NOTE: We might eventually need Docker authentication here.
-      - image: cimg/python:3.10
+      - image: cimg/python:3.9
     steps:
       - checkout
       - run:
