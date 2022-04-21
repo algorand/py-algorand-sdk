@@ -13,6 +13,8 @@ from ..v2client import algod, models
 from nacl.signing import SigningKey, VerifyKey
 from nacl.exceptions import BadSignatureError
 
+ZERO_ADDRESS = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ"
+
 
 class SuggestedParams:
     """
@@ -357,6 +359,8 @@ class PaymentTxn(Transaction):
         )
         if receiver:
             self.receiver = receiver
+        elif close_remainder_to is not None:
+            self.receiver = ZERO_ADDRESS
         else:
             raise error.ZeroAddressError
 
@@ -1346,8 +1350,11 @@ class AssetTransferTxn(Transaction):
         )
         if receiver:
             self.receiver = receiver
+        elif close_assets_to is not None:
+            self.receiver = ZERO_ADDRESS
         else:
             raise error.ZeroAddressError
+
         self.amount = amt
         if (not isinstance(self.amount, int)) or self.amount < 0:
             raise error.WrongAmountType
