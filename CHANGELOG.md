@@ -1,5 +1,11 @@
 # Changelog
 
+# v1.12.0
+## Fixed 
+- Catch TypeError and ValueError in verify functions (#309)
+## Added
+- Dryrun response (#283)
+
 # v1.11.0
 ## Added
 - Support unlimited assets REST API changes. (#295)

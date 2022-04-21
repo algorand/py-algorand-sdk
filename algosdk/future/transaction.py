@@ -2393,7 +2393,7 @@ class Multisig:
                 try:
                     verify_key.verify(message, subsig.signature)
                     verified_count += 1
-                except BadSignatureError:
+                except (BadSignatureError, ValueError, TypeError):
                     return False
 
         if verified_count < self.threshold:
@@ -2562,7 +2562,7 @@ class LogicSig:
             try:
                 verify_key.verify(to_sign, base64.b64decode(self.sig))
                 return True
-            except (BadSignatureError, ValueError):
+            except (BadSignatureError, ValueError, TypeError):
                 return False
 
         return self.msig.verify(to_sign)
