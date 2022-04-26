@@ -141,7 +141,7 @@ class DryrunTransactionResult:
             spc = StackPrinterConfig(top_of_stack_first=False)
 
         return self.trace(
-            self.logic_sig_trace, self.logic_sig_disassembly, spaces=spc
+            self.logic_sig_trace, self.logic_sig_disassembly, spc=spc
         )
 
 
