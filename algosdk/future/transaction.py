@@ -357,8 +357,6 @@ class PaymentTxn(Transaction):
         )
         if receiver:
             self.receiver = receiver
-        elif close_remainder_to and not amt:
-            self.receiver = constants.ZERO_ADDRESS
         else:
             raise error.ZeroAddressError
 
@@ -396,7 +394,7 @@ class PaymentTxn(Transaction):
             "amt": d["amt"] if "amt" in d else 0,
             "receiver": encoding.encode_address(d["rcv"])
             if "rcv" in d
-            else None,
+            else constants.ZERO_ADDRESS,
         }
         return args
 
@@ -1348,8 +1346,6 @@ class AssetTransferTxn(Transaction):
         )
         if receiver:
             self.receiver = receiver
-        elif close_assets_to and not amt:
-            self.receiver = constants.ZERO_ADDRESS
         else:
             raise error.ZeroAddressError
 
@@ -1391,7 +1387,7 @@ class AssetTransferTxn(Transaction):
         args = {
             "receiver": encoding.encode_address(d["arcv"])
             if "arcv" in d
-            else None,
+            else constants.ZERO_ADDRESS,
             "amt": d["aamt"] if "aamt" in d else 0,
             "index": d["xaid"] if "xaid" in d else None,
             "close_assets_to": encoding.encode_address(d["aclose"])
