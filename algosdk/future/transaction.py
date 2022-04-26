@@ -3131,6 +3131,12 @@ def create_dryrun(
                 accts.extend(txn.accounts)
             if txn.foreign_apps:
                 apps.extend(txn.foreign_apps)
+                accts.extend(
+                    [
+                        logic.get_application_address(aidx)
+                        for aidx in txn.foreign_apps
+                    ]
+                )
             if txn.foreign_assets:
                 assets.extend(txn.foreign_assets)
 
