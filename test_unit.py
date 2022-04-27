@@ -1942,6 +1942,30 @@ class TestMsgpack(unittest.TestCase):
             paytxn, encoding.msgpack_encode(encoding.msgpack_decode(paytxn))
         )
 
+    def test_payment_txn_future(self):
+        paytxn = (
+            "iKVjbG9zZcQgYMak0FPHfqBp4So5wS5p7g+O4rLkqwo/ILSjXWQVKpGjZmVlzQPoom"
+            "Z2KqNnZW6qc2FuZG5ldC12MaJnaMQgNCTHAIMgeYC+4MCSbMinkrlsgtRD6jhfJEXz"
+            "IP3mH9SibHbNBBKjc25kxCARM5ng7Z1RkubT9fUef5nT9w0MGQKRGbwgOva8/tx3qqR"
+            "0eXBlo3BheQ=="
+        )
+        self.assertEqual(
+            paytxn,
+            encoding.msgpack_encode(encoding.future_msgpack_decode(paytxn)),
+        )
+
+    def test_asset_xfer_txn_future(self):
+        axfer = (
+            "iaZhY2xvc2XEIGDGpNBTx36gaeEqOcEuae4PjuKy5KsKPyC0o11kFSqRo2ZlZc0D6KJmdi"
+            "qjZ2VuqnNhbmRuZXQtdjGiZ2jEIDQkxwCDIHmAvuDAkmzIp5K5bILUQ+o4XyRF8yD95h/U"
+            "omx2zQQSo3NuZMQgETOZ4O2dUZLm0/X1Hn+Z0/cNDBkCkRm8IDr2vP7cd6qkdHlwZaVheGZ"
+            "lcqR4YWlkCg=="
+        )
+        self.assertEqual(
+            axfer,
+            encoding.msgpack_encode(encoding.future_msgpack_decode(axfer)),
+        )
+
     def test_multisig_txn(self):
         msigtxn = (
             "gqRtc2lng6ZzdWJzaWeSgqJwa8Qg1ke3gkLuR0MUN/Ku0oyiRVIm9P1QFDaiEhT5v"

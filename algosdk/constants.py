@@ -89,6 +89,9 @@ LOGIC_SIG_MAX_COST = 20000
 LOGIC_SIG_MAX_SIZE = 1000
 """int: max size of a teal program and its arguments in bytes"""
 
+ZERO_ADDRESS = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ"
+"""str: algorand encoded address of 32 zero bytes"""
+
 # for backward compatibility:
 kmd_auth_header = KMD_AUTH_HEADER
 algod_auth_header = ALGOD_AUTH_HEADER
