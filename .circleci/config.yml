@@ -4,14 +4,20 @@ workflows:
   version: 2
   test:
     jobs:
+      matrix:
+        parameters:
+          python-version: ["3.8", "3.9", "3.10"]
       - unit-test
       - integration-test
       - docset
 
 jobs:
   unit-test:
+    parameters:
+      python-version:
+        type: string
     docker:
-      - image: python:3.8
+      - image: python:<< parameters.python-version >>
     steps:
       - checkout
       - run: pip install -r requirements.txt
