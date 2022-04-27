@@ -22,7 +22,7 @@ setuptools.setup(
         "msgpack>=1.0.0,<2",
     ],
     packages=setuptools.find_packages(),
-    python_requires=">=3.5",
+    python_requires=">=3.8",
     package_data={"": ["data/langspec.json"]},
     include_package_data=True,
 )
