@@ -4,10 +4,10 @@ workflows:
   version: 2
   test:
     jobs:
-      matrix:
-        parameters:
-          python-version: ["3.8", "3.9", "3.10"]
       - unit-test
+          matrix:
+            parameters:
+              python-version: ["3.8", "3.9", "3.10"]
       - integration-test
       - docset
 
