@@ -24,8 +24,8 @@ jobs:
       - run: black --check .
       - run: python3 test_unit.py
   integration-test:
-    machine:
-     image: "ubuntu-2004:202104-01"
+    docker:
+      - image: python:3.9
     steps:
       - checkout
       - run: make docker-test
