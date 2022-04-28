@@ -6,5 +6,6 @@ INTEGRATIONS = "@abi or @algod or @applications or @applications.verified or @as
 integration:
 	behave --tags=$(INTEGRATIONS) test -f progress2
 
+PYTHON_VERSION ?= 3.8
 docker-test:
-	./run_integration.sh
+	PYTHON_VERSION='$(PYTHON_VERSION)' ./run_integration.sh
