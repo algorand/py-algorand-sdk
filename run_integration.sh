@@ -14,7 +14,7 @@ mkdir -p test/features
 cp -r test-harness/features/* test/features
 
 # Build SDK testing environment
-docker build -t py-sdk-testing -f Dockerfile "$(pwd)"
+docker build -t py-sdk-testing --build-arg PYTHON_VERSION="${PYTHON_VERSION}" -f Dockerfile "$(pwd)"
 
 # Start test harness environment
 ./test-harness/scripts/up.sh

@@ -8,7 +8,10 @@ workflows:
           matrix:
             parameters:
               python-version: ["3.8", "3.9", "3.10"]
-      - integration-test
+      - integration-test:
+          matrix:
+            parameters:
+              python-version: ["3.8", "3.9", "3.10"]
       - docset
 
 jobs:
@@ -24,11 +27,14 @@ jobs:
       - run: black --check .
       - run: python3 test_unit.py
   integration-test:
+    parameters:
+      python-version:
+        type: string
     machine:
      image: "ubuntu-2004:202104-01"
     steps:
       - checkout
-      - run: make docker-test
+      - run: PYTHON_VERSION=<< parameters.python-version >> make docker-test
   docset:
     docker:
       # NOTE: We might eventually need Docker authentication here.
