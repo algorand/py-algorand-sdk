@@ -4,29 +4,41 @@ workflows:
   version: 2
   test:
     jobs:
-      - unit-test
-      - integration-test
+      - unit-test:
+          matrix:
+            parameters:
+              python-version: ["3.8", "3.9", "3.10"]
+      - integration-test:
+          matrix:
+            parameters:
+              python-version: ["3.8", "3.9", "3.10"]
       - docset
 
 jobs:
   unit-test:
+    parameters:
+      python-version:
+        type: string
     docker:
-      - image: python:3.7.9
+      - image: python:<< parameters.python-version >>
     steps:
       - checkout
       - run: pip install -r requirements.txt
       - run: black --check .
       - run: python3 test_unit.py
   integration-test:
+    parameters:
+      python-version:
+        type: string
     machine:
      image: "ubuntu-2004:202104-01"
     steps:
       - checkout
-      - run: make docker-test
+      - run: PYTHON_VERSION=<< parameters.python-version >> make docker-test
   docset:
     docker:
       # NOTE: We might eventually need Docker authentication here.
-      - image: cimg/python:3.9
+      - image: cimg/python:3.8
     steps:
       - checkout
       - run:

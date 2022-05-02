@@ -1,7 +1,20 @@
 # Changelog
 
+# v1.13.0
+## Added
+- Adding condition for allowing rcv to be none if close to is set (#317)
+- Adding foreign-app-addr to dryrun creator (#321)
+## Changed
+- Matrix test python versions integration tests (#327)
+- Matrix test across Python versions for unit tests (#325)
+- Bump minimum Python version to 3.8 (#323)
+- Add minimum Python version policy to README (#322)
+- Consistently reference `pip3` in README (#319)
+## Fixed
+- Fixed typo in lsig trace (#320)
+
 # v1.12.0
-## Fixed 
+## Fixed
 - Catch TypeError and ValueError in verify functions (#309)
 ## Added
 - Dryrun response (#283)

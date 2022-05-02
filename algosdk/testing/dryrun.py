@@ -4,7 +4,7 @@ import string
 from dataclasses import dataclass
 from typing import List, Union
 
-from algosdk.constants import payment_txn, appcall_txn
+from algosdk.constants import payment_txn, appcall_txn, ZERO_ADDRESS
 from algosdk.future import transaction
 from algosdk.encoding import encode_address, msgpack_encode
 from algosdk.v2client.models import (
@@ -18,7 +18,6 @@ from algosdk.v2client.models import (
 )
 
 
-ZERO_ADDRESS = encode_address(bytes(32))
 PRINTABLE = frozenset(string.printable)
 
 
@@ -478,7 +477,11 @@ class DryrunTestCaseMixin:
         return drr
 
     def _checked_request(
-        self, prog_drr_txns, lsig=None, app=None, sender=ZERO_ADDRESS
+        self,
+        prog_drr_txns,
+        lsig=None,
+        app=None,
+        sender=ZERO_ADDRESS,
     ):
         """
         Helper function to make a dryrun request and perform basic validation
