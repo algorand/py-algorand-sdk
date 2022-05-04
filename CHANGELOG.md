@@ -1,5 +1,9 @@
 # Changelog
 
+# v1.13.1
+## Fixed
+- Fix readthedocs by providing root requirements.txt (#332)
+
 # v1.13.0
 ## Added
 - Adding condition for allowing rcv to be none if close to is set (#317)
