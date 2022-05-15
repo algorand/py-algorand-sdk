@@ -421,24 +421,34 @@ class TestPaymentTransaction(unittest.TestCase):
         votefirst = 10000
         votelast = 10111
         votedilution = 11
+        sprfKey = "mYR0GVEObMTSNdsKM6RwYywHYPqVDqg3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk9w=="
 
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True
         )
         txn = transaction.KeyregTxn(
-            pk, sp, votepk, selpk, votefirst, votelast, votedilution
+            pk,
+            sp,
+            votepk,
+            selpk,
+            votefirst,
+            votelast,
+            votedilution,
+            sprfkey=sprfKey,
         )
         signed_txn = txn.sign(sk)
 
         golden = (
-            "gqNzaWfEQEA8ANbrvTRxU9c8v6WERcEPw7D/HacRgg4vICa61vEof60Wwtx6KJKDy"
-            "vBuvViFeacLlngPY6vYCVP0DktTwQ2jdHhui6NmZWXNA+iiZnbOAATsD6JnaMQgSG"
-            "O1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOAATv96ZzZWxrZXnEIGz"
-            "4K7+GKID3HWlAMa7dUMrGGU1ckQLlDA+M0JgrvZZXo3NuZMQgCfvSdiwI+Gxa5r9t"
-            "16epAd5mdddQ4H6MXHaYZH224f2kdHlwZaZrZXlyZWendm90ZWZzdM0nEKZ2b3Rla"
-            "2QLp3ZvdGVrZXnEICr+0CO3IYtcumsaMvre8MwFaXj6kav65I81of0TGMi6p3ZvdG"
-            "Vsc3TNJ38="
+            "gqNzaWfEQDDDuwMXAJM2JISVLu0yjeLT5zf9d4p/TBiEr26zny/M72GfLpciu1jSRv"
+            "sM4zlp3V92Ix5/4iN52lhVwspabA2jdHhujKNmZWXNA+iiZnbOAATsD6JnaMQgSGO1"
+            "GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOAATv96ZzZWxrZXnEIGz4K7"
+            "+GKID3HWlAMa7dUMrGGU1ckQLlDA+M0JgrvZZXo3NuZMQgCfvSdiwI+Gxa5r9t16ep"
+            "Ad5mdddQ4H6MXHaYZH224f2nc3ByZmtlecRAmYR0GVEObMTSNdsKM6RwYywHYPqVDqg"
+            "3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk96R0eXBlpmtleX"
+            "JlZ6d2b3RlZnN0zScQpnZvdGVrZAundm90ZWtlecQgKv7QI7chi1y6axoy+t7wzAVpe"
+            "PqRq/rkjzWh/RMYyLqndm90ZWxzdM0nfw=="
         )
+        print(encoding.msgpack_encode(signed_txn))
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
     def test_serialize_keyreg_offline(self):
@@ -516,23 +526,30 @@ class TestPaymentTransaction(unittest.TestCase):
         votefirst = 10000
         votelast = 10111
         votedilution = 11
-
+        sprfKey = "mYR0GVEObMTSNdsKM6RwYywHYPqVDqg3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk9w=="
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True
         )
         txn = transaction.KeyregOnlineTxn(
-            pk, sp, votepk, selpk, votefirst, votelast, votedilution
+            pk,
+            sp,
+            votepk,
+            selpk,
+            votefirst,
+            votelast,
+            votedilution,
+            sprfkey=sprfKey,
         )
         signed_txn = txn.sign(sk)
-
         golden = (
-            "gqNzaWfEQEA8ANbrvTRxU9c8v6WERcEPw7D/HacRgg4vICa61vEof60Wwtx"
-            "6KJKDyvBuvViFeacLlngPY6vYCVP0DktTwQ2jdHhui6NmZWXNA+iiZnbOAA"
-            "TsD6JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOA"
-            "ATv96ZzZWxrZXnEIGz4K7+GKID3HWlAMa7dUMrGGU1ckQLlDA+M0JgrvZZX"
-            "o3NuZMQgCfvSdiwI+Gxa5r9t16epAd5mdddQ4H6MXHaYZH224f2kdHlwZaZ"
-            "rZXlyZWendm90ZWZzdM0nEKZ2b3Rla2QLp3ZvdGVrZXnEICr+0CO3IYtcum"
-            "saMvre8MwFaXj6kav65I81of0TGMi6p3ZvdGVsc3TNJ38="
+            "gqNzaWfEQDDDuwMXAJM2JISVLu0yjeLT5zf9d4p/TBiEr26zny/M72GfLpciu1jSRv"
+            "sM4zlp3V92Ix5/4iN52lhVwspabA2jdHhujKNmZWXNA+iiZnbOAATsD6JnaMQgSGO1"
+            "GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOAATv96ZzZWxrZXnEIGz4K7"
+            "+GKID3HWlAMa7dUMrGGU1ckQLlDA+M0JgrvZZXo3NuZMQgCfvSdiwI+Gxa5r9t16ep"
+            "Ad5mdddQ4H6MXHaYZH224f2nc3ByZmtlecRAmYR0GVEObMTSNdsKM6RwYywHYPqVDqg"
+            "3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk96R0eXBlpmtleX"
+            "JlZ6d2b3RlZnN0zScQpnZvdGVrZAundm90ZWtlecQgKv7QI7chi1y6axoy+t7wzAVpe"
+            "PqRq/rkjzWh/RMYyLqndm90ZWxzdM0nfw=="
         )
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
@@ -551,16 +568,25 @@ class TestPaymentTransaction(unittest.TestCase):
         votefirst = 10000
         votelast = 10111
         votedilution = 11
-
+        sprfKey = "mYR0GVEObMTSNdsKM6RwYywHYPqVDqg3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk9w=="
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True
         )
         txn = transaction.KeyregOnlineTxn(
-            pk, sp, votepk, selpk, votefirst, votelast, votedilution
+            pk,
+            sp,
+            votepk,
+            selpk,
+            votefirst,
+            votelast,
+            votedilution,
+            sprfkey=sprfKey,
         )
         path = "/tmp/%s" % uuid.uuid4()
         transaction.write_to_file([txn], path)
         txnr = transaction.retrieve_from_file(path)[0]
+        print("txn:", txn)
+        print("txnr:", txnr)
         os.remove(path)
         self.assertEqual(txn, txnr)
 
@@ -579,13 +605,20 @@ class TestPaymentTransaction(unittest.TestCase):
         votefirst = 10000
         votelast = None
         votedilution = 11
-
+        sprfKey = "mYR0GVEObMTSNdsKM6RwYywHYPqVDqg3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk9w=="
         sp = transaction.SuggestedParams(
             fee, 322575, 323575, gh, flat_fee=True
         )
         with self.assertRaises(error.KeyregOnlineTxnInitError) as cm:
             transaction.KeyregOnlineTxn(
-                pk, sp, votepk, selpk, votefirst, votelast, votedilution
+                pk,
+                sp,
+                votepk,
+                selpk,
+                votefirst,
+                votelast,
+                votedilution,
+                sprfkey=sprfKey,
             )
         the_exception = cm.exception
         self.assertTrue("votelst" in the_exception.__repr__())
@@ -1909,6 +1942,30 @@ class TestMsgpack(unittest.TestCase):
             paytxn, encoding.msgpack_encode(encoding.msgpack_decode(paytxn))
         )
 
+    def test_payment_txn_future(self):
+        paytxn = (
+            "iKVjbG9zZcQgYMak0FPHfqBp4So5wS5p7g+O4rLkqwo/ILSjXWQVKpGjZmVlzQPoom"
+            "Z2KqNnZW6qc2FuZG5ldC12MaJnaMQgNCTHAIMgeYC+4MCSbMinkrlsgtRD6jhfJEXz"
+            "IP3mH9SibHbNBBKjc25kxCARM5ng7Z1RkubT9fUef5nT9w0MGQKRGbwgOva8/tx3qqR"
+            "0eXBlo3BheQ=="
+        )
+        self.assertEqual(
+            paytxn,
+            encoding.msgpack_encode(encoding.future_msgpack_decode(paytxn)),
+        )
+
+    def test_asset_xfer_txn_future(self):
+        axfer = (
+            "iaZhY2xvc2XEIGDGpNBTx36gaeEqOcEuae4PjuKy5KsKPyC0o11kFSqRo2ZlZc0D6KJmdi"
+            "qjZ2VuqnNhbmRuZXQtdjGiZ2jEIDQkxwCDIHmAvuDAkmzIp5K5bILUQ+o4XyRF8yD95h/U"
+            "omx2zQQSo3NuZMQgETOZ4O2dUZLm0/X1Hn+Z0/cNDBkCkRm8IDr2vP7cd6qkdHlwZaVheGZ"
+            "lcqR4YWlkCg=="
+        )
+        self.assertEqual(
+            axfer,
+            encoding.msgpack_encode(encoding.future_msgpack_decode(axfer)),
+        )
+
     def test_multisig_txn(self):
         msigtxn = (
             "gqRtc2lng6ZzdWJzaWeSgqJwa8Qg1ke3gkLuR0MUN/Ku0oyiRVIm9P1QFDaiEhT5v"
@@ -2094,6 +2151,8 @@ class TestSignBytes(unittest.TestCase):
         intarray[0] = (intarray[0] + 1) % 256
         changed_message = bytes(intarray)
         self.assertFalse(util.verify_bytes(changed_message, signature, pk))
+        # Check that wrong number of bytes returns false in verify function.
+        self.assertFalse(util.verify_bytes(bytes(), signature, pk))
 
 
 class TestLogic(unittest.TestCase):
@@ -2304,6 +2363,31 @@ class TestLogic(unittest.TestCase):
         # cover, uncover, log
         program = b"\x05\x80\x01\x61\x80\x01\x62\x80\x01\x63\x4e\x02\x4f\x02\x50\x50\xb0\x81\x01"
         # byte "a"; byte "b"; byte "c"; cover 2; uncover 2; concat; concat; log; int 1
+        self.assertTrue(logic.check_program(program, None))
+
+    def test_check_program_teal_6(self):
+        # check TEAL v6 opcodes
+
+        self.assertIsNotNone(
+            logic.spec, "Must be called after any of logic.check_program"
+        )
+        self.assertTrue(logic.spec["EvalMaxVersion"] >= 6)
+
+        # bsqrt
+        program = b"\x06\x80\x01\x90\x96\x80\x01\x0c\xa8"
+        # byte 0x90; bsqrt; byte 0x0c; b==
+        self.assertTrue(logic.check_program(program, None))
+
+        # divw
+        program = b"\x06\x81\x09\x81\xec\xff\xff\xff\xff\xff\xff\xff\xff\x01\x81\x0a\x97\x81\xfe\xff\xff\xff\xff\xff\xff\xff\xff\x01\x12"
+        # int 9; int 18446744073709551596; int 10; divw; int 18446744073709551614; ==
+        self.assertTrue(logic.check_program(program, None))
+
+        # txn fields
+        program = (
+            b"\x06\x31\x3f\x15\x81\x40\x12\x33\x00\x3e\x15\x81\x0a\x12\x10"
+        )
+        # txn StateProofPK; len; int 64; ==; gtxn 0 LastLog; len; int 10; ==; &&
         self.assertTrue(logic.check_program(program, None))
 
 
@@ -2642,7 +2726,10 @@ class TestLogicSigAccount(unittest.TestCase):
         sigLsigAccount = encoding.future_msgpack_decode(sigEncoded)
         self.assertEqual(sigLsigAccount.verify(), True)
 
-        sigLsigAccount.lsig.sig = "AQ=="  # wrong sig
+        sigLsigAccount.lsig.sig = "AQ=="  # wrong length of bytes
+        self.assertEqual(sigLsigAccount.verify(), False)
+
+        sigLsigAccount.lsig.sig = 123  # wrong type (not bytes)
         self.assertEqual(sigLsigAccount.verify(), False)
 
         msigEncoded = "gaRsc2lng6NhcmeSxAEBxAICA6FsxAUBIAEBIqRtc2lng6ZzdWJzaWeTgqJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC8mKvrEiCairgXihc8RASRO4BdGefywQgPYzfhhUp87q7hDdvRNlhL+Tt18wYxWRyiMM7e8j0XQbUp2w/+83VNZG9LVh/Iu8LXtOY1y9AoKicGvEIAljMglTc4nwdWcRdzmRx9A+G3PIxPUr9q/wGqJc+cJxoXPEQGS8VdvtkaJB1Cq2YPfhSrmZmlKzsXFYzvw/T+fLIkEUrak9XoQFAgoXpmmDAyJOhqOLajbFVL4gUP/T7qizBAmBonBrxCDn8PhNBoEd+fMcjYeLEVX0Zx1RoYXCAJCGZ/RJWHBooaN0aHICoXYB"
@@ -3635,7 +3722,7 @@ class TestABIEncoding(unittest.TestCase):
                 expected = val
                 self.assertEqual(actual, expected)
             # Test for the upper limit of each bit size
-            val = 2 ** uint_size - 1
+            val = 2**uint_size - 1
             uint_type = UintType(uint_size)
             actual = uint_type.encode(val)
             self.assertEqual(len(actual), uint_type.bit_size // 8)
@@ -3651,7 +3738,7 @@ class TestABIEncoding(unittest.TestCase):
             with self.assertRaises(error.ABIEncodingError) as e:
                 UintType(uint_size).encode(-1)
             with self.assertRaises(error.ABIEncodingError) as e:
-                UintType(uint_size).encode(2 ** uint_size)
+                UintType(uint_size).encode(2**uint_size)
             with self.assertRaises(error.ABIEncodingError) as e:
                 UintType(uint_size).decode("ZZZZ")
             with self.assertRaises(error.ABIEncodingError) as e:
@@ -3674,7 +3761,7 @@ class TestABIEncoding(unittest.TestCase):
                     expected = val
                     self.assertEqual(actual, expected)
             # Test for the upper limit of each bit size
-            val = 2 ** ufixed_size - 1
+            val = 2**ufixed_size - 1
             ufixed_type = UfixedType(ufixed_size, precision)
             actual = ufixed_type.encode(val)
             self.assertEqual(len(actual), ufixed_type.bit_size // 8)
@@ -3690,7 +3777,7 @@ class TestABIEncoding(unittest.TestCase):
             with self.assertRaises(error.ABIEncodingError) as e:
                 UfixedType(ufixed_size, 10).encode(-1)
             with self.assertRaises(error.ABIEncodingError) as e:
-                UfixedType(ufixed_size, 10).encode(2 ** ufixed_size)
+                UfixedType(ufixed_size, 10).encode(2**ufixed_size)
             with self.assertRaises(error.ABIEncodingError) as e:
                 UfixedType(ufixed_size, 10).decode("ZZZZ")
             with self.assertRaises(error.ABIEncodingError) as e:

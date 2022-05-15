@@ -1,5 +1,61 @@
 # Changelog
 
+# v1.13.1
+## Fixed
+- Fix readthedocs by providing root requirements.txt (#332)
+
+# v1.13.0
+## Added
+- Adding condition for allowing rcv to be none if close to is set (#317)
+- Adding foreign-app-addr to dryrun creator (#321)
+## Changed
+- Matrix test python versions integration tests (#327)
+- Matrix test across Python versions for unit tests (#325)
+- Bump minimum Python version to 3.8 (#323)
+- Add minimum Python version policy to README (#322)
+- Consistently reference `pip3` in README (#319)
+## Fixed
+- Fixed typo in lsig trace (#320)
+
+# v1.12.0
+## Fixed
+- Catch TypeError and ValueError in verify functions (#309)
+## Added
+- Dryrun response (#283)
+
+# v1.11.0
+## Added
+- Support unlimited assets REST API changes. (#295)
+
+## Changed
+- Fix the cucumber test wording around block rounds in indexer asset balance lookup (#301)
+
+# v1.11.0b1
+
+## Added
+- Support unlimited assets REST API changes. (#295)
+
+## Changed
+- Fix the cucumber test wording around block rounds in indexer asset balance lookup (#301)
+
+# 1.10.0
+
+## Added:
+
+- New keyreg txn field (#244)
+- C2C Feature and Testing (#268)
+- Add App creator to account balances (#277)
+- Add ABI and ATC to Sphinx (#289)
+
+## Changed:
+
+- Change __init__.py to include v2client import (#243)
+- Updates to pipeline (#279)
+- Add CircleCI build step to generate docsets (#285)
+- revert to point testing harness to sdk testing's master branch (#288)
+- Partially fix types for atomic transaction composer (#290)
+- Update `langspec.json` for Teal6 (#292)
+
 ## 1.9.0
 ### Added
 

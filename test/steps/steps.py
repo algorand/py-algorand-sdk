@@ -724,6 +724,13 @@ def create_keyreg_txn(context):
     )
 
 
+@given("default V2 key registration transaction {type}")
+def default_v2_keyreg_txn(context, type):
+    context.params = context.acl.suggested_params_as_object()
+    context.pk = context.accounts[0]
+    context.txn = buildTxn(type, context.pk, context.params)
+
+
 @when("I get recent transactions, limited by {cnt} transactions")
 def step_impl(context, cnt):
     txns = context.acl.transactions_by_address(
@@ -977,34 +984,34 @@ def add_rekey_to_address(context, rekey):
     context.txn.rekey_to = rekey
 
 
-@given(u'base64 encoded data to sign "{data_enc}"')
+@given('base64 encoded data to sign "{data_enc}"')
 def set_base64_encoded_data(context, data_enc):
     context.data = base64.b64decode(data_enc)
 
 
-@given(u'program hash "{contract_addr}"')
+@given('program hash "{contract_addr}"')
 def set_program_hash(context, contract_addr):
     context.address = contract_addr
 
 
-@when(u"I perform tealsign")
+@when("I perform tealsign")
 def perform_tealsign(context):
     context.sig = logic.teal_sign(context.sk, context.data, context.address)
 
 
-@then(u'the signature should be equal to "{sig_enc}"')
+@then('the signature should be equal to "{sig_enc}"')
 def check_tealsign(context, sig_enc):
     expected = base64.b64decode(sig_enc)
     assert expected == context.sig
 
 
-@given(u'base64 encoded program "{program_enc}"')
+@given('base64 encoded program "{program_enc}"')
 def set_program_hash_from_program(context, program_enc):
     program = base64.b64decode(program_enc)
     context.address = logic.address(program)
 
 
-@given(u'base64 encoded private key "{sk_enc}"')
+@given('base64 encoded private key "{sk_enc}"')
 def set_sk_from_encoded_seed(context, sk_enc):
     seed = base64.b64decode(sk_enc)
     key = SigningKey(seed)
@@ -1031,3 +1038,29 @@ def fee_not_in_txn(context):
     else:
         stxn = context.mtx.dictify()
     assert "fee" not in stxn["txn"]
+
+
+def buildTxn(t, sender, params):
+    txn = None
+    if "online" in t:
+        votekey = "9mr13Ri8rFepxN3ghIUrZNui6LqqM5hEzB45Rri5lkU="
+        selkey = "dx717L3uOIIb/jr9OIyls1l5Ei00NFgRa380w7TnPr4="
+        votefst = 0
+        votelst = 2000
+        votekd = 10
+        sprf = "mYR0GVEObMTSNdsKM6RwYywHYPqVDqg3E4JFzxZOreH9NU8B+tKzUanyY8AQ144hETgSMX7fXWwjBdHz6AWk9w=="
+        txn = transaction.KeyregOnlineTxn(
+            sender,
+            params,
+            votekey,
+            selkey,
+            votefst,
+            votelst,
+            votekd,
+            sprfkey=sprf,
+        )
+    elif "offline" in t:
+        txn = transaction.KeyregOfflineTxn(sender, params)
+    elif "nonparticipation" in t:
+        txn = transaction.KeyregNonparticipatingTxn(sender, params)
+    return txn

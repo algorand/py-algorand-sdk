@@ -27,6 +27,7 @@ from algosdk import (
     abi,
     account,
     atomic_transaction_composer,
+    dryrun_results,
     encoding,
     error,
     logic,
@@ -294,6 +295,13 @@ def parse_ledger(context, tot, online, roundNum):
     assert context.response["current_round"] == int(roundNum)
 
 
+@when(
+    'we make an Account Information call against account "{account}" with exclude "{exclude:MaybeString}"'
+)
+def acc_info(context, account, exclude):
+    context.response = context.acl.account_info(account, exclude=exclude)
+
+
 @when('we make an Account Information call against account "{account}"')
 def acc_info(context, account):
     context.response = context.acl.account_info(account)
@@ -311,6 +319,22 @@ def acc_info_any(context):
 )
 def parse_acc_info(context, address):
     assert context.response["address"] == address
+
+
+@when(
+    'we make an Account Asset Information call against account "{account}" assetID {assetID}'
+)
+def acc_asset_info(context, account, assetID):
+    context.response = context.acl.account_asset_info(account, assetID)
+
+
+@when(
+    'we make an Account Application Information call against account "{account}" applicationID {applicationID}'
+)
+def acc_application_info(context, account, applicationID):
+    context.response = context.acl.account_application_info(
+        account, applicationID
+    )
 
 
 @when("we make a GetAssetByID call for assetID {asset_id}")
@@ -369,14 +393,13 @@ def check_asset_balance(context, numaccounts, account, isfrozen, amount):
 
 
 @when(
-    'we make a Lookup Asset Balances call against asset index {index} with limit {limit} afterAddress "{afterAddress:MaybeString}" round {block} currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan}'
+    'we make a Lookup Asset Balances call against asset index {index} with limit {limit} afterAddress "{afterAddress:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan}'
 )
 def asset_balance(
     context,
     index,
     limit,
     afterAddress,
-    block,
     currencyGreaterThan,
     currencyLessThan,
 ):
@@ -386,7 +409,6 @@ def asset_balance(
         next_page=None,
         min_balance=int(currencyGreaterThan),
         max_balance=int(currencyLessThan),
-        block=int(block),
     )
 
 
@@ -407,6 +429,64 @@ def parse_asset_balance(
     assert context.response["balances"][int(idx)]["amount"] == int(amount)
     assert context.response["balances"][int(idx)]["is-frozen"] == (
         frozenState == "true"
+    )
+
+
+@when(
+    'we make a LookupAccountAssets call with accountID "{account}" assetID {asset_id} includeAll "{includeAll:MaybeBool}" limit {limit} next "{next:MaybeString}"'
+)
+def lookup_account_assets(context, account, asset_id, includeAll, limit, next):
+    context.response = context.icl.lookup_account_assets(
+        account,
+        asset_id=int(asset_id),
+        include_all=includeAll,
+        limit=int(limit),
+        next_page=next,
+    )
+
+
+@when(
+    'we make a LookupAccountCreatedAssets call with accountID "{account}" assetID {asset_id} includeAll "{includeAll:MaybeBool}" limit {limit} next "{next:MaybeString}"'
+)
+def lookup_account_created_assets(
+    context, account, asset_id, includeAll, limit, next
+):
+    context.response = context.icl.lookup_account_asset_by_creator(
+        account,
+        asset_id=int(asset_id),
+        include_all=includeAll,
+        limit=int(limit),
+        next_page=next,
+    )
+
+
+@when(
+    'we make a LookupAccountAppLocalStates call with accountID "{account}" applicationID {application_id} includeAll "{includeAll:MaybeBool}" limit {limit} next "{next:MaybeString}"'
+)
+def lookup_account_applications(
+    context, account, application_id, includeAll, limit, next
+):
+    context.response = context.icl.lookup_account_application_local_state(
+        account,
+        application_id=int(application_id),
+        include_all=includeAll,
+        limit=int(limit),
+        next_page=next,
+    )
+
+
+@when(
+    'we make a LookupAccountCreatedApplications call with accountID "{account}" applicationID {application_id} includeAll "{includeAll:MaybeBool}" limit {limit} next "{next:MaybeString}"'
+)
+def lookup_account_created_applications(
+    context, account, application_id, includeAll, limit, next
+):
+    context.response = context.icl.lookup_account_application_by_creator(
+        account,
+        application_id=int(application_id),
+        include_all=includeAll,
+        limit=int(limit),
+        next_page=next,
     )
 
 
@@ -790,6 +870,13 @@ def lookup_account(context, account, block):
     context.response = context.icl.account_info(account, int(block))
 
 
+@when(
+    'we make a Lookup Account by ID call against account "{account}" with exclude "{exclude:MaybeString}"'
+)
+def lookup_account(context, account, exclude):
+    context.response = context.icl.account_info(account, exclude=exclude)
+
+
 @when("we make any LookupAccountByID call")
 def lookup_account_any(context):
     context.response = context.icl.account_info(
@@ -896,6 +983,11 @@ def search_application(context, app_id):
     context.response = context.icl.search_applications(int(app_id))
 
 
+@when('we make a SearchForApplications call with creator "{creator}"')
+def search_application(context, creator):
+    context.response = context.icl.search_applications(creator=creator)
+
+
 @when(
     "we make a Search Accounts call with assetID {index} limit {limit} currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} and round {block}"
 )
@@ -935,6 +1027,14 @@ def search_accounts(
         block=int(block),
         auth_addr=authAddr,
     )
+
+
+@when('we make a Search Accounts call with exclude "{exclude:MaybeString}"')
+def search_accounts(
+    context,
+    exclude,
+):
+    context.response = context.icl.accounts(exclude=exclude)
 
 
 @when(
@@ -1682,6 +1782,51 @@ def suggested_transaction_parameters(
         last=int(last_valid),
         gh=genesis_hash,
         gen=genesis_id,
+    )
+
+
+@when(
+    'I build a keyreg transaction with sender "{sender}", nonparticipation "{nonpart:MaybeBool}", vote first {vote_first}, vote last {vote_last}, key dilution {key_dilution}, vote public key "{vote_pk:MaybeString}", selection public key "{selection_pk:MaybeString}", and state proof public key "{state_proof_pk:MaybeString}"'
+)
+def step_impl(
+    context,
+    sender,
+    nonpart,
+    vote_first,
+    vote_last,
+    key_dilution,
+    vote_pk,
+    selection_pk,
+    state_proof_pk,
+):
+    if nonpart:
+        context.transaction = transaction.KeyregNonparticipatingTxn(
+            sender, context.suggested_params
+        )
+        return
+
+    if len(vote_pk) == 0:
+        vote_pk = None
+    if len(selection_pk) == 0:
+        selection_pk = None
+    if len(state_proof_pk) == 0:
+        state_proof_pk = None
+
+    if vote_pk is None and selection_pk is None and state_proof_pk is None:
+        context.transaction = transaction.KeyregOfflineTxn(
+            sender, context.suggested_params
+        )
+        return
+
+    context.transaction = transaction.KeyregOnlineTxn(
+        sender,
+        context.suggested_params,
+        vote_pk,
+        selection_pk,
+        int(vote_first),
+        int(vote_last),
+        int(key_dilution),
+        sprfkey=state_proof_pk,
     )
 
 
@@ -2936,6 +3081,46 @@ def serialize_contract_to_json(context):
 def deserialize_json_to_contract(context):
     actual = abi.Contract.undictify(context.json_output)
     assert actual == context.abi_contract
+
+
+@given(
+    'a dryrun response file "{dryrun_response_file}" and a transaction at index "{txn_id}"'
+)
+def parse_dryrun_response_object(context, dryrun_response_file, txn_id):
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    dir_path = os.path.dirname(os.path.dirname(dir_path))
+    with open(
+        dir_path + "/test/features/resources/" + dryrun_response_file, "r"
+    ) as f:
+        drr_dict = json.loads(f.read())
+
+    context.dryrun_response_object = dryrun_results.DryrunResponse(drr_dict)
+    context.dryrun_txn_result = context.dryrun_response_object.txns[
+        int(txn_id)
+    ]
+
+
+@then('calling app trace produces "{app_trace_file}"')
+def dryrun_compare_golden(context, app_trace_file):
+    trace_expected = load_resource(app_trace_file, is_binary=False)
+
+    dryrun_trace = context.dryrun_txn_result.app_trace()
+
+    got_lines = dryrun_trace.split("\n")
+    expected_lines = trace_expected.split("\n")
+
+    print("{} {}".format(len(got_lines), len(expected_lines)))
+    for idx in range(len(got_lines)):
+        if got_lines[idx] != expected_lines[idx]:
+            print(
+                "  {}  \n{}\n{}\n".format(
+                    idx, got_lines[idx], expected_lines[idx]
+                )
+            )
+
+    assert trace_expected == dryrun_trace, "Expected \n{}\ngot\n{}\n".format(
+        trace_expected, dryrun_trace
+    )
 
 
 @then(
