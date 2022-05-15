@@ -469,6 +469,7 @@ class AtomicTransactionComposer:
         method_results = self.parse_response(drr_resp["txns"])
 
         dryrun_responses = []
+        dryrun_traces = []
         for idx, result in enumerate(method_results):
             dr_res = DryrunABIResult(
                 result.tx_id,
@@ -481,13 +482,14 @@ class AtomicTransactionComposer:
             if "cost" in dr_txn:
                 dr_res.cost = dr_txn["cost"]
 
+            dryrun_traces = DryrunResponse(dr_res)
             dryrun_responses.append(dr_res)
 
         return DryrunAtomicTransactionResponse(
             dryrun_response=drr,
             tx_ids=self.tx_ids,
             results=dryrun_responses,
-            traces=[DryrunResponse(drresp) for drresp in dryrun_responses],
+            traces=dryrun_traces,
         )
 
     def parse_response(self, txns: List[dict]) -> "List[ABIResult]":
@@ -768,7 +770,9 @@ class DryrunAtomicTransactionResponse:
         dryrun_response: dict,
         tx_ids: List[str],
         results: DryrunABIResult,
+        traces: List[DryrunResponse],
     ) -> None:
         self.dryrun_response = dryrun_response
         self.tx_ids = tx_ids
         self.abi_results = results
+        self.traces = traces
