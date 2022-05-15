@@ -593,9 +593,6 @@ class AtomicTransactionComposer:
         resps = []
 
         for i, tx_id in enumerate(self.tx_ids):
-            if i not in self.method_dict:
-                continue
-
             resps.append(client.pending_transaction_info(tx_id))
 
         method_results = self.parse_response(resps)
