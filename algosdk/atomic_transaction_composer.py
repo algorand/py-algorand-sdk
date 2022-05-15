@@ -4,8 +4,10 @@ import copy
 from enum import IntEnum
 from typing import Any, List, Optional, TypeVar, Union
 
+
 from algosdk import abi, error
 from algosdk.abi.address_type import AddressType
+from algosdk.dryrun_results import DryrunResponse
 from algosdk.future import transaction
 from algosdk.v2client import algod
 
@@ -466,7 +468,7 @@ class AtomicTransactionComposer:
 
         method_results = self.parse_response(drr_resp["txns"])
 
-        dryrun_results = []
+        dryrun_responses = []
         for idx, result in enumerate(method_results):
             dr_res = DryrunABIResult(
                 result.tx_id,
@@ -479,12 +481,13 @@ class AtomicTransactionComposer:
             if "cost" in dr_txn:
                 dr_res.cost = dr_txn["cost"]
 
-            dryrun_results.append(dr_res)
+            dryrun_responses.append(dr_res)
 
         return DryrunAtomicTransactionResponse(
             dryrun_response=drr,
             tx_ids=self.tx_ids,
-            results=dryrun_results,
+            results=dryrun_responses,
+            traces=[DryrunResponse(drresp) for drresp in dryrun_responses],
         )
 
     def parse_response(self, txns: List[dict]) -> "List[ABIResult]":
