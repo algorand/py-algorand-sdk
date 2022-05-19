@@ -1522,6 +1522,39 @@ class StateSchema:
         )
 
 
+class BoxReference:
+    def __init__(self, app_index: int, name: str):
+        self.app_index = app_index
+        self.name = name
+
+
+    def dictify(self):
+        d = dict()
+        if self.app_index:
+            d["i"] = self.app_index
+        if self.name:
+            d["n"] = self.name
+        od = OrderedDict(sorted(d.items()))
+        return od
+
+    @staticmethod
+    def undictify(d):
+        args = {
+            "app_index": d["i"] if "i" in d else None,
+            "name": d["n"] if "n" in d else None,
+        }
+        return args
+
+    def __eq__(self, other):
+        if not isinstance(other, BoxReference):
+            return False
+        return (
+            self.app_index == other.app_index
+            and self.name == other.name
+        )
+
+
+
 class OnComplete(IntEnum):
     # NoOpOC indicates that an application transaction will simply call its
     # ApprovalProgram
@@ -1572,6 +1605,7 @@ class ApplicationCallTxn(Transaction):
         foreign_apps (list[int], optional): list of other applications (identified by index) involved in call
         foreign_assets (list[int], optional): list of assets involved in call
         extra_pages (int, optional): additional program space for supporting larger programs.  A page is 1024 bytes.
+        boxes (list[(int, str)], optional): list of tuples specifying app id and key for boxes the app may access
 
     Attributes:
         sender (str)
@@ -1590,6 +1624,7 @@ class ApplicationCallTxn(Transaction):
         foreign_apps (list[int])
         foreign_assets (list[int])
         extra_pages (int)
+        boxes (list[(int, str)])
     """
 
     def __init__(
@@ -1610,6 +1645,7 @@ class ApplicationCallTxn(Transaction):
         lease=None,
         rekey_to=None,
         extra_pages=0,
+        boxes=None,
     ):
         Transaction.__init__(
             self, sender, sp, note, lease, constants.appcall_txn, rekey_to
@@ -1625,6 +1661,7 @@ class ApplicationCallTxn(Transaction):
         self.foreign_apps = self.int_list(foreign_apps)
         self.foreign_assets = self.int_list(foreign_assets)
         self.extra_pages = extra_pages
+        self.boxes = boxes
         if not sp.flat_fee:
             self.fee = max(
                 self.estimate_size() * self.fee, constants.min_txn_fee
@@ -1701,6 +1738,8 @@ class ApplicationCallTxn(Transaction):
             d["apas"] = self.foreign_assets
         if self.extra_pages:
             d["apep"] = self.extra_pages
+        if self.boxes:
+            d["apbx"] = [box.dictify() for box in self.boxes]
 
         d.update(super(ApplicationCallTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
@@ -1725,6 +1764,7 @@ class ApplicationCallTxn(Transaction):
             "foreign_apps": d["apfa"] if "apfa" in d else None,
             "foreign_assets": d["apas"] if "apas" in d else None,
             "extra_pages": d["apep"] if "apep" in d else 0,
+            "boxes":[BoxReference(**BoxReference.undictify(box)) for box in d["apbx"]] if "apbx" in d else None
         }
         if args["accounts"]:
             args["accounts"] = [
@@ -1749,6 +1789,7 @@ class ApplicationCallTxn(Transaction):
             and self.foreign_apps == other.foreign_apps
             and self.foreign_assets == other.foreign_assets
             and self.extra_pages == other.extra_pages
+            and self.boxes == other.boxes
         )
 
 
@@ -1852,6 +1893,7 @@ class ApplicationUpdateTxn(ApplicationCallTxn):
         note=None,
         lease=None,
         rekey_to=None,
+        boxes=None
     ):
         ApplicationCallTxn.__init__(
             self,
@@ -1868,6 +1910,7 @@ class ApplicationUpdateTxn(ApplicationCallTxn):
             note=note,
             lease=lease,
             rekey_to=rekey_to,
+            boxes=boxes
         )
 
 
@@ -1903,6 +1946,7 @@ class ApplicationDeleteTxn(ApplicationCallTxn):
         note=None,
         lease=None,
         rekey_to=None,
+        boxes=None,
     ):
         ApplicationCallTxn.__init__(
             self,
@@ -1917,6 +1961,7 @@ class ApplicationDeleteTxn(ApplicationCallTxn):
             note=note,
             lease=lease,
             rekey_to=rekey_to,
+            boxes=boxes,
         )
 
 
@@ -1952,6 +1997,7 @@ class ApplicationOptInTxn(ApplicationCallTxn):
         note=None,
         lease=None,
         rekey_to=None,
+        boxes=None
     ):
         ApplicationCallTxn.__init__(
             self,
@@ -1966,6 +2012,7 @@ class ApplicationOptInTxn(ApplicationCallTxn):
             note=note,
             lease=lease,
             rekey_to=rekey_to,
+            boxes=boxes
         )
 
 
@@ -2001,6 +2048,7 @@ class ApplicationCloseOutTxn(ApplicationCallTxn):
         note=None,
         lease=None,
         rekey_to=None,
+        boxes=None
     ):
         ApplicationCallTxn.__init__(
             self,
@@ -2015,6 +2063,7 @@ class ApplicationCloseOutTxn(ApplicationCallTxn):
             note=note,
             lease=lease,
             rekey_to=rekey_to,
+            boxes=boxes
         )
 
 
@@ -2050,6 +2099,7 @@ class ApplicationClearStateTxn(ApplicationCallTxn):
         note=None,
         lease=None,
         rekey_to=None,
+        boxes=None
     ):
         ApplicationCallTxn.__init__(
             self,
@@ -2064,6 +2114,7 @@ class ApplicationClearStateTxn(ApplicationCallTxn):
             note=note,
             lease=lease,
             rekey_to=rekey_to,
+            boxes=boxes
         )
 
 
@@ -2100,6 +2151,7 @@ class ApplicationNoOpTxn(ApplicationCallTxn):
         note=None,
         lease=None,
         rekey_to=None,
+        boxes=None
     ):
         ApplicationCallTxn.__init__(
             self,
@@ -2114,6 +2166,7 @@ class ApplicationNoOpTxn(ApplicationCallTxn):
             note=note,
             lease=lease,
             rekey_to=rekey_to,
+            boxes=boxes
         )
 
 
