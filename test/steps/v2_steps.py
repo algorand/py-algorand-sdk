@@ -1898,7 +1898,7 @@ def build_payment_transaction(
 
 
 @when(
-    'I build an application transaction with operation "{operation:MaybeString}", application-id {application_id}, sender "{sender:MaybeString}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", fee {fee}, first-valid {first_valid}, last-valid {last_valid}, genesis-hash "{genesis_hash:MaybeString}", extra-pages {extra_pages}'
+    'I build an application transaction with operation "{operation:MaybeString}", application-id {application_id}, sender "{sender:MaybeString}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", fee {fee}, first-valid {first_valid}, last-valid {last_valid}, genesis-hash "{genesis_hash:MaybeString}", extra-pages {extra_pages}, boxes "{boxes:MaybeString}"'
 )
 def build_app_transaction(
     context,
@@ -1920,6 +1920,7 @@ def build_app_transaction(
     last_valid,
     genesis_hash,
     extra_pages,
+    boxes,
 ):
     if operation == "none":
         operation = None
@@ -1953,6 +1954,19 @@ def build_app_transaction(
         app_accounts = [
             account_pubkey for account_pubkey in app_accounts.split(",")
         ]
+    if boxes == "none":
+        boxes = None
+    elif boxes:
+        box_str = boxes
+        boxes = []
+        app_id = 0
+        for token in box_str.split(","):
+            try:
+                app_id = int(token)
+            except ValueError:
+                boxes.append((app_id, token))
+        # Sanity check that input correctly alternates between int and str.
+        assert len(boxes) == len(box_str.split(",")) // 2
     if genesis_hash == "none":
         genesis_hash = None
     local_schema = transaction.StateSchema(
@@ -1985,6 +1999,7 @@ def build_app_transaction(
         note=None,
         lease=None,
         rekey_to=None,
+        boxes=boxes,
     )
 
 

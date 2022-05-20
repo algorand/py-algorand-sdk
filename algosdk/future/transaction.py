@@ -1734,7 +1734,7 @@ class ApplicationCallTxn(Transaction):
         if self.extra_pages:
             d["apep"] = self.extra_pages
         if self.boxes:
-            d["apbx"] = [box.dictify() for box in self.boxes]
+            d["apbx"] = self.boxes #[box.dictify() for box in self.boxes]
 
         d.update(super(ApplicationCallTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
