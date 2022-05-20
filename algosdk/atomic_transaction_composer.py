@@ -173,6 +173,7 @@ class AtomicTransactionComposer:
         note: bytes = None,
         lease: bytes = None,
         rekey_to: str = None,
+        boxes: List[transaction.BoxReference] = None
     ) -> "AtomicTransactionComposer":
         """
         Add a smart contract method call to this atomic group.
@@ -350,6 +351,7 @@ class AtomicTransactionComposer:
             lease=lease,
             rekey_to=rekey_to,
             extra_pages=extra_pages,
+            boxes=boxes,
         )
         txn_with_signer = TransactionWithSigner(method_txn, signer)
         txn_list.append(txn_with_signer)
