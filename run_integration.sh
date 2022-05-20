@@ -7,7 +7,8 @@ pushd $rootdir
 
 # Reset test harness
 rm -rf test-harness
-git clone --single-branch --branch master https://github.com/algorand/algorand-sdk-testing.git test-harness
+# TODO: Before merging, change branch back to master
+git clone --single-branch --branch box-reference https://github.com/algorand/algorand-sdk-testing.git test-harness
 
 ## Copy feature files into the project resources
 mkdir -p test/features
