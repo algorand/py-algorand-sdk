@@ -1600,7 +1600,7 @@ class ApplicationCallTxn(Transaction):
         foreign_apps (list[int], optional): list of other applications (identified by index) involved in call
         foreign_assets (list[int], optional): list of assets involved in call
         extra_pages (int, optional): additional program space for supporting larger programs.  A page is 1024 bytes.
-        boxes (list[(int, str)], optional): list of tuples specifying app id and key for boxes the app may access
+        boxes(list[(int, str)], optional): list of tuples specifying app id and key for boxes the app may access
 
     Attributes:
         sender (str)
@@ -1874,6 +1874,8 @@ class ApplicationUpdateTxn(ApplicationCallTxn):
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
+        boxes(list[(int, str)], optional): list of tuples specifying app id and key for boxes the app may access
+
 
     Attributes:
         See ApplicationCallTxn
@@ -1929,6 +1931,7 @@ class ApplicationDeleteTxn(ApplicationCallTxn):
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
+        boxes(list[(int, str)], optional): list of tuples specifying app id and key for boxes the app may access
 
     Attributes:
         See ApplicationCallTxn
@@ -1980,6 +1983,7 @@ class ApplicationOptInTxn(ApplicationCallTxn):
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
+        boxes(list[(int, str)], optional): list of tuples specifying app id and key for boxes the app may access
 
     Attributes:
         See ApplicationCallTxn
@@ -2031,6 +2035,7 @@ class ApplicationCloseOutTxn(ApplicationCallTxn):
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
+        boxes(list[(int, str)], optional): list of tuples specifying app id and key for boxes the app may access
 
     Attributes:
         See ApplicationCallTxn
@@ -2082,6 +2087,7 @@ class ApplicationClearStateTxn(ApplicationCallTxn):
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
+        boxes(list[(int, str)], optional): list of tuples specifying app id and key for boxes the app may access
 
     Attributes:
         See ApplicationCallTxn
@@ -2134,6 +2140,7 @@ class ApplicationNoOpTxn(ApplicationCallTxn):
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
+        boxes(list[(int, str)], optional): list of tuples specifying app id and key for boxes the app may access
 
     Attributes:
         See ApplicationCallTxn
