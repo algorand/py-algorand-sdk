@@ -1813,6 +1813,7 @@ class ApplicationCreateTxn(ApplicationCallTxn):
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
         extra_pages(int, optional): provides extra program size
+        boxes(list[(int, str)], optional): list of tuples specifying app id and key for boxes the app may access
 
     Attributes:
         See ApplicationCallTxn
@@ -1835,6 +1836,7 @@ class ApplicationCreateTxn(ApplicationCallTxn):
         lease=None,
         rekey_to=None,
         extra_pages=0,
+        boxes=None,
     ):
         ApplicationCallTxn.__init__(
             self,
@@ -1854,6 +1856,7 @@ class ApplicationCreateTxn(ApplicationCallTxn):
             lease=lease,
             rekey_to=rekey_to,
             extra_pages=extra_pages,
+            boxes=boxes,
         )
 
 
