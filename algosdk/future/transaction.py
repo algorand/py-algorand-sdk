@@ -1527,7 +1527,6 @@ class BoxReference:
         self.app_index = app_index
         self.name = name
 
-
     def dictify(self):
         d = dict()
         if self.app_index:
@@ -1548,11 +1547,7 @@ class BoxReference:
     def __eq__(self, other):
         if not isinstance(other, BoxReference):
             return False
-        return (
-            self.app_index == other.app_index
-            and self.name == other.name
-        )
-
+        return self.app_index == other.app_index and self.name == other.name
 
 
 class OnComplete(IntEnum):
@@ -1764,7 +1759,12 @@ class ApplicationCallTxn(Transaction):
             "foreign_apps": d["apfa"] if "apfa" in d else None,
             "foreign_assets": d["apas"] if "apas" in d else None,
             "extra_pages": d["apep"] if "apep" in d else 0,
-            "boxes":[BoxReference(**BoxReference.undictify(box)) for box in d["apbx"]] if "apbx" in d else None
+            "boxes": [
+                BoxReference(**BoxReference.undictify(box))
+                for box in d["apbx"]
+            ]
+            if "apbx" in d
+            else None,
         }
         if args["accounts"]:
             args["accounts"] = [
@@ -1893,7 +1893,7 @@ class ApplicationUpdateTxn(ApplicationCallTxn):
         note=None,
         lease=None,
         rekey_to=None,
-        boxes=None
+        boxes=None,
     ):
         ApplicationCallTxn.__init__(
             self,
@@ -1910,7 +1910,7 @@ class ApplicationUpdateTxn(ApplicationCallTxn):
             note=note,
             lease=lease,
             rekey_to=rekey_to,
-            boxes=boxes
+            boxes=boxes,
         )
 
 
@@ -1997,7 +1997,7 @@ class ApplicationOptInTxn(ApplicationCallTxn):
         note=None,
         lease=None,
         rekey_to=None,
-        boxes=None
+        boxes=None,
     ):
         ApplicationCallTxn.__init__(
             self,
@@ -2012,7 +2012,7 @@ class ApplicationOptInTxn(ApplicationCallTxn):
             note=note,
             lease=lease,
             rekey_to=rekey_to,
-            boxes=boxes
+            boxes=boxes,
         )
 
 
@@ -2048,7 +2048,7 @@ class ApplicationCloseOutTxn(ApplicationCallTxn):
         note=None,
         lease=None,
         rekey_to=None,
-        boxes=None
+        boxes=None,
     ):
         ApplicationCallTxn.__init__(
             self,
@@ -2063,7 +2063,7 @@ class ApplicationCloseOutTxn(ApplicationCallTxn):
             note=note,
             lease=lease,
             rekey_to=rekey_to,
-            boxes=boxes
+            boxes=boxes,
         )
 
 
@@ -2099,7 +2099,7 @@ class ApplicationClearStateTxn(ApplicationCallTxn):
         note=None,
         lease=None,
         rekey_to=None,
-        boxes=None
+        boxes=None,
     ):
         ApplicationCallTxn.__init__(
             self,
@@ -2114,7 +2114,7 @@ class ApplicationClearStateTxn(ApplicationCallTxn):
             note=note,
             lease=lease,
             rekey_to=rekey_to,
-            boxes=boxes
+            boxes=boxes,
         )
 
 
@@ -2151,7 +2151,7 @@ class ApplicationNoOpTxn(ApplicationCallTxn):
         note=None,
         lease=None,
         rekey_to=None,
-        boxes=None
+        boxes=None,
     ):
         ApplicationCallTxn.__init__(
             self,
@@ -2166,7 +2166,7 @@ class ApplicationNoOpTxn(ApplicationCallTxn):
             note=note,
             lease=lease,
             rekey_to=rekey_to,
-            boxes=boxes
+            boxes=boxes,
         )
 
 

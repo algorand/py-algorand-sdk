@@ -173,7 +173,7 @@ class AtomicTransactionComposer:
         note: bytes = None,
         lease: bytes = None,
         rekey_to: str = None,
-        boxes: List[transaction.BoxReference] = None
+        boxes: List[transaction.BoxReference] = None,
     ) -> "AtomicTransactionComposer":
         """
         Add a smart contract method call to this atomic group.
