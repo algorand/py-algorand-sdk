@@ -1528,6 +1528,9 @@ class BoxReference:
     def translate_box_references(
         references: List[Tuple[int, str]], foreign_apps: List[int]
     ) -> List["BoxReference"]:
+        if not references:
+            return []
+
         box_references = []
         for ref in references:
             # Try coercing reference id and name.
