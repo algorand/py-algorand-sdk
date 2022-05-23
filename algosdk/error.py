@@ -222,3 +222,8 @@ class ABIEncodingError(Exception):
 class AtomicTransactionComposerError(Exception):
     def __init__(self, msg):
         super().__init__(msg)
+
+
+class InvalidForeignAppIdError(Exception):
+    def __init__(self, msg):
+        super().__init__(msg)

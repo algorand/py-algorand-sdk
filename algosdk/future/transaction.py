@@ -1524,6 +1524,25 @@ class BoxReference:
         self.app_index = app_index
         self.name = name
 
+    @staticmethod
+    def translate_box_references(
+        references: List[Tuple[int, str]], foreign_apps: List[int]
+    ) -> List["BoxReference"]:
+        box_references = []
+        for ref in references:
+            ref_id, ref_name = ref
+            index = 0
+            try:
+                # Foreign apps start from index 1; index 0 is its own app ID.
+                index = foreign_apps.index(ref_id) + 1
+            except ValueError:
+                # TODO: What if the app id is itself; i.e. valid, but not explicitly in foreign app array?
+                raise error.InvalidForeignAppIdError(
+                    f"Box ref with appId {ref_id} not in foreign-apps"
+                )
+            box_references.append(BoxReference(index, ref_name))
+        return box_references
+
     def dictify(self):
         d = dict()
         if self.app_index:

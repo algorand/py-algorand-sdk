@@ -4140,25 +4140,56 @@ class TestABIInteraction(unittest.TestCase):
         )
 
 
+class TestBoxReference(unittest.TestCase):
+    def test_translate_box_references(self):
+        # Test case: reference input, foreign app array, expected output
+        test_cases = [
+            ([], [], []),
+            (
+                [(100, "potato")],
+                [100],
+                [transaction.BoxReference(1, "potato")],
+            ),
+            (
+                [(777, "tomato"), (888, "pomato")],
+                [100, 777, 888, 1000],
+                [
+                    transaction.BoxReference(2, "tomato"),
+                    transaction.BoxReference(3, "pomato"),
+                ],
+            ),
+        ]
+        for test_case in test_cases:
+            expected = test_case[2]
+            actual = transaction.BoxReference.translate_box_references(
+                test_case[0], test_case[1]
+            )
+
+            self.assertEqual(len(expected), len(actual))
+            for i, actual_refs in enumerate(actual):
+                self.assertEqual(expected[i], actual_refs)
+
+
 if __name__ == "__main__":
     to_run = [
-        TestPaymentTransaction,
-        TestAssetConfigConveniences,
-        TestAssetTransferConveniences,
-        TestApplicationTransactions,
-        TestMnemonic,
-        TestAddress,
-        TestMultisig,
-        TestMsgpack,
-        TestSignBytes,
-        TestLogic,
-        TestLogicSig,
-        TestLogicSigAccount,
-        TestLogicSigTransaction,
-        TestDryrun,
-        TestABIType,
-        TestABIEncoding,
-        TestABIInteraction,
+        # TestPaymentTransaction,
+        # TestAssetConfigConveniences,
+        # TestAssetTransferConveniences,
+        # TestApplicationTransactions,
+        # TestMnemonic,
+        # TestAddress,
+        # TestMultisig,
+        # TestMsgpack,
+        # TestSignBytes,
+        # TestLogic,
+        # TestLogicSig,
+        # TestLogicSigAccount,
+        # TestLogicSigTransaction,
+        # TestDryrun,
+        # TestABIType,
+        # TestABIEncoding,
+        # TestABIInteraction,
+        TestBoxReference,
     ]
     loader = unittest.TestLoader()
     suites = [
