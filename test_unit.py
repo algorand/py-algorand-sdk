@@ -4142,17 +4142,35 @@ class TestABIInteraction(unittest.TestCase):
 
 class TestBoxReference(unittest.TestCase):
     def test_translate_box_references(self):
-        # Test case: reference input, foreign app array, expected output
+        # Test case: reference input, foreign app array, caller app id, expected output
         test_cases = [
-            ([], [], []),
+            ([], [], 9999, []),
             (
                 [(100, "potato")],
                 [100],
+                9999,
+                [transaction.BoxReference(1, "potato")],
+            ),
+            (
+                [(9999, "potato"), (0, "tomato")],
+                [100],
+                9999,
+                [
+                    transaction.BoxReference(0, "potato"),
+                    transaction.BoxReference(0, "tomato"),
+                ],
+            ),
+            # Self referencing its own app id in foreign array.
+            (
+                [(100, "potato")],
+                [100],
+                100,
                 [transaction.BoxReference(1, "potato")],
             ),
             (
                 [(777, "tomato"), (888, "pomato")],
                 [100, 777, 888, 1000],
+                9999,
                 [
                     transaction.BoxReference(2, "tomato"),
                     transaction.BoxReference(3, "pomato"),
@@ -4160,9 +4178,9 @@ class TestBoxReference(unittest.TestCase):
             ),
         ]
         for test_case in test_cases:
-            expected = test_case[2]
+            expected = test_case[3]
             actual = transaction.BoxReference.translate_box_references(
-                test_case[0], test_case[1]
+                test_case[0], test_case[1], test_case[2]
             )
 
             self.assertEqual(len(expected), len(actual))
@@ -4190,7 +4208,7 @@ class TestBoxReference(unittest.TestCase):
         for test_case in test_cases_id_error:
             with self.assertRaises(test_case[2]) as e:
                 transaction.BoxReference.translate_box_references(
-                    test_case[0], test_case[1]
+                    test_case[0], test_case[1], 9999
                 )
 
 

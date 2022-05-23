@@ -1526,7 +1526,9 @@ class BoxReference:
 
     @staticmethod
     def translate_box_references(
-        references: List[Tuple[int, str]], foreign_apps: List[int]
+        references: List[Tuple[int, str]],
+        foreign_apps: List[int],
+        this_app_id: int,
     ) -> List["BoxReference"]:
         if not references:
             return []
@@ -1540,10 +1542,15 @@ class BoxReference:
                 # Foreign apps start from index 1; index 0 is its own app ID.
                 index = foreign_apps.index(ref_id) + 1
             except ValueError:
-                # TODO: What if the app id is itself; i.e. valid, but not explicitly in foreign app array?
-                raise error.InvalidForeignAppIdError(
-                    f"Box ref with appId {ref_id} not in foreign-apps"
-                )
+                # Check if the app referenced is itself after checking the
+                # foreign apps array (in case its own app id is in its own
+                # foreign apps array).
+                if ref_id == 0 or ref_id == this_app_id:
+                    pass
+                else:
+                    raise error.InvalidForeignAppIdError(
+                        f"Box ref with appId {ref_id} not in foreign-apps"
+                    )
             box_references.append(BoxReference(index, ref_name))
         return box_references
 
@@ -1676,7 +1683,7 @@ class ApplicationCallTxn(Transaction):
         self.foreign_apps = self.int_list(foreign_apps)
         self.foreign_assets = self.int_list(foreign_assets)
         self.extra_pages = extra_pages
-        self.boxes = BoxReference.translate_box_references(boxes, self.foreign_apps)  # type: ignore
+        self.boxes = BoxReference.translate_box_references(boxes, self.foreign_apps, self.index)  # type: ignore
         if not sp.flat_fee:
             self.fee = max(
                 self.estimate_size() * self.fee, constants.min_txn_fee
