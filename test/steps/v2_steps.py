@@ -2139,6 +2139,7 @@ def build_app_txn_with_transient(
         note=None,
         lease=None,
         rekey_to=None,
+        boxes=None,
     )
 
 

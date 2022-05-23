@@ -211,6 +211,7 @@ class AtomicTransactionComposer:
                 with the same sender and lease can be confirmed in this
                 transaction's valid rounds
             rekey_to (str, optional): additionally rekey the sender to this address
+            boxes (list[(int, str)], optional): list of tuples specifying app id and key for boxes the app may access
 
         """
         if self.status != AtomicTransactionComposerStatus.BUILDING:
