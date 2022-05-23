@@ -2,27 +2,17 @@ import base64
 import json
 import os
 import re
-import urllib
 import unittest
+import urllib
 from datetime import datetime
 from pathlib import Path
-import pytest
+from test.steps.steps import algod_port
+from test.steps.steps import token as daemon_token
 from typing import List, Union
 from urllib.request import Request, urlopen
 
-# TODO: This file is WAY TOO BIG. Break it up into logically related chunks.
-
-from behave import (
-    given,
-    when,
-    then,
-    register_type,
-    step,
-)  # pylint: disable=no-name-in-module
-
-from glom import glom
 import parse
-
+import pytest
 from algosdk import (
     abi,
     account,
@@ -36,17 +26,24 @@ from algosdk import (
 from algosdk.abi.contract import NetworkInfo
 from algosdk.error import ABITypeError, AlgodHTTPError, IndexerHTTPError
 from algosdk.future import transaction
+from algosdk.testing.dryrun import DryrunTestCaseMixin
 from algosdk.v2client import *
 from algosdk.v2client.models import (
-    DryrunRequest,
-    DryrunSource,
     Account,
     ApplicationLocalState,
+    DryrunRequest,
+    DryrunSource,
 )
-from algosdk.testing.dryrun import DryrunTestCaseMixin
+from behave import (
+    given,
+    register_type,  # pylint: disable=no-name-in-module
+    step,
+    then,
+    when,
+)
+from glom import glom
 
-from test.steps.steps import token as daemon_token
-from test.steps.steps import algod_port
+# TODO: This file is WAY TOO BIG. Break it up into logically related chunks.
 
 
 @parse.with_pattern(r".*")
