@@ -1530,7 +1530,8 @@ class BoxReference:
     ) -> List["BoxReference"]:
         box_references = []
         for ref in references:
-            ref_id, ref_name = ref
+            # Try coercing reference id and name.
+            ref_id, ref_name = int(ref[0]), str(ref[1])
             index = 0
             try:
                 # Foreign apps start from index 1; index 0 is its own app ID.
@@ -1672,7 +1673,7 @@ class ApplicationCallTxn(Transaction):
         self.foreign_apps = self.int_list(foreign_apps)
         self.foreign_assets = self.int_list(foreign_assets)
         self.extra_pages = extra_pages
-        self.boxes = boxes
+        self.boxes = BoxReference.translate_box_references(boxes, self.foreign_apps)  # type: ignore
         if not sp.flat_fee:
             self.fee = max(
                 self.estimate_size() * self.fee, constants.min_txn_fee
