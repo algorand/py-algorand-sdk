@@ -1873,6 +1873,19 @@ def split_and_process_app_args(in_args):
     return app_args
 
 
+def split_and_process_boxes(box_str: str):
+    boxes = []
+    app_id = 0
+    for token in box_str.split(","):
+        try:
+            app_id = int(token)
+        except ValueError:
+            boxes.append((app_id, token))
+    # Sanity check that input correctly alternates between int and str.
+    assert len(boxes) == len(box_str.split(",")) // 2
+    return boxes
+
+
 @step(
     'I build a payment transaction with sender "{sender:MaybeString}", receiver "{receiver:MaybeString}", amount {amount}, close remainder to "{close_remainder_to:MaybeString}"'
 )
@@ -1954,16 +1967,7 @@ def build_app_transaction(
     if boxes == "none":
         boxes = None
     elif boxes:
-        box_str = boxes
-        boxes = []
-        app_id = 0
-        for token in box_str.split(","):
-            try:
-                app_id = int(token)
-            except ValueError:
-                boxes.append((app_id, token))
-        # Sanity check that input correctly alternates between int and str.
-        assert len(boxes) == len(box_str.split(",")) // 2
+        boxes = split_and_process_boxes(boxes)
     if genesis_hash == "none":
         genesis_hash = None
     local_schema = transaction.StateSchema(
@@ -2060,7 +2064,7 @@ def create_transient_and_fund(context, transient_fund_amount):
 
 
 @step(
-    'I build an application transaction with the transient account, the current application, suggested params, operation "{operation}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", extra-pages {extra_pages}'
+    'I build an application transaction with the transient account, the current application, suggested params, operation "{operation}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", extra-pages {extra_pages}, boxes "{boxes:MaybeString}"'
 )
 def build_app_txn_with_transient(
     context,
@@ -2076,6 +2080,7 @@ def build_app_txn_with_transient(
     foreign_assets,
     app_accounts,
     extra_pages,
+    boxes,
 ):
     application_id = 0
     if operation == "none":
@@ -2120,6 +2125,10 @@ def build_app_txn_with_transient(
         app_accounts = [
             account_pubkey for account_pubkey in app_accounts.split(",")
         ]
+    if boxes == "none":
+        boxes = None
+    elif boxes:
+        boxes = split_and_process_boxes(boxes)
 
     sp = context.app_acl.suggested_params()
     context.app_transaction = transaction.ApplicationCallTxn(
