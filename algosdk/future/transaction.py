@@ -1,7 +1,7 @@
 import base64
 from collections import OrderedDict
 from enum import IntEnum
-from typing import List, Tuple, Union
+from typing import List, Union
 
 import msgpack
 from algosdk import account, constants, encoding, error, logic, transaction
@@ -1652,22 +1652,23 @@ class ApplicationCallTxn(Transaction):
         return teal
 
     @staticmethod
+    def as_bytes(e):
+        """Confirm or coerce element to bytes."""
+        if isinstance(e, (bytes, bytearray)):
+            return e
+        if isinstance(e, str):
+            return e.encode()
+        if isinstance(e, int):
+            # Uses 8 bytes, big endian to match TEAL's btoi
+            return e.to_bytes(8, "big")  # raises for negative or too big
+        assert False, "{} is not bytes, str, or int".format(e)
+
+    @staticmethod
     def bytes_list(lst):
         """Confirm or coerce list elements to bytes. Return None for empty/false lst."""
-
-        def as_bytes(e):
-            if isinstance(e, (bytes, bytearray)):
-                return e
-            if isinstance(e, str):
-                return e.encode()
-            if isinstance(e, int):
-                # Uses 8 bytes, big endian to match TEAL's btoi
-                return e.to_bytes(8, "big")  # raises for negative or too big
-            assert False, "{} is not bytes, str, or int".format(e)
-
         if not lst:
             return None
-        return [as_bytes(elt) for elt in lst]
+        return [ApplicationCallTxn.as_bytes(elt) for elt in lst]
 
     @staticmethod
     def int_list(lst):

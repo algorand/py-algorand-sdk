@@ -5,13 +5,13 @@ from algosdk import error
 
 
 class BoxReference:
-    def __init__(self, app_index: int, name: str):
+    def __init__(self, app_index: int, name: bytes):
         self.app_index = app_index
         self.name = name
 
     @staticmethod
     def translate_box_references(
-        references: List[Tuple[int, str]],
+        references: List[Tuple[int, bytes]],
         foreign_apps: List[int],
         this_app_id: int,
     ) -> List["BoxReference"]:
@@ -21,7 +21,9 @@ class BoxReference:
         box_references = []
         for ref in references:
             # Try coercing reference id and name.
-            ref_id, ref_name = int(ref[0]), str(ref[1])
+            from algosdk.future.transaction import ApplicationCallTxn
+
+            ref_id, ref_name = int(ref[0]), ApplicationCallTxn.as_bytes(ref[1])
             index = 0
             try:
                 # Foreign apps start from index 1; index 0 is its own app ID.

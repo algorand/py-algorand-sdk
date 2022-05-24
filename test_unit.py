@@ -22,19 +22,19 @@ from algosdk import (
 )
 from algosdk.abi import (
     ABIType,
-    UintType,
-    UfixedType,
-    BoolType,
-    ByteType,
     AddressType,
-    StringType,
     ArrayDynamicType,
     ArrayStaticType,
-    TupleType,
-    Method,
-    Interface,
+    BoolType,
+    ByteType,
     Contract,
+    Interface,
+    Method,
     NetworkInfo,
+    StringType,
+    TupleType,
+    UfixedType,
+    UintType,
 )
 from algosdk.future import template, transaction
 from algosdk.testing import dryrun
@@ -4149,15 +4149,15 @@ class TestBoxReference(unittest.TestCase):
                 [(100, "potato")],
                 [100],
                 9999,
-                [transaction.BoxReference(1, "potato")],
+                [transaction.BoxReference(1, "potato".encode())],
             ),
             (
                 [(9999, "potato"), (0, "tomato")],
                 [100],
                 9999,
                 [
-                    transaction.BoxReference(0, "potato"),
-                    transaction.BoxReference(0, "tomato"),
+                    transaction.BoxReference(0, "potato".encode()),
+                    transaction.BoxReference(0, "tomato".encode()),
                 ],
             ),
             # Self referencing its own app id in foreign array.
@@ -4165,15 +4165,15 @@ class TestBoxReference(unittest.TestCase):
                 [(100, "potato")],
                 [100],
                 100,
-                [transaction.BoxReference(1, "potato")],
+                [transaction.BoxReference(1, "potato".encode())],
             ),
             (
                 [(777, "tomato"), (888, "pomato")],
                 [100, 777, 888, 1000],
                 9999,
                 [
-                    transaction.BoxReference(2, "tomato"),
-                    transaction.BoxReference(3, "pomato"),
+                    transaction.BoxReference(2, "tomato".encode()),
+                    transaction.BoxReference(3, "pomato".encode()),
                 ],
             ),
         ]
