@@ -10,7 +10,7 @@ class BoxReference:
 
     Args:
         app_index (int): index of the application in the foreign app array
-        name (bytes): name of the box in bytes
+        name (bytes): key for the box in bytes
     """
 
     def __init__(self, app_index: int, name: bytes):
@@ -52,6 +52,12 @@ class BoxReference:
         """
         Translates a list of tuples with app IDs and names into an array of
         BoxReferences with foreign indices.
+
+        Args:
+            references (list[(int, bytes)]): list of tuples specifying app id
+                and key for boxes the app may access
+            foreign_apps (list[int]): list of other applications in appl call
+            this_app_id (int): app ID of the box being references
         """
         if not references:
             return []
