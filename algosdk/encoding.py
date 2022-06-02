@@ -237,3 +237,15 @@ def checksum(data):
     chksum = SHA512.new(truncate="256")
     chksum.update(data)
     return chksum.digest()
+
+
+def encode_as_bytes(e):
+    """Confirm or coerce element to bytes."""
+    if isinstance(e, (bytes, bytearray)):
+        return e
+    if isinstance(e, str):
+        return e.encode()
+    if isinstance(e, int):
+        # Uses 8 bytes, big endian to match TEAL's btoi
+        return e.to_bytes(8, "big")  # raises for negative or too big
+    raise TypeError("{} is not bytes, str, or int".format(e))

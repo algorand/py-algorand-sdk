@@ -10,32 +10,12 @@ from unittest.mock import Mock
 
 from nacl.signing import SigningKey
 
-from algosdk import (
-    account,
-    constants,
-    encoding,
-    error,
-    logic,
-    mnemonic,
-    util,
-    wordlist,
-)
-from algosdk.abi import (
-    ABIType,
-    AddressType,
-    ArrayDynamicType,
-    ArrayStaticType,
-    BoolType,
-    ByteType,
-    Contract,
-    Interface,
-    Method,
-    NetworkInfo,
-    StringType,
-    TupleType,
-    UfixedType,
-    UintType,
-)
+from algosdk import (account, constants, encoding, error, logic, mnemonic,
+                     util, wordlist)
+from algosdk.abi import (ABIType, AddressType, ArrayDynamicType,
+                         ArrayStaticType, BoolType, ByteType, Contract,
+                         Interface, Method, NetworkInfo, StringType, TupleType,
+                         UfixedType, UintType)
 from algosdk.future import template, transaction
 from algosdk.testing import dryrun
 
@@ -1313,7 +1293,7 @@ class TestApplicationTransactions(unittest.TestCase):
             transaction.ApplicationCallTxn(
                 self.sender, params, 10, oc, app_args=[2, 3, 0]
             )  # ints work
-            with self.assertRaises(AssertionError):
+            with self.assertRaises(TypeError):
                 transaction.ApplicationCallTxn(
                     self.sender, params, 10, oc, app_args=[3.4]
                 )  # floats don't

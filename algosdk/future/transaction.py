@@ -1636,9 +1636,8 @@ class ApplicationCallTxn(Transaction):
         """Confirm the argument is a StateSchema, or false which is coerced to None"""
         if not schema or not schema.dictify():
             return None  # Coerce false/empty values to None, to help __eq__
-        assert isinstance(
-            schema, StateSchema
-        ), "{} is not a StateSchema".format(schema)
+        if not isinstance(schema, StateSchema):
+            raise TypeError("{} is not a StateSchema".format(schema))
         return schema
 
     @staticmethod
@@ -1646,29 +1645,16 @@ class ApplicationCallTxn(Transaction):
         """Confirm the argument is bytes-like, or false which is coerced to None"""
         if not teal:
             return None  # Coerce false values like "" to None, to help __eq__
-        assert isinstance(
-            teal, (bytes, bytearray)
-        ), "Program {} is not bytes".format(teal)
+        if not isinstance(teal, (bytes, bytearray)):
+            raise TypeError("Program {} is not bytes".format(teal))
         return teal
-
-    @staticmethod
-    def as_bytes(e):
-        """Confirm or coerce element to bytes."""
-        if isinstance(e, (bytes, bytearray)):
-            return e
-        if isinstance(e, str):
-            return e.encode()
-        if isinstance(e, int):
-            # Uses 8 bytes, big endian to match TEAL's btoi
-            return e.to_bytes(8, "big")  # raises for negative or too big
-        assert False, "{} is not bytes, str, or int".format(e)
 
     @staticmethod
     def bytes_list(lst):
         """Confirm or coerce list elements to bytes. Return None for empty/false lst."""
         if not lst:
             return None
-        return [ApplicationCallTxn.as_bytes(elt) for elt in lst]
+        return [encoding.encode_as_bytes(elt) for elt in lst]
 
     @staticmethod
     def int_list(lst):

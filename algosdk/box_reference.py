@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from typing import List, Tuple
 
-from algosdk import error
+from algosdk import encoding, error
 
 
 class BoxReference:
@@ -28,9 +28,7 @@ class BoxReference:
         this_app_id: int,
     ) -> "BoxReference":
         # Try coercing reference id and name.
-        from algosdk.future.transaction import ApplicationCallTxn
-
-        ref_id, ref_name = int(ref[0]), ApplicationCallTxn.as_bytes(ref[1])
+        ref_id, ref_name = int(ref[0]), encoding.encode_as_bytes(ref[1])
         index = 0
         try:
             # Foreign apps start from index 1; index 0 is its own app ID.
