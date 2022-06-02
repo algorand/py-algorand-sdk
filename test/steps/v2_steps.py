@@ -1855,34 +1855,44 @@ def operation_string_to_enum(operation):
         )
 
 
+# Takes in a tuple where first element is the encoding and second element is value.
+# If there is only one element, then it is assumed to be an int.
+def process_app_args(sub_arg):
+    if len(sub_arg) == 1:  # assume int
+        return int(sub_arg[0])
+    elif sub_arg[0] == "str":
+        return bytes(sub_arg[1], "ascii")
+    elif sub_arg[0] == "b64":
+        return base64.decodebytes(sub_arg[1].encode())
+    elif sub_arg[0] == "int":
+        return int(sub_arg[1])
+    elif sub_arg[0] == "addr":
+        return encoding.decode_address(sub_arg[1])
+
+
 def split_and_process_app_args(in_args):
     split_args = in_args.split(",")
     sub_args = [sub_arg.split(":") for sub_arg in split_args]
     app_args = []
     for sub_arg in sub_args:
-        if len(sub_arg) == 1:  # assume int
-            app_args.append(int(sub_arg[0]))
-        elif sub_arg[0] == "str":
-            app_args.append(bytes(sub_arg[1], "ascii"))
-        elif sub_arg[0] == "b64":
-            app_args.append(base64.decodebytes(sub_arg[1].encode()))
-        elif sub_arg[0] == "int":
-            app_args.append(int(sub_arg[1]))
-        elif sub_arg[0] == "addr":
-            app_args.append(encoding.decode_address(sub_arg[1]))
+        app_args.append(process_app_args(sub_arg))
     return app_args
 
 
 def split_and_process_boxes(box_str: str):
     boxes = []
     app_id = 0
-    for token in box_str.split(","):
+    split_args = box_str.split(",")
+    # Box strings alternate between the app ID and the encoded app arg.
+    for token in split_args:
         try:
             app_id = int(token)
         except ValueError:
-            boxes.append((app_id, token))
+            sub_arg = token.split(":")
+            sub_arg = process_app_args(sub_arg)
+            boxes.append((app_id, sub_arg))
     # Sanity check that input correctly alternates between int and str.
-    assert len(boxes) == len(box_str.split(",")) // 2
+    assert len(boxes) == len(split_args) // 2
     return boxes
 
 

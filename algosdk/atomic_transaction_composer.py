@@ -261,6 +261,7 @@ class AtomicTransactionComposer:
         accounts = accounts[:] if accounts else []
         foreign_apps = foreign_apps[:] if foreign_apps else []
         foreign_assets = foreign_assets[:] if foreign_assets else []
+        boxes = boxes[:] if boxes else []
 
         app_args = []
         raw_values = []
