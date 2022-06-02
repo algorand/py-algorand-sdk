@@ -1507,11 +1507,10 @@ class StateSchema:
 
     @staticmethod
     def undictify(d):
-        args = {
-            "num_uints": d["nui"] if "nui" in d else None,
-            "num_byte_slices": d["nbs"] if "nbs" in d else None,
-        }
-        return args
+        return StateSchema(
+            num_uints=d["nui"] if "nui" in d else None,
+            num_byte_slices=d["nbs"] if "nbs" in d else None,
+        )
 
     def __eq__(self, other):
         if not isinstance(other, StateSchema):
@@ -1712,10 +1711,10 @@ class ApplicationCallTxn(Transaction):
         args = {
             "index": d["apid"] if "apid" in d else None,
             "on_complete": d["apan"] if "apan" in d else None,
-            "local_schema": StateSchema(**StateSchema.undictify(d["apls"]))
+            "local_schema": StateSchema.undictify(d["apls"])
             if "apls" in d
             else None,
-            "global_schema": StateSchema(**StateSchema.undictify(d["apgs"]))
+            "global_schema": StateSchema.undictify(d["apgs"])
             if "apgs" in d
             else None,
             "approval_program": d["apap"] if "apap" in d else None,
