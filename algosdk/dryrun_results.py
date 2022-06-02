@@ -37,6 +37,8 @@ class DryrunTransactionResult:
             "app-call-messages",
             "local-deltas",
             "global-delta",
+            "budget-added",
+            "budget-consumed",
             "cost",
             "logic-sig-messages",
             "logic-sig-disassembly",
