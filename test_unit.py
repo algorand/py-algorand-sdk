@@ -10,12 +10,32 @@ from unittest.mock import Mock
 
 from nacl.signing import SigningKey
 
-from algosdk import (account, constants, encoding, error, logic, mnemonic,
-                     util, wordlist)
-from algosdk.abi import (ABIType, AddressType, ArrayDynamicType,
-                         ArrayStaticType, BoolType, ByteType, Contract,
-                         Interface, Method, NetworkInfo, StringType, TupleType,
-                         UfixedType, UintType)
+from algosdk import (
+    account,
+    constants,
+    encoding,
+    error,
+    logic,
+    mnemonic,
+    util,
+    wordlist,
+)
+from algosdk.abi import (
+    ABIType,
+    AddressType,
+    ArrayDynamicType,
+    ArrayStaticType,
+    BoolType,
+    ByteType,
+    Contract,
+    Interface,
+    Method,
+    NetworkInfo,
+    StringType,
+    TupleType,
+    UfixedType,
+    UintType,
+)
 from algosdk.future import template, transaction
 from algosdk.testing import dryrun
 
