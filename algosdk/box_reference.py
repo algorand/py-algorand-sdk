@@ -14,6 +14,10 @@ class BoxReference:
     """
 
     def __init__(self, app_index: int, name: bytes):
+        if app_index < 0:
+            raise ValueError(
+                f"Box app index must be a non-negative integer: {app_index}"
+            )
         self.app_index = app_index
         self.name = name
 
@@ -35,9 +39,7 @@ class BoxReference:
             # Check if the app referenced is itself after checking the
             # foreign apps array (in case its own app id is in its own
             # foreign apps array).
-            if ref_id == 0 or ref_id == this_app_id:
-                pass
-            else:
+            if ref_id != 0 and ref_id != this_app_id:
                 raise error.InvalidForeignAppIdError(
                     f"Box ref with appId {ref_id} not in foreign-apps"
                 )
