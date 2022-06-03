@@ -1,5 +1,21 @@
 # Changelog
 
+# BOX-STORAGE-VERSION TBD
+
+## Changed
+
+- `class StateSchema`'s method `undictify()` now returns a `StateSchema` object instead of a python `dict`
+
+# v1.14.0
+
+## What's Changed
+
+* Update client API to support new cost fields in dryrun result by @algoidurovic in https://github.com/algorand/py-algorand-sdk/pull/336
+
+## New Contributors
+
+* @algoidurovic made their first contribution in https://github.com/algorand/py-algorand-sdk/pull/336
+
 # v1.13.1
 ## Fixed
 - Fix readthedocs by providing root requirements.txt (#332)
