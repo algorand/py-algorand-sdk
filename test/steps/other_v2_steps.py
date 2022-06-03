@@ -3,7 +3,6 @@ import json
 import os
 import urllib
 import unittest
-import urllib
 from datetime import datetime
 from pathlib import Path
 from urllib.request import Request, urlopen
@@ -18,7 +17,7 @@ from behave import (
 
 from glom import glom
 import parse
-import pytest
+
 from algosdk import (
     dryrun_results,
     encoding,
@@ -27,24 +26,17 @@ from algosdk import (
 )
 from algosdk.error import AlgodHTTPError
 from algosdk.future import transaction
-from algosdk.testing.dryrun import DryrunTestCaseMixin
 from algosdk.v2client import *
 from algosdk.v2client.models import (
-    Account,
-    ApplicationLocalState,
     DryrunRequest,
     DryrunSource,
+    Account,
+    ApplicationLocalState,
 )
-from behave import (
-    given,
-    register_type,  # pylint: disable=no-name-in-module
-    step,
-    then,
-    when,
-)
-from glom import glom
+from algosdk.testing.dryrun import DryrunTestCaseMixin
 
-# TODO: This file is WAY TOO BIG. Break it up into logically related chunks.
+from test.steps.steps import token as daemon_token
+from test.steps.steps import algod_port
 
 
 @parse.with_pattern(r".*")
