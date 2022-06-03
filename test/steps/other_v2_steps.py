@@ -3,7 +3,6 @@ import json
 import os
 import urllib
 import unittest
-import urllib
 from datetime import datetime
 from pathlib import Path
 from urllib.request import Request, urlopen
@@ -15,10 +14,8 @@ from behave import (
     register_type,
     step,
 )  # pylint: disable=no-name-in-module
-
 from glom import glom
 import parse
-import pytest
 
 from algosdk import (
     dryrun_results,
@@ -38,8 +35,7 @@ from algosdk.v2client.models import (
 
 from algosdk.testing.dryrun import DryrunTestCaseMixin
 
-from test.steps.steps import token as daemon_token
-from test.steps.steps import algod_port
+from test.steps.steps import algod_port, token as daemon_token
 
 
 @parse.with_pattern(r".*")
