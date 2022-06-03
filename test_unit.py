@@ -1,6 +1,7 @@
 import base64
 import copy
 import os
+import pytest
 import random
 import string
 import sys
@@ -4138,6 +4139,39 @@ class TestABIInteraction(unittest.TestCase):
             [m.get_signature() for m in c.methods],
             ["add(uint64,uint64)void", "multiply(uint64,uint64)void"],
         )
+
+
+class TestEncoding(unittest.TestCase):
+    """
+    Miscellanous unit tests for functions in `encoding.py` not covered elsewhere
+    """
+
+    def test_encode_as_bytes(self):
+        bs = b"blahblah"
+        assert bs == encoding.encode_as_bytes(bs)
+
+        ba = bytearray("blueblue", "utf-8")
+        assert ba == encoding.encode_as_bytes(ba)
+
+        s = "i am a ho hum string"
+        assert s.encode() == encoding.encode_as_bytes(s)
+
+        i = 42
+        assert i.to_bytes(8, "big") == encoding.encode_as_bytes(i)
+
+        for bad_type in [
+            13.37,
+            type(self),
+            None,
+            {"hi": "there"},
+            ["hello", "goodbye"],
+        ]:
+            with pytest.raises(TypeError) as te:
+                encoding.encode_as_bytes(bad_type)
+
+            assert f"{bad_type} is not bytes, bytearray, str, or int" == str(
+                te.value
+            )
 
 
 class TestBoxReference(unittest.TestCase):
