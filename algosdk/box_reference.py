@@ -38,7 +38,7 @@ class BoxReference:
             # foreign apps array (in case its own app id is in its own
             # foreign apps array).
             if ref_id != 0 and ref_id != this_app_id:
-                raise error.InvalidForeignAppIdError(
+                raise error.InvalidForeignIndexError(
                     f"Box ref with appId {ref_id} not in foreign-apps"
                 )
         return BoxReference(index, ref_name)
@@ -80,11 +80,10 @@ class BoxReference:
 
     @staticmethod
     def undictify(d):
-        args = {
-            "app_index": d["i"] if "i" in d else None,
-            "name": d["n"] if "n" in d else None,
-        }
-        return args
+        return BoxReference(
+            d["i"] if "i" in d else None,
+            d["n"] if "n" in d else None,
+        )
 
     def __eq__(self, other):
         if not isinstance(other, BoxReference):
