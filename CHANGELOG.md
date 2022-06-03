@@ -1,5 +1,11 @@
 # Changelog
 
+# BOX-STORAGE-VERSION TBD
+
+## Changed
+
+- `class StateSchema`'s method `undictify()` now returns a `StateSchema` object instead of a python `dict`
+
 # v1.14.0
 
 ## What's Changed
