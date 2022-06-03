@@ -248,4 +248,4 @@ def encode_as_bytes(e):
     if isinstance(e, int):
         # Uses 8 bytes, big endian to match TEAL's btoi
         return e.to_bytes(8, "big")  # raises for negative or too big
-    raise TypeError("{} is not bytes, str, or int".format(e))
+    raise TypeError("{} is not bytes, bytearray, str, or int".format(e))
