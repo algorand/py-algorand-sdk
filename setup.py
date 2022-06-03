@@ -9,7 +9,7 @@ setuptools.setup(
     description="Algorand SDK in Python",
     author="Algorand",
     author_email="pypiservice@algorand.com",
-    version="v1.13.1",
+    version="v1.14.0",
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="MIT",
