@@ -4265,6 +4265,7 @@ if __name__ == "__main__":
         TestABIType,
         TestABIEncoding,
         TestABIInteraction,
+        TestEncoding,
         TestBoxReference,
     ]
     loader = unittest.TestLoader()
