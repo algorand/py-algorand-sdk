@@ -4143,7 +4143,7 @@ class TestABIInteraction(unittest.TestCase):
 
 class TestEncoding(unittest.TestCase):
     """
-    Miscellanous unit tests for functions in `encoding.py` not covered elsewhere
+    Miscellaneous unit tests for functions in `encoding.py` not covered elsewhere
     """
 
     def test_encode_as_bytes(self):
