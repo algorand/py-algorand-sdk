@@ -4224,17 +4224,17 @@ class TestBoxReference(unittest.TestCase):
     def test_translate_invalid_box_references(self):
         # Test case: reference input, foreign app array, error
         test_cases_id_error = [
-            ([(1, "tomato")], [], error.InvalidForeignAppIdError),
-            ([(-1, "tomato")], [1], error.InvalidForeignAppIdError),
+            ([(1, "tomato")], [], error.InvalidForeignIndexError),
+            ([(-1, "tomato")], [1], error.InvalidForeignIndexError),
             (
                 [(444, "pomato")],
                 [2, 3, 100, 888],
-                error.InvalidForeignAppIdError,
+                error.InvalidForeignIndexError,
             ),
             (
                 [(2, "tomato"), (444, "pomato")],
                 [2, 3, 100, 888],
-                error.InvalidForeignAppIdError,
+                error.InvalidForeignIndexError,
             ),
             ([("tomato", "tomato")], [1], ValueError),
         ]
