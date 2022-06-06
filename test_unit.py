@@ -4237,6 +4237,7 @@ class TestBoxReference(unittest.TestCase):
                 error.InvalidForeignIndexError,
             ),
             ([("tomato", "tomato")], [1], ValueError),
+            ([(2, "zomato")], [], error.InvalidForeignIndexError),
         ]
 
         for test_case in test_cases_id_error:
