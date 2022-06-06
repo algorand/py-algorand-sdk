@@ -33,7 +33,7 @@ class BoxReference:
         try:
             # Foreign apps start from index 1; index 0 is its own app ID.
             index = foreign_apps.index(ref_id) + 1
-        except ValueError:
+        except (ValueError, AttributeError):
             # Check if the app referenced is itself after checking the
             # foreign apps array (in case its own app id is in its own
             # foreign apps array).
