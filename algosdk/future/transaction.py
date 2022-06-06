@@ -1715,7 +1715,7 @@ class ApplicationCallTxn(Transaction):
             "foreign_assets": d["apas"] if "apas" in d else None,
             "extra_pages": d["apep"] if "apep" in d else 0,
             "boxes": [
-                BoxReference(**BoxReference.undictify(box))
+                BoxReference.undictify(box)
                 for box in d["apbx"]
             ]
             if "apbx" in d
