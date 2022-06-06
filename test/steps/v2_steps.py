@@ -2566,7 +2566,6 @@ def create_atomic_transaction_composer(context):
     context.atomic_transaction_composer = (
         atomic_transaction_composer.AtomicTransactionComposer()
     )
-    context.method_list = []
 
 
 @step("I make a transaction signer for the {account_type} account.")
@@ -2587,9 +2586,6 @@ def create_transaction_signer(context, account_type):
 @step('I create the Method object from method signature "{method_signature}"')
 def build_abi_method(context, method_signature):
     context.abi_method = abi.Method.from_signature(method_signature)
-    if not hasattr(context, "method_list"):
-        context.method_list = []
-    context.method_list.append(context.abi_method)
 
 
 @step("I create a transaction with signer with the current transaction.")
@@ -2908,9 +2904,7 @@ def check_atomic_transaction_composer_response(context, returns):
                 assert result.decode_error is None
                 continue
             expected_bytes = base64.b64decode(expected)
-            expected_value = context.method_list[i].returns.type.decode(
-                expected_bytes
-            )
+            expected_value = result.method.returns.type.decode(expected_bytes)
 
             assert expected_bytes == result.raw_value, "actual is {}".format(
                 result.raw_value
