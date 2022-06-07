@@ -994,15 +994,15 @@ def spin_results_satisfy(context, result_index, regex):
     assert re.search(regex, spin), f"{spin} did not match the regex {regex}"
 
 
-
-
-@when('I create an Interface object from the Method object')
+@when("I create an Interface object from the Method object")
 def create_interface_from_method(context):
-    context.iface = abi.Interface('', [context.abi_method])
+    context.iface = abi.Interface("", [context.abi_method])
 
-@when('I create a Contract object from the Method object')
+
+@when("I create a Contract object from the Method object")
 def create_contract_from_method(context):
-    context.contract = abi.Contract('', [context.abi_method])
+    context.contract = abi.Contract("", [context.abi_method])
+
 
 @when('I get the method from the Interface by name "{name}"')
 def get_interface_method_by_name(context, name):
@@ -1011,6 +1011,7 @@ def get_interface_method_by_name(context, name):
     except KeyError as ke:
         context.error = str(ke)
 
+
 @when('I get the method from the Contract by name "{name}"')
 def get_contract_method_by_name(context, name):
     try:
@@ -1018,13 +1019,16 @@ def get_contract_method_by_name(context, name):
     except KeyError as ke:
         context.error = str(ke)
 
-@then('the produced method signature should equal "{methodsig}" if there is an error it is equal to "{error:MaybeString}"')
+
+@then(
+    'the produced method signature should equal "{methodsig}" if there is an error it is equal to "{error:MaybeString}"'
+)
 def check_found_method_or_error(context, methodsig, error: str = None):
-    if hasattr(context, 'retrieved_method'):
+    if hasattr(context, "retrieved_method"):
         assert error == ""
         assert methodsig == context.retrieved_method.get_signature()
-    elif hasattr(context, 'error'):
+    elif hasattr(context, "error"):
         assert error != ""
-        assert error in context.error 
-    else: 
+        assert error in context.error
+    else:
         assert False, "Both retrieved method and error string are None"
