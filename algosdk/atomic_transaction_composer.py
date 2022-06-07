@@ -2,7 +2,7 @@ import base64
 import copy
 from abc import ABC, abstractmethod
 from enum import IntEnum
-from typing import Any, List, Optional, TypeVar, Union
+from typing import Any, List, Optional, Tuple, TypeVar, Union
 
 from algosdk import abi, error
 from algosdk.abi.address_type import AddressType
@@ -173,7 +173,7 @@ class AtomicTransactionComposer:
         note: bytes = None,
         lease: bytes = None,
         rekey_to: str = None,
-        boxes: List[transaction.BoxReference] = None,
+        boxes: List[Tuple[int, bytes]] = None,
     ) -> "AtomicTransactionComposer":
         """
         Add a smart contract method call to this atomic group.
