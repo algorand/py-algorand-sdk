@@ -113,6 +113,14 @@ def application_info(context, app_id):
     context.response = context.acl.application_info(int(app_id))
 
 
+@when(
+    'we make a GetApplicationBoxByName call for applicationID {app_id} with box name "{box_name}"'
+)
+def application_box_by_name(context, app_id, box_name):
+    boxes = split_and_process_app_args(box_name)[0]
+    context.response = context.acl.application_box_by_name(app_id, boxes)
+
+
 @when("we make a LookupApplications call with applicationID {app_id}")
 def lookup_application(context, app_id):
     context.response = context.icl.applications(int(app_id))
