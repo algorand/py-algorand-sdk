@@ -64,8 +64,8 @@ class Contract:
         )
 
     def get_method_by_name(self, name: str) -> Method:
-        methods_filtered = filter(
-            lambda method: method.name == name, self.methods
+        methods_filtered = list(
+            filter(lambda method: method.name == name, self.methods)
         )
 
         if len(methods_filtered) > 1:
