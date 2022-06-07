@@ -49,3 +49,20 @@ class Interface:
         method_list = [Method.undictify(method) for method in d["methods"]]
         desc = d["desc"] if "desc" in d else None
         return Interface(name=name, desc=desc, methods=method_list)
+
+    def get_method_by_name(self, name: str) -> Method:
+        methods_filtered = filter(
+            lambda method: method.name == name, self.methods
+        )
+
+        if len(methods_filtered) > 1:
+            raise KeyError(
+                "Found {} methods with the same name {}".format(
+                    len(methods_filtered), name
+                )
+            )
+
+        if len(methods_filtered) == 0:
+            raise KeyError("No method {} found".format(name))
+
+        return methods_filtered[0]

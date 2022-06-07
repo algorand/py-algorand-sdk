@@ -711,26 +711,3 @@ class AtomicTransactionResponse:
         self.confirmed_round = confirmed_round
         self.tx_ids = tx_ids
         self.abi_results = results
-
-
-def get_method_by_name(
-    iface: Union[abi.Contract, abi.Interface], name: str
-) -> abi.Method:
-    if not isinstance(iface, abi.Contract) and not isinstance(
-        iface, abi.Interface
-    ):
-        raise TypeError("Expected Interface or Contract, got {}".format(iface))
-
-    method = None
-    for m in iface.methods:
-        if m.name == name:
-            if m is not None:
-                raise KeyError(
-                    "Found multiple methods with the same name {}".format(name)
-                )
-            method = m
-
-    if method is None:
-        raise KeyError("No method {} found".format(name))
-
-    return method
