@@ -66,6 +66,6 @@ class Interface:
             )
 
         if len(methods_filtered) == 0:
-            raise KeyError("No method {} found".format(name))
+            raise KeyError("found 0 methods for {}".format(name))
 
         return methods_filtered[0]
