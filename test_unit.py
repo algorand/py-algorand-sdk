@@ -4236,7 +4236,7 @@ class TestBoxReference(unittest.TestCase):
                 [2, 3, 100, 888],
                 error.InvalidForeignIndexError,
             ),
-            ([("tomato", "tomato")], [1], ValueError),
+            ([("tomato", "tomato")], [1], TypeError),
             ([(2, "zomato")], None, error.InvalidForeignIndexError),
         ]
 

@@ -1,5 +1,6 @@
 import base64
 from collections import OrderedDict
+from typing import Union
 
 import msgpack
 from Cryptodome.Hash import SHA512
@@ -239,7 +240,9 @@ def checksum(data):
     return chksum.digest()
 
 
-def encode_as_bytes(e):
+def encode_as_bytes(
+    e: Union[bytes, bytearray, str, int]
+) -> Union[bytes, bytearray]:
     """Confirm or coerce element to bytes."""
     if isinstance(e, (bytes, bytearray)):
         return e

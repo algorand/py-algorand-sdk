@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from algosdk import encoding, error
 
@@ -23,12 +23,15 @@ class BoxReference:
 
     @staticmethod
     def translate_box_reference(
-        ref: Tuple[int, bytes],
+        ref: Tuple[int, Union[bytes, bytearray, str, int]],
         foreign_apps: List[int],
         this_app_id: int,
     ) -> "BoxReference":
-        # Try coercing reference id and name.
-        ref_id, ref_name = int(ref[0]), encoding.encode_as_bytes(ref[1])
+        # Try checking reference id and name type.
+        ref_id, ref_name = ref[0], encoding.encode_as_bytes(ref[1])
+        if not isinstance(ref_id, int):
+            raise TypeError("Box reference ID must be an int")
+
         index = 0
         try:
             # Foreign apps start from index 1; index 0 is its own app ID.
@@ -45,7 +48,7 @@ class BoxReference:
 
     @staticmethod
     def translate_box_references(
-        references: List[Tuple[int, bytes]],
+        references: List[Tuple[int, Union[bytes, bytearray, str, int]]],
         foreign_apps: List[int],
         this_app_id: int,
     ) -> List["BoxReference"]:
