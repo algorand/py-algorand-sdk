@@ -994,14 +994,29 @@ def spin_results_satisfy(context, result_index, regex):
     assert re.search(regex, spin), f"{spin} did not match the regex {regex}"
 
 
+@when(
+    'I create another Method object from method signature "{extramethod:MaybeString}"'
+)
+def make_extra_method(context, extramethod):
+    if extramethod != "":
+        context.extramethod = abi.Method.from_signature(extramethod)
+
+
 @when("I create an Interface object from the Method object")
 def create_interface_from_method(context):
-    context.iface = abi.Interface("", [context.abi_method])
+    methods = [context.abi_method]
+    if hasattr(context, "extramethod"):
+        methods.append(context.extramethod)
+
+    context.iface = abi.Interface("", methods)
 
 
 @when("I create a Contract object from the Method object")
 def create_contract_from_method(context):
-    context.contract = abi.Contract("", [context.abi_method])
+    methods = [context.abi_method]
+    if hasattr(context, "extramethod"):
+        methods.append(context.extramethod)
+    context.contract = abi.Contract("", methods)
 
 
 @when('I get the method from the Interface by name "{name}"')
@@ -1021,7 +1036,7 @@ def get_contract_method_by_name(context, name):
 
 
 @then(
-    'the produced method signature should equal "{methodsig}" if there is an error it is equal to "{error:MaybeString}"'
+    'the produced method signature should equal "{methodsig}". If there is an error it begins with "{error:MaybeString}"'
 )
 def check_found_method_or_error(context, methodsig, error: str = None):
     if hasattr(context, "retrieved_method"):

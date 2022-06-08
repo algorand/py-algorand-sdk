@@ -70,7 +70,7 @@ class Contract:
 
         if len(methods_filtered) > 1:
             raise KeyError(
-                "Found {} methods with the same name {}".format(
+                "found {} methods with the same name {}".format(
                     len(methods_filtered),
                     ",".join(
                         [method.get_signature() for method in methods_filtered]
