@@ -995,28 +995,24 @@ def spin_results_satisfy(context, result_index, regex):
 
 
 @when(
-    'I create another Method object from method signature "{extramethod:MaybeString}"'
+    'I append to my Method objects list in the case of a non-empty signature "{method:MaybeString}"'
 )
-def make_extra_method(context, extramethod):
-    if extramethod != "":
-        context.extramethod = abi.Method.from_signature(extramethod)
+def make_extra_method(context, method):
+    if not hasattr(context, 'methods'):
+        context.methods = []
+
+    if method != "":
+        context.methods.append(abi.Method.from_signature(method))
 
 
-@when("I create an Interface object from the Method object")
+@when("I create an Interface object from my Method objects list")
 def create_interface_from_method(context):
-    methods = [context.abi_method]
-    if hasattr(context, "extramethod"):
-        methods.append(context.extramethod)
-
-    context.iface = abi.Interface("", methods)
+    context.iface = abi.Interface("", context.methods)
 
 
-@when("I create a Contract object from the Method object")
+@when("I create a Contract object from my Method objects list")
 def create_contract_from_method(context):
-    methods = [context.abi_method]
-    if hasattr(context, "extramethod"):
-        methods.append(context.extramethod)
-    context.contract = abi.Contract("", methods)
+    context.contract = abi.Contract("", context.methods)
 
 
 @when('I get the method from the Interface by name "{name}"')
