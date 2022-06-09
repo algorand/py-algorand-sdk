@@ -998,7 +998,7 @@ def spin_results_satisfy(context, result_index, regex):
     'I append to my Method objects list in the case of a non-empty signature "{method:MaybeString}"'
 )
 def make_extra_method(context, method):
-    if not hasattr(context, 'methods'):
+    if not hasattr(context, "methods"):
         context.methods = []
 
     if method != "":

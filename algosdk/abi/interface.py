@@ -51,9 +51,9 @@ class Interface:
         return Interface(name=name, desc=desc, methods=method_list)
 
     def get_method_by_name(self, name: str) -> Method:
-        methods_filtered = list(
-            filter(lambda method: method.name == name, self.methods)
-        )
+        methods_filtered = [
+            method for method in self.methods if method.name == name
+        ]
 
         if len(methods_filtered) > 1:
             raise KeyError(
