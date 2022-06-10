@@ -136,7 +136,7 @@ class AlgodClient:
             application_id (int): The ID of the application to look up.
             box_name (bytes): The name or key of the box.
         """
-        box_name_encoded = parse.quote(box_name)
+        box_name_encoded = parse.quote(box_name,safe='')
         req = (
             "/applications/"
             + str(application_id)
