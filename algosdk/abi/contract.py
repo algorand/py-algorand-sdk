@@ -66,6 +66,7 @@ class Contract:
     def get_method_by_name(self, name: str) -> Method:
         return get_method_by_name(self.methods, name)
 
+
 class NetworkInfo:
     """
     Represents network information.
