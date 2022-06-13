@@ -1,7 +1,7 @@
 import json
 from typing import Dict, List, Union
 
-from algosdk.abi.method import Method
+from algosdk.abi.method import Method, get_method_by_name
 
 
 class Contract:
@@ -64,23 +64,7 @@ class Contract:
         )
 
     def get_method_by_name(self, name: str) -> Method:
-        methods_filtered = [m for m in self.methods if m.name == name]
-
-        if len(methods_filtered) > 1:
-            raise KeyError(
-                "found {} methods with the same name {}".format(
-                    len(methods_filtered),
-                    ",".join(
-                        [method.get_signature() for method in methods_filtered]
-                    ),
-                )
-            )
-
-        if len(methods_filtered) == 0:
-            raise KeyError("found 0 methods for {}".format(name))
-
-        return methods_filtered[0]
-
+        return get_method_by_name(self.methods, name)
 
 class NetworkInfo:
     """

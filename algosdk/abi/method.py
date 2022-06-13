@@ -126,6 +126,28 @@ class Method:
         return Method(name=name, args=arg_list, returns=return_obj, desc=desc)
 
 
+def get_method_by_name(methods: List[Method], name: str) -> Method:
+    methods_filtered = [
+        method for method in methods if method.name == name
+    ]
+
+    if len(methods_filtered) > 1:
+        raise KeyError(
+            "found {} methods with the same name {}".format(
+                len(methods_filtered),
+                ",".join(
+                    [method.get_signature() for method in methods_filtered]
+                ),
+            )
+        )
+
+    if len(methods_filtered) == 0:
+        raise KeyError("found 0 methods for {}".format(name))
+
+    return methods_filtered[0]
+
+
+
 class Argument:
     """
     Represents an argument for a ABI method
