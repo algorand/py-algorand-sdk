@@ -541,14 +541,15 @@ class AtomicTransactionComposer:
             except Exception as e:
                 decode_error = e
 
-            method_results.append(ABIResult(
-                tx_id=tx_id,
-                raw_value=raw_value,
-                return_value=return_value,
-                decode_error=decode_error,
-                tx_info=tx_info,
-                method=self.method_dict[i],
-            )
+            method_results.append(
+                ABIResult(
+                    tx_id=tx_id,
+                    raw_value=raw_value,
+                    return_value=return_value,
+                    decode_error=decode_error,
+                    tx_info=tx_info,
+                    method=self.method_dict[i],
+                )
             )
 
         return method_results
