@@ -681,6 +681,11 @@ def abi_method_adder(
         assert re.search(
             exception_regex, str(atce)
         ), f"{atce} did not satisfy the expected regular expression {exception_regex}"
+        return
+
+    assert (
+        exception_regex == "none"
+    ), f"should have encountered an AtomicTransactionComposerError satisfying the regex pattern {exception_regex}, but no such exception has been detected"
 
 
 @step(
