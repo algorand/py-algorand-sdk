@@ -604,7 +604,7 @@ def txns_by_addr(
 @when(
     'we make a Lookup Account Transactions call against account "{account:MaybeString}" with NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index}'
 )
-def txns_by_addr(
+def txns_by_addr2(
     context,
     account,
     notePrefixB64,
@@ -1404,27 +1404,6 @@ def algod_v2_client_at_host_port_and_token(context, host, port, token):
 def algod_v2_client(context):
     algod_address = "http://localhost" + ":" + str(algod_port)
     context.app_acl = algod.AlgodClient(daemon_token, algod_address)
-
-
-@step(
-    'I sign and submit the transaction, saving the txid. If there is an error it is "{error_string:MaybeString}".'
-)
-def sign_submit_save_txid_with_error(context, error_string):
-    try:
-        signed_app_transaction = context.app_transaction.sign(
-            context.transient_sk
-        )
-        context.app_txid = context.app_acl.send_transaction(
-            signed_app_transaction
-        )
-    except Exception as e:
-        if not error_string or error_string not in str(e):
-            raise RuntimeError(
-                "error string "
-                + error_string
-                + " not in actual error "
-                + str(e)
-            )
 
 
 @when('I compile a teal program "{program}"')

@@ -7,7 +7,11 @@ import pytest
 
 from algosdk import abi, atomic_transaction_composer, encoding, mnemonic
 from algosdk.abi.contract import NetworkInfo
-from algosdk.error import ABITypeError, IndexerHTTPError
+from algosdk.error import (
+    ABITypeError,
+    IndexerHTTPError,
+    AtomicTransactionComposerError,
+)
 from algosdk.future import transaction
 
 from test.steps.other_v2_steps import read_program
@@ -85,14 +89,30 @@ def s512_256_uint64(witness):
     return int.from_bytes(encoding.checksum(witness)[:8], "big")
 
 
+@step(
+    'I sign and submit the transaction, saving the txid. If there is an error it is "{error_string:MaybeString}".'
+)
+def sign_submit_save_txid_with_error(context, error_string):
+    try:
+        signed_app_transaction = context.app_transaction.sign(
+            context.transient_sk
+        )
+        context.app_txid = context.app_acl.send_transaction(
+            signed_app_transaction
+        )
+    except Exception as e:
+        if not error_string or error_string not in str(e):
+            raise RuntimeError(
+                "error string "
+                + error_string
+                + " not in actual error "
+                + str(e)
+            )
+
+
 @when("we make a GetApplicationByID call for applicationID {app_id}")
 def application_info(context, app_id):
     context.response = context.acl.application_info(int(app_id))
-
-
-@when("we make a LookupApplications call with applicationID {app_id}")
-def lookup_application(context, app_id):
-    context.response = context.icl.applications(int(app_id))
 
 
 @when(
@@ -159,8 +179,13 @@ def lookup_application_include_all2(
         context.response = json.loads(str(e))
 
 
+@when("we make a LookupApplications call with applicationID {app_id}")
+def lookup_application(context, app_id):
+    context.response = context.icl.applications(int(app_id))
+
+
 @when("I use {indexer} to lookup application with {application_id}")
-def lookup_application(context, indexer, application_id):
+def lookup_application2(context, indexer, application_id):
     context.response = context.icls[indexer].applications(
         application_id=int(application_id)
     )
@@ -512,35 +537,37 @@ def add_transaction_to_composer(context):
     )
 
 
-def process_abi_args(context, method, arg_tokens):
+def process_abi_args(context, method, arg_tokens, erase_empty_tokens=True):
+    if erase_empty_tokens:
+        arg_tokens = [tok for tok in arg_tokens if tok]
     method_args = []
-    for arg_index, arg in enumerate(method.args):
-        # Skip arg if it does not have a type
+    for arg_index, arg_token in enumerate(arg_tokens):
+        if arg_index >= len(method.args):
+            method_args.append(arg_token)
+            continue
+
+        arg = method.args[arg_index]
         if isinstance(arg.type, abi.ABIType):
-            method_arg = arg.type.decode(
-                base64.b64decode(arg_tokens[arg_index])
-            )
+            method_arg = arg.type.decode(base64.b64decode(arg_token))
             method_args.append(method_arg)
         elif arg.type == abi.ABIReferenceType.ACCOUNT:
-            method_arg = abi.AddressType().decode(
-                base64.b64decode(arg_tokens[arg_index])
-            )
+            method_arg = abi.AddressType().decode(base64.b64decode(arg_token))
             method_args.append(method_arg)
         elif (
             arg.type == abi.ABIReferenceType.APPLICATION
             or arg.type == abi.ABIReferenceType.ASSET
         ):
-            parts = arg_tokens[arg_index].split(":")
+            parts = arg_token.split(":")
             if len(parts) == 2 and parts[0] == "ctxAppIdx":
                 method_arg = context.app_ids[int(parts[1])]
             else:
                 method_arg = abi.UintType(64).decode(
-                    base64.b64decode(arg_tokens[arg_index])
+                    base64.b64decode(arg_token)
                 )
             method_args.append(method_arg)
         else:
             # Append the transaction signer as is
-            method_args.append(arg_tokens[arg_index])
+            method_args.append(arg_token)
     return method_args
 
 
@@ -621,6 +648,7 @@ def abi_method_adder(
     app_args = process_abi_args(
         context, context.abi_method, context.method_args
     )
+    context.app_args = app_args
     note = None
     if force_unique_transactions:
         note = (
@@ -628,21 +656,38 @@ def abi_method_adder(
             + context.nonce.encode()
         )
 
-    context.atomic_transaction_composer.add_method_call(
-        app_id=app_id,
-        method=context.abi_method,
-        sender=sender,
-        sp=context.suggested_params,
-        signer=context.transaction_signer,
-        method_args=app_args,
-        on_complete=operation_string_to_enum(operation),
-        local_schema=local_schema,
-        global_schema=global_schema,
-        approval_program=approval_program,
-        clear_program=clear_program,
-        extra_pages=extra_pages,
-        note=note,
-    )
+    context.most_recent_added_method_exception = None
+    try:
+        context.atomic_transaction_composer.add_method_call(
+            app_id=app_id,
+            method=context.abi_method,
+            sender=sender,
+            sp=context.suggested_params,
+            signer=context.transaction_signer,
+            method_args=app_args,
+            on_complete=operation_string_to_enum(operation),
+            local_schema=local_schema,
+            global_schema=global_schema,
+            approval_program=approval_program,
+            clear_program=clear_program,
+            extra_pages=extra_pages,
+            note=note,
+        )
+    except AtomicTransactionComposerError as atce:
+        context.most_recent_added_method_exception = atce
+
+
+@then(
+    'the most recently added method call has an exception which satisfies "{regex}".'
+)
+def most_recently_added_method_exception_satisfies(context, regex):
+    most_recent_exception = context.most_recent_added_method_exception
+    if regex == "none":
+        assert most_recent_exception is None
+        return
+    assert re.search(
+        regex, str(most_recent_exception)
+    ), f"{most_recent_exception} did not satisfy {regex}. FYI: method_args={context.method_args}; app_args={context.app_args}"
 
 
 @step(
@@ -827,7 +872,7 @@ def serialize_method_to_json(context):
 @when(
     'I create the Method object with name "{method_name}" method description "{method_desc}" first argument type "{first_arg_type}" first argument description "{first_arg_desc}" second argument type "{second_arg_type}" second argument description "{second_arg_desc}" and return type "{return_arg_type}"'
 )
-def create_method_from_test_with_arg_name(
+def create_method_from_test_with_arg_name_and_desc(
     context,
     method_name,
     method_desc,
