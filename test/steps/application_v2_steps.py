@@ -610,6 +610,7 @@ def abi_method_adder(
     local_ints=None,
     extra_pages=None,
     force_unique_transactions=False,
+    exception_regex="none",
 ):
     if account_type == "transient":
         sender = context.transient_pk
@@ -656,7 +657,6 @@ def abi_method_adder(
             + context.nonce.encode()
         )
 
-    context.most_recent_added_method_exception = None
     try:
         context.atomic_transaction_composer.add_method_call(
             app_id=app_id,
@@ -674,31 +674,26 @@ def abi_method_adder(
             note=note,
         )
     except AtomicTransactionComposerError as atce:
-        context.most_recent_added_method_exception = atce
+        assert (
+            exception_regex != "none"
+        ), f"cucumber step asserted that no exception resulted, but the following exception actually occurred: {atce}"
 
-
-@then(
-    'the most recently added method call has an exception which satisfies "{regex}".'
-)
-def most_recently_added_method_exception_satisfies(context, regex):
-    most_recent_exception = context.most_recent_added_method_exception
-    if regex == "none":
-        assert most_recent_exception is None
-        return
-    assert re.search(
-        regex, str(most_recent_exception)
-    ), f"{most_recent_exception} did not satisfy {regex}. FYI: method_args={context.method_args}; app_args={context.app_args}"
+        assert re.search(
+            exception_regex, str(atce)
+        ), f"{atce} did not satisfy the expected regular expression {exception_regex}"
 
 
 @step(
-    'I add a nonced method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments.'
+    'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments; any resulting exception satisfies the regex "{exception_regex}".'
 )
-def add_abi_method_call_nonced(context, account_type, operation):
+def add_abi_method_call_with_exception(
+    context, account_type, operation, exception_regex
+):
     abi_method_adder(
         context,
         account_type,
         operation,
-        force_unique_transactions=True,
+        exception_regex=exception_regex,
     )
 
 
@@ -760,6 +755,18 @@ def add_abi_method_call_creation(
         True,
         approval_program_path,
         clear_program_path,
+    )
+
+
+@step(
+    'I add a nonced method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments.'
+)
+def add_abi_method_call_nonced(context, account_type, operation):
+    abi_method_adder(
+        context,
+        account_type,
+        operation,
+        force_unique_transactions=True,
     )
 
 
