@@ -560,3 +560,267 @@ class TestLogicSigTransaction(unittest.TestCase):
         sender = TestLogicSigTransaction.otherAddr
         expected = "g6Rsc2lng6NhcmeSxAEBxAICA6FsxAUBIAEBIqRtc2lng6ZzdWJzaWeTgqJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC8mKvrEiCairgXihc8RASRO4BdGefywQgPYzfhhUp87q7hDdvRNlhL+Tt18wYxWRyiMM7e8j0XQbUp2w/+83VNZG9LVh/Iu8LXtOY1y9AoKicGvEIAljMglTc4nwdWcRdzmRx9A+G3PIxPUr9q/wGqJc+cJxoXPEQGS8VdvtkaJB1Cq2YPfhSrmZmlKzsXFYzvw/T+fLIkEUrak9XoQFAgoXpmmDAyJOhqOLajbFVL4gUP/T7qizBAmBonBrxCDn8PhNBoEd+fMcjYeLEVX0Zx1RoYXCAJCGZ/RJWHBooaN0aHICoXYBpHNnbnLEII2StImQAXOgTfpDWaNmamr86ixCoF3Zwfc+66VHgDfpo3R4boqjYW10zROIo2ZlZc4AA0+oomZ2zgAO1tyjZ2VurXRlc3RuZXQtdjMxLjCiZ2jEICYLIAmgk6iGi3lYci+l5Ubt5+0X5NhcTHivsEUmkO3Somx2zgAO2sSkbm90ZcQItFF5Ofz60nGjcmN2xCC0xiJopMM1UPWKbdS4yiOcnx0Qs0Gqfho2485h+/z5iqNzbmTEILTGImikwzVQ9Ypt1LjKI5yfHRCzQap+GjbjzmH7/PmKpHR5cGWjcGF5"
         self._test_sign_txn(lsigAccount, sender, expected)
+
+
+class TestMultisig(unittest.TestCase):
+    def test_merge(self):
+        msig = transaction.Multisig(
+            1,
+            2,
+            [
+                "DN7MBMCL5JQ3PFUQS7TMX5AH4EEKOBJVDUF4TCV6WERATKFLQF4MQUPZTA",
+                "BFRTECKTOOE7A5LHCF3TTEOH2A7BW46IYT2SX5VP6ANKEXHZYJY77SJTVM",
+                "47YPQTIGQEO7T4Y4RWDYWEKV6RTR2UNBQXBABEEGM72ESWDQNCQ52OPASU",
+            ],
+        )
+        mn = (
+            "auction inquiry lava second expand liberty glass involve ginger i"
+            "llness length room item discover ahead table doctor term tackle c"
+            "ement bonus profit right above catch"
+        )
+
+        sk = mnemonic.to_private_key(mn)
+        sender = "RWJLJCMQAFZ2ATP2INM2GZTKNL6OULCCUBO5TQPXH3V2KR4AG7U5UA5JNM"
+        rcv = "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI"
+        gh = "/rNsORAUOQDD2lVCyhg2sA/S+BlZElfNI/YEL5jINp0="
+        close = "IDUTJEUIEVSMXTU4LGTJWZ2UE2E6TIODUKU6UW3FU3UKIQQ77RLUBBBFLA"
+
+        sp = transaction.SuggestedParams(0, 62229, 63229, gh, "devnet-v38.0")
+        txn = transaction.PaymentTxn(
+            sender,
+            sp,
+            rcv,
+            1000,
+            note=base64.b64decode("RSYiABhShvs="),
+            close_remainder_to=close,
+        )
+
+        mtx = transaction.MultisigTransaction(txn, msig)
+        mtx.sign(sk)
+        golden = (
+            "gqRtc2lng6ZzdWJzaWeTgqJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC8mKvrEiC"
+            "airgXihc8RAuLAFE0oma0skOoAmOzEwfPuLYpEWl4LINtsiLrUqWQkDxh4WHb29//"
+            "YCpj4MFbiSgD2jKYt0XKRD86zKCF4RDYGicGvEIAljMglTc4nwdWcRdzmRx9A+G3P"
+            "IxPUr9q/wGqJc+cJxgaJwa8Qg5/D4TQaBHfnzHI2HixFV9GcdUaGFwgCQhmf0SVhw"
+            "aKGjdGhyAqF2AaN0eG6Lo2FtdM0D6KVjbG9zZcQgQOk0koglZMvOnFmmm2dUJonpo"
+            "cOiqepbZabopEIf/FejZmVlzQPoomZ2zfMVo2dlbqxkZXZuZXQtdjM4LjCiZ2jEIP"
+            "6zbDkQFDkAw9pVQsoYNrAP0vgZWRJXzSP2BC+YyDadomx2zfb9pG5vdGXECEUmIgA"
+            "YUob7o3JjdsQge2ziT+tbrMCxZOKcIixX9fY9w4fUOQSCWEEcX+EPfAKjc25kxCCN"
+            "krSJkAFzoE36Q1mjZmpq/OosQqBd2cH3PuulR4A36aR0eXBlo3BheQ=="
+        )
+        self.assertEqual(golden, encoding.msgpack_encode(mtx))
+
+        mtx_2 = transaction.MultisigTransaction(
+            txn, msig.get_multisig_account()
+        )
+        mn2 = (
+            "since during average anxiety protect cherry club long lawsuit loa"
+            "n expand embark forum theory winter park twenty ball kangaroo cra"
+            "m burst board host ability left"
+        )
+        sk2 = mnemonic.to_private_key(mn2)
+        mtx_2.sign(sk2)
+
+        mtx_final = transaction.MultisigTransaction.merge([mtx, mtx_2])
+
+        golden2 = (
+            "gqRtc2lng6ZzdWJzaWeTgqJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC8mKvrEiC"
+            "airgXihc8RAuLAFE0oma0skOoAmOzEwfPuLYpEWl4LINtsiLrUqWQkDxh4WHb29//"
+            "YCpj4MFbiSgD2jKYt0XKRD86zKCF4RDYKicGvEIAljMglTc4nwdWcRdzmRx9A+G3P"
+            "IxPUr9q/wGqJc+cJxoXPEQBAhuyRjsOrnHp3s/xI+iMKiL7QPsh8iJZ22YOJJP0aF"
+            "UwedMr+a6wfdBXk1OefyrAN1wqJ9rq6O+DrWV1fH0ASBonBrxCDn8PhNBoEd+fMcj"
+            "YeLEVX0Zx1RoYXCAJCGZ/RJWHBooaN0aHICoXYBo3R4boujYW10zQPopWNsb3NlxC"
+            "BA6TSSiCVky86cWaabZ1Qmiemhw6Kp6ltlpuikQh/8V6NmZWXNA+iiZnbN8xWjZ2V"
+            "urGRldm5ldC12MzguMKJnaMQg/rNsORAUOQDD2lVCyhg2sA/S+BlZElfNI/YEL5jI"
+            "Np2ibHbN9v2kbm90ZcQIRSYiABhShvujcmN2xCB7bOJP61uswLFk4pwiLFf19j3Dh"
+            "9Q5BIJYQRxf4Q98AqNzbmTEII2StImQAXOgTfpDWaNmamr86ixCoF3Zwfc+66VHgD"
+            "fppHR5cGWjcGF5"
+        )
+        self.assertEqual(golden2, encoding.msgpack_encode(mtx_final))
+
+    def test_sign(self):
+        msig = transaction.Multisig(
+            1,
+            2,
+            [
+                "DN7MBMCL5JQ3PFUQS7TMX5AH4EEKOBJVDUF4TCV6WERATKFLQF4MQUPZTA",
+                "BFRTECKTOOE7A5LHCF3TTEOH2A7BW46IYT2SX5VP6ANKEXHZYJY77SJTVM",
+                "47YPQTIGQEO7T4Y4RWDYWEKV6RTR2UNBQXBABEEGM72ESWDQNCQ52OPASU",
+            ],
+        )
+        mn = (
+            "advice pudding treat near rule blouse same whisper inner electric"
+            " quit surface sunny dismiss leader blood seat clown cost exist ho"
+            "spital century reform able sponsor"
+        )
+        sk = mnemonic.to_private_key(mn)
+
+        rcv = "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        close = "IDUTJEUIEVSMXTU4LGTJWZ2UE2E6TIODUKU6UW3FU3UKIQQ77RLUBBBFLA"
+        sp = transaction.SuggestedParams(4, 12466, 13466, gh, "devnet-v33.0")
+        txn = transaction.PaymentTxn(
+            msig.address(),
+            sp,
+            rcv,
+            1000,
+            note=base64.b64decode("X4Bl4wQ9rCo="),
+            close_remainder_to=close,
+        )
+        mtx = transaction.MultisigTransaction(txn, msig)
+        self.assertEqual(mtx.auth_addr, None)
+
+        mtx.sign(sk)
+        golden = (
+            "gqRtc2lng6ZzdWJzaWeTgaJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC8mKvrEiC"
+            "airgXiBonBrxCAJYzIJU3OJ8HVnEXc5kcfQPhtzyMT1K/av8BqiXPnCcYKicGvEIO"
+            "fw+E0GgR358xyNh4sRVfRnHVGhhcIAkIZn9ElYcGihoXPEQF6nXZ7CgInd1h7NVsp"
+            "IPFZNhkPL+vGFpTNwH3Eh9gwPM8pf1EPTHfPvjf14sS7xN7mTK+wrz7Odhp4rdWBN"
+            "UASjdGhyAqF2AaN0eG6Lo2FtdM0D6KVjbG9zZcQgQOk0koglZMvOnFmmm2dUJonpo"
+            "cOiqepbZabopEIf/FejZmVlzQSYomZ2zTCyo2dlbqxkZXZuZXQtdjMzLjCiZ2jEIC"
+            "YLIAmgk6iGi3lYci+l5Ubt5+0X5NhcTHivsEUmkO3Somx2zTSapG5vdGXECF+AZeM"
+            "EPawqo3JjdsQge2ziT+tbrMCxZOKcIixX9fY9w4fUOQSCWEEcX+EPfAKjc25kxCCN"
+            "krSJkAFzoE36Q1mjZmpq/OosQqBd2cH3PuulR4A36aR0eXBlo3BheQ=="
+        )
+        self.assertEqual(golden, encoding.msgpack_encode(mtx))
+        txid_golden = "TDIO6RJWJIVDDJZELMSX5CPJW7MUNM3QR4YAHYAKHF3W2CFRTI7A"
+        self.assertEqual(txn.get_txid(), txid_golden)
+
+    def test_sign_auth_addr(self):
+        msig = transaction.Multisig(
+            1,
+            2,
+            [
+                "DN7MBMCL5JQ3PFUQS7TMX5AH4EEKOBJVDUF4TCV6WERATKFLQF4MQUPZTA",
+                "BFRTECKTOOE7A5LHCF3TTEOH2A7BW46IYT2SX5VP6ANKEXHZYJY77SJTVM",
+                "47YPQTIGQEO7T4Y4RWDYWEKV6RTR2UNBQXBABEEGM72ESWDQNCQ52OPASU",
+            ],
+        )
+        mn = (
+            "advice pudding treat near rule blouse same whisper inner electric"
+            " quit surface sunny dismiss leader blood seat clown cost exist ho"
+            "spital century reform able sponsor"
+        )
+        sk = mnemonic.to_private_key(mn)
+
+        sender = "WTDCE2FEYM2VB5MKNXKLRSRDTSPR2EFTIGVH4GRW4PHGD6747GFJTBGT2A"
+        rcv = "PNWOET7LLOWMBMLE4KOCELCX6X3D3Q4H2Q4QJASYIEOF7YIPPQBG3YQ5YI"
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        close = "IDUTJEUIEVSMXTU4LGTJWZ2UE2E6TIODUKU6UW3FU3UKIQQ77RLUBBBFLA"
+        sp = transaction.SuggestedParams(4, 12466, 13466, gh, "devnet-v33.0")
+        txn = transaction.PaymentTxn(
+            sender,
+            sp,
+            rcv,
+            1000,
+            note=base64.b64decode("X4Bl4wQ9rCo="),
+            close_remainder_to=close,
+        )
+        mtx = transaction.MultisigTransaction(txn, msig)
+        self.assertEqual(mtx.auth_addr, msig.address())
+
+        mtx.sign(sk)
+        golden = (
+            "g6Rtc2lng6ZzdWJzaWeTgaJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC8mKvrEiC"
+            "airgXiBonBrxCAJYzIJU3OJ8HVnEXc5kcfQPhtzyMT1K/av8BqiXPnCcYKicGvEIO"
+            "fw+E0GgR358xyNh4sRVfRnHVGhhcIAkIZn9ElYcGihoXPEQOtXd8NwMBC4Lve/OjK"
+            "PcryC/dSmrbY6dlqxq6cSGG2cAObZDdskW8IE8oI2KcZDpm2uQSCpB/xLbBpH2ZVG"
+            "YwKjdGhyAqF2AaRzZ25yxCCNkrSJkAFzoE36Q1mjZmpq/OosQqBd2cH3PuulR4A36"
+            "aN0eG6Lo2FtdM0D6KVjbG9zZcQgQOk0koglZMvOnFmmm2dUJonpocOiqepbZabopE"
+            "If/FejZmVlzQSYomZ2zTCyo2dlbqxkZXZuZXQtdjMzLjCiZ2jEICYLIAmgk6iGi3l"
+            "Yci+l5Ubt5+0X5NhcTHivsEUmkO3Somx2zTSapG5vdGXECF+AZeMEPawqo3JjdsQg"
+            "e2ziT+tbrMCxZOKcIixX9fY9w4fUOQSCWEEcX+EPfAKjc25kxCC0xiJopMM1UPWKb"
+            "dS4yiOcnx0Qs0Gqfho2485h+/z5iqR0eXBlo3BheQ=="
+        )
+        self.assertEqual(golden, encoding.msgpack_encode(mtx))
+        txid_golden = "BARRBT2T3DTXIXINAYDZHTJNPRF33OZHTYTQ3KZAEH4QMB7GBYLA"
+        self.assertEqual(txn.get_txid(), txid_golden)
+
+    def test_msig_address(self):
+        msig = transaction.Multisig(
+            1,
+            2,
+            [
+                "XMHLMNAVJIMAW2RHJXLXKKK4G3J3U6VONNO3BTAQYVDC3MHTGDP3J5OCRU",
+                "HTNOX33OCQI2JCOLZ2IRM3BC2WZ6JUILSLEORBPFI6W7GU5Q4ZW6LINHLA",
+                "E6JSNTY4PVCY3IRZ6XEDHEO6VIHCQ5KGXCIQKFQCMB2N6HXRY4IB43VSHI",
+            ],
+        )
+        golden = "UCE2U2JC4O4ZR6W763GUQCG57HQCDZEUJY4J5I6VYY4HQZUJDF7AKZO5GM"
+        self.assertEqual(msig.address(), golden)
+
+        msig2 = transaction.Multisig(
+            1,
+            2,
+            [
+                "DN7MBMCL5JQ3PFUQS7TMX5AH4EEKOBJVDUF4TCV6WERATKFLQF4MQUPZTA",
+                "BFRTECKTOOE7A5LHCF3TTEOH2A7BW46IYT2SX5VP6ANKEXHZYJY77SJTVM",
+                "47YPQTIGQEO7T4Y4RWDYWEKV6RTR2UNBQXBABEEGM72ESWDQNCQ52OPASU",
+            ],
+        )
+        golden = "RWJLJCMQAFZ2ATP2INM2GZTKNL6OULCCUBO5TQPXH3V2KR4AG7U5UA5JNM"
+        self.assertEqual(msig2.address(), golden)
+
+    def test_errors(self):
+
+        # get random private key
+        private_key_1, account_1 = account.generate_account()
+        _, account_2 = account.generate_account()
+        private_key_3, account_3 = account.generate_account()
+
+        # create multisig address with invalid version
+        msig = transaction.Multisig(2, 2, [account_1, account_2])
+        self.assertRaises(error.UnknownMsigVersionError, msig.validate)
+
+        # change it to have invalid threshold
+        msig.version = 1
+        msig.threshold = 3
+        self.assertRaises(error.InvalidThresholdError, msig.validate)
+        msig.threshold = 2
+
+        # create transaction
+        gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+        sp = transaction.SuggestedParams(3, 1234, 1334, gh)
+        txn = transaction.PaymentTxn(account_2, sp, account_2, 1000)
+
+        mtx = transaction.MultisigTransaction(txn, msig)
+
+        # try to sign with incorrect private key
+        self.assertRaises(error.InvalidSecretKeyError, mtx.sign, private_key_3)
+
+        # create another multisig with different address
+        msig_2 = transaction.Multisig(1, 2, [account_2, account_3])
+
+        # try to merge with different addresses
+        mtx_2 = transaction.MultisigTransaction(txn, msig_2)
+        self.assertRaises(
+            error.MergeKeysMismatchError,
+            transaction.MultisigTransaction.merge,
+            [mtx, mtx_2],
+        )
+
+        # try to merge with different auth_addrs
+        mtx_3 = transaction.MultisigTransaction(txn, msig)
+        mtx_3.auth_addr = None
+        self.assertRaises(
+            error.MergeAuthAddrMismatchError,
+            transaction.MultisigTransaction.merge,
+            [mtx, mtx_3],
+        )
+
+        # create another multisig with same address
+        msig_3 = msig_2.get_multisig_account()
+
+        # add mismatched signatures
+        msig_2.subsigs[0].signature = "sig2"
+        msig_3.subsigs[0].signature = "sig3"
+
+        # try to merge
+        self.assertRaises(
+            error.DuplicateSigMismatchError,
+            transaction.MultisigTransaction.merge,
+            [
+                transaction.MultisigTransaction(txn, msig_2),
+                transaction.MultisigTransaction(txn, msig_3),
+            ],
+        )
