@@ -1,7 +1,7 @@
 import json
 from typing import List, Union
 
-from algosdk.abi.method import Method
+from algosdk.abi.method import Method, get_method_by_name
 
 
 class Interface:
@@ -49,3 +49,6 @@ class Interface:
         method_list = [Method.undictify(method) for method in d["methods"]]
         desc = d["desc"] if "desc" in d else None
         return Interface(name=name, desc=desc, methods=method_list)
+
+    def get_method_by_name(self, name: str) -> Method:
+        return get_method_by_name(self.methods, name)

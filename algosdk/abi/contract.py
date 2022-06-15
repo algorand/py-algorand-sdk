@@ -1,7 +1,7 @@
 import json
 from typing import Dict, List, Union
 
-from algosdk.abi.method import Method
+from algosdk.abi.method import Method, get_method_by_name
 
 
 class Contract:
@@ -62,6 +62,9 @@ class Contract:
         return Contract(
             name=name, desc=desc, networks=networks, methods=method_list
         )
+
+    def get_method_by_name(self, name: str) -> Method:
+        return get_method_by_name(self.methods, name)
 
 
 class NetworkInfo:
