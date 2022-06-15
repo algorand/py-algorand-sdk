@@ -35,7 +35,7 @@ from algosdk.v2client.models import (
 
 from algosdk.testing.dryrun import DryrunTestCaseMixin
 
-from test.steps.steps import algod_port, token as daemon_token
+from tests.steps.steps import algod_port, token as daemon_token
 
 
 @parse.with_pattern(r".*")
