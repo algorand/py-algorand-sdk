@@ -35,8 +35,7 @@ from algosdk.v2client.models import (
 )
 from algosdk.testing.dryrun import DryrunTestCaseMixin
 
-from test.steps.steps import token as daemon_token
-from test.steps.steps import algod_port
+from tests.steps.steps import algod_port, token as daemon_token
 
 
 @parse.with_pattern(r".*")
@@ -134,13 +133,13 @@ def mock_response(context, jsonfiles, directory):
 )
 def mock_http_responses(context, filename, directory, status):
     context.expected_status_code = int(status)
-    with open("test/features/resources/mock_response_status", "w") as f:
+    with open("tests/features/resources/mock_response_status", "w") as f:
         f.write(status)
     mock_response(context, filename, directory)
-    f = open("test/features/resources/mock_response_path", "r")
+    f = open("tests/features/resources/mock_response_path", "r")
     mock_response_path = f.read()
     f.close()
-    f = open("test/features/resources/" + mock_response_path, "r")
+    f = open("tests/features/resources/" + mock_response_path, "r")
     expected_mock_response = f.read()
     f.close()
     expected_mock_response = bytes(expected_mock_response, "ascii")
@@ -1155,7 +1154,7 @@ def parsed_equals(context, jsonfile):
     loaded_response = None
     dir_path = os.path.dirname(os.path.realpath(__file__))
     dir_path = os.path.dirname(os.path.dirname(dir_path))
-    with open(dir_path + "/test/features/resources/" + jsonfile, "rb") as f:
+    with open(dir_path + "/tests/features/resources/" + jsonfile, "rb") as f:
         loaded_response = bytearray(f.read())
     # sort context.response
     def recursively_sort_on_key(dictionary):
@@ -1657,7 +1656,7 @@ def dryrun_test_case_local_state_assert_fail_step(
 )
 def check_json_output_equals(context, json_path, json_directory):
     with open(
-        "test/features/unit/" + json_directory + "/" + json_path, "rb"
+        "tests/features/unit/" + json_directory + "/" + json_path, "rb"
     ) as f:
         loaded_response = json.load(f)
     assert context.json_output == loaded_response
@@ -1670,7 +1669,7 @@ def parse_dryrun_response_object(context, dryrun_response_file, txn_id):
     dir_path = os.path.dirname(os.path.realpath(__file__))
     dir_path = os.path.dirname(os.path.dirname(dir_path))
     with open(
-        dir_path + "/test/features/resources/" + dryrun_response_file, "r"
+        dir_path + "/tests/features/resources/" + dryrun_response_file, "r"
     ) as f:
         drr_dict = json.loads(f.read())
 
