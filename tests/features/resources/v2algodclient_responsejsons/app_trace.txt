@@ -1,0 +1,17 @@
+pc# |ln# |source                            |scratch |stack
+1   |1   |intcblock 0 4 1 5 2               |        |[]
+8   |2   |bytecblock 0x43726561746f72 0x... |        |[]
+72  |3   |intc_0                            |        |[]
+73  |4   |txn ApplicationID                 |        |[0]
+75  |5   |==                                |        |[0, 0]
+76  |6   |bz label1                         |        |[1]
+79  |7   |bytec_0                           |        |[]
+80  |8   |txn Sender                        |        |[0x43726561746f72]
+82  |9   |app_global_put                    |        |[0x43726561746f72, 0xa01e926fb...
+83  |10  |txn NumAppArgs                    |        |[]
+85  |11  |intc_1                            |        |[0]
+86  |12  |==                                |        |[0, 4]
+87  |13  |bz label2                         |        |[0]
+311 |163 |intc_0                            |        |[]
+312 |164 |return                            |        |[0]
+315 |168 |                                  |        |[0]

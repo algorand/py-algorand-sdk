@@ -1,0 +1,20 @@
+#pragma version 2
+// write to local state of accounts[0] - txn sender
+int 0
+byte "intkey"
+int 11
+app_local_put
+int 0
+byte "byteskey"
+byte b64 dGVzdA==
+app_local_put
+// write to local state of accounts[1]
+int 1
+byte "intkey"
+int 11
+app_local_put
+int 1
+byte "byteskey"
+byte b64 dGVzdA==
+app_local_put
+int 1

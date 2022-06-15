@@ -1,0 +1,1 @@
+{"name":"add","desc":"method description","args":[{"type":"uint32","desc":"first description"},{"type":"uint16","desc":"second description"}],"returns":{"type":"uint32"}}

@@ -1,0 +1,8 @@
+{
+  "block" : {
+    "today" : "today, 'object' is a string!"
+  },
+  "cert" : {
+    "today" : "today, 'object' is a string!"
+  }
+}

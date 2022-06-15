@@ -1,0 +1,12 @@
+{
+  "pending-rewards" : 0,
+  "created-assets" : [],
+  "assets" : [],
+  "address" : "ALGORANDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIN5DNAU",
+  "amount-without-pending-rewards" : 1500000,
+  "amount" : 1500000,
+  "status" : "Not Participating",
+  "round" : 6222133,
+  "reward-base" : 0,
+  "rewards" : 0
+}

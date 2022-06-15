@@ -1,0 +1,54 @@
+// <<<< WARNING: For demo purposes only >>>>
+// Do not use in any applications that require unpredictable randomness.
+// (As of Jan 2022) To achieve secure randomness, consider following an approach such as: https://github.com/ori-shem-tov/vrf-oracle
+
+// TODO: disallow updates, optins, etc.
+
+#pragma version 6
+txn ApplicationID
+bz create       // yes, we can create this app
+
+txn ApplicationArgs 0
+method "randInt(uint64)(uint64,byte[17])"
+==
+assert      // except for create, only allow calling method randInt()
+
+global Round
+itob
+pushbytes "#"
+concat
+pushbytes "counter"
+app_global_get      
+dup
+
+pushint 1
++
+pushbytes "counter"
+swap
+app_global_put
+itob  
+concat  // >>> itob(round)|#|itob(counter)
+dup
+sha512_256
+pushint 0
+extract_uint64
+txn ApplicationArgs 1
+btoi
+%       // TODO: slightly better if try again in the unlikely case that 1 << 64 + A % B < A + B
+itob
+swap
+concat  // >>> itob(randInt)|itob(round)|#|itob(counter)
+byte 0x151f7c75  // return code
+swap
+concat
+log
+
+b finish
+
+create:
+    pushbytes "counter"
+    pushint 0
+    app_global_put
+
+finish:
+    int 1

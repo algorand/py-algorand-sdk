@@ -1,0 +1,263 @@
+// TODO: award(byte[3])uint64
+// MAYBE TODO:
+// * _create(int,string[])void
+// * disallow updates, optins, etc.
+
+// Input: None
+// Output: 3 random bytes from each slot of slot machine as well as corresponding witnesses
+
+// 0. On creation, provide s_i , (combo_j, award_j) params and set the following app global vars:
+//     * RandomByte:app_id - global-int
+//     * itob(1):s_1       - global-byte
+//     * itob(2):s_2       - global-byte
+//     ...
+//     * itob(n):s_n       - global-byte
+    
+//     * combo_1:award_1   - global-int
+//     * combo_2:award_1   - global-int
+//     ...
+//     * combo_m:award_m   - global-int
+
+// (at runtime, you can figure out what n is with GlobalNumByteSlice)
+
+// 1. create variables "reels" and "witnesses" each containing ""
+// 2. for i = 1 to n:
+//     c_i, w_i = RandomByte.randElement(s_n)
+//     reels += c_i
+//     witnesses += w_i
+// 3. return reels + witnesses
+
+#pragma version 6
+txn ApplicationID
+bz create
+
+txn ApplicationArgs 0
+method "setReels(string,string,string)void"
+==
+bnz set_reels
+
+txn ApplicationArgs 0
+method "spin(application,application)(byte[3],byte[17],byte[17],byte[17])"
+==
+assert  // only allowable methods: spin + set_reels
+
+byte "num_reels"
+app_global_get
+// >>> numReels
+
+dup
+assert // gotta spin something
+
+// spin reel2, then reel1 then reel0
+itxn_begin
+spin:
+    int 1
+    -
+    dup
+    // >>> reelNum <-- reelNum
+
+    int appl
+    itxn_field TypeEnum
+
+    txn Applications 2  // RandomByte
+    itxn_field ApplicationID
+
+    method "randElement(string,application)(byte,byte[17])"
+    itxn_field ApplicationArgs
+
+    byte "reel"
+    swap
+    itob
+    // >>> reelNum <-- "reel" <-- itob(reelNum)
+    concat
+    app_global_get
+    // >> reelNum <-- reelContents
+
+    // pushbytes "reel"
+    // callsub debug
+
+    dup
+    len
+    itob
+    extract 6 0
+    swap
+    concat
+
+    // pushbytes "randElement input"
+    // callsub debug
+
+    itxn_field ApplicationArgs
+    // >>> reelNum
+
+    txn Applications 1 // FakeRandom
+    itxn_field Applications
+    
+    dup
+    // >>> reelNum <-- reelNum
+    bz submit
+itxn_next
+b spin
+
+submit:
+    int 0
+    ==
+    assert
+    // <<<EMPTY>>>
+itxn_submit
+
+gitxna 2 Logs 0
+
+// pushbytes "gitxna 2 Logs 0"
+// callsub debug
+
+// >>> return|randByte2|witness2
+callsub extract_element_and_witness
+// >>> randByte2 <-- witness2
+
+dup2
+pushbytes "witness2"
+callsub debug
+pop
+pushbytes "randByte2"
+callsub debug
+pop
+
+
+gitxna 1 Logs 0
+
+// pushbytes "gitxna 1 Logs 0"
+// callsub debug
+
+callsub extract_element_and_witness
+// >>> randByte2 <-- witness2 <-- randByte1 <-- witness1
+
+dup2
+pushbytes "witness1"
+callsub debug
+pop
+pushbytes "randByte1"
+callsub debug
+pop
+
+
+gitxna 0 Logs 0
+
+// pushbytes "gitxna 0 Logs 0"
+// callsub debug
+
+callsub extract_element_and_witness
+// >>> randByte2 <-- witness2 <-- randByte1 <-- witness1 <-- randByte0 <-- witness0
+
+dup2
+pushbytes "witness0"
+callsub debug
+pop
+pushbytes "randByte0"
+callsub debug
+pop
+
+// r2 w2 r1 w1 r0 w0
+uncover 2   // r2 w2 r1 r0 w0 w1
+uncover 4   // r2 r1 r0 w0 w1 w2
+concat      
+concat      // r2 r1 r0 w0w1w2
+uncover 1   // r2 r1 w0w1w2 r0
+uncover 2   // r2 w0w1w2 r0 r1
+uncover 3   // w0w1w2 r0 r1 r2
+concat
+concat      // w0w1w2 r0r1r2
+swap        // r0r1r2 w0w1w2
+concat      // r0r1r2w0w1w2
+
+byte 0x151f7c75
+swap
+concat
+log         // return|randByte0|randByte1|randByte2|witness0|witness1|witness2
+
+int 1
+return
+
+extract_element_and_witness: 
+    // INPUT:      >>> ... return|byte|witness
+    dup             // ... return|byte|witness <-- return|byte|witness
+    extract 4 1     // ... return|byte|witness <-- byte
+    // pushbytes "byte?"
+    // callsub debug
+    swap            // ... byte <-- return|byte|witness
+    extract 5 0     
+    retsub
+    // OUTPUT:     >>> ... byte <-- witness
+
+debug: 
+    // INPUT:  >>> ... S[1] <-- S[0] ( == THE_VALUE:byte[] <-- MESSAGE:byte[] )
+    pushbytes "dbg ["
+    swap
+    concat
+    pushbytes "] --->"
+    concat
+    log
+    dup     // ... THE_VALUE <-- THE_VALUE
+    log
+    retsub
+
+create:     // TODO: would like to make this more dynamic. One thing holding me back is the
+            // absense of gitxnas which would make it possible to dynamically read 
+            // logs off the i'th inner transaction
+    byte "num_reels"
+    pushint 3
+    app_global_put
+
+    byte "reel"
+    int 0
+    itob
+    concat
+    byte "@!-"
+    app_global_put
+
+    byte "reel"
+    int 1
+    itob
+    concat
+    byte "@@!---"
+    app_global_put
+
+    byte "reel"
+    int 2
+    itob
+    concat
+    byte "@!------"
+    app_global_put
+
+    // Assuming that each face of a reel shows with equal probability, and the randomness of each reel is independent.
+    // P(!!!) = 1/144, P(@@@) = 1/72
+    // With respective prizes of 50 Algos & 40 Algos expected payoff is 0.903 Algos
+    int 1
+    return
+
+set_reels:
+    byte "reel"
+    int 2
+    itob
+    concat
+    txn ApplicationArgs 1
+    extract 2 0     // string 1
+    app_global_put
+
+    byte "reel"
+    int 1
+    itob
+    concat
+    txn ApplicationArgs 2
+    extract 2 0     // string 2
+    app_global_put
+
+    byte "reel"
+    int 0
+    itob
+    concat
+    txn ApplicationArgs 3
+    extract 2 0     // string 3
+    app_global_put
+
+    int 1
+

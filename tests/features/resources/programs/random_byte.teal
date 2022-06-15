@@ -1,0 +1,90 @@
+// TODO: disallow updates, optins, etc.
+
+// Input: a string s such as "hello random"
+// Output: a byte in s picked with index of uniform randomness
+
+// 1. n := len(s)
+// 2. r, w := FakeRandom.randInt(n)
+// 3. c := substring n n+1
+// 4. return c, w
+
+#pragma version 6
+txn ApplicationID
+bz finish  // creating ok
+
+txn ApplicationArgs 0
+method "randElement(string,application)(byte,byte[17])"
+==
+assert      // other than create, only the app call is allowed
+
+itxn_begin
+    int appl
+    itxn_field TypeEnum
+
+    txn Applications 1 // FakeRandom
+    itxn_field ApplicationID
+
+    method "randInt(uint64)(uint64,byte[17])"
+    itxn_field ApplicationArgs
+
+    txn ApplicationArgs 1
+    len
+    pushint 2
+    -       // subtract 2 from length for encoding prefix
+    itob
+    itxn_field ApplicationArgs    
+itxn_submit
+
+// assert a single log so we know where to look for return val:
+pushint 0
+itxn NumLogs
+pushint 1
+==
+assert
+
+itxna Logs 0
+// >>> return|uint64|byte[17]|
+
+// dup
+// pushbytes "debug logs received--->"
+// log
+// log
+// >>> return|uint64|byte[17]|
+
+dup
+extract 12 0  // the witness
+swap
+// >>> byte[17] <-- return|uint64|byte[17]|
+
+extract 4 8   // the randInt
+btoi
+// >>> byte[17] <-- randInt
+
+txn ApplicationArgs 1
+// >>> byte[17] <-- randInt <-- len|input_string
+
+extract 2 0   // the input string
+swap
+// >>> byte[17] <-- input_string <-- randInt
+
+pushint 1
+extract3  
+// >>> byte[17] <-- randByte
+
+pushbytes 0x151f7c75  // return code
+swap
+// >>> byte[17] <-- return <-- randByte
+
+concat
+// >>> byte[17] <-- return|randByte
+
+swap
+concat
+// >>> return|randByte|byte[17]
+
+log
+// <<<EMPTY>>>
+
+finish:
+    int 1
+    return

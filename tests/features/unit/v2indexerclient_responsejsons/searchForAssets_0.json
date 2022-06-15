@@ -1,0 +1,49 @@
+{
+  "assets" : [ {
+    "index" : 5,
+    "params" : {
+      "clawback" : "L226FSG3LTZR4V2MI5M4SDKJSF5HP2TQFAYD6L2HOKYGJB6GARLETV3B4A",
+      "creator" : "L226FSG3LTZR4V2MI5M4SDKJSF5HP2TQFAYD6L2HOKYGJB6GARLETV3B4A",
+      "decimals" : 0,
+      "default-frozen" : false,
+      "freeze" : "L226FSG3LTZR4V2MI5M4SDKJSF5HP2TQFAYD6L2HOKYGJB6GARLETV3B4A",
+      "manager" : "L226FSG3LTZR4V2MI5M4SDKJSF5HP2TQFAYD6L2HOKYGJB6GARLETV3B4A",
+      "name" : "Joe-Coin",
+      "reserve" : "L226FSG3LTZR4V2MI5M4SDKJSF5HP2TQFAYD6L2HOKYGJB6GARLETV3B4A",
+      "total" : 10000,
+      "unit-name" : "JC"
+    }
+  }, {
+    "index" : 6,
+    "params" : {
+      "clawback" : "QYQYXRJ7FLQCRRGE3WH5CIAAL56LLMIN6GHRMN6PR45A44E6XA4QQ3JC64",
+      "creator" : "QYQYXRJ7FLQCRRGE3WH5CIAAL56LLMIN6GHRMN6PR45A44E6XA4QQ3JC64",
+      "decimals" : 0,
+      "default-frozen" : false,
+      "freeze" : "QYQYXRJ7FLQCRRGE3WH5CIAAL56LLMIN6GHRMN6PR45A44E6XA4QQ3JC64",
+      "manager" : "QYQYXRJ7FLQCRRGE3WH5CIAAL56LLMIN6GHRMN6PR45A44E6XA4QQ3JC64",
+      "name" : "Cartan",
+      "reserve" : "QYQYXRJ7FLQCRRGE3WH5CIAAL56LLMIN6GHRMN6PR45A44E6XA4QQ3JC64",
+      "total" : 100000000000000,
+      "unit-name" : "CTN",
+      "url" : "https://www.cartan.group"
+    }
+  }, {
+    "index" : 235,
+    "params" : {
+      "clawback" : "QA75IQ76F6H2T55G65BY7BPLF5QNWSLT5XGI62COZSYB4ZQ3MSKI3EQ25A",
+      "creator" : "QA75IQ76F6H2T55G65BY7BPLF5QNWSLT5XGI62COZSYB4ZQ3MSKI3EQ25A",
+      "decimals" : 0,
+      "default-frozen" : false,
+      "freeze" : "QA75IQ76F6H2T55G65BY7BPLF5QNWSLT5XGI62COZSYB4ZQ3MSKI3EQ25A",
+      "manager" : "QA75IQ76F6H2T55G65BY7BPLF5QNWSLT5XGI62COZSYB4ZQ3MSKI3EQ25A",
+      "name" : "Optional hash ",
+      "reserve" : "QA75IQ76F6H2T55G65BY7BPLF5QNWSLT5XGI62COZSYB4ZQ3MSKI3EQ25A",
+      "total" : 1,
+      "unit-name" : "ertrng",
+      "url" : "verify.proofplum.com/ertrng"
+    }
+  } ],
+  "current-round" : 6222956,
+  "next-token" : "235"
+}

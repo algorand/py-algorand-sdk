@@ -1,0 +1,1 @@
+{"name":"referenceTest","args":[{"type":"account"},{"type":"application"},{"type":"asset"}],"returns":{"type":"uint8[3]"}}

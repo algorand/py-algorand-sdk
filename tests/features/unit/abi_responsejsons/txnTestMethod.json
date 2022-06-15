@@ -1,0 +1,1 @@
+{"name":"txnTest","args":[{"type":"txn"},{"type":"pay"},{"type":"keyreg"},{"type":"acfg"},{"type":"axfer"},{"type":"afrz"},{"type":"appl"}],"returns":{"type":"bool"}}

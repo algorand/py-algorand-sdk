@@ -1,0 +1,16 @@
+{
+  "catchpoint" : "oZSrqon3hT7qQqrHNUle",
+  "catchpoint-acquired-blocks" : 44608,
+  "catchpoint-processed-accounts" : 949700,
+  "catchpoint-total-accounts" : 411977,
+  "catchpoint-total-blocks" : 884853,
+  "catchup-time" : 374361,
+  "last-catchpoint" : "oZSrqon3hT7qQqrHNUle",
+  "last-round" : 834807,
+  "last-version" : "oZSrqon3hT7qQqrHNUle",
+  "next-version" : "oZSrqon3hT7qQqrHNUle",
+  "next-version-round" : 760031,
+  "next-version-supported" : false,
+  "stopped-at-unsupported-round" : true,
+  "time-since-last-round" : 32376
+}

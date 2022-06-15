@@ -1,0 +1,19 @@
+{
+  "block" : {
+    "gen" : "bWFpbm5ldC12MS4w",
+    "seed" : "tVhZrXGDoIKUWIzbs/lcouKQQw5XHqCbJMcgTqdCymE=",
+    "rnd" : 6221992,
+    "gh" : "wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=",
+    "prev" : "J3rDPwf0tw/X8h+WwI4p94fTccHYRKiG1m9oL+o9Dxc=",
+    "tc" : 846431,
+    "fees" : "x/zNsljw1BicK/i21o7ml1CGQrCtAB8x/LkYw1S6hZo=",
+    "rwd" : "/v////////////////////////////////////////8=",
+    "proto" : "aHR0cHM6Ly9naXRodWIuY29tL2FsZ29yYW5kZm91bmRhdGlvbi9zcGVjcy90cmVlLzRhOWRiNmEyNTU5NWM2ZmQwOTdjZjljYzEzN2NjODMwMjc3ODdlYWE=",
+    "txn" : "tGWqr06HVvsHC2hFmu2EhwYBSiMkvIoo5nWxAkUxsLo=",
+    "ts" : 1587567633,
+    "rwcalr" : 6500000,
+    "earn" : 117855,
+    "frac" : 1009778285,
+    "rate" : 26000000
+  }
+}

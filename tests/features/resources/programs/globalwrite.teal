@@ -1,0 +1,8 @@
+#pragma version 2
+byte "intkey"
+int 11
+app_global_put
+byte "byteskey"
+byte "test"
+app_global_put
+int 1

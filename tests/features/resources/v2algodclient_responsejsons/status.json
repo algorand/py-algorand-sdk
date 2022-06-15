@@ -1,0 +1,10 @@
+{
+  "last-version" : "https://github.com/algorandfoundation/specs/tree/4a9db6a25595c6fd097cf9cc137cc83027787eaa",
+  "next-version-supported" : true,
+  "next-version" : "https://github.com/algorandfoundation/specs/tree/4a9db6a25595c6fd097cf9cc137cc83027787eaa",
+  "time-since-last-round" : 3491829964,
+  "next-version-round" : 6222191,
+  "last-round" : 6222190,
+  "stopped-at-unsupported-round" : false,
+  "catchup-time" : 0
+}

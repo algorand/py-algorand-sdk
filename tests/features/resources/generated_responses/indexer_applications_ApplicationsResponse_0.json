@@ -1,0 +1,228 @@
+{
+  "applications" : [ {
+    "id" : 156995,
+    "params" : {
+      "approval-program" : "oZSrqon3hT7qQqrHNUle",
+      "clear-state-program" : "oZSrqon3hT7qQqrHNUle",
+      "creator" : "ZNWXZXMZJJ3YIYLA46IEFFNMGKLYJ5RR3KRKXMB4C2N6HBIQLETJKZWB4E",
+      "global-state" : [ {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 500936,
+          "uint" : 997634
+        }
+      }, {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 691032,
+          "uint" : 278988
+        }
+      }, {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 709194,
+          "uint" : 23764
+        }
+      }, {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 707581,
+          "uint" : 937146
+        }
+      }, {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 610923,
+          "uint" : 998443
+        }
+      }, {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 687419,
+          "uint" : 96818
+        }
+      }, {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 162361,
+          "uint" : 508272
+        }
+      }, {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 592779,
+          "uint" : 267567
+        }
+      }, {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 114897,
+          "uint" : 647103
+        }
+      } ],
+      "global-state-schema" : {
+        "num-byte-slice" : 560281,
+        "num-uint" : 212701
+      },
+      "local-state-schema" : {
+        "num-byte-slice" : 543539,
+        "num-uint" : 101580
+      }
+    }
+  }, {
+    "id" : 427179,
+    "params" : {
+      "approval-program" : "oZSrqon3hT7qQqrHNUle",
+      "clear-state-program" : "oZSrqon3hT7qQqrHNUle",
+      "creator" : "CVZVNKBBD3ODA67RPZ6B7GLUMOWKDGFORB4JJKZXRMEQ4JUKGU37F5DI5U",
+      "global-state" : [ {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 802863,
+          "uint" : 465392
+        }
+      }, {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 945755,
+          "uint" : 397236
+        }
+      }, {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 246844,
+          "uint" : 332436
+        }
+      }, {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 613952,
+          "uint" : 835606
+        }
+      }, {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 10216,
+          "uint" : 682936
+        }
+      }, {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 869099,
+          "uint" : 899828
+        }
+      }, {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 899625,
+          "uint" : 425633
+        }
+      }, {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 754253,
+          "uint" : 911703
+        }
+      }, {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 22545,
+          "uint" : 250205
+        }
+      } ],
+      "global-state-schema" : {
+        "num-byte-slice" : 250486,
+        "num-uint" : 435448
+      },
+      "local-state-schema" : {
+        "num-byte-slice" : 206624,
+        "num-uint" : 669556
+      }
+    }
+  }, {
+    "id" : 591800,
+    "params" : {
+      "approval-program" : "oZSrqon3hT7qQqrHNUle",
+      "clear-state-program" : "oZSrqon3hT7qQqrHNUle",
+      "creator" : "XIBBH2BKYNNTIZ7BHMAYHYP7CMVWLRGLXEOIHLJZ53LGYUC52DXTYMXWJ4",
+      "global-state" : [ {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 940531,
+          "uint" : 215277
+        }
+      }, {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 202794,
+          "uint" : 258163
+        }
+      }, {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 145627,
+          "uint" : 902970
+        }
+      }, {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 912008,
+          "uint" : 157516
+        }
+      }, {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 126473,
+          "uint" : 563521
+        }
+      }, {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 884600,
+          "uint" : 633395
+        }
+      }, {
+        "key" : "oZSrqon3hT7qQqrHNUle",
+        "value" : {
+          "bytes" : "oZSrqon3hT7qQqrHNUle",
+          "type" : 767205,
+          "uint" : 981703
+        }
+      } ],
+      "global-state-schema" : {
+        "num-byte-slice" : 909031,
+        "num-uint" : 46186
+      },
+      "local-state-schema" : {
+        "num-byte-slice" : 38781,
+        "num-uint" : 67259
+      }
+    }
+  } ],
+  "current-round" : 32530,
+  "next-token" : "oZSrqon3hT7qQqrHNUle"
+}

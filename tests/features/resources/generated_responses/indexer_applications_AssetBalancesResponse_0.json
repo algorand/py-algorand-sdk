@@ -1,0 +1,17 @@
+{
+  "balances" : [ {
+    "address" : "GSSTDEESAUXR6CMXENZ5QKHVUZ6EZTH2GPGIHNUPMAA6B5VMEZBSPKFABI",
+    "amount" : 790912,
+    "is-frozen" : true
+  }, {
+    "address" : "QRZOO6GDOML7KUDWNPFBBB25HHX4WVSM5WAYBAUDDQJLCAZJKMBQ5ISD2M",
+    "amount" : 93099,
+    "is-frozen" : false
+  }, {
+    "address" : "OFIXGVWZO5343AC7KNH3JSKORHWA53IRLCHLXSP5Z63MN4FLFYOBGUDFNE",
+    "amount" : 531145,
+    "is-frozen" : true
+  } ],
+  "current-round" : 43381,
+  "next-token" : "oZSrqon3hT7qQqrHNUle"
+}
