@@ -36,22 +36,45 @@ def operation_string_to_enum(operation):
         )
 
 
+# Takes in a tuple where first element is the encoding and second element is value.
+# If there is only one element, then it is assumed to be an int.
+def process_app_args(sub_arg):
+    if len(sub_arg) == 1:  # assume int
+        return int(sub_arg[0])
+    elif sub_arg[0] == "str":
+        return bytes(sub_arg[1], "ascii")
+    elif sub_arg[0] == "b64":
+        return base64.decodebytes(sub_arg[1].encode())
+    elif sub_arg[0] == "int":
+        return int(sub_arg[1])
+    elif sub_arg[0] == "addr":
+        return encoding.decode_address(sub_arg[1])
+
+
 def split_and_process_app_args(in_args):
     split_args = in_args.split(",")
     sub_args = [sub_arg.split(":") for sub_arg in split_args]
     app_args = []
     for sub_arg in sub_args:
-        if len(sub_arg) == 1:  # assume int
-            app_args.append(int(sub_arg[0]))
-        elif sub_arg[0] == "str":
-            app_args.append(bytes(sub_arg[1], "ascii"))
-        elif sub_arg[0] == "b64":
-            app_args.append(base64.decodebytes(sub_arg[1].encode()))
-        elif sub_arg[0] == "int":
-            app_args.append(int(sub_arg[1]))
-        elif sub_arg[0] == "addr":
-            app_args.append(encoding.decode_address(sub_arg[1]))
+        app_args.append(process_app_args(sub_arg))
     return app_args
+
+
+def split_and_process_boxes(box_str: str):
+    boxes = []
+    app_id = 0
+    split_args = box_str.split(",")
+    # Box strings alternate between the app ID and the encoded app arg.
+    for token in split_args:
+        try:
+            app_id = int(token)
+        except ValueError:
+            sub_arg = token.split(":")
+            sub_arg = process_app_args(sub_arg)
+            boxes.append((app_id, sub_arg))
+    # Sanity check that input correctly alternates between int and str.
+    assert len(boxes) == len(split_args) // 2
+    return boxes
 
 
 def composer_status_string_to_enum(status):
@@ -181,7 +204,7 @@ def lookup_applications(context, application_id, round):
 
 
 @when(
-    'I build an application transaction with operation "{operation:MaybeString}", application-id {application_id}, sender "{sender:MaybeString}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", fee {fee}, first-valid {first_valid}, last-valid {last_valid}, genesis-hash "{genesis_hash:MaybeString}", extra-pages {extra_pages}'
+    'I build an application transaction with operation "{operation:MaybeString}", application-id {application_id}, sender "{sender:MaybeString}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", fee {fee}, first-valid {first_valid}, last-valid {last_valid}, genesis-hash "{genesis_hash:MaybeString}", extra-pages {extra_pages}, boxes "{boxes:MaybeString}"'
 )
 def build_app_transaction(
     context,
@@ -203,6 +226,7 @@ def build_app_transaction(
     last_valid,
     genesis_hash,
     extra_pages,
+    boxes,
 ):
     if operation == "none":
         operation = None
@@ -236,6 +260,10 @@ def build_app_transaction(
         app_accounts = [
             account_pubkey for account_pubkey in app_accounts.split(",")
         ]
+    if boxes == "none":
+        boxes = None
+    elif boxes:
+        boxes = split_and_process_boxes(boxes)
     if genesis_hash == "none":
         genesis_hash = None
     local_schema = transaction.StateSchema(
@@ -268,11 +296,12 @@ def build_app_transaction(
         note=None,
         lease=None,
         rekey_to=None,
+        boxes=boxes,
     )
 
 
 @step(
-    'I build an application transaction with the transient account, the current application, suggested params, operation "{operation}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", extra-pages {extra_pages}'
+    'I build an application transaction with the transient account, the current application, suggested params, operation "{operation}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", extra-pages {extra_pages}, boxes "{boxes:MaybeString}"'
 )
 def build_app_txn_with_transient(
     context,
@@ -288,6 +317,7 @@ def build_app_txn_with_transient(
     foreign_assets,
     app_accounts,
     extra_pages,
+    boxes,
 ):
     application_id = 0
     if operation == "none":
@@ -332,6 +362,10 @@ def build_app_txn_with_transient(
         app_accounts = [
             account_pubkey for account_pubkey in app_accounts.split(",")
         ]
+    if boxes == "none":
+        boxes = None
+    elif boxes:
+        boxes = split_and_process_boxes(boxes)
 
     sp = context.app_acl.suggested_params()
     context.app_transaction = transaction.ApplicationCallTxn(
@@ -351,6 +385,7 @@ def build_app_txn_with_transient(
         note=None,
         lease=None,
         rekey_to=None,
+        boxes=None,
     )
 
 

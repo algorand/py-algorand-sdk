@@ -1,10 +1,10 @@
 import base64
 import json
-from urllib import parse
 import urllib.error
+from urllib import parse
 from urllib.request import Request, urlopen
 
-from .. import constants, encoding, error, future, logic, util
+from algosdk import constants, encoding, error, future, util
 
 api_version_path_prefix = "/v2"
 

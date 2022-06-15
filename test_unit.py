@@ -1,6 +1,7 @@
 import base64
 import copy
 import os
+import pytest
 import random
 import string
 import sys
@@ -22,19 +23,19 @@ from algosdk import (
 )
 from algosdk.abi import (
     ABIType,
-    UintType,
-    UfixedType,
-    BoolType,
-    ByteType,
     AddressType,
-    StringType,
     ArrayDynamicType,
     ArrayStaticType,
-    TupleType,
-    Method,
-    Interface,
+    BoolType,
+    ByteType,
     Contract,
+    Interface,
+    Method,
     NetworkInfo,
+    StringType,
+    TupleType,
+    UfixedType,
+    UintType,
 )
 from algosdk.future import template, transaction
 from algosdk.testing import dryrun
@@ -1313,7 +1314,7 @@ class TestApplicationTransactions(unittest.TestCase):
             transaction.ApplicationCallTxn(
                 self.sender, params, 10, oc, app_args=[2, 3, 0]
             )  # ints work
-            with self.assertRaises(AssertionError):
+            with self.assertRaises(TypeError):
                 transaction.ApplicationCallTxn(
                     self.sender, params, 10, oc, app_args=[3.4]
                 )  # floats don't
@@ -4140,6 +4141,112 @@ class TestABIInteraction(unittest.TestCase):
         )
 
 
+class TestEncoding(unittest.TestCase):
+    """
+    Miscellaneous unit tests for functions in `encoding.py` not covered elsewhere
+    """
+
+    def test_encode_as_bytes(self):
+        bs = b"blahblah"
+        assert bs == encoding.encode_as_bytes(bs)
+
+        ba = bytearray("blueblue", "utf-8")
+        assert ba == encoding.encode_as_bytes(ba)
+
+        s = "i am a ho hum string"
+        assert s.encode() == encoding.encode_as_bytes(s)
+
+        i = 42
+        assert i.to_bytes(8, "big") == encoding.encode_as_bytes(i)
+
+        for bad_type in [
+            13.37,
+            type(self),
+            None,
+            {"hi": "there"},
+            ["hello", "goodbye"],
+        ]:
+            with pytest.raises(TypeError) as te:
+                encoding.encode_as_bytes(bad_type)
+
+            assert f"{bad_type} is not bytes, bytearray, str, or int" == str(
+                te.value
+            )
+
+
+class TestBoxReference(unittest.TestCase):
+    def test_translate_box_references(self):
+        # Test case: reference input, foreign app array, caller app id, expected output
+        test_cases = [
+            ([], [], 9999, []),
+            (
+                [(100, "potato")],
+                [100],
+                9999,
+                [transaction.BoxReference(1, "potato".encode())],
+            ),
+            (
+                [(9999, "potato"), (0, "tomato")],
+                [100],
+                9999,
+                [
+                    transaction.BoxReference(0, "potato".encode()),
+                    transaction.BoxReference(0, "tomato".encode()),
+                ],
+            ),
+            # Self referencing its own app id in foreign array.
+            (
+                [(100, "potato")],
+                [100],
+                100,
+                [transaction.BoxReference(1, "potato".encode())],
+            ),
+            (
+                [(777, "tomato"), (888, "pomato")],
+                [100, 777, 888, 1000],
+                9999,
+                [
+                    transaction.BoxReference(2, "tomato".encode()),
+                    transaction.BoxReference(3, "pomato".encode()),
+                ],
+            ),
+        ]
+        for test_case in test_cases:
+            expected = test_case[3]
+            actual = transaction.BoxReference.translate_box_references(
+                test_case[0], test_case[1], test_case[2]
+            )
+
+            self.assertEqual(len(expected), len(actual))
+            for i, actual_refs in enumerate(actual):
+                self.assertEqual(expected[i], actual_refs)
+
+    def test_translate_invalid_box_references(self):
+        # Test case: reference input, foreign app array, error
+        test_cases_id_error = [
+            ([(1, "tomato")], [], error.InvalidForeignIndexError),
+            ([(-1, "tomato")], [1], error.InvalidForeignIndexError),
+            (
+                [(444, "pomato")],
+                [2, 3, 100, 888],
+                error.InvalidForeignIndexError,
+            ),
+            (
+                [(2, "tomato"), (444, "pomato")],
+                [2, 3, 100, 888],
+                error.InvalidForeignIndexError,
+            ),
+            ([("tomato", "tomato")], [1], TypeError),
+            ([(2, "zomato")], None, error.InvalidForeignIndexError),
+        ]
+
+        for test_case in test_cases_id_error:
+            with self.assertRaises(test_case[2]) as e:
+                transaction.BoxReference.translate_box_references(
+                    test_case[0], test_case[1], 9999
+                )
+
+
 if __name__ == "__main__":
     to_run = [
         TestPaymentTransaction,
@@ -4159,6 +4266,8 @@ if __name__ == "__main__":
         TestABIType,
         TestABIEncoding,
         TestABIInteraction,
+        TestEncoding,
+        TestBoxReference,
     ]
     loader = unittest.TestLoader()
     suites = [

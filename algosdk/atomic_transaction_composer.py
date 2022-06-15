@@ -1,8 +1,8 @@
-from abc import ABC, abstractmethod
 import base64
 import copy
+from abc import ABC, abstractmethod
 from enum import IntEnum
-from typing import Any, List, Optional, TypeVar, Union
+from typing import Any, List, Optional, Tuple, TypeVar, Union
 
 from algosdk import abi, error
 from algosdk.abi.address_type import AddressType
@@ -173,6 +173,7 @@ class AtomicTransactionComposer:
         note: bytes = None,
         lease: bytes = None,
         rekey_to: str = None,
+        boxes: List[Tuple[int, bytes]] = None,
     ) -> "AtomicTransactionComposer":
         """
         Add a smart contract method call to this atomic group.
@@ -210,6 +211,7 @@ class AtomicTransactionComposer:
                 with the same sender and lease can be confirmed in this
                 transaction's valid rounds
             rekey_to (str, optional): additionally rekey the sender to this address
+            boxes (list[(int, bytes)], optional): list of tuples specifying app id and key for boxes the app may access
 
         """
         if self.status != AtomicTransactionComposerStatus.BUILDING:
@@ -259,6 +261,7 @@ class AtomicTransactionComposer:
         accounts = accounts[:] if accounts else []
         foreign_apps = foreign_apps[:] if foreign_apps else []
         foreign_assets = foreign_assets[:] if foreign_assets else []
+        boxes = boxes[:] if boxes else []
 
         app_args = []
         raw_values = []
@@ -350,6 +353,7 @@ class AtomicTransactionComposer:
             lease=lease,
             rekey_to=rekey_to,
             extra_pages=extra_pages,
+            boxes=boxes,
         )
         txn_with_signer = TransactionWithSigner(method_txn, signer)
         txn_list.append(txn_with_signer)

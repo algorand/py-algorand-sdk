@@ -1,17 +1,14 @@
-from typing import List, Union
 import base64
-from enum import IntEnum
-import msgpack
 from collections import OrderedDict
-from .. import account
-from .. import constants
-from .. import encoding
-from .. import error
-from .. import logic
-from .. import transaction
-from ..v2client import algod, models
-from nacl.signing import SigningKey, VerifyKey
+from enum import IntEnum
+from typing import List, Union
+
+import msgpack
+from algosdk import account, constants, encoding, error, logic, transaction
+from algosdk.box_reference import BoxReference
+from algosdk.v2client import algod, models
 from nacl.exceptions import BadSignatureError
+from nacl.signing import SigningKey, VerifyKey
 
 
 class SuggestedParams:
@@ -1571,6 +1568,7 @@ class ApplicationCallTxn(Transaction):
         foreign_apps (list[int], optional): list of other applications (identified by index) involved in call
         foreign_assets (list[int], optional): list of assets involved in call
         extra_pages (int, optional): additional program space for supporting larger programs.  A page is 1024 bytes.
+        boxes(list[(int, bytes)], optional): list of tuples specifying app id and key for boxes the app may access
 
     Attributes:
         sender (str)
@@ -1589,6 +1587,7 @@ class ApplicationCallTxn(Transaction):
         foreign_apps (list[int])
         foreign_assets (list[int])
         extra_pages (int)
+        boxes (list[(int, bytes)])
     """
 
     def __init__(
@@ -1609,6 +1608,7 @@ class ApplicationCallTxn(Transaction):
         lease=None,
         rekey_to=None,
         extra_pages=0,
+        boxes=None,
     ):
         Transaction.__init__(
             self, sender, sp, note, lease, constants.appcall_txn, rekey_to
@@ -1624,6 +1624,7 @@ class ApplicationCallTxn(Transaction):
         self.foreign_apps = self.int_list(foreign_apps)
         self.foreign_assets = self.int_list(foreign_assets)
         self.extra_pages = extra_pages
+        self.boxes = BoxReference.translate_box_references(boxes, self.foreign_apps, self.index)  # type: ignore
         if not sp.flat_fee:
             self.fee = max(
                 self.estimate_size() * self.fee, constants.min_txn_fee
@@ -1634,9 +1635,8 @@ class ApplicationCallTxn(Transaction):
         """Confirm the argument is a StateSchema, or false which is coerced to None"""
         if not schema or not schema.dictify():
             return None  # Coerce false/empty values to None, to help __eq__
-        assert isinstance(
-            schema, StateSchema
-        ), "{} is not a StateSchema".format(schema)
+        if not isinstance(schema, StateSchema):
+            raise TypeError("{} is not a StateSchema".format(schema))
         return schema
 
     @staticmethod
@@ -1644,28 +1644,16 @@ class ApplicationCallTxn(Transaction):
         """Confirm the argument is bytes-like, or false which is coerced to None"""
         if not teal:
             return None  # Coerce false values like "" to None, to help __eq__
-        assert isinstance(
-            teal, (bytes, bytearray)
-        ), "Program {} is not bytes".format(teal)
+        if not isinstance(teal, (bytes, bytearray)):
+            raise TypeError("Program {} is not bytes".format(teal))
         return teal
 
     @staticmethod
     def bytes_list(lst):
         """Confirm or coerce list elements to bytes. Return None for empty/false lst."""
-
-        def as_bytes(e):
-            if isinstance(e, (bytes, bytearray)):
-                return e
-            if isinstance(e, str):
-                return e.encode()
-            if isinstance(e, int):
-                # Uses 8 bytes, big endian to match TEAL's btoi
-                return e.to_bytes(8, "big")  # raises for negative or too big
-            assert False, "{} is not bytes, str, or int".format(e)
-
         if not lst:
             return None
-        return [as_bytes(elt) for elt in lst]
+        return [encoding.encode_as_bytes(elt) for elt in lst]
 
     @staticmethod
     def int_list(lst):
@@ -1700,6 +1688,8 @@ class ApplicationCallTxn(Transaction):
             d["apas"] = self.foreign_assets
         if self.extra_pages:
             d["apep"] = self.extra_pages
+        if self.boxes:
+            d["apbx"] = [box.dictify() for box in self.boxes]
 
         d.update(super(ApplicationCallTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
@@ -1724,6 +1714,9 @@ class ApplicationCallTxn(Transaction):
             "foreign_apps": d["apfa"] if "apfa" in d else None,
             "foreign_assets": d["apas"] if "apas" in d else None,
             "extra_pages": d["apep"] if "apep" in d else 0,
+            "boxes": [BoxReference.undictify(box) for box in d["apbx"]]
+            if "apbx" in d
+            else None,
         }
         if args["accounts"]:
             args["accounts"] = [
@@ -1748,6 +1741,7 @@ class ApplicationCallTxn(Transaction):
             and self.foreign_apps == other.foreign_apps
             and self.foreign_assets == other.foreign_assets
             and self.extra_pages == other.extra_pages
+            and self.boxes == other.boxes
         )
 
 
@@ -1771,6 +1765,7 @@ class ApplicationCreateTxn(ApplicationCallTxn):
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
         extra_pages(int, optional): provides extra program size
+        boxes(list[(int, bytes)], optional): list of tuples specifying app id and key for boxes the app may access
 
     Attributes:
         See ApplicationCallTxn
@@ -1793,6 +1788,7 @@ class ApplicationCreateTxn(ApplicationCallTxn):
         lease=None,
         rekey_to=None,
         extra_pages=0,
+        boxes=None,
     ):
         ApplicationCallTxn.__init__(
             self,
@@ -1812,6 +1808,7 @@ class ApplicationCreateTxn(ApplicationCallTxn):
             lease=lease,
             rekey_to=rekey_to,
             extra_pages=extra_pages,
+            boxes=boxes,
         )
 
 
@@ -1832,6 +1829,8 @@ class ApplicationUpdateTxn(ApplicationCallTxn):
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
+        boxes(list[(int, bytes)], optional): list of tuples specifying app id and key for boxes the app may access
+
 
     Attributes:
         See ApplicationCallTxn
@@ -1851,6 +1850,7 @@ class ApplicationUpdateTxn(ApplicationCallTxn):
         note=None,
         lease=None,
         rekey_to=None,
+        boxes=None,
     ):
         ApplicationCallTxn.__init__(
             self,
@@ -1867,6 +1867,7 @@ class ApplicationUpdateTxn(ApplicationCallTxn):
             note=note,
             lease=lease,
             rekey_to=rekey_to,
+            boxes=boxes,
         )
 
 
@@ -1885,6 +1886,7 @@ class ApplicationDeleteTxn(ApplicationCallTxn):
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
+        boxes(list[(int, bytes)], optional): list of tuples specifying app id and key for boxes the app may access
 
     Attributes:
         See ApplicationCallTxn
@@ -1902,6 +1904,7 @@ class ApplicationDeleteTxn(ApplicationCallTxn):
         note=None,
         lease=None,
         rekey_to=None,
+        boxes=None,
     ):
         ApplicationCallTxn.__init__(
             self,
@@ -1916,6 +1919,7 @@ class ApplicationDeleteTxn(ApplicationCallTxn):
             note=note,
             lease=lease,
             rekey_to=rekey_to,
+            boxes=boxes,
         )
 
 
@@ -1934,6 +1938,7 @@ class ApplicationOptInTxn(ApplicationCallTxn):
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
+        boxes(list[(int, bytes)], optional): list of tuples specifying app id and key for boxes the app may access
 
     Attributes:
         See ApplicationCallTxn
@@ -1951,6 +1956,7 @@ class ApplicationOptInTxn(ApplicationCallTxn):
         note=None,
         lease=None,
         rekey_to=None,
+        boxes=None,
     ):
         ApplicationCallTxn.__init__(
             self,
@@ -1965,6 +1971,7 @@ class ApplicationOptInTxn(ApplicationCallTxn):
             note=note,
             lease=lease,
             rekey_to=rekey_to,
+            boxes=boxes,
         )
 
 
@@ -1983,6 +1990,7 @@ class ApplicationCloseOutTxn(ApplicationCallTxn):
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
+        boxes(list[(int, bytes)], optional): list of tuples specifying app id and key for boxes the app may access
 
     Attributes:
         See ApplicationCallTxn
@@ -2000,6 +2008,7 @@ class ApplicationCloseOutTxn(ApplicationCallTxn):
         note=None,
         lease=None,
         rekey_to=None,
+        boxes=None,
     ):
         ApplicationCallTxn.__init__(
             self,
@@ -2014,6 +2023,7 @@ class ApplicationCloseOutTxn(ApplicationCallTxn):
             note=note,
             lease=lease,
             rekey_to=rekey_to,
+            boxes=boxes,
         )
 
 
@@ -2032,6 +2042,7 @@ class ApplicationClearStateTxn(ApplicationCallTxn):
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
+        boxes(list[(int, bytes)], optional): list of tuples specifying app id and key for boxes the app may access
 
     Attributes:
         See ApplicationCallTxn
@@ -2049,6 +2060,7 @@ class ApplicationClearStateTxn(ApplicationCallTxn):
         note=None,
         lease=None,
         rekey_to=None,
+        boxes=None,
     ):
         ApplicationCallTxn.__init__(
             self,
@@ -2063,6 +2075,7 @@ class ApplicationClearStateTxn(ApplicationCallTxn):
             note=note,
             lease=lease,
             rekey_to=rekey_to,
+            boxes=boxes,
         )
 
 
@@ -2082,6 +2095,7 @@ class ApplicationNoOpTxn(ApplicationCallTxn):
         note(bytes, optional): transaction note field
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
+        boxes(list[(int, bytes)], optional): list of tuples specifying app id and key for boxes the app may access
 
     Attributes:
         See ApplicationCallTxn
@@ -2099,6 +2113,7 @@ class ApplicationNoOpTxn(ApplicationCallTxn):
         note=None,
         lease=None,
         rekey_to=None,
+        boxes=None,
     ):
         ApplicationCallTxn.__init__(
             self,
@@ -2113,6 +2128,7 @@ class ApplicationNoOpTxn(ApplicationCallTxn):
             note=note,
             lease=lease,
             rekey_to=rekey_to,
+            boxes=boxes,
         )
 
 
