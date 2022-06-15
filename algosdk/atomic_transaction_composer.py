@@ -515,6 +515,7 @@ class AtomicTransactionComposer:
                             return_value=return_value,
                             decode_error=decode_error,
                             tx_info=tx_info,
+                            method=self.method_dict[i],
                         )
                     )
                     continue
@@ -549,6 +550,7 @@ class AtomicTransactionComposer:
                 return_value=return_value,
                 decode_error=decode_error,
                 tx_info=tx_info,
+                method=self.method_dict[i],
             )
             method_results.append(abi_result)
 
@@ -696,12 +698,14 @@ class ABIResult:
         return_value: Any,
         decode_error: Optional[Exception],
         tx_info: dict,
+        method: abi.Method,
     ) -> None:
         self.tx_id = tx_id
         self.raw_value = raw_value
         self.return_value = return_value
         self.decode_error = decode_error
         self.tx_info = tx_info
+        self.method = method
 
 
 class AtomicTransactionResponse:
