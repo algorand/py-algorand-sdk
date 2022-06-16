@@ -610,7 +610,7 @@ def abi_method_adder(
     local_ints=None,
     extra_pages=None,
     force_unique_transactions=False,
-    exception_regex="none",
+    exception_key="none",
 ):
     if account_type == "transient":
         sender = context.transient_pk
@@ -675,30 +675,40 @@ def abi_method_adder(
         )
     except AtomicTransactionComposerError as atce:
         assert (
-            exception_regex != "none"
+            exception_key != "none"
         ), f"cucumber step asserted that no exception resulted, but the following exception actually occurred: {atce}"
 
-        assert re.search(
-            exception_regex, str(atce)
-        ), f"{atce} did not satisfy the expected regular expression {exception_regex}"
+        arglen_exception = "argument_count_mismatch"
+        known_exception_keys = [arglen_exception]
+        assert (
+            exception_key in known_exception_keys
+        ), f"encountered exception key '{exception_key}' which is not in known set: {known_exception_keys}"
+
+        if exception_key == arglen_exception:
+            exception_msg = (
+                "number of method arguments do not match the method signature"
+            )
+            assert exception_msg in str(
+                atce
+            ), f"expected argument count mismatch error such as '{exception_msg}' but got the following instead: {atce}"
         return
 
     assert (
-        exception_regex == "none"
-    ), f"should have encountered an AtomicTransactionComposerError satisfying the regex pattern {exception_regex}, but no such exception has been detected"
+        exception_key == "none"
+    ), f"should have encountered an AtomicTransactionComposerError keyed by '{exception_key}', but no such exception has been detected"
 
 
 @step(
-    'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments; any resulting exception satisfies the regex "{exception_regex}".'
+    'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments; any resulting exception has key "{exception_key}".'
 )
 def add_abi_method_call_with_exception(
-    context, account_type, operation, exception_regex
+    context, account_type, operation, exception_key
 ):
     abi_method_adder(
         context,
         account_type,
         operation,
-        exception_regex=exception_regex,
+        exception_key=exception_key,
     )
 
 
