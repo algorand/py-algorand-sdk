@@ -537,9 +537,7 @@ def add_transaction_to_composer(context):
     )
 
 
-def process_abi_args(context, method, arg_tokens, erase_empty_tokens=True):
-    if erase_empty_tokens:
-        arg_tokens = [tok for tok in arg_tokens if tok]
+def process_abi_args(context, method, arg_tokens):
     method_args = []
     for arg_index, arg_token in enumerate(arg_tokens):
         if arg_index >= len(method.args):
@@ -588,7 +586,7 @@ def append_txn_to_method_args(context):
 )
 def append_app_args_to_method_args(context, method_args):
     # Returns a list of ABI method arguments
-    app_args = method_args.split(",")
+    app_args = method_args.split(",") if method_args else []
     context.method_args += app_args
 
 
