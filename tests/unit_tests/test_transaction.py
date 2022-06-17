@@ -314,42 +314,7 @@ class TestPaymentTransaction(unittest.TestCase):
         note = base64.b64decode("6gAVR0Nsv5Y=")
         close = "IDUTJEUIEVSMXTU4LGTJWZ2UE2E6TIODUKU6UW3FU3UKIQQ77RLUBBBFLA"
         amount = 1000
-        lease = bytes(
-            [
-                1,
-                2,
-                3,
-                4,
-                1,
-                2,
-                3,
-                4,
-                1,
-                2,
-                3,
-                4,
-                1,
-                2,
-                3,
-                4,
-                1,
-                2,
-                3,
-                4,
-                1,
-                2,
-                3,
-                4,
-                1,
-                2,
-                3,
-                4,
-                1,
-                2,
-                3,
-                4,
-            ]
-        )
+        lease = bytes([1,2,3,4]*8)
         sp = transaction.SuggestedParams(fee, first_round, last_round, gh, gen)
         txn = transaction.PaymentTxn(
             pk,
