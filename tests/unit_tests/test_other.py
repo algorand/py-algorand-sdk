@@ -18,7 +18,7 @@ from nacl.signing import SigningKey
 
 
 class TestMnemonic(unittest.TestCase):
-    zero_bytes = bytes([0]*32)
+    zero_bytes = bytes([0] * 32)
 
     def test_mnemonic_private_key(self):
         priv_key, _ = account.generate_account()
@@ -106,7 +106,7 @@ class TestMnemonic(unittest.TestCase):
         self.assertRaises(error.WrongMnemonicLengthError, mnemonic._to_key, mn)
 
     def test_bytes_wrong_len(self):
-        key = bytes([0]*31)
+        key = bytes([0] * 31)
         self.assertRaises(
             error.WrongKeyBytesLengthError, mnemonic._from_key, key
         )
