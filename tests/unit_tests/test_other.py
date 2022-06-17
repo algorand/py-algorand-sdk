@@ -106,41 +106,7 @@ class TestMnemonic(unittest.TestCase):
         self.assertRaises(error.WrongMnemonicLengthError, mnemonic._to_key, mn)
 
     def test_bytes_wrong_len(self):
-        key = bytes(
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-            ]
-        )
+        key = bytes([0]*31)
         self.assertRaises(
             error.WrongKeyBytesLengthError, mnemonic._from_key, key
         )
