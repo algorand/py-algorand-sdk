@@ -18,42 +18,7 @@ from nacl.signing import SigningKey
 
 
 class TestMnemonic(unittest.TestCase):
-    zero_bytes = bytes(
-        [
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-        ]
-    )
+    zero_bytes = bytes([0]*32)
 
     def test_mnemonic_private_key(self):
         priv_key, _ = account.generate_account()
