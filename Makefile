@@ -27,7 +27,7 @@ show-local-testenv:
 local-test: export TESTING_URL ?= https://github.com/algorand/algorand-sdk-testing.git
 local-test: export TESTING_BRANCH ?= control-my-test-branches # revert to master before merge
 local-test: export ALGOD_URL ?= https://github.com/algorand/go-algorand
-local-test: export ALGOD_BRANCH ?= feature/avm-boxes # revert to master before merge
+local-test: export ALGOD_BRANCH ?= feature/avm-box # revert to master before merge
 local-test: export INDEXER_URL ?= https://github.com/algorand/indexer
 local-test: export INDEXER_BRANCH ?= localledger/integration # revert to develop before merge
 
