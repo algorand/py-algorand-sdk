@@ -24,20 +24,20 @@ show-local-testenv:
 	cat $(LOCAL_TESTENV) || echo "DNE"
 
 # configure the repos and branches that a local test will build off of:
-local-test: export TESTING_URL ?= https://github.com/algorand/algorand-sdk-testing.git
-local-test: export TESTING_BRANCH ?= control-my-test-branches # revert to master before merge
-local-test: export ALGOD_URL ?= https://github.com/algorand/go-algorand
-local-test: export ALGOD_BRANCH ?= feature/avm-box # revert to master before merge
-local-test: export INDEXER_URL ?= https://github.com/algorand/indexer
-local-test: export INDEXER_BRANCH ?= localledger/integration # revert to develop before merge
+build-for-local-test: export TESTING_URL ?= https://github.com/algorand/algorand-sdk-testing.git
+build-for-local-test: export TESTING_BRANCH ?= control-my-test-branches # revert to master before merge
+build-for-local-test: export ALGOD_URL ?= https://github.com/algorand/go-algorand
+build-for-local-test: export ALGOD_BRANCH ?= feature/avm-box # revert to master before merge
+build-for-local-test: export INDEXER_URL ?= https://github.com/algorand/indexer
+build-for-local-test: export INDEXER_BRANCH ?= localledger/integration # revert to develop before merge
 
 # other exports for `local-test`:
-local-test: export PYTHON_VERSION := $(PYTHON_VERSION)
-local-test: export LOCAL_TESTENV := $(abspath .)/$(LOCAL_TESTENV)
-local-test: export DOCKER_TESTING ?= false
-local-test: export TYPE_OVERRIDE ?= source
+build-for-local-test: export PYTHON_VERSION := $(PYTHON_VERSION)
+build-for-local-test: export LOCAL_TESTENV := $(abspath .)/$(LOCAL_TESTENV)
+build-for-local-test: export DOCKER_TESTING ?= false
+build-for-local-test: export TYPE_OVERRIDE ?= source
 
 # local-test bootstraps the necessary algod and indexer docker containers
 # for integration tests, but does not run the tests
-local-test: prep-local-testenv show-local-testenv
+build-for-local-test: prep-local-testenv show-local-testenv
 	./integration.sh
