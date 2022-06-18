@@ -13,9 +13,9 @@ git clone --single-branch --branch ${TESTING_BRANCH} ${TESTING_URL} test-harness
 mkdir -p tests/features
 cp -r test-harness/features/* tests/features
 
-echo "DOCKERIZE_PYSDK-->${DOCKERIZE_PYSDK}"
-if [[ ${DOCKERIZE_PYSDK}==true ]]; then
-  echo "Building SDK docker for a full integration to run after algod and indexer docker builds"
+echo "DOCKER_TESTING-->${DOCKER_TESTING}"
+if [[ ${DOCKER_TESTING}==true ]]; then
+  echo "Building SDK docker for a full integration test which will run at the end"
   docker build -t py-sdk-testing --build-arg PYTHON_VERSION="${PYTHON_VERSION}" -f Dockerfile "$(pwd)"
 fi
 
@@ -33,7 +33,7 @@ done
 
 echo "algod is ready for testing"
 
-if [[ ${DOCKERIZE_PYSDK}==true ]]; then
+if [[ ${DOCKER_TESTING}==true ]]; then
   echo "Launching SDK testing via the SDK docker image"
   docker run -it --network host py-sdk-testing:latest
 fi

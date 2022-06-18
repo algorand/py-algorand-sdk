@@ -8,7 +8,7 @@ integration:
 
 PYTHON_VERSION ?= 3.8
 docker-test: export PYTHON_VERSION := $(PYTHON_VERSION)
-docker-test: export DOCKERIZE_PYSDK ?= true
+docker-test: export DOCKER_TESTING ?= true
 docker-test: export TESTING_URL ?= https://github.com/algorand/algorand-sdk-testing.git
 docker-test: export TESTING_BRANCH ?= control-my-test-branches # revert to master before merge
 docker-test:
@@ -34,7 +34,7 @@ local-test: export INDEXER_BRANCH ?= localledger/integration # revert to develop
 # other exports for `local-test`:
 local-test: export PYTHON_VERSION := $(PYTHON_VERSION)
 local-test: export LOCAL_TESTENV := $(abspath .)/$(LOCAL_TESTENV)
-local-test: export DOCKERIZE_PYSDK ?= false
+local-test: export DOCKER_TESTING ?= false
 local-test: export TYPE_OVERRIDE ?= source
 
 # local-test bootstraps the necessary algod and indexer docker containers
