@@ -14,6 +14,15 @@ docker-test: export TESTING_BRANCH ?= control-my-test-branches # revert to maste
 docker-test:
 	./integration.sh
 
+docker-ps:
+	cd test-harness && docker-compose ps
+
+docker-pause:
+	cd test-harness && docker-compose pause
+
+docker-unpause:
+	cd test-harness && docker-compose unpause
+
 # these are utilized if run locally:
 LOCAL_TESTENV ?= .local-env
 prep-local-testenv:
