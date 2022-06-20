@@ -303,9 +303,11 @@ def decode_source_map(src_map: Dict[str, Any], delimiter: str = ";"):
             line_map[line_num].append(index)
     return line_map
 
+
 def _decode_int_value(value: str) -> int:
     decoded_value = base64vlq_decode(value)
     return decoded_value[2] if decoded_value else None
+
 
 _b64chars = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 _b64table = [None] * (max(_b64chars) + 1)
@@ -313,6 +315,7 @@ for i, b in enumerate(_b64chars):
     _b64table[b] = i
 
 _shiftsize, _flag, _mask = 5, 1 << 5, (1 << 5) - 1
+
 
 def base64vlq_decode(vlqval: str) -> Tuple[int]:
     """Decode Base64 VLQ value"""
