@@ -291,17 +291,49 @@ def get_application_address(appID: int) -> str:
     return encoding.encode_address(checksum)
 
 
-def decode_source_map(src_map: Dict[str, Any], delimiter: str = ";"):
-    raw_mapping = src_map["mapping"].split(delimiter)
-    pc_list = [_decode_int_value(raw_val) for raw_val in raw_mapping]
+class SourceMap:
+    def __init__(self, map: Dict[str, Any], delimiter: str = ";"):
+        self.delimter = delimiter
 
-    line_map = {}
-    for index, line_num in enumerate(pc_list):
-        if line_num is not None:  # be careful for '0' checks!
-            if line_num not in line_map:
-                line_map[line_num] = []
-            line_map[line_num].append(index)
-    return line_map
+        self.version: int = map["version"]
+        self.sources: List[str] = map["sources"]
+
+        if "comments" in map:
+            self.comments: Dict[int, str] = {
+                int(k): v for k, v in map["comments"].items()
+            }
+        else:
+            self.comments = {}
+
+        self.mapping: str = map["mapping"]
+
+        self.line_to_pc = {}
+
+        raw_mapping = self.mapping.split(delimiter)
+        pc_list = [_decode_int_value(raw_val) for raw_val in raw_mapping]
+
+        self.pc_to_line: Dict[int, int] = {}
+        self.line_to_pc: Dict[int, List[int]] = {}
+        last_line = 0
+        for index, line_num in enumerate(pc_list):
+            if line_num is not None:  # be careful for '0' checks!
+                if line_num not in self.line_to_pc:
+                    self.line_to_pc[line_num] = []
+                self.line_to_pc[line_num].append(index)
+                last_line = line_num
+
+            self.pc_to_line[index] = last_line
+
+    def get_line_for_pc(self, pc: int) -> int:
+        return self.pc_to_line[pc]
+
+    def get_pcs_for_line(self, line: int) -> List[int]:
+        return self.line_to_pc[line]
+
+    def get_comment_for_line(self, line: int) -> str:
+        if line in self.comments:
+            return self.comments[line]
+        return ""
 
 
 def _decode_int_value(value: str) -> int:
