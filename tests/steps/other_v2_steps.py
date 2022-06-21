@@ -1,41 +1,25 @@
 import base64
 import json
 import os
-import urllib
 import unittest
+import urllib
 from datetime import datetime
 from pathlib import Path
 from urllib.request import Request, urlopen
 
-from behave import (
-    given,
-    when,
-    then,
-    register_type,
-    step,
-)  # pylint: disable=no-name-in-module
-from glom import glom
 import parse
-
-from algosdk import (
-    dryrun_results,
-    encoding,
-    error,
-    mnemonic,
-)
+from algosdk import dryrun_results, encoding, error, mnemonic
 from algosdk.error import AlgodHTTPError
 from algosdk.future import transaction
-from algosdk.v2client import *
-from algosdk.v2client.models import (
-    DryrunRequest,
-    DryrunSource,
-    Account,
-    ApplicationLocalState,
-)
-
 from algosdk.testing.dryrun import DryrunTestCaseMixin
-
-from tests.steps.steps import algod_port, token as daemon_token
+from algosdk.v2client import *
+from algosdk.v2client.models import (Account, ApplicationLocalState,
+                                     DryrunRequest, DryrunSource)
+from behave import (given, register_type,  # pylint: disable=no-name-in-module
+                    step, then, when)
+from glom import glom
+from tests.steps.steps import algod_port
+from tests.steps.steps import token as daemon_token
 
 
 @parse.with_pattern(r".*")
