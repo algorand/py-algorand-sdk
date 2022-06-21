@@ -13,10 +13,19 @@ from algosdk.error import AlgodHTTPError
 from algosdk.future import transaction
 from algosdk.testing.dryrun import DryrunTestCaseMixin
 from algosdk.v2client import *
-from algosdk.v2client.models import (Account, ApplicationLocalState,
-                                     DryrunRequest, DryrunSource)
-from behave import (given, register_type,  # pylint: disable=no-name-in-module
-                    step, then, when)
+from algosdk.v2client.models import (
+    Account,
+    ApplicationLocalState,
+    DryrunRequest,
+    DryrunSource,
+)
+from behave import (
+    given,
+    register_type,  # pylint: disable=no-name-in-module
+    step,
+    then,
+    when,
+)
 from glom import glom
 from tests.steps.steps import algod_port
 from tests.steps.steps import token as daemon_token
