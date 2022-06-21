@@ -7,10 +7,14 @@ import pytest
 
 from algosdk import abi, atomic_transaction_composer, encoding, mnemonic
 from algosdk.abi.contract import NetworkInfo
-from algosdk.error import ABITypeError, IndexerHTTPError
+from algosdk.error import (
+    ABITypeError,
+    IndexerHTTPError,
+    AtomicTransactionComposerError,
+)
 from algosdk.future import transaction
 
-from test.steps.other_v2_steps import read_program
+from tests.steps.other_v2_steps import read_program
 
 
 def operation_string_to_enum(operation):
@@ -108,6 +112,27 @@ def s512_256_uint64(witness):
     return int.from_bytes(encoding.checksum(witness)[:8], "big")
 
 
+@step(
+    'I sign and submit the transaction, saving the txid. If there is an error it is "{error_string:MaybeString}".'
+)
+def sign_submit_save_txid_with_error(context, error_string):
+    try:
+        signed_app_transaction = context.app_transaction.sign(
+            context.transient_sk
+        )
+        context.app_txid = context.app_acl.send_transaction(
+            signed_app_transaction
+        )
+    except Exception as e:
+        if not error_string or error_string not in str(e):
+            raise RuntimeError(
+                "error string "
+                + error_string
+                + " not in actual error "
+                + str(e)
+            )
+
+
 @when("we make a GetApplicationByID call for applicationID {app_id}")
 def application_info(context, app_id):
     context.response = context.acl.application_info(int(app_id))
@@ -119,11 +144,6 @@ def application_info(context, app_id):
 def application_box_by_name(context, app_id, box_name):
     boxes = split_and_process_app_args(box_name)[0]
     context.response = context.acl.application_box_by_name(app_id, boxes)
-
-
-@when("we make a LookupApplications call with applicationID {app_id}")
-def lookup_application(context, app_id):
-    context.response = context.icl.applications(int(app_id))
 
 
 @when(
@@ -190,8 +210,13 @@ def lookup_application_include_all2(
         context.response = json.loads(str(e))
 
 
+@when("we make a LookupApplications call with applicationID {app_id}")
+def lookup_application(context, app_id):
+    context.response = context.icl.applications(int(app_id))
+
+
 @when("I use {indexer} to lookup application with {application_id}")
-def lookup_application(context, indexer, application_id):
+def lookup_application2(context, indexer, application_id):
     context.response = context.icls[indexer].applications(
         application_id=int(application_id)
     )
@@ -517,15 +542,11 @@ def create_atomic_transaction_composer(context):
     context.atomic_transaction_composer = (
         atomic_transaction_composer.AtomicTransactionComposer()
     )
-    context.method_list = []
 
 
 @step('I create the Method object from method signature "{method_signature}"')
 def build_abi_method(context, method_signature):
     context.abi_method = abi.Method.from_signature(method_signature)
-    if not hasattr(context, "method_list"):
-        context.method_list = []
-    context.method_list.append(context.abi_method)
 
 
 @step("I make a transaction signer for the {account_type} account.")
@@ -561,33 +582,33 @@ def add_transaction_to_composer(context):
 
 def process_abi_args(context, method, arg_tokens):
     method_args = []
-    for arg_index, arg in enumerate(method.args):
-        # Skip arg if it does not have a type
+    for arg_index, arg_token in enumerate(arg_tokens):
+        if arg_index >= len(method.args):
+            method_args.append(arg_token)
+            continue
+
+        arg = method.args[arg_index]
         if isinstance(arg.type, abi.ABIType):
-            method_arg = arg.type.decode(
-                base64.b64decode(arg_tokens[arg_index])
-            )
+            method_arg = arg.type.decode(base64.b64decode(arg_token))
             method_args.append(method_arg)
         elif arg.type == abi.ABIReferenceType.ACCOUNT:
-            method_arg = abi.AddressType().decode(
-                base64.b64decode(arg_tokens[arg_index])
-            )
+            method_arg = abi.AddressType().decode(base64.b64decode(arg_token))
             method_args.append(method_arg)
         elif (
             arg.type == abi.ABIReferenceType.APPLICATION
             or arg.type == abi.ABIReferenceType.ASSET
         ):
-            parts = arg_tokens[arg_index].split(":")
+            parts = arg_token.split(":")
             if len(parts) == 2 and parts[0] == "ctxAppIdx":
                 method_arg = context.app_ids[int(parts[1])]
             else:
                 method_arg = abi.UintType(64).decode(
-                    base64.b64decode(arg_tokens[arg_index])
+                    base64.b64decode(arg_token)
                 )
             method_args.append(method_arg)
         else:
             # Append the transaction signer as is
-            method_args.append(arg_tokens[arg_index])
+            method_args.append(arg_token)
     return method_args
 
 
@@ -608,7 +629,7 @@ def append_txn_to_method_args(context):
 )
 def append_app_args_to_method_args(context, method_args):
     # Returns a list of ABI method arguments
-    app_args = method_args.split(",")
+    app_args = method_args.split(",") if method_args else []
     context.method_args += app_args
 
 
@@ -630,6 +651,7 @@ def abi_method_adder(
     local_ints=None,
     extra_pages=None,
     force_unique_transactions=False,
+    exception_key="none",
 ):
     if account_type == "transient":
         sender = context.transient_pk
@@ -668,6 +690,7 @@ def abi_method_adder(
     app_args = process_abi_args(
         context, context.abi_method, context.method_args
     )
+    context.app_args = app_args
     note = None
     if force_unique_transactions:
         note = (
@@ -675,32 +698,58 @@ def abi_method_adder(
             + context.nonce.encode()
         )
 
-    context.atomic_transaction_composer.add_method_call(
-        app_id=app_id,
-        method=context.abi_method,
-        sender=sender,
-        sp=context.suggested_params,
-        signer=context.transaction_signer,
-        method_args=app_args,
-        on_complete=operation_string_to_enum(operation),
-        local_schema=local_schema,
-        global_schema=global_schema,
-        approval_program=approval_program,
-        clear_program=clear_program,
-        extra_pages=extra_pages,
-        note=note,
-    )
+    try:
+        context.atomic_transaction_composer.add_method_call(
+            app_id=app_id,
+            method=context.abi_method,
+            sender=sender,
+            sp=context.suggested_params,
+            signer=context.transaction_signer,
+            method_args=app_args,
+            on_complete=operation_string_to_enum(operation),
+            local_schema=local_schema,
+            global_schema=global_schema,
+            approval_program=approval_program,
+            clear_program=clear_program,
+            extra_pages=extra_pages,
+            note=note,
+        )
+    except AtomicTransactionComposerError as atce:
+        assert (
+            exception_key != "none"
+        ), f"cucumber step asserted that no exception resulted, but the following exception actually occurred: {atce}"
+
+        arglen_exception = "argument_count_mismatch"
+        known_exception_keys = [arglen_exception]
+        assert (
+            exception_key in known_exception_keys
+        ), f"encountered exception key '{exception_key}' which is not in known set: {known_exception_keys}"
+
+        if exception_key == arglen_exception:
+            exception_msg = (
+                "number of method arguments do not match the method signature"
+            )
+            assert exception_msg in str(
+                atce
+            ), f"expected argument count mismatch error such as '{exception_msg}' but got the following instead: {atce}"
+        return
+
+    assert (
+        exception_key == "none"
+    ), f"should have encountered an AtomicTransactionComposerError keyed by '{exception_key}', but no such exception has been detected"
 
 
 @step(
-    'I add a nonced method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments.'
+    'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments; any resulting exception has key "{exception_key}".'
 )
-def add_abi_method_call_nonced(context, account_type, operation):
+def add_abi_method_call_with_exception(
+    context, account_type, operation, exception_key
+):
     abi_method_adder(
         context,
         account_type,
         operation,
-        force_unique_transactions=True,
+        exception_key=exception_key,
     )
 
 
@@ -762,6 +811,18 @@ def add_abi_method_call_creation(
         True,
         approval_program_path,
         clear_program_path,
+    )
+
+
+@step(
+    'I add a nonced method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments.'
+)
+def add_abi_method_call_nonced(context, account_type, operation):
+    abi_method_adder(
+        context,
+        account_type,
+        operation,
+        force_unique_transactions=True,
     )
 
 
@@ -832,9 +893,7 @@ def check_atomic_transaction_composer_response(context, returns):
                 assert result.decode_error is None
                 continue
             expected_bytes = base64.b64decode(expected)
-            expected_value = context.method_list[i].returns.type.decode(
-                expected_bytes
-            )
+            expected_value = result.method.returns.type.decode(expected_bytes)
 
             assert expected_bytes == result.raw_value, "actual is {}".format(
                 result.raw_value
@@ -876,7 +935,7 @@ def serialize_method_to_json(context):
 @when(
     'I create the Method object with name "{method_name}" method description "{method_desc}" first argument type "{first_arg_type}" first argument description "{first_arg_desc}" second argument type "{second_arg_type}" second argument description "{second_arg_desc}" and return type "{return_arg_type}"'
 )
-def create_method_from_test_with_arg_name(
+def create_method_from_test_with_arg_name_and_desc(
     context,
     method_name,
     method_desc,
@@ -1041,3 +1100,54 @@ def spin_results_satisfy(context, result_index, regex):
     spin = bytes(spin).decode()
 
     assert re.search(regex, spin), f"{spin} did not match the regex {regex}"
+
+
+@when(
+    'I append to my Method objects list in the case of a non-empty signature "{method:MaybeString}"'
+)
+def make_extra_method(context, method):
+    if not hasattr(context, "methods"):
+        context.methods = []
+
+    if method != "":
+        context.methods.append(abi.Method.from_signature(method))
+
+
+@when("I create an Interface object from my Method objects list")
+def create_interface_from_method(context):
+    context.iface = abi.Interface("", context.methods)
+
+
+@when("I create a Contract object from my Method objects list")
+def create_contract_from_method(context):
+    context.contract = abi.Contract("", context.methods)
+
+
+@when('I get the method from the Interface by name "{name}"')
+def get_interface_method_by_name(context, name):
+    try:
+        context.retrieved_method = context.iface.get_method_by_name(name)
+    except KeyError as ke:
+        context.error = str(ke)
+
+
+@when('I get the method from the Contract by name "{name}"')
+def get_contract_method_by_name(context, name):
+    try:
+        context.retrieved_method = context.contract.get_method_by_name(name)
+    except KeyError as ke:
+        context.error = str(ke)
+
+
+@then(
+    'the produced method signature should equal "{methodsig}". If there is an error it begins with "{error:MaybeString}"'
+)
+def check_found_method_or_error(context, methodsig, error: str = None):
+    if hasattr(context, "retrieved_method"):
+        assert error == ""
+        assert methodsig == context.retrieved_method.get_signature()
+    elif hasattr(context, "error"):
+        assert error != ""
+        assert error in context.error
+    else:
+        assert False, "Both retrieved method and error string are None"
