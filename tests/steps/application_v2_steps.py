@@ -1156,7 +1156,9 @@ def check_found_method_or_error(context, methodsig, error: str = None):
 @then(
     'the contents of the box with name "{box_name}" should be "{box_value:MaybeString}". If there is an error it is "{error_string:MaybeString}".'
 )
-def check_box_contents(context, box_name, box_value: str = None, error_string: str = None):
+def check_box_contents(
+    context, box_name, box_value: str = None, error_string: str = None
+):
     try:
         box_name = split_and_process_app_args(box_name)[0]
         box_response = context.app_acl.application_box_by_name(
