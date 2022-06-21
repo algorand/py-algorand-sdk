@@ -35,7 +35,11 @@ from algosdk.v2client.models import (
 
 from algosdk.testing.dryrun import DryrunTestCaseMixin
 
+<<<<<<< HEAD:test/steps/other_v2_steps.py
 from test.steps.steps import algod_port, token as daemon_token
+=======
+from tests.steps.steps import algod_port, token as daemon_token
+>>>>>>> develop:tests/steps/other_v2_steps.py
 
 
 @parse.with_pattern(r".*")
@@ -133,13 +137,13 @@ def mock_response(context, jsonfiles, directory):
 )
 def mock_http_responses(context, filename, directory, status):
     context.expected_status_code = int(status)
-    with open("test/features/resources/mock_response_status", "w") as f:
+    with open("tests/features/resources/mock_response_status", "w") as f:
         f.write(status)
     mock_response(context, filename, directory)
-    f = open("test/features/resources/mock_response_path", "r")
+    f = open("tests/features/resources/mock_response_path", "r")
     mock_response_path = f.read()
     f.close()
-    f = open("test/features/resources/" + mock_response_path, "r")
+    f = open("tests/features/resources/" + mock_response_path, "r")
     expected_mock_response = f.read()
     f.close()
     expected_mock_response = bytes(expected_mock_response, "ascii")
@@ -603,7 +607,7 @@ def txns_by_addr(
 @when(
     'we make a Lookup Account Transactions call against account "{account:MaybeString}" with NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index}'
 )
-def txns_by_addr(
+def txns_by_addr2(
     context,
     account,
     notePrefixB64,
@@ -1154,7 +1158,7 @@ def parsed_equals(context, jsonfile):
     loaded_response = None
     dir_path = os.path.dirname(os.path.realpath(__file__))
     dir_path = os.path.dirname(os.path.dirname(dir_path))
-    with open(dir_path + "/test/features/resources/" + jsonfile, "rb") as f:
+    with open(dir_path + "/tests/features/resources/" + jsonfile, "rb") as f:
         loaded_response = bytearray(f.read())
     # sort context.response
     def recursively_sort_on_key(dictionary):
@@ -1405,27 +1409,6 @@ def algod_v2_client(context):
     context.app_acl = algod.AlgodClient(daemon_token, algod_address)
 
 
-@step(
-    'I sign and submit the transaction, saving the txid. If there is an error it is "{error_string:MaybeString}".'
-)
-def sign_submit_save_txid_with_error(context, error_string):
-    try:
-        signed_app_transaction = context.app_transaction.sign(
-            context.transient_sk
-        )
-        context.app_txid = context.app_acl.send_transaction(
-            signed_app_transaction
-        )
-    except Exception as e:
-        if not error_string or error_string not in str(e):
-            raise RuntimeError(
-                "error string "
-                + error_string
-                + " not in actual error "
-                + str(e)
-            )
-
-
 @when('I compile a teal program "{program}"')
 def compile_step(context, program):
     data = load_resource(program)
@@ -1656,7 +1639,7 @@ def dryrun_test_case_local_state_assert_fail_step(
 )
 def check_json_output_equals(context, json_path, json_directory):
     with open(
-        "test/features/unit/" + json_directory + "/" + json_path, "rb"
+        "tests/features/unit/" + json_directory + "/" + json_path, "rb"
     ) as f:
         loaded_response = json.load(f)
     assert context.json_output == loaded_response
@@ -1669,7 +1652,7 @@ def parse_dryrun_response_object(context, dryrun_response_file, txn_id):
     dir_path = os.path.dirname(os.path.realpath(__file__))
     dir_path = os.path.dirname(os.path.dirname(dir_path))
     with open(
-        dir_path + "/test/features/resources/" + dryrun_response_file, "r"
+        dir_path + "/tests/features/resources/" + dryrun_response_file, "r"
     ) as f:
         drr_dict = json.loads(f.read())
 
