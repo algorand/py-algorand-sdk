@@ -471,7 +471,7 @@ def assert_app_account_is_the_hash(context):
     ), f"account-address: expected [{expected}], but got [{actual}]"
 
 
-@then(
+@step(
     "I fund the current application's address with {fund_amount} microalgos."
 )
 def fund_app_account(context, fund_amount):
