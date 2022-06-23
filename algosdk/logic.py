@@ -297,20 +297,12 @@ class SourceMap:
 
         self.version: int = map["version"]
         self.sources: List[str] = map["sources"]
-
-        if "comments" in map:
-            self.comments: Dict[int, str] = {
-                int(k): v for k, v in map["comments"].items()
-            }
-        else:
-            self.comments = {}
-
         self.mapping: str = map["mapping"]
 
-        self.line_to_pc = {}
-
-        raw_mapping = self.mapping.split(delimiter)
-        pc_list = [_decode_int_value(raw_val) for raw_val in raw_mapping]
+        pc_list = [
+            _decode_int_value(raw_val)
+            for raw_val in self.mapping.split(delimiter)
+        ]
 
         self.pc_to_line: Dict[int, int] = {}
         self.line_to_pc: Dict[int, List[int]] = {}
@@ -329,11 +321,6 @@ class SourceMap:
 
     def get_pcs_for_line(self, line: int) -> List[int]:
         return self.line_to_pc[line]
-
-    def get_comment_for_line(self, line: int) -> str:
-        if line in self.comments:
-            return self.comments[line]
-        return ""
 
 
 def _decode_int_value(value: str) -> int:
