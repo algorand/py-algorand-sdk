@@ -1713,7 +1713,6 @@ def step_impl(context, sourcemap_file):
 @then('the string composed of pc:line number equals "{pc_to_line}"')
 def step_impl(context, pc_to_line):
     buff = [
-        f"{pc}:{line}"
-        for pc, line in context.source_map.pc_to_line.items()
+        f"{pc}:{line}" for pc, line in context.source_map.pc_to_line.items()
     ]
     assert ";".join(buff) == pc_to_line
