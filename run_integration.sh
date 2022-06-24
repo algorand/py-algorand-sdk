@@ -13,8 +13,6 @@ git clone --single-branch --branch sourcemap https://github.com/algorand/algoran
 mkdir -p tests/features
 cp -r test-harness/features/* tests/features
 
-exit
-
 # Build SDK testing environment
 docker build -t py-sdk-testing --build-arg PYTHON_VERSION="${PYTHON_VERSION}" -f Dockerfile "$(pwd)"
 
