@@ -15,8 +15,8 @@ class SourceMap:
         ]
 
         # Initialize with 0,0 for pc/line
-        self.pc_to_line: Dict[int, int] = {0:0}
-        self.line_to_pc: Dict[int, List[int]] = {0:[0]}
+        self.pc_to_line: Dict[int, int] = {0: 0}
+        self.line_to_pc: Dict[int, List[int]] = {0: [0]}
 
         last_line = 0
         for index, line_num in enumerate(pc_list):
