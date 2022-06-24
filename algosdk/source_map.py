@@ -2,12 +2,21 @@ from typing import Dict, Any, List, Tuple
 
 
 class SourceMap:
-    def __init__(self, map: Dict[str, Any], delimiter: str = ";"):
+    """
+    Decodes a VLQ-encoded source mapping between PC values and TEAL source code lines.
+    Spec available here: https://sourcemaps.info/spec.html
+
+    Args:
+        source_map (dict(str, Any)): source map JSON from algod
+        delimiter (str, optional): delimiter for mappings
+    """
+
+    def __init__(self, source_map: Dict[str, Any], delimiter: str = ";"):
         self.delimter = delimiter
 
-        self.version: int = map["version"]
-        self.sources: List[str] = map["sources"]
-        self.mapping: str = map["mapping"]
+        self.version: int = source_map["version"]
+        self.sources: List[str] = source_map["sources"]
+        self.mapping: str = source_map["mapping"]
 
         pc_list = [
             _decode_int_value(raw_val)
@@ -36,6 +45,8 @@ class SourceMap:
 
 
 def _decode_int_value(value: str) -> int:
+    # Mappings may have up to 5 segments:
+    # Third segment represents the zero-based starting line in the original source represented.
     decoded_value = base64vlq_decode(value)
     return decoded_value[2] if decoded_value else None
 

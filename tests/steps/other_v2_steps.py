@@ -1705,13 +1705,13 @@ def glom_app_eval_delta(context, i, path, field):
 
 
 @given('a source map json file "{sourcemap_file}"')
-def step_impl(context, sourcemap_file):
+def parse_source_map(context, sourcemap_file):
     jsmap = json.loads(load_resource(sourcemap_file, is_binary=False))
     context.source_map = source_map.SourceMap(jsmap)
 
 
 @then('the string composed of pc:line number equals "{pc_to_line}"')
-def step_impl(context, pc_to_line):
+def check_source_map(context, pc_to_line):
     buff = [
         f"{pc}:{line}" for pc, line in context.source_map.pc_to_line.items()
     ]
