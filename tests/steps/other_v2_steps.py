@@ -1710,23 +1710,10 @@ def step_impl(context, sourcemap_file):
     context.source_map = source_map.SourceMap(jsmap)
 
 
-@then(
-    'getting the line that corresponds to the PC "{pc_value:d}" produces "{line_number:d}"'
-)
-def step_impl(context, pc_value, line_number):
-    pc_value = int(pc_value)
-    line_number = int(line_number)
-    actual_line = context.source_map.get_line_for_pc(pc_value)
-    assert (
-        actual_line == line_number
-    ), f"Expected {line_number} got {actual_line}"
-
-
-@then(
-    'getting the first PC that corresponds to the line "{line_number:d}" produces "{pc_value:d}"'
-)
-def step_impl(context, line_number, pc_value):
-    pc_value = int(pc_value)
-    line_number = int(line_number)
-    pcs = context.source_map.get_pcs_for_line(line_number)
-    assert pcs[0] == pc_value, f"Expected {pc_value} got {pcs[0]}"
+@then('the string composed of pc:line number equals "{pc_to_line}"')
+def step_impl(context, pc_to_line):
+    buff = [
+        f"{pc}:{line}"
+        for pc, line in context.source_map.pc_to_line.items()
+    ]
+    assert ";".join(buff) == pc_to_line
