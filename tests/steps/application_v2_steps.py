@@ -14,7 +14,7 @@ from algosdk.error import (
 )
 from algosdk.future import transaction
 
-from test.steps.other_v2_steps import read_program
+from tests.steps.other_v2_steps import read_program
 
 
 def operation_string_to_enum(operation):
