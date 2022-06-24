@@ -23,6 +23,7 @@ from algosdk import (
     encoding,
     error,
     mnemonic,
+    source_map
 )
 from algosdk.error import AlgodHTTPError
 from algosdk.future import transaction
@@ -1708,3 +1709,25 @@ def glom_app_eval_delta(context, i, path, field):
     assert field == str(
         actual_field
     ), f"path [{path}] expected value [{field}] but got [{actual_field}] instead"
+
+
+
+
+@given('a source map json file "{sourcemap_file}"')
+def step_impl(context, sourcemap_file):
+    jsmap = json.loads(load_resource(sourcemap_file, is_binary=False))
+    context.source_map = source_map.SourceMap(jsmap)
+
+@then('getting the line that corresponds to the PC "{pc_value:d}" produces "{line_number:d}"')
+def step_impl(context, pc_value, line_number):
+    pc_value = int(pc_value)
+    line_number = int(line_number)
+    actual_line = context.source_map.get_line_for_pc(pc_value)
+    assert  actual_line == line_number, f"Expected {line_number} got {actual_line}"
+
+@then('getting the first PC that corresponds to the line "{line_number:d}" produces "{pc_value:d}"')
+def step_impl(context, line_number, pc_value):
+    pc_value = int(pc_value)
+    line_number = int(line_number)
+    pcs = context.source_map.get_pcs_for_line(line_number) 
+    assert pcs[0] == pc_value, f"Expected {pc_value} got {pcs[0]}"
