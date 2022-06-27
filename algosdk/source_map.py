@@ -47,7 +47,7 @@ class SourceMap:
 def _decode_int_value(value: str) -> int:
     # Mappings may have up to 5 segments:
     # Third segment represents the zero-based starting line in the original source represented.
-    decoded_value = base64vlq_decode(value)
+    decoded_value = _base64vlq_decode(value)
     return decoded_value[2] if decoded_value else None
 
 
@@ -60,14 +60,12 @@ _b64table = [None] * (max(_b64chars) + 1)
 for i, b in enumerate(_b64chars):
     _b64table[b] = i
 
-_shiftsize, _flag, _mask = 5, 1 << 5, (1 << 5) - 1
+shiftsize, flag, mask = 5, 1 << 5, (1 << 5) - 1
 
 
-def base64vlq_decode(vlqval: str) -> Tuple[int]:
+def _base64vlq_decode(vlqval: str) -> Tuple[int]:
     """Decode Base64 VLQ value"""
     results = []
-    add = results.append
-    shiftsize, flag, mask = _shiftsize, _flag, _mask
     shift = value = 0
     # use byte values and a table to go from base64 characters to integers
     for v in map(_b64table.__getitem__, vlqval.encode("ascii")):
@@ -76,22 +74,20 @@ def base64vlq_decode(vlqval: str) -> Tuple[int]:
             shift += shiftsize
             continue
         # determine sign and add to results
-        add((value >> 1) * (-1 if value & 1 else 1))
+        results.append((value >> 1) * (-1 if value & 1 else 1))
         shift = value = 0
     return results
 
 
-def base64vlq_encode(*values: int) -> str:
+def _base64vlq_encode(*values: int) -> str:
     """Encode integers to a VLQ value"""
     results = []
-    add = results.append
-    shiftsize, flag, mask = _shiftsize, _flag, _mask
     for v in values:
         # add sign bit
         v = (abs(v) << 1) | int(v < 0)
         while True:
             toencode, v = v & mask, v >> shiftsize
-            add(toencode | (v and flag))
+            results.append(toencode | (v and flag))
             if not v:
                 break
     return bytes(map(_b64chars.__getitem__, results)).decode()
