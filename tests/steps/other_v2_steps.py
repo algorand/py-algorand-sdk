@@ -1,11 +1,13 @@
 import base64
 import json
 import os
+import random
 import urllib
 import unittest
 from datetime import datetime
 from pathlib import Path
 from urllib.request import Request, urlopen
+import time
 
 from behave import (
     given,
@@ -17,13 +19,7 @@ from behave import (
 
 from glom import glom
 import parse
-
-from algosdk import (
-    dryrun_results,
-    encoding,
-    error,
-    mnemonic,
-)
+from algosdk import constants, dryrun_results, encoding, error, mnemonic
 from algosdk.error import AlgodHTTPError
 from algosdk.future import transaction
 from algosdk.v2client import *
@@ -100,6 +96,28 @@ def read_program(context, path):
         return base64.b64decode(resp["result"])
 
     return read_program_binary(path)
+
+
+# Send transactions to progress block numbers on dev mode.
+def send_zero_transactions(context, txns=1):
+    sp = context.app_acl.suggested_params()
+    for _ in range(txns):
+        payment = transaction.PaymentTxn(
+            context.accounts[0],
+            sp,
+            constants.ZERO_ADDRESS,
+            0,
+            note=random.randbytes(8)
+        )
+        signed_payment = context.wallet.sign_transaction(payment)
+        context.app_acl.send_transaction(signed_payment)
+
+
+# To prevent excess waiting, send a zero payment transaction before
+# the wait_for_confirmation function in dev mode.
+def dev_mode_wait_for_confirmation(context, txid, rounds):
+    send_zero_transactions(context)
+    transaction.wait_for_confirmation(context.app_acl, txid, rounds)
 
 
 @given("mock server recording request paths")

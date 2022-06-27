@@ -1,10 +1,9 @@
-from behave import given, then, when
 from typing import Union
 
-from algosdk import account, encoding, logic
+from algosdk import account, constants, encoding, logic
 from algosdk.future import transaction
-
-import tests.steps.other_v2_steps
+from behave import given, then, when
+from tests.steps.other_v2_steps import dev_mode_wait_for_confirmation
 
 
 def fund_account_address(
@@ -19,7 +18,7 @@ def fund_account_address(
     )
     signed_payment = context.wallet.sign_transaction(payment)
     context.app_acl.send_transaction(signed_payment)
-    transaction.wait_for_confirmation(context.app_acl, payment.get_txid(), 10)
+    dev_mode_wait_for_confirmation(context, payment.get_txid(), 10)
 
 
 @when(
@@ -454,7 +453,7 @@ def create_transient_and_fund(context, transient_fund_amount):
     )
     signed_payment = context.wallet.sign_transaction(payment)
     context.app_acl.send_transaction(signed_payment)
-    transaction.wait_for_confirmation(context.app_acl, payment.get_txid(), 10)
+    dev_mode_wait_for_confirmation(context, payment.get_txid(), 10)
 
 
 @then(

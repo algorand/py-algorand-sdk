@@ -1,26 +1,42 @@
-from behave import given, when, then
 import base64
-from algosdk import kmd
-from algosdk.future import transaction
-from algosdk import encoding
-from algosdk import algod
-from algosdk import account
-from algosdk import mnemonic
-from algosdk import wallet
-from algosdk import auction
-from algosdk import util
-from algosdk import constants
-from algosdk import logic
-from algosdk.future import template
 import os
+import random
 from datetime import datetime
-import hashlib
 
+from algosdk import (
+    account,
+    algod,
+    auction,
+    constants,
+    encoding,
+    kmd,
+    logic,
+    mnemonic,
+    util,
+    wallet,
+)
+from algosdk.future import transaction
+from behave import given, then, when
 from nacl.signing import SigningKey
 
 token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 algod_port = 60000
 kmd_port = 60001
+
+
+# Send a zero payment transaction
+def send_zero_transactions(context, txns=1):
+    sp = context.acl.suggested_params_as_object()
+    for _ in range(txns):
+        payment = transaction.PaymentTxn(
+            context.accounts[0],
+            sp,
+            constants.ZERO_ADDRESS,
+            0,
+            note=random.randbytes(8),
+        )
+        signed_payment = context.wallet.sign_transaction(payment)
+        context.acl.send_transaction(signed_payment)
 
 
 @when("I create a wallet")
@@ -225,6 +241,7 @@ def status(context):
 
 @when("I get status after this block")
 def status_block(context):
+    send_zero_transactions(context)
     context.status_after = context.acl.status_after_block(
         context.status["lastRound"]
     )
@@ -232,6 +249,7 @@ def status_block(context):
 
 @then("I can get the block info")
 def block(context):
+    send_zero_transactions(context)
     context.block = context.acl.block_info(context.status["lastRound"] + 1)
 
 
@@ -320,6 +338,7 @@ def algod_client(context):
     algod_address = "http://localhost:" + str(algod_port)
     context.acl = algod.AlgodClient(token, algod_address)
     if context.acl.status()["lastRound"] < 2:
+        send_zero_transactions(context, 2)
         context.acl.status_after_block(2)
 
 
@@ -332,6 +351,7 @@ def wallet_info(context):
     )
     context.wallet_id = context.wallet.id
     context.accounts = context.wallet.list_keys()
+    print("ASDF ", context.accounts)
 
 
 @given('default transaction with parameters {amt} "{note}"')
@@ -408,6 +428,7 @@ def check_txn(context):
     assert "type" in context.acl.pending_transaction_info(
         context.txn.get_txid()
     )
+    send_zero_transactions(context, 3)
     context.acl.status_after_block(last_round + 2)
     assert "type" in context.acl.transaction_info(
         context.txn.sender, context.txn.get_txid()
@@ -417,6 +438,7 @@ def check_txn(context):
 
 @then("I can get the transaction by ID")
 def get_txn_by_id(context):
+    send_zero_transactions(context, 3)
     context.acl.status_after_block(context.last_round + 2)
     assert "type" in context.acl.transaction_by_id(context.txn.get_txid())
 
@@ -493,6 +515,7 @@ def check_save_txn(context):
     stx = transaction.retrieve_from_file(dir_path + "/temp/txn.tx")[0]
     txid = stx.transaction.get_txid()
     last_round = context.acl.status()["lastRound"]
+    send_zero_transactions(context, 3)
     context.acl.status_after_block(last_round + 2)
     assert context.acl.transaction_info(stx.transaction.sender, txid)
 
@@ -775,6 +798,7 @@ def default_asset_creation_txn(context, total):
         "metadatahash": None,
         "url": "",
     }
+    print("GGGG ", context.pk)
 
 
 @given("default-frozen asset creation transaction with total issuance {total}")

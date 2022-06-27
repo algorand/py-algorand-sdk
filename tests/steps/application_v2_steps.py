@@ -2,19 +2,21 @@ import base64
 import json
 import re
 
-from behave import given, step, then, when
 import pytest
-
 from algosdk import abi, atomic_transaction_composer, encoding, mnemonic
 from algosdk.abi.contract import NetworkInfo
 from algosdk.error import (
     ABITypeError,
-    IndexerHTTPError,
     AtomicTransactionComposerError,
+    IndexerHTTPError,
 )
 from algosdk.future import transaction
-
-from tests.steps.other_v2_steps import read_program
+from behave import given, step, then, when
+from tests.steps.other_v2_steps import (
+    dev_mode_wait_for_confirmation,
+    read_program,
+    send_zero_transactions,
+)
 
 
 def operation_string_to_enum(operation):
@@ -406,6 +408,7 @@ def remember_app_id(context):
 def wait_for_app_txn_confirm(context):
     sp = context.app_acl.suggested_params()
     last_round = sp.first
+    send_zero_transactions(context, 3)
     context.app_acl.status_after_block(last_round + 2)
     if hasattr(context, "acl"):
         assert "type" in context.acl.transaction_info(
@@ -413,9 +416,7 @@ def wait_for_app_txn_confirm(context):
         )
         assert "type" in context.acl.transaction_by_id(context.app_txid)
     else:
-        transaction.wait_for_confirmation(
-            context.app_acl, context.app_txid, 10
-        )
+        dev_mode_wait_for_confirmation(context, context.app_txid, 10)
 
 
 @given("an application id {app_id}")
