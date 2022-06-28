@@ -1,5 +1,7 @@
 from typing import Dict, Any, List, Tuple
 
+from algosdk.error import SourceMapVersionError
+
 
 class SourceMap:
     """
@@ -8,19 +10,25 @@ class SourceMap:
 
     Args:
         source_map (dict(str, Any)): source map JSON from algod
-        delimiter (str, optional): delimiter for mappings
     """
 
-    def __init__(self, source_map: Dict[str, Any], delimiter: str = ";"):
-        self.delimter = delimiter
+    def __init__(self, source_map: Dict[str, Any]):
 
         self.version: int = source_map["version"]
+
+        if self.version != 3:
+            raise SourceMapVersionError(self.version)
+
         self.sources: List[str] = source_map["sources"]
-        self.mapping: str = source_map["mapping"]
+
+        if "mapping" in source_map:
+            # For backwards compat until go-algorand has the change then we should remove
+            self.mappings: str = source_map["mapping"]
+        else:
+            self.mappings: str = source_map["mappings"]
 
         pc_list = [
-            _decode_int_value(raw_val)
-            for raw_val in self.mapping.split(delimiter)
+            _decode_int_value(raw_val) for raw_val in self.mappings.split(";")
         ]
 
         # Initialize with 0,0 for pc/line
