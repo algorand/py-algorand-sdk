@@ -137,7 +137,6 @@ class AlgodClient:
             box_name (bytes): The name or key of the box.
         """
         encoded_box = base64.b64encode(box_name).decode()
-        # box_name_encoded = parse.quote(encoded_box, safe="")
         box_name_encoded = "b64:" + encoded_box
         req = "/applications/" + str(application_id) + "/box"
         params = {"name": box_name_encoded}
