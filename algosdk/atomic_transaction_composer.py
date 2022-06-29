@@ -4,6 +4,7 @@ import copy
 from enum import IntEnum
 from typing import Any, List, Optional, TypeVar, Union
 
+from algosdk.account import address_from_private_key
 from algosdk import abi, error
 from algosdk.abi.address_type import AddressType
 from algosdk.future import transaction
@@ -605,6 +606,9 @@ class AccountTransactionSigner(TransactionSigner):
             stxns.append(stxn)
         return stxns
 
+    def address(self) -> str:
+        return address_from_private_key(self.private_key)
+
 
 class LogicSigTransactionSigner(TransactionSigner):
     """
@@ -638,6 +642,9 @@ class LogicSigTransactionSigner(TransactionSigner):
             stxn = transaction.LogicSigTransaction(txn_group[i], self.lsig)
             stxns.append(stxn)
         return stxns
+
+    def address(self) -> str:
+        return self.lsig.address()
 
 
 class MultisigTransactionSigner(TransactionSigner):
@@ -676,6 +683,9 @@ class MultisigTransactionSigner(TransactionSigner):
                 mtxn.sign(sk)
             stxns.append(mtxn)
         return stxns
+
+    def address(self) -> str:
+        return self.msig.address()
 
 
 class TransactionWithSigner:
