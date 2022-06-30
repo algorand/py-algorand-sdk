@@ -139,6 +139,14 @@ def application_info(context, app_id):
 
 
 @when(
+    'we make a GetApplicationBoxByName call for applicationID {app_id} with encoded box name "{box_name}"'
+)
+def application_box_by_name(context, app_id, box_name):
+    boxes = split_and_process_app_args(box_name)[0]
+    context.response = context.acl.application_box_by_name(app_id, boxes)
+
+
+@when(
     'we make a LookupApplicationLogsByID call with applicationID {app_id} limit {limit} minRound {min_round} maxRound {max_round} nextToken "{next_token:MaybeString}" sender "{sender:MaybeString}" and txID "{txid:MaybeString}"'
 )
 def lookup_application_logs(
@@ -410,7 +418,7 @@ def build_app_txn_with_transient(
         note=None,
         lease=None,
         rekey_to=None,
-        boxes=None,
+        boxes=boxes,
     )
 
 
@@ -1143,3 +1151,28 @@ def check_found_method_or_error(context, methodsig, error: str = None):
         assert error in context.error
     else:
         assert False, "Both retrieved method and error string are None"
+
+
+@then(
+    'the contents of the box with name "{box_name}" should be "{box_value:MaybeString}". If there is an error it is "{error_string:MaybeString}".'
+)
+def check_box_contents(
+    context, box_name, box_value: str = None, error_string: str = None
+):
+    try:
+        box_name = split_and_process_app_args(box_name)[0]
+        box_response = context.app_acl.application_box_by_name(
+            context.current_application_id, box_name
+        )
+        actual_name = box_response["name"]
+        actual_value = box_response["value"]
+        assert box_name == base64.b64decode(actual_name)
+        assert box_value == str(actual_value)
+    except Exception as e:
+        if not error_string or error_string not in str(e):
+            raise RuntimeError(
+                "error string "
+                + error_string
+                + " not in actual error "
+                + str(e)
+            )

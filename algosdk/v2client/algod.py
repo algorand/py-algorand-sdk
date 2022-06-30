@@ -126,6 +126,23 @@ class AlgodClient:
         req = "/applications/" + str(application_id)
         return self.algod_request("GET", req, **kwargs)
 
+    def application_box_by_name(
+        self, application_id: int, box_name: bytes, **kwargs
+    ):
+        """
+        Return the value of an application's box.
+
+        Args:
+            application_id (int): The ID of the application to look up.
+            box_name (bytes): The name or key of the box.
+        """
+        encoded_box = base64.b64encode(box_name).decode()
+        box_name_encoded = "b64:" + encoded_box
+        req = "/applications/" + str(application_id) + "/box"
+        params = {"name": box_name_encoded}
+        print(req, params)
+        return self.algod_request("GET", req, params=params, **kwargs)
+
     def account_asset_info(self, address, asset_id, **kwargs):
         """
         Return asset information for a specific account.
