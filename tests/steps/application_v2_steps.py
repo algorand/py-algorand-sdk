@@ -139,7 +139,7 @@ def application_info(context, app_id):
 
 
 @when(
-    'we make a GetApplicationBoxByName call for applicationID {app_id} with box name "{box_name}"'
+    'we make a GetApplicationBoxByName call for applicationID {app_id} with encoded box name "{box_name}"'
 )
 def application_box_by_name(context, app_id, box_name):
     boxes = split_and_process_app_args(box_name)[0]
