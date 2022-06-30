@@ -89,6 +89,9 @@ LOGIC_SIG_MAX_COST = 20000
 LOGIC_SIG_MAX_SIZE = 1000
 """int: max size of a teal program and its arguments in bytes"""
 
+APP_PAGE_MAX_SIZE = 2048
+"""int: max size of a page for an application in bytes"""
+
 ZERO_ADDRESS = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ"
 """str: algorand encoded address of 32 zero bytes"""
 
@@ -130,3 +133,4 @@ tx_group_limit = TX_GROUP_LIMIT
 max_asset_decimals = MAX_ASSET_DECIMALS
 logic_sig_max_cost = LOGIC_SIG_MAX_COST
 logic_sig_max_size = LOGIC_SIG_MAX_SIZE
+app_page_max_size = APP_PAGE_MAX_SIZE
