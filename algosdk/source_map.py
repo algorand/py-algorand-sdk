@@ -36,8 +36,9 @@ class SourceMap:
         self.line_to_pc: Dict[int, List[int]] = {0: [0]}
 
         last_line = 0
-        for index, line_num in enumerate(pc_list):
-            if line_num is not None:  # be careful for '0' checks!
+        for index, line_delta in enumerate(pc_list):
+            if line_delta is not None:  # be careful for '0' checks!
+                line_num = last_line + line_delta
                 if line_num not in self.line_to_pc:
                     self.line_to_pc[line_num] = []
                 self.line_to_pc[line_num].append(index)
