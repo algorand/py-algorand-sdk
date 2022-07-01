@@ -1716,4 +1716,4 @@ def check_source_map(context, pc_to_line):
         f"{pc}:{line}" for pc, line in context.source_map.pc_to_line.items()
     ]
     actual = ";".join(buff)
-    assert  actual == pc_to_line, f"expected {pc_to_line} got {actual}"
+    assert actual == pc_to_line, f"expected {pc_to_line} got {actual}"
