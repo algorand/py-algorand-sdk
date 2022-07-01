@@ -47,6 +47,6 @@ build-for-local-test: export DOCKER_TESTING ?= false
 build-for-local-test: export TYPE_OVERRIDE ?= source
 
 # local-test bootstraps the necessary algod and indexer docker containers
-# for integration tests, but does not run the tests
+# for integration tests, but does not run the tests UNLESS $(DOCKER_TESTING) == true
 build-for-local-test: prep-local-testenv show-local-testenv
 	./integration.sh
