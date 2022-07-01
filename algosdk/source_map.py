@@ -32,8 +32,8 @@ class SourceMap:
         ]
 
         # Initialize with 0,0 for pc/line
-        self.pc_to_line: Dict[int, int] = {0: 0}
-        self.line_to_pc: Dict[int, List[int]] = {0: [0]}
+        self.pc_to_line: Dict[int, int] = {}
+        self.line_to_pc: Dict[int, List[int]] = {}
 
         last_line = 0
         for index, line_delta in enumerate(pc_list):
