@@ -33,7 +33,7 @@ show-local-testenv:
 	cat $(LOCAL_TESTENV) || echo "DNE"
 
 # configure the repos and branches that a local test will build off of:
-build-for-local-test: export TESTING_URL ?= https://github.com/algorand/algorand-sdk-testing.git
+build-for-local-test: export TESTING_URL ?= https://github.com/algorand/algorand-sdk-testing
 build-for-local-test: export TESTING_BRANCH ?= control-my-test-branches # revert to master before merge
 build-for-local-test: export ALGOD_URL ?= https://github.com/algorand/go-algorand
 build-for-local-test: export ALGOD_BRANCH ?= feature/avm-box # revert to master before merge
