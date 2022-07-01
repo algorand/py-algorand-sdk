@@ -31,7 +31,6 @@ class SourceMap:
             _decode_int_value(raw_val) for raw_val in self.mappings.split(";")
         ]
 
-        # Initialize with 0,0 for pc/line
         self.pc_to_line: Dict[int, int] = {}
         self.line_to_pc: Dict[int, List[int]] = {}
 
