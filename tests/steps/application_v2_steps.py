@@ -146,6 +146,11 @@ def application_box_by_name(context, app_id, box_name):
     context.response = context.acl.application_box_by_name(app_id, boxes)
 
 
+@when("we make a GetApplicationBoxes call for applicationID {app_id}")
+def application_boxes(context, app_id):
+    context.response = context.acl.application_boxes(app_id)
+
+
 @when(
     'we make a LookupApplicationLogsByID call with applicationID {app_id} limit {limit} minRound {min_round} maxRound {max_round} nextToken "{next_token:MaybeString}" sender "{sender:MaybeString}" and txID "{txid:MaybeString}"'
 )
@@ -1154,7 +1159,7 @@ def check_found_method_or_error(context, methodsig, error: str = None):
 
 
 @then(
-    'the contents of the box with name "{box_name}" should be "{box_value:MaybeString}". If there is an error it is "{error_string:MaybeString}".'
+    'the contents of the box with name "{box_name}" in the current application should be "{box_value:MaybeString}". If there is an error it is "{error_string:MaybeString}".'
 )
 def check_box_contents(
     context, box_name, box_value: str = None, error_string: str = None
@@ -1176,3 +1181,27 @@ def check_box_contents(
                 + " not in actual error "
                 + str(e)
             )
+
+
+@then(
+    'the current application should have the following boxes "{box_names:MaybeString}".'
+)
+def check_all_boxes(context, box_names: str = None):
+    if box_names:
+        expected_box_names = split_and_process_app_args(box_names)
+    else:
+        expected_box_names = []
+    box_response = context.app_acl.application_boxes(
+        context.current_application_id
+    )
+    actual_box_names = set()
+    for box in box_response:
+        decoded_box = base64.b64decode(box)
+        actual_box_names.add(decoded_box)
+
+    assert len(expected_box_names) == len(
+        actual_box_names
+    ), f"Expected box names array length does not match actual array length {(expected_box_names)} != {(box_response)}"
+    assert set(expected_box_names) == set(
+        actual_box_names
+    ), f"Expected box names array does not match actual array {expected_box_names} != {actual_box_names}"
