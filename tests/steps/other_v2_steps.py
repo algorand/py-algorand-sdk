@@ -107,7 +107,7 @@ def send_zero_transactions(context, txns=1):
             sp,
             constants.ZERO_ADDRESS,
             0,
-            note=random.randbytes(8)
+            note=random.randbytes(8),
         )
         signed_payment = context.wallet.sign_transaction(payment)
         context.app_acl.send_transaction(signed_payment)
