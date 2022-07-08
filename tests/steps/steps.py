@@ -1,12 +1,4 @@
-from datetime import datetime
-
-from algosdk import (
-    account,
-    auction,
-    encoding,
-    kmd,
-    wallet,
-)
+from algosdk import account, auction, encoding, kmd, wallet
 from algosdk.future import transaction
 from behave import given, then, when
 
