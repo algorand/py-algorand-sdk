@@ -21,11 +21,7 @@ class SourceMap:
 
         self.sources: List[str] = source_map["sources"]
 
-        if "mapping" in source_map:
-            # For backwards compat until go-algorand has the change then we should remove
-            self.mappings: str = source_map["mapping"]
-        else:
-            self.mappings: str = source_map["mappings"]
+        self.mappings: str = source_map["mappings"]
 
         pc_list = [
             _decode_int_value(raw_val) for raw_val in self.mappings.split(";")
@@ -47,10 +43,10 @@ class SourceMap:
             self.pc_to_line[index] = last_line
 
     def get_line_for_pc(self, pc: int) -> int:
-        return self.pc_to_line[pc]
+        return self.pc_to_line.get(pc, None)
 
     def get_pcs_for_line(self, line: int) -> List[int]:
-        return self.line_to_pc[line]
+        return self.line_to_pc.get(line, None)
 
 
 def _decode_int_value(value: str) -> int:
