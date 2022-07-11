@@ -32,13 +32,15 @@ class SourceMap:
 
         last_line = 0
         for index, line_delta in enumerate(pc_list):
-            if line_delta is not None:  # be careful for '0' checks!
-                line_num = last_line + line_delta
-                if line_num not in self.line_to_pc:
-                    self.line_to_pc[line_num] = []
-                self.line_to_pc[line_num].append(index)
-                last_line = line_num
+            # line_delta is None if the line number has not not changed
+            # or if the line is empty
+            if line_delta is not None:
+                last_line = last_line + line_delta
 
+            if last_line not in self.line_to_pc:
+                self.line_to_pc[last_line] = []
+
+            self.line_to_pc[last_line].append(index)
             self.pc_to_line[index] = last_line
 
     def get_line_for_pc(self, pc: int) -> int:
