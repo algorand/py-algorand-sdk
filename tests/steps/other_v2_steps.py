@@ -1717,3 +1717,29 @@ def check_source_map(context, pc_to_line):
     ]
     actual = ";".join(buff)
     assert actual == pc_to_line, f"expected {pc_to_line} got {actual}"
+
+
+@then('getting the line associated with a pc "{pc}" equals "{line}"')
+def check_pc_to_line(context, pc, line):
+
+    actual_line = context.source_map.get_line_for_pc(int(pc))
+    assert actual_line == int(line), f"expected line {line} got {actual_line}"
+
+@then('getting the last pc associated with a line "{line}" equals "{pc}"')
+def check_line_to_pc(context, line, pc):
+    actual_pcs = context.source_map.get_pcs_for_line(int(line))
+    assert actual_pcs[-1] == int(pc), f"expected pc {pc} got {actual_pcs[-1]}"
+
+
+@when('I compile a teal program "{teal}" with mapping enabled')
+def check_compile_mapping(context, teal):
+    data = load_resource(teal)
+    source = data.decode("utf-8")
+    response = context.app_acl.compile(source, source_map=True)
+    context.raw_source_map = json.dumps(response['sourcemap'], separators=(',', ':'))
+
+
+@then('the resulting source map is the same as the json "{sourcemap}"')
+def check_mapping_equal(context, sourcemap):
+    expected = load_resource(sourcemap).decode('utf-8').strip()
+    assert context.raw_source_map == expected
