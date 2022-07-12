@@ -1204,9 +1204,6 @@ def check_all_boxes(context, box_names: str = None):
         decoded_box = base64.b64decode(box)
         actual_box_names.add(decoded_box)
 
-    assert len(expected_box_names) == len(
-        actual_box_names
-    ), f"Expected box names array length does not match actual array length {(expected_box_names)} != {(box_response)}"
     assert set(expected_box_names) == set(
         actual_box_names
     ), f"Expected box names array does not match actual array {expected_box_names} != {actual_box_names}"
