@@ -146,9 +146,9 @@ def application_box_by_name(context, app_id, box_name):
     context.response = context.acl.application_box_by_name(app_id, boxes)
 
 
-@when("we make a GetApplicationBoxes call for applicationID {app_id}")
-def application_boxes(context, app_id):
-    context.response = context.acl.application_boxes(app_id)
+@when("we make a GetApplicationBoxes call for applicationID {app_id} with max {max_results}")
+def application_boxes(context, app_id, max_results):
+    context.response = context.acl.application_boxes(app_id, limit=int(max_results))
 
 
 @when(
