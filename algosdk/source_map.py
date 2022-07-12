@@ -32,7 +32,7 @@ class SourceMap:
 
         last_line = 0
         for index, line_delta in enumerate(pc_list):
-            # line_delta is None if the line number has not not changed
+            # line_delta is None if the line number has not changed
             # or if the line is empty
             if line_delta is not None:
                 last_line = last_line + line_delta
