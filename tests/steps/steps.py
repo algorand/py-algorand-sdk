@@ -1,4 +1,6 @@
-from algosdk import account, auction, encoding, kmd, wallet
+import random
+
+from algosdk import account, algod, auction, constants, encoding, kmd, wallet
 from algosdk.future import transaction
 from behave import given, then, when
 from nacl.signing import SigningKey
@@ -17,7 +19,7 @@ def send_zero_transactions(context, txns=1):
             sp,
             constants.ZERO_ADDRESS,
             0,
-            note=random.randbytes(8),
+            note=random.randint(0, 256).to_bytes(8, "big"),
         )
         signed_payment = context.wallet.sign_transaction(payment)
         context.acl.send_transaction(signed_payment)
