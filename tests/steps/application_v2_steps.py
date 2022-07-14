@@ -1198,11 +1198,11 @@ def check_all_boxes(context, box_names: str = None):
     box_response = context.app_acl.application_boxes(
         context.current_application_id
     )
-    actual_box_names = []
+    actual_box_names = set()
     for box in box_response["boxes"]:
         box = box["name"]
         decoded_box = base64.b64decode(box)
-        actual_box_names.append(decoded_box)
+        actual_box_names.add(decoded_box)
 
     assert set(expected_box_names) == set(
         actual_box_names
