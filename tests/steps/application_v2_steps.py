@@ -56,6 +56,8 @@ def process_app_args(sub_arg):
 
 
 def split_and_process_app_args(in_args):
+    if not in_args:
+        return []
     split_args = in_args.split(",")
     sub_args = [sub_arg.split(":") for sub_arg in split_args]
     app_args = []
@@ -1191,19 +1193,20 @@ def check_box_contents(
     'the current application should have the following boxes "{box_names:MaybeString}".'
 )
 def check_all_boxes(context, box_names: str = None):
-    if box_names:
-        expected_box_names = split_and_process_app_args(box_names)
-    else:
-        expected_box_names = []
+    expected_box_names = split_and_process_app_args(box_names)
     box_response = context.app_acl.application_boxes(
         context.current_application_id
     )
-    actual_box_names = set()
+    actual_box_names = []
     for box in box_response["boxes"]:
         box = box["name"]
         decoded_box = base64.b64decode(box)
-        actual_box_names.add(decoded_box)
+        actual_box_names.append(decoded_box)
 
+    # Check that length of lists are equal, then check for set equality.
+    assert len(expected_box_names) == len(
+        actual_box_names
+    ), f"Expected box names array length does not match actual array length {(expected_box_names)} != {(box_response)}"
     assert set(expected_box_names) == set(
         actual_box_names
     ), f"Expected box names array does not match actual array {expected_box_names} != {actual_box_names}"
