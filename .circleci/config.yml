@@ -42,6 +42,7 @@ jobs:
     steps:
       - checkout
       - run:
+          no_output_timeout: 30m
           # NOTE: We might add caching at `pip` level here.
           command: |
             pip install -r requirements.txt
