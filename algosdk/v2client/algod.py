@@ -140,7 +140,19 @@ class AlgodClient:
         box_name_encoded = "b64:" + encoded_box
         req = "/applications/" + str(application_id) + "/box"
         params = {"name": box_name_encoded}
-        print(req, params)
+        return self.algod_request("GET", req, params=params, **kwargs)
+
+    def application_boxes(self, application_id: int, limit: int = 0, **kwargs):
+        """
+        Return a list of all the application's boxes.
+
+        Args:
+            application_id (int): The ID of the application to look up.
+            limit (int, optional): Max number of box names to return.
+                If max is not set, or max == 0, returns all box-names.
+        """
+        req = "/applications/" + str(application_id) + "/boxes"
+        params = {"max": limit} if limit else {}
         return self.algod_request("GET", req, params=params, **kwargs)
 
     def account_asset_info(self, address, asset_id, **kwargs):

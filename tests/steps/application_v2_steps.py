@@ -56,6 +56,8 @@ def process_app_args(sub_arg):
 
 
 def split_and_process_app_args(in_args):
+    if not in_args:
+        return []
     split_args = in_args.split(",")
     sub_args = [sub_arg.split(":") for sub_arg in split_args]
     app_args = []
@@ -144,6 +146,15 @@ def application_info(context, app_id):
 def application_box_by_name(context, app_id, box_name):
     boxes = split_and_process_app_args(box_name)[0]
     context.response = context.acl.application_box_by_name(app_id, boxes)
+
+
+@when(
+    "we make a GetApplicationBoxes call for applicationID {app_id} with max {max_results}"
+)
+def application_boxes(context, app_id, max_results):
+    context.response = context.acl.application_boxes(
+        app_id, limit=int(max_results)
+    )
 
 
 @when(
@@ -1154,7 +1165,7 @@ def check_found_method_or_error(context, methodsig, error: str = None):
 
 
 @then(
-    'the contents of the box with name "{box_name}" should be "{box_value:MaybeString}". If there is an error it is "{error_string:MaybeString}".'
+    'the contents of the box with name "{box_name}" in the current application should be "{box_value:MaybeString}". If there is an error it is "{error_string:MaybeString}".'
 )
 def check_box_contents(
     context, box_name, box_value: str = None, error_string: str = None
@@ -1176,3 +1187,26 @@ def check_box_contents(
                 + " not in actual error "
                 + str(e)
             )
+
+
+@then(
+    'the current application should have the following boxes "{box_names:MaybeString}".'
+)
+def check_all_boxes(context, box_names: str = None):
+    expected_box_names = split_and_process_app_args(box_names)
+    box_response = context.app_acl.application_boxes(
+        context.current_application_id
+    )
+    actual_box_names = []
+    for box in box_response["boxes"]:
+        box = box["name"]
+        decoded_box = base64.b64decode(box)
+        actual_box_names.append(decoded_box)
+
+    # Check that length of lists are equal, then check for set equality.
+    assert len(expected_box_names) == len(
+        actual_box_names
+    ), f"Expected box names array length does not match actual array length {(expected_box_names)} != {(box_response)}"
+    assert set(expected_box_names) == set(
+        actual_box_names
+    ), f"Expected box names array does not match actual array {expected_box_names} != {actual_box_names}"
