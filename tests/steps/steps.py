@@ -337,7 +337,6 @@ def wallet_info(context):
     )
     context.wallet_id = context.wallet.id
     context.accounts = context.wallet.list_keys()
-    print("ASDF ", context.accounts)
 
 
 @given('default transaction with parameters {amt} "{note}"')
@@ -784,7 +783,6 @@ def default_asset_creation_txn(context, total):
         "metadatahash": None,
         "url": "",
     }
-    print("GGGG ", context.pk)
 
 
 @given("default-frozen asset creation transaction with total issuance {total}")
