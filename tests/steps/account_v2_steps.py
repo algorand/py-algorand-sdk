@@ -4,7 +4,7 @@ from typing import Union
 from algosdk import account, encoding, logic
 from algosdk.future import transaction
 
-import test.steps.other_v2_steps
+import tests.steps.other_v2_steps
 
 
 def fund_account_address(

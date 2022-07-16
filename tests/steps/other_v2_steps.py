@@ -18,12 +18,7 @@ from behave import (
 from glom import glom
 import parse
 
-from algosdk import (
-    dryrun_results,
-    encoding,
-    error,
-    mnemonic,
-)
+from algosdk import dryrun_results, encoding, error, mnemonic, source_map
 from algosdk.error import AlgodHTTPError
 from algosdk.future import transaction
 from algosdk.v2client import *
@@ -35,8 +30,7 @@ from algosdk.v2client.models import (
 )
 from algosdk.testing.dryrun import DryrunTestCaseMixin
 
-from test.steps.steps import token as daemon_token
-from test.steps.steps import algod_port
+from tests.steps.steps import algod_port, token as daemon_token
 
 
 @parse.with_pattern(r".*")
@@ -134,13 +128,13 @@ def mock_response(context, jsonfiles, directory):
 )
 def mock_http_responses(context, filename, directory, status):
     context.expected_status_code = int(status)
-    with open("test/features/resources/mock_response_status", "w") as f:
+    with open("tests/features/resources/mock_response_status", "w") as f:
         f.write(status)
     mock_response(context, filename, directory)
-    f = open("test/features/resources/mock_response_path", "r")
+    f = open("tests/features/resources/mock_response_path", "r")
     mock_response_path = f.read()
     f.close()
-    f = open("test/features/resources/" + mock_response_path, "r")
+    f = open("tests/features/resources/" + mock_response_path, "r")
     expected_mock_response = f.read()
     f.close()
     expected_mock_response = bytes(expected_mock_response, "ascii")
@@ -604,7 +598,7 @@ def txns_by_addr(
 @when(
     'we make a Lookup Account Transactions call against account "{account:MaybeString}" with NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index}'
 )
-def txns_by_addr(
+def txns_by_addr2(
     context,
     account,
     notePrefixB64,
@@ -1155,7 +1149,7 @@ def parsed_equals(context, jsonfile):
     loaded_response = None
     dir_path = os.path.dirname(os.path.realpath(__file__))
     dir_path = os.path.dirname(os.path.dirname(dir_path))
-    with open(dir_path + "/test/features/resources/" + jsonfile, "rb") as f:
+    with open(dir_path + "/tests/features/resources/" + jsonfile, "rb") as f:
         loaded_response = bytearray(f.read())
     # sort context.response
     def recursively_sort_on_key(dictionary):
@@ -1406,27 +1400,6 @@ def algod_v2_client(context):
     context.app_acl = algod.AlgodClient(daemon_token, algod_address)
 
 
-@step(
-    'I sign and submit the transaction, saving the txid. If there is an error it is "{error_string:MaybeString}".'
-)
-def sign_submit_save_txid_with_error(context, error_string):
-    try:
-        signed_app_transaction = context.app_transaction.sign(
-            context.transient_sk
-        )
-        context.app_txid = context.app_acl.send_transaction(
-            signed_app_transaction
-        )
-    except Exception as e:
-        if not error_string or error_string not in str(e):
-            raise RuntimeError(
-                "error string "
-                + error_string
-                + " not in actual error "
-                + str(e)
-            )
-
-
 @when('I compile a teal program "{program}"')
 def compile_step(context, program):
     data = load_resource(program)
@@ -1657,7 +1630,7 @@ def dryrun_test_case_local_state_assert_fail_step(
 )
 def check_json_output_equals(context, json_path, json_directory):
     with open(
-        "test/features/unit/" + json_directory + "/" + json_path, "rb"
+        "tests/features/unit/" + json_directory + "/" + json_path, "rb"
     ) as f:
         loaded_response = json.load(f)
     assert context.json_output == loaded_response
@@ -1670,7 +1643,7 @@ def parse_dryrun_response_object(context, dryrun_response_file, txn_id):
     dir_path = os.path.dirname(os.path.realpath(__file__))
     dir_path = os.path.dirname(os.path.dirname(dir_path))
     with open(
-        dir_path + "/test/features/resources/" + dryrun_response_file, "r"
+        dir_path + "/tests/features/resources/" + dryrun_response_file, "r"
     ) as f:
         drr_dict = json.loads(f.read())
 
@@ -1729,3 +1702,47 @@ def glom_app_eval_delta(context, i, path, field):
     assert field == str(
         actual_field
     ), f"path [{path}] expected value [{field}] but got [{actual_field}] instead"
+
+
+@given('a source map json file "{sourcemap_file}"')
+def parse_source_map(context, sourcemap_file):
+    jsmap = json.loads(load_resource(sourcemap_file, is_binary=False))
+    context.source_map = source_map.SourceMap(jsmap)
+
+
+@then('the string composed of pc:line number equals "{pc_to_line}"')
+def check_source_map(context, pc_to_line):
+    buff = [
+        f"{pc}:{line}" for pc, line in context.source_map.pc_to_line.items()
+    ]
+    actual = ";".join(buff)
+    assert actual == pc_to_line, f"expected {pc_to_line} got {actual}"
+
+
+@then('getting the line associated with a pc "{pc}" equals "{line}"')
+def check_pc_to_line(context, pc, line):
+
+    actual_line = context.source_map.get_line_for_pc(int(pc))
+    assert actual_line == int(line), f"expected line {line} got {actual_line}"
+
+
+@then('getting the last pc associated with a line "{line}" equals "{pc}"')
+def check_line_to_pc(context, line, pc):
+    actual_pcs = context.source_map.get_pcs_for_line(int(line))
+    assert actual_pcs[-1] == int(pc), f"expected pc {pc} got {actual_pcs[-1]}"
+
+
+@when('I compile a teal program "{teal}" with mapping enabled')
+def check_compile_mapping(context, teal):
+    data = load_resource(teal)
+    source = data.decode("utf-8")
+    response = context.app_acl.compile(source, source_map=True)
+    context.raw_source_map = json.dumps(
+        response["sourcemap"], separators=(",", ":")
+    )
+
+
+@then('the resulting source map is the same as the json "{sourcemap}"')
+def check_mapping_equal(context, sourcemap):
+    expected = load_resource(sourcemap).decode("utf-8").strip()
+    assert context.raw_source_map == expected
