@@ -112,7 +112,9 @@ def send_zero_transactions(context, txns=1):
         signed_payment = context.wallet.sign_transaction(payment)
         context.app_acl.send_transaction(signed_payment)
         # Wait and confirm that the zero payment succeeded.
-        transaction.wait_for_confirmation(context.app_acl, signed_payment, 5)
+        transaction.wait_for_confirmation(
+            context.app_acl, payment.get_txid(), 5
+        )
 
 
 # To prevent excess waiting, send a zero payment transaction before
