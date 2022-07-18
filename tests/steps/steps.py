@@ -32,11 +32,12 @@ def send_zero_transactions(context, txns=1):
             context.accounts[0],
             sp,
             constants.ZERO_ADDRESS,
-            0,
+            random.randint(0, 100000),
             note=random.randint(0, 256).to_bytes(8, "big"),
         )
         signed_payment = context.wallet.sign_transaction(payment)
         context.acl.send_transaction(signed_payment)
+        transaction.wait_for_confirmation(context.app_acl, signed_payment, 5)
 
 
 @when("I create a wallet")
