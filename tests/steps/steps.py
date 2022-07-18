@@ -28,17 +28,17 @@ kmd_port = 60001
 # Send a zero payment transaction
 def send_zero_transactions(context, txns=1):
     sp = context.acl.suggested_params_as_object()
+    if not hasattr(context, "pk"):
+        context.pk = context.accounts[0]
     for _ in range(txns):
         payment = transaction.PaymentTxn(
-            context.accounts[0],
-            sp,
-            constants.ZERO_ADDRESS,
-            random.randint(100000, 900000),
-            note=random.randint(0, 256).to_bytes(8, "big"),
+            sender=context.pk,
+            sp=sp,
+            receiver=constants.ZERO_ADDRESS,
+            amt=random.randint(100000, 900000),
         )
         signed_payment = context.wallet.sign_transaction(payment)
         context.acl.send_transaction(signed_payment)
-        time.sleep(0.1)
 
 
 @when("I create a wallet")
@@ -425,12 +425,12 @@ def send_msig_txn(context):
 
 @then("the transaction should go through")
 def check_txn(context):
-    send_zero_transactions(context, 3)
-    last_round = context.acl.status()["lastRound"]
-    # assert "type" in context.acl.pending_transaction_info(
-    #     context.txn.get_txid()
-    # )
-    context.acl.status_after_block(last_round + 2)
+    send_zero_transactions(context)
+    # last_round = context.acl.status()["lastRound"]
+    assert "type" in context.acl.pending_transaction_info(
+        context.txn.get_txid()
+    )
+    # context.acl.status_after_block(last_round + 2)
     assert "type" in context.acl.transaction_info(
         context.txn.sender, context.txn.get_txid()
     )
