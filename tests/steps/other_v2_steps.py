@@ -107,7 +107,6 @@ def send_zero_transactions(context, txns=1):
             sp,
             constants.ZERO_ADDRESS,
             random.randint(100000, 900000),
-            note=random.randint(0, 256).to_bytes(8, "big"),
         )
         signed_payment = context.wallet.sign_transaction(payment)
         context.app_acl.send_transaction(signed_payment)
