@@ -34,9 +34,7 @@ jobs:
      image: "ubuntu-2004:202104-01"
     steps:
       - checkout
-      - run: 
-          no_output_timeout: 30m
-          command: PYTHON_VERSION=<< parameters.python-version >> make docker-test
+      - run: PYTHON_VERSION=<< parameters.python-version >> make docker-test
   docset:
     docker:
       # NOTE: We might eventually need Docker authentication here.
