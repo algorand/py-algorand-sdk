@@ -431,7 +431,6 @@ def check_txn(context):
         context.txn.sender, context.txn.get_txid()
     )
     # assert "type" in context.acl.transaction_by_id(context.txn.get_txid())
-    assert 1
 
 
 @then("I can get the transaction by ID")
