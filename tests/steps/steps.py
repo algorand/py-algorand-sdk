@@ -421,15 +421,15 @@ def send_msig_txn(context):
 
 @then("the transaction should go through")
 def check_txn(context):
-    # send_zero_transactions(context)
+    send_zero_transactions(context)
     # last_round = context.acl.status()["lastRound"]
-    # assert "type" in context.acl.pending_transaction_info(
-    #     context.txn.get_txid()
-    # )
+    assert "type" in context.acl.pending_transaction_info(
+        context.txn.get_txid()
+    )
     # context.acl.status_after_block(last_round + 2)
-    # assert "type" in context.acl.transaction_info(
-    #     context.txn.sender, context.txn.get_txid()
-    # )
+    assert "type" in context.acl.transaction_info(
+        context.txn.sender, context.txn.get_txid()
+    )
     # assert "type" in context.acl.transaction_by_id(context.txn.get_txid())
     assert 1
 
