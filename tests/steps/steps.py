@@ -24,16 +24,33 @@ algod_port = 60000
 kmd_port = 60001
 
 
+# Initialize dev mode accounts.
+def initialize_dev_mode_account(context):
+    context.dev_sk, context.dev_pk = account.generate_account()
+    payment = transaction.PaymentTxn(
+        sender=context.accounts[0],
+        sp=context.acl.suggested_params_as_object(),
+        receiver=context.dev_pk,
+        amt=10_000_000,
+    )
+    signed_payment = context.wallet.sign_transaction(payment)
+    context.acl.send_transaction(signed_payment)
+
+
 # Send a zero payment transaction
 def send_zero_transactions(context, txns=1):
+    if not hasattr(context, "dev_pk"):
+        initialize_dev_mode_account(context)
     for _ in range(txns):
         payment = transaction.PaymentTxn(
-            sender=context.accounts[0],
+            sender=context.dev_pk,
             sp=context.acl.suggested_params_as_object(),
             receiver=constants.ZERO_ADDRESS,
             amt=random.randint(100000, 900000),
         )
-        signed_payment = context.wallet.sign_transaction(payment)
+        # signed_payment = context.wallet.sign_transaction(payment)
+        # context.sk = context.wallet.export_key(context.accounts[0])
+        signed_payment = payment.sign(context.dev_sk)
         context.acl.send_transaction(signed_payment)
 
 
@@ -363,6 +380,10 @@ def default_txn(context, amt, note):
         context.accounts[0], params, context.accounts[1], int(amt), note=note
     )
     context.pk = context.accounts[0]
+
+    # Initialize dev mode accounts
+    if not hasattr(context, "dev_pk"):
+        initialize_dev_mode_account(context)
 
 
 @given('default multisig transaction with parameters {amt} "{note}"')
