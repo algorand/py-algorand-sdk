@@ -38,18 +38,16 @@ def initialize_dev_mode_account(context):
 
 
 # Send a zero payment transaction
-def send_zero_transactions(context, txns=1):
+def burn_algo_transactions(context, num_txns=1):
     if not hasattr(context, "dev_pk"):
         initialize_dev_mode_account(context)
-    for _ in range(txns):
+    for _ in range(num_txns):
         payment = transaction.PaymentTxn(
             sender=context.dev_pk,
             sp=context.acl.suggested_params_as_object(),
             receiver=constants.ZERO_ADDRESS,
             amt=random.randint(100000, 900000),
         )
-        # signed_payment = context.wallet.sign_transaction(payment)
-        # context.sk = context.wallet.export_key(context.accounts[0])
         signed_payment = payment.sign(context.dev_sk)
         context.acl.send_transaction(signed_payment)
 
@@ -256,7 +254,7 @@ def status(context):
 
 @when("I get status after this block")
 def status_block(context):
-    send_zero_transactions(context)
+    burn_algo_transactions(context)
     context.status_after = context.acl.status_after_block(
         context.status["lastRound"]
     )
@@ -264,7 +262,7 @@ def status_block(context):
 
 @then("I can get the block info")
 def block(context):
-    send_zero_transactions(context)
+    burn_algo_transactions(context)
     context.block = context.acl.block_info(context.status["lastRound"] + 1)
 
 
@@ -353,7 +351,7 @@ def algod_client(context):
     algod_address = "http://localhost:" + str(algod_port)
     context.acl = algod.AlgodClient(token, algod_address)
     if context.acl.status()["lastRound"] < 2:
-        send_zero_transactions(context, 2)
+        burn_algo_transactions(context, 2)
         context.acl.status_after_block(2)
 
 
@@ -442,21 +440,18 @@ def send_msig_txn(context):
 
 @then("the transaction should go through")
 def check_txn(context):
-    send_zero_transactions(context)
-    # last_round = context.acl.status()["lastRound"]
+    burn_algo_transactions(context)
     assert "type" in context.acl.pending_transaction_info(
         context.txn.get_txid()
     )
-    # context.acl.status_after_block(last_round + 2)
     assert "type" in context.acl.transaction_info(
         context.txn.sender, context.txn.get_txid()
     )
-    # assert "type" in context.acl.transaction_by_id(context.txn.get_txid())
 
 
 @then("I can get the transaction by ID")
 def get_txn_by_id(context):
-    send_zero_transactions(context, 3)
+    burn_algo_transactions(context, 3)
     context.acl.status_after_block(context.last_round + 2)
     assert "type" in context.acl.transaction_by_id(context.txn.get_txid())
 
@@ -533,7 +528,7 @@ def check_save_txn(context):
     stx = transaction.retrieve_from_file(dir_path + "/temp/txn.tx")[0]
     txid = stx.transaction.get_txid()
     last_round = context.acl.status()["lastRound"]
-    send_zero_transactions(context, 3)
+    burn_algo_transactions(context, 3)
     context.acl.status_after_block(last_round + 2)
     assert context.acl.transaction_info(stx.transaction.sender, txid)
 

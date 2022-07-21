@@ -15,7 +15,7 @@ from behave import given, step, then, when
 from tests.steps.other_v2_steps import (
     dev_mode_wait_for_confirmation,
     read_program,
-    send_zero_transactions,
+    burn_algo_transactions,
 )
 
 
@@ -408,7 +408,9 @@ def remember_app_id(context):
 def wait_for_app_txn_confirm(context):
     sp = context.app_acl.suggested_params()
     last_round = sp.first
-    send_zero_transactions(context, 3)
+    # Send some transactions to advance block state in dev mode so we can
+    # check the status after block `last_round + 2`.
+    burn_algo_transactions(context, 3)
     context.app_acl.status_after_block(last_round + 2)
     if hasattr(context, "acl"):
         assert "type" in context.acl.transaction_info(

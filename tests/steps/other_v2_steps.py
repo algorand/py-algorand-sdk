@@ -99,9 +99,9 @@ def read_program(context, path):
 
 
 # Send transactions to progress block numbers on dev mode.
-def send_zero_transactions(context, txns=1):
+def burn_algo_transactions(context, num_txns=1):
     sp = context.app_acl.suggested_params()
-    for _ in range(txns):
+    for _ in range(num_txns):
         payment = transaction.PaymentTxn(
             context.accounts[0],
             sp,
@@ -119,7 +119,7 @@ def send_zero_transactions(context, txns=1):
 # To prevent excess waiting, send a zero payment transaction before
 # the wait_for_confirmation function in dev mode.
 def dev_mode_wait_for_confirmation(context, txid, rounds):
-    send_zero_transactions(context)
+    burn_algo_transactions(context)
     transaction.wait_for_confirmation(context.app_acl, txid, rounds)
 
 
