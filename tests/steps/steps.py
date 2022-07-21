@@ -23,21 +23,21 @@ token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 algod_port = 60000
 kmd_port = 60001
 
-
-# Initialize dev mode accounts.
+DEV_ACCOUNT_INITIAL_MICROALGOS: int = 100_000_000
+# Initialize a transient account in dev mode to make payment transactions.
 def initialize_dev_mode_account(context):
     context.dev_sk, context.dev_pk = account.generate_account()
     payment = transaction.PaymentTxn(
         sender=context.accounts[0],
         sp=context.acl.suggested_params_as_object(),
         receiver=context.dev_pk,
-        amt=10_000_000,
+        amt=DEV_ACCOUNT_INITIAL_MICROALGOS,
     )
     signed_payment = context.wallet.sign_transaction(payment)
     context.acl.send_transaction(signed_payment)
 
 
-# Send a zero payment transaction
+# Send a payment transaction to itself to advance blocks in dev mode.
 def burn_algo_transactions(context, num_txns=1):
     if not hasattr(context, "dev_pk"):
         initialize_dev_mode_account(context)
@@ -45,7 +45,7 @@ def burn_algo_transactions(context, num_txns=1):
         payment = transaction.PaymentTxn(
             sender=context.dev_pk,
             sp=context.acl.suggested_params_as_object(),
-            receiver=constants.ZERO_ADDRESS,
+            receiver=context.dev_pk,
             amt=random.randint(100000, 900000),
         )
         signed_payment = payment.sign(context.dev_sk)

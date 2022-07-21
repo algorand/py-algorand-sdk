@@ -111,14 +111,15 @@ def burn_algo_transactions(context, num_txns=1):
         signed_payment = context.wallet.sign_transaction(payment)
         context.app_acl.send_transaction(signed_payment)
         # Wait and confirm that the zero payment succeeded.
+        # In dev mode, the transaction should be instantly confirmed in the block.
         transaction.wait_for_confirmation(
-            context.app_acl, payment.get_txid(), 5
+            context.app_acl, payment.get_txid(), 1
         )
 
 
 # To prevent excess waiting, send a zero payment transaction before
 # the wait_for_confirmation function in dev mode.
-def dev_mode_wait_for_confirmation(context, txid, rounds):
+def dev_mode_wait_for_confirmation(context, txid, rounds=1):
     burn_algo_transactions(context)
     transaction.wait_for_confirmation(context.app_acl, txid, rounds)
 
