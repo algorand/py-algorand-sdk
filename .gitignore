@@ -114,7 +114,7 @@ venv.bak/
 
 # Testing files
 *.feature
-test/features
+tests/features
 test-harness
 
 # Build files

@@ -55,11 +55,11 @@ class PathsHandler(http.server.SimpleHTTPRequestHandler):
 
 
 def get_status_to_use():
-    f = open("test/features/resources/mock_response_status", "r")
+    f = open("tests/features/resources/mock_response_status", "r")
     status = f.read()
     f.close()
     # overwrite to default 200 so that tests that don't write above file operate properly
-    with open("test/features/resources/mock_response_status", "w") as f:
+    with open("tests/features/resources/mock_response_status", "w") as f:
         f.write("200")
     return int(status)
 
@@ -67,7 +67,7 @@ def get_status_to_use():
 class FileHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         if "mock" in self.path:
-            f = open("test/features/resources/mock_response_path", "w")
+            f = open("tests/features/resources/mock_response_path", "w")
             f.write(self.path[6:])
             f.close()
             self.send_response(200)
@@ -78,10 +78,10 @@ class FileHandler(http.server.SimpleHTTPRequestHandler):
             self.send_response(get_status_to_use())
             self.send_header("Content-type", "application/json")
             self.end_headers()
-            f = open("test/features/resources/mock_response_path", "r")
+            f = open("tests/features/resources/mock_response_path", "r")
             mock_response_path = f.read()
             f.close()
-            f = open("test/features/resources/" + mock_response_path, "r")
+            f = open("tests/features/resources/" + mock_response_path, "r")
             s = f.read()
             f.close()
             if "base64" in mock_response_path:
@@ -97,10 +97,10 @@ class FileHandler(http.server.SimpleHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-type", "application/json")
         self.end_headers()
-        f = open("test/features/resources/mock_response_path", "r")
+        f = open("tests/features/resources/mock_response_path", "r")
         mock_response_path = f.read()
         f.close()
-        f = open("test/features/resources/" + mock_response_path, "r")
+        f = open("tests/features/resources/" + mock_response_path, "r")
         s = f.read()
         f.close()
         s = bytes(s, "ascii")
