@@ -25,12 +25,11 @@ kmd_port = 60001
 
 DEV_ACCOUNT_INITIAL_MICROALGOS: int = 100_000_000
 # Initialize a transient account in dev mode to make payment transactions.
-def initialize_dev_mode_account(context):
-    context.dev_sk, context.dev_pk = account.generate_account()
+def initialize_account(context, account):
     payment = transaction.PaymentTxn(
         sender=context.accounts[0],
         sp=context.acl.suggested_params_as_object(),
-        receiver=context.dev_pk,
+        receiver=account,
         amt=DEV_ACCOUNT_INITIAL_MICROALGOS,
     )
     signed_payment = context.wallet.sign_transaction(payment)
@@ -40,13 +39,14 @@ def initialize_dev_mode_account(context):
 # Send a payment transaction to itself to advance blocks in dev mode.
 def burn_algo_transactions(context, num_txns=1):
     if not hasattr(context, "dev_pk"):
-        initialize_dev_mode_account(context)
+        context.dev_sk, context.dev_pk = account.generate_account()
+        initialize_account(context, context.dev_pk)
     for _ in range(num_txns):
         payment = transaction.PaymentTxn(
             sender=context.dev_pk,
             sp=context.acl.suggested_params_as_object(),
             receiver=context.dev_pk,
-            amt=random.randint(100000, 900000),
+            amt=random.randint(1, 100_000),
         )
         signed_payment = payment.sign(context.dev_sk)
         context.acl.send_transaction(signed_payment)
@@ -305,6 +305,12 @@ def gen_key_kmd(context):
     context.pk = context.wallet.generate_key()
 
 
+@when("I generate a key using kmd for rekeying")
+def gen_rekey_kmd(context):
+    context.rekey = context.wallet.generate_key()
+    initialize_account(context, context.rekey)
+
+
 @then("the key should be in the wallet")
 def key_in_wallet(context):
     keys = context.wallet.list_keys()
@@ -366,8 +372,7 @@ def wallet_info(context):
     context.accounts = context.wallet.list_keys()
 
 
-@given('default transaction with parameters {amt} "{note}"')
-def default_txn(context, amt, note):
+def default_txn_with_addr(context, amt, note, sender_addr):
     params = context.acl.suggested_params_as_object()
     context.last_round = params.first
     if note == "none":
@@ -375,13 +380,19 @@ def default_txn(context, amt, note):
     else:
         note = base64.b64decode(note)
     context.txn = transaction.PaymentTxn(
-        context.accounts[0], params, context.accounts[1], int(amt), note=note
+        sender_addr, params, context.accounts[1], int(amt), note=note
     )
-    context.pk = context.accounts[0]
+    context.pk = sender_addr
 
-    # Initialize dev mode accounts
-    if not hasattr(context, "dev_pk"):
-        initialize_dev_mode_account(context)
+
+@given('default transaction with parameters {amt} "{note}"')
+def default_txn(context, amt, note):
+    default_txn_with_addr(context, amt, note, context.accounts[0])
+
+
+@given("default transaction with parameters {amt} {note} and rekeying key")
+def default_txn_rekey(context, amt, note):
+    default_txn_with_addr(context, amt, note, context.rekey)
 
 
 @given('default multisig transaction with parameters {amt} "{note}"')
