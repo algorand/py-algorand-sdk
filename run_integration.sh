@@ -9,6 +9,9 @@ pushd $rootdir
 rm -rf test-harness
 git clone --single-branch --branch devmodenet https://github.com/algorand/algorand-sdk-testing.git test-harness
 
+# Export env variable so network is set to dev mode
+export NETWORK_TEMPLATE="DevModeNetwork.json"
+
 ## Copy feature files into the project resources
 mkdir -p tests/features
 cp -r test-harness/features/* tests/features
