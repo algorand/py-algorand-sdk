@@ -1,6 +1,7 @@
 import base64
 import os
 import random
+import time
 from datetime import datetime
 
 from algosdk import (
@@ -22,7 +23,7 @@ token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 algod_port = 60000
 kmd_port = 60001
 
-DEV_ACCOUNT_INITIAL_MICROALGOS: int = 100_000_000
+DEV_ACCOUNT_INITIAL_MICROALGOS: int = 10_000_000
 # Initialize a transient account in dev mode to make payment transactions.
 def initialize_account(context, account):
     payment = transaction.PaymentTxn(
@@ -33,6 +34,8 @@ def initialize_account(context, account):
     )
     signed_payment = context.wallet.sign_transaction(payment)
     context.acl.send_transaction(signed_payment)
+    # Wait to let transaction get confirmed in dev mode in v1.
+    time.sleep(0.1)
 
 
 # Send a self-payment transaction to itself to advance blocks in dev mode.
@@ -49,6 +52,8 @@ def self_pay_transactions(context, num_txns=1):
         )
         signed_payment = payment.sign(context.dev_sk)
         context.acl.send_transaction(signed_payment)
+        # Wait to let transaction get confirmed in dev mode in v1.
+        time.sleep(0.1)
 
 
 @when("I create a wallet")

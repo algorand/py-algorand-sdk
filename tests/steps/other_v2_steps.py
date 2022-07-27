@@ -98,7 +98,7 @@ def read_program(context, path):
     return read_program_binary(path)
 
 
-DEV_ACCOUNT_INITIAL_MICROALGOS: int = 100_000_000
+DEV_ACCOUNT_INITIAL_MICROALGOS: int = 10_000_000
 # Initialize a transient account in dev mode to make payment transactions.
 def initialize_account(context, account):
     payment = transaction.PaymentTxn(
@@ -109,6 +109,8 @@ def initialize_account(context, account):
     )
     signed_payment = context.wallet.sign_transaction(payment)
     context.app_acl.send_transaction(signed_payment)
+    # Wait and confirm that the payment succeeded.
+    transaction.wait_for_confirmation(context.app_acl, payment.get_txid(), 1)
 
 
 # Send a self-payment transaction to itself to advance blocks in dev mode.
@@ -126,7 +128,7 @@ def self_pay_transactions(context, num_txns=1):
         )
         signed_payment = payment.sign(context.dev_sk)
         context.app_acl.send_transaction(signed_payment)
-        # Wait and confirm that the zero payment succeeded.
+        # Wait and confirm that the payment succeeded.
         # In dev mode, the transaction should be instantly confirmed in the block.
         transaction.wait_for_confirmation(
             context.app_acl, payment.get_txid(), 1
