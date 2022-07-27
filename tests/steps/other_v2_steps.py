@@ -10,7 +10,7 @@ from urllib.request import Request, urlopen
 
 import parse
 from algosdk import (
-    constants,
+    account,
     dryrun_results,
     encoding,
     error,
@@ -98,15 +98,15 @@ def read_program(context, path):
     return read_program_binary(path)
 
 
-# Send transactions to progress block numbers on dev mode.
-def burn_algo_transactions(context, num_txns=1):
+# Send a self-payment transaction to itself to advance blocks in dev mode.
+def self_pay_transactions(context, num_txns=1):
     sp = context.app_acl.suggested_params()
     for _ in range(num_txns):
         payment = transaction.PaymentTxn(
             context.accounts[0],
             sp,
-            constants.ZERO_ADDRESS,
-            random.randint(100000, 900000),
+            context.accounts[0],
+            random.randint(1, 100_000),
         )
         signed_payment = context.wallet.sign_transaction(payment)
         context.app_acl.send_transaction(signed_payment)
@@ -120,7 +120,7 @@ def burn_algo_transactions(context, num_txns=1):
 # To prevent excess waiting, send a zero payment transaction before
 # the wait_for_confirmation function in dev mode.
 def dev_mode_wait_for_confirmation(context, txid, rounds=1):
-    burn_algo_transactions(context)
+    self_pay_transactions(context)
     transaction.wait_for_confirmation(context.app_acl, txid, rounds)
 
 

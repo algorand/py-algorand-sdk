@@ -7,7 +7,6 @@ from algosdk import (
     account,
     algod,
     auction,
-    constants,
     encoding,
     kmd,
     logic,
@@ -36,8 +35,8 @@ def initialize_account(context, account):
     context.acl.send_transaction(signed_payment)
 
 
-# Send a payment transaction to itself to advance blocks in dev mode.
-def burn_algo_transactions(context, num_txns=1):
+# Send a self-payment transaction to itself to advance blocks in dev mode.
+def self_pay_transactions(context, num_txns=1):
     if not hasattr(context, "dev_pk"):
         context.dev_sk, context.dev_pk = account.generate_account()
         initialize_account(context, context.dev_pk)
@@ -46,7 +45,7 @@ def burn_algo_transactions(context, num_txns=1):
             sender=context.dev_pk,
             sp=context.acl.suggested_params_as_object(),
             receiver=context.dev_pk,
-            amt=random.randint(1, 100_000),
+            amt=random.randint(1, int(DEV_ACCOUNT_INITIAL_MICROALGOS * 0.01)),
         )
         signed_payment = payment.sign(context.dev_sk)
         context.acl.send_transaction(signed_payment)
@@ -254,7 +253,7 @@ def status(context):
 
 @when("I get status after this block")
 def status_block(context):
-    burn_algo_transactions(context)
+    self_pay_transactions(context)
     context.status_after = context.acl.status_after_block(
         context.status["lastRound"]
     )
@@ -262,7 +261,7 @@ def status_block(context):
 
 @then("I can get the block info")
 def block(context):
-    burn_algo_transactions(context)
+    self_pay_transactions(context)
     context.block = context.acl.block_info(context.status["lastRound"] + 1)
 
 
@@ -357,7 +356,7 @@ def algod_client(context):
     algod_address = "http://localhost:" + str(algod_port)
     context.acl = algod.AlgodClient(token, algod_address)
     if context.acl.status()["lastRound"] < 2:
-        burn_algo_transactions(context, 2)
+        self_pay_transactions(context, 2)
         context.acl.status_after_block(2)
 
 
@@ -390,7 +389,7 @@ def default_txn(context, amt, note):
     default_txn_with_addr(context, amt, note, context.accounts[0])
 
 
-@given("default transaction with parameters {amt} {note} and rekeying key")
+@given('default transaction with parameters {amt} "{note}" and rekeying key')
 def default_txn_rekey(context, amt, note):
     default_txn_with_addr(context, amt, note, context.rekey)
 
@@ -451,7 +450,7 @@ def send_msig_txn(context):
 
 @then("the transaction should go through")
 def check_txn(context):
-    burn_algo_transactions(context)
+    self_pay_transactions(context)
     assert "type" in context.acl.pending_transaction_info(
         context.txn.get_txid()
     )
@@ -462,7 +461,7 @@ def check_txn(context):
 
 @then("I can get the transaction by ID")
 def get_txn_by_id(context):
-    burn_algo_transactions(context, 3)
+    self_pay_transactions(context, 3)
     context.acl.status_after_block(context.last_round + 2)
     assert "type" in context.acl.transaction_by_id(context.txn.get_txid())
 
@@ -539,7 +538,7 @@ def check_save_txn(context):
     stx = transaction.retrieve_from_file(dir_path + "/temp/txn.tx")[0]
     txid = stx.transaction.get_txid()
     last_round = context.acl.status()["lastRound"]
-    burn_algo_transactions(context, 3)
+    self_pay_transactions(context, 3)
     context.acl.status_after_block(last_round + 2)
     assert context.acl.transaction_info(stx.transaction.sender, txid)
 
