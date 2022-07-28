@@ -24,6 +24,17 @@ algod_port = 60000
 kmd_port = 60001
 
 DEV_ACCOUNT_INITIAL_MICROALGOS: int = 10_000_000
+
+def wait_for_algod_transaction_processing_to_complete():
+    """
+    wait_for_algod_transaction_processing_to_complete is a Dev mode helper method that's a rough analog to `context.app_acl.status_after_block(last_round + 2)`.
+     * <p>
+     * Since Dev mode produces blocks on a per transaction basis, it's possible algod generates a block _before_ the corresponding SDK call to wait for a block.  
+     * Without _any_ wait, it's possible the SDK looks for the transaction before algod completes processing.  
+     * So, the method performs a local sleep to simulate waiting for a block.
+    """
+    time.sleep(0.5)
+
 # Initialize a transient account in dev mode to make payment transactions.
 def initialize_account(context, account):
     payment = transaction.PaymentTxn(
@@ -35,7 +46,7 @@ def initialize_account(context, account):
     signed_payment = context.wallet.sign_transaction(payment)
     context.acl.send_transaction(signed_payment)
     # Wait to let transaction get confirmed in dev mode in v1.
-    time.sleep(0.1)
+    wait_for_algod_transaction_processing_to_complete()
 
 
 # Send a self-payment transaction to itself to advance blocks in dev mode.
@@ -53,7 +64,7 @@ def self_pay_transactions(context, num_txns=1):
         signed_payment = payment.sign(context.dev_sk)
         context.acl.send_transaction(signed_payment)
         # Wait to let transaction get confirmed in dev mode in v1.
-        time.sleep(0.1)
+        wait_for_algod_transaction_processing_to_complete()
 
 
 @when("I create a wallet")
@@ -455,7 +466,7 @@ def send_msig_txn(context):
 
 @then("the transaction should go through")
 def check_txn(context):
-    self_pay_transactions(context)
+    wait_for_algod_transaction_processing_to_complete()
     assert "type" in context.acl.pending_transaction_info(
         context.txn.get_txid()
     )
@@ -466,8 +477,7 @@ def check_txn(context):
 
 @then("I can get the transaction by ID")
 def get_txn_by_id(context):
-    self_pay_transactions(context, 3)
-    context.acl.status_after_block(context.last_round + 2)
+    wait_for_algod_transaction_processing_to_complete()
     assert "type" in context.acl.transaction_by_id(context.txn.get_txid())
 
 
@@ -542,9 +552,7 @@ def check_save_txn(context):
     dir_path = os.path.dirname(os.path.dirname(dir_path))
     stx = transaction.retrieve_from_file(dir_path + "/temp/txn.tx")[0]
     txid = stx.transaction.get_txid()
-    last_round = context.acl.status()["lastRound"]
-    self_pay_transactions(context, 3)
-    context.acl.status_after_block(last_round + 2)
+    wait_for_algod_transaction_processing_to_complete()
     assert context.acl.transaction_info(stx.transaction.sender, txid)
 
 
