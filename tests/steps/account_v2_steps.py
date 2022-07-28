@@ -3,8 +3,7 @@ from typing import Union
 from algosdk import account, constants, encoding, logic
 from algosdk.future import transaction
 from behave import given, then, when
-from tests.steps.other_v2_steps import dev_mode_wait_for_confirmation
-
+import tests.steps.other_v2_steps # Imports MaybeString
 
 def fund_account_address(
     context, account_address: str, amount: Union[int, str]
@@ -18,7 +17,7 @@ def fund_account_address(
     )
     signed_payment = context.wallet.sign_transaction(payment)
     context.app_acl.send_transaction(signed_payment)
-    dev_mode_wait_for_confirmation(context, payment.get_txid(), 10)
+    transaction.wait_for_confirmation(context.app_acl, payment.get_txid(), 10)
 
 
 @when(
@@ -453,7 +452,7 @@ def create_transient_and_fund(context, transient_fund_amount):
     )
     signed_payment = context.wallet.sign_transaction(payment)
     context.app_acl.send_transaction(signed_payment)
-    dev_mode_wait_for_confirmation(context, payment.get_txid(), 10)
+    transaction.wait_for_confirmation(context.app_acl, payment.get_txid(), 10)
 
 
 @then(
