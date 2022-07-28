@@ -25,15 +25,17 @@ kmd_port = 60001
 
 DEV_ACCOUNT_INITIAL_MICROALGOS: int = 10_000_000
 
+
 def wait_for_algod_transaction_processing_to_complete():
     """
     wait_for_algod_transaction_processing_to_complete is a Dev mode helper method that's a rough analog to `context.app_acl.status_after_block(last_round + 2)`.
      * <p>
-     * Since Dev mode produces blocks on a per transaction basis, it's possible algod generates a block _before_ the corresponding SDK call to wait for a block.  
-     * Without _any_ wait, it's possible the SDK looks for the transaction before algod completes processing.  
+     * Since Dev mode produces blocks on a per transaction basis, it's possible algod generates a block _before_ the corresponding SDK call to wait for a block.
+     * Without _any_ wait, it's possible the SDK looks for the transaction before algod completes processing.
      * So, the method performs a local sleep to simulate waiting for a block.
     """
     time.sleep(0.5)
+
 
 # Initialize a transient account in dev mode to make payment transactions.
 def initialize_account(context, account):
