@@ -1,6 +1,7 @@
 import base64
 import json
 import re
+import time
 
 import pytest
 from algosdk import abi, atomic_transaction_composer, encoding, mnemonic
@@ -13,9 +14,7 @@ from algosdk.error import (
 from algosdk.future import transaction
 from behave import given, step, then, when
 from tests.steps.other_v2_steps import (
-    dev_mode_wait_for_confirmation,
     read_program,
-    self_pay_transactions,
 )
 
 
@@ -404,21 +403,26 @@ def remember_app_id(context):
     context.app_ids.append(app_id)
 
 
+def wait_for_algod_transaction_processing_to_complete():
+    """
+    wait_for_algod_transaction_processing_to_complete is a Dev mode helper method that's a rough analog to `context.app_acl.status_after_block(last_round + 2)`.
+     * <p>
+     * Since Dev mode produces blocks on a per transaction basis, it's possible algod generates a block _before_ the corresponding SDK call to wait for a block.  Without _any_ wait, it's possible the SDK looks for the transaction before algod completes processing.  So, the method performs a local sleep to simulate waiting for a block.
+
+    """
+    time.sleep(0.5)
+
+
 @step("I wait for the transaction to be confirmed.")
 def wait_for_app_txn_confirm(context):
-    sp = context.app_acl.suggested_params()
-    last_round = sp.first
-    # Send some transactions to advance block state in dev mode so we can
-    # check the status after block `last_round + 2`.
-    self_pay_transactions(context, 3)
-    context.app_acl.status_after_block(last_round + 2)
+    wait_for_algod_transaction_processing_to_complete()
     if hasattr(context, "acl"):
         assert "type" in context.acl.transaction_info(
             context.transient_pk, context.app_txid
         )
         assert "type" in context.acl.transaction_by_id(context.app_txid)
     else:
-        dev_mode_wait_for_confirmation(context, context.app_txid, 10)
+        transaction.wait_for_confirmation(context.app_acl, context.app_txid, 1)
 
 
 @given("an application id {app_id}")

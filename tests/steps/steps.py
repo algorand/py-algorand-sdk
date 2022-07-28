@@ -309,7 +309,7 @@ def gen_key_kmd(context):
     context.pk = context.wallet.generate_key()
 
 
-@when("I generate a key using kmd for rekeying")
+@when("I generate a key using kmd for rekeying and fund it")
 def gen_rekey_kmd(context):
     context.rekey = context.wallet.generate_key()
     initialize_account(context, context.rekey)

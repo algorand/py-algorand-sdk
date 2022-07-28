@@ -1,7 +1,6 @@
 import base64
 import json
 import os
-import random
 import unittest
 import urllib
 from datetime import datetime
@@ -10,7 +9,6 @@ from urllib.request import Request, urlopen
 
 import parse
 from algosdk import (
-    account,
     dryrun_results,
     encoding,
     error,
@@ -96,50 +94,6 @@ def read_program(context, path):
         return base64.b64decode(resp["result"])
 
     return read_program_binary(path)
-
-
-DEV_ACCOUNT_INITIAL_MICROALGOS: int = 10_000_000
-# Initialize a transient account in dev mode to make payment transactions.
-def initialize_account(context, account):
-    payment = transaction.PaymentTxn(
-        sender=context.accounts[0],
-        sp=context.app_acl.suggested_params(),
-        receiver=account,
-        amt=DEV_ACCOUNT_INITIAL_MICROALGOS,
-    )
-    signed_payment = context.wallet.sign_transaction(payment)
-    context.app_acl.send_transaction(signed_payment)
-    # Wait and confirm that the payment succeeded.
-    transaction.wait_for_confirmation(context.app_acl, payment.get_txid(), 1)
-
-
-# Send a self-payment transaction to itself to advance blocks in dev mode.
-def self_pay_transactions(context, num_txns=1):
-    if not hasattr(context, "dev_pk"):
-        context.dev_sk, context.dev_pk = account.generate_account()
-        initialize_account(context, context.dev_pk)
-    sp = context.app_acl.suggested_params()
-    for _ in range(num_txns):
-        payment = transaction.PaymentTxn(
-            context.dev_pk,
-            sp,
-            context.dev_pk,
-            random.randint(1, int(DEV_ACCOUNT_INITIAL_MICROALGOS * 0.01)),
-        )
-        signed_payment = payment.sign(context.dev_sk)
-        context.app_acl.send_transaction(signed_payment)
-        # Wait and confirm that the payment succeeded.
-        # In dev mode, the transaction should be instantly confirmed in the block.
-        transaction.wait_for_confirmation(
-            context.app_acl, payment.get_txid(), 1
-        )
-
-
-# To prevent excess waiting, send a zero payment transaction before
-# the wait_for_confirmation function in dev mode.
-def dev_mode_wait_for_confirmation(context, txid, rounds=1):
-    self_pay_transactions(context)
-    transaction.wait_for_confirmation(context.app_acl, txid, rounds)
 
 
 @given("mock server recording request paths")
