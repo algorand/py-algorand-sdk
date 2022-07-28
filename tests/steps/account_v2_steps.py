@@ -3,7 +3,8 @@ from typing import Union
 from algosdk import account, constants, encoding, logic
 from algosdk.future import transaction
 from behave import given, then, when
-import tests.steps.other_v2_steps # Imports MaybeString
+import tests.steps.other_v2_steps  # Imports MaybeString
+
 
 def fund_account_address(
     context, account_address: str, amount: Union[int, str]

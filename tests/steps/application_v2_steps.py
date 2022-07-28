@@ -402,6 +402,7 @@ def remember_app_id(context):
 
     context.app_ids.append(app_id)
 
+
 def wait_for_algod_transaction_processing_to_complete():
     """
     wait_wait_for_algod_transaction_processing_to_complete is a Dev mode helper method that's a rough analog to `context.app_acl.status_after_block(last_round + 2)`.
@@ -410,6 +411,7 @@ def wait_for_algod_transaction_processing_to_complete():
 
     """
     time.sleep(0.5)
+
 
 @step("I wait for the transaction to be confirmed.")
 def wait_for_app_txn_confirm(context):
@@ -420,7 +422,9 @@ def wait_for_app_txn_confirm(context):
         )
         assert "type" in context.acl.transaction_by_id(context.app_txid)
     else:
-        transaction.wait_for_confirmation(context.app_acl, context.app_txid, 10)
+        transaction.wait_for_confirmation(
+            context.app_acl, context.app_txid, 10
+        )
 
 
 @given("an application id {app_id}")
