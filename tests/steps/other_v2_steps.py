@@ -138,7 +138,7 @@ def self_pay_transactions(context, num_txns=1):
 # To prevent excess waiting, send a zero payment transaction before
 # the wait_for_confirmation function in dev mode.
 def dev_mode_wait_for_confirmation(context, txid, rounds=1):
-    self_pay_transactions(context)
+    # self_pay_transactions(context)
     transaction.wait_for_confirmation(context.app_acl, txid, rounds)
 
 
