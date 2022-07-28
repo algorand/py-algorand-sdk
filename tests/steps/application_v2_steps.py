@@ -423,7 +423,7 @@ def wait_for_app_txn_confirm(context):
         assert "type" in context.acl.transaction_by_id(context.app_txid)
     else:
         transaction.wait_for_confirmation(
-            context.app_acl, context.app_txid, 10
+            context.app_acl, context.app_txid, 1
         )
 
 

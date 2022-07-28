@@ -18,7 +18,7 @@ def fund_account_address(
     )
     signed_payment = context.wallet.sign_transaction(payment)
     context.app_acl.send_transaction(signed_payment)
-    transaction.wait_for_confirmation(context.app_acl, payment.get_txid(), 10)
+    transaction.wait_for_confirmation(context.app_acl, payment.get_txid(), 1)
 
 
 @when(
@@ -453,7 +453,7 @@ def create_transient_and_fund(context, transient_fund_amount):
     )
     signed_payment = context.wallet.sign_transaction(payment)
     context.app_acl.send_transaction(signed_payment)
-    transaction.wait_for_confirmation(context.app_acl, payment.get_txid(), 10)
+    transaction.wait_for_confirmation(context.app_acl, payment.get_txid(), 1)
 
 
 @then(
