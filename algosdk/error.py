@@ -227,3 +227,11 @@ class AtomicTransactionComposerError(Exception):
 class InvalidForeignIndexError(Exception):
     def __init__(self, msg):
         super().__init__(msg)
+
+
+class SourceMapVersionError(Exception):
+    def __init__(self, version):
+        Exception.__init__(
+            self,
+            "Only SourceMap version 3 is supported, got: {}".format(version),
+        )

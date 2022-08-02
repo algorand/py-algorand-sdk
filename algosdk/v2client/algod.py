@@ -376,7 +376,7 @@ class AlgodClient:
             res["min-fee"],
         )
 
-    def compile(self, source, **kwargs):
+    def compile(self, source, source_map=False, **kwargs):
         """
         Compile TEAL source with remote algod.
 
@@ -394,9 +394,9 @@ class AlgodClient:
             {"Content-Type": "application/x-binary"},
         )
         kwargs["headers"] = headers
-
+        params = {"sourcemap": source_map}
         return self.algod_request(
-            "POST", req, data=source.encode("utf-8"), **kwargs
+            "POST", req, params=params, data=source.encode("utf-8"), **kwargs
         )
 
     def dryrun(self, drr, **kwargs):

@@ -1700,3 +1700,47 @@ def glom_app_eval_delta(context, i, path, field):
     assert field == str(
         actual_field
     ), f"path [{path}] expected value [{field}] but got [{actual_field}] instead"
+
+
+@given('a source map json file "{sourcemap_file}"')
+def parse_source_map(context, sourcemap_file):
+    jsmap = json.loads(load_resource(sourcemap_file, is_binary=False))
+    context.source_map = source_map.SourceMap(jsmap)
+
+
+@then('the string composed of pc:line number equals "{pc_to_line}"')
+def check_source_map(context, pc_to_line):
+    buff = [
+        f"{pc}:{line}" for pc, line in context.source_map.pc_to_line.items()
+    ]
+    actual = ";".join(buff)
+    assert actual == pc_to_line, f"expected {pc_to_line} got {actual}"
+
+
+@then('getting the line associated with a pc "{pc}" equals "{line}"')
+def check_pc_to_line(context, pc, line):
+
+    actual_line = context.source_map.get_line_for_pc(int(pc))
+    assert actual_line == int(line), f"expected line {line} got {actual_line}"
+
+
+@then('getting the last pc associated with a line "{line}" equals "{pc}"')
+def check_line_to_pc(context, line, pc):
+    actual_pcs = context.source_map.get_pcs_for_line(int(line))
+    assert actual_pcs[-1] == int(pc), f"expected pc {pc} got {actual_pcs[-1]}"
+
+
+@when('I compile a teal program "{teal}" with mapping enabled')
+def check_compile_mapping(context, teal):
+    data = load_resource(teal)
+    source = data.decode("utf-8")
+    response = context.app_acl.compile(source, source_map=True)
+    context.raw_source_map = json.dumps(
+        response["sourcemap"], separators=(",", ":")
+    )
+
+
+@then('the resulting source map is the same as the json "{sourcemap}"')
+def check_mapping_equal(context, sourcemap):
+    expected = load_resource(sourcemap).decode("utf-8").strip()
+    assert context.raw_source_map == expected

@@ -6,6 +6,24 @@
 
 - `class StateSchema`'s method `undictify()` now returns a `StateSchema` object instead of a python `dict`
 
+# v1.16.0
+
+## What's Changed
+
+### New Features
+* Dev Tools: Source map decoder by @barnjamin in https://github.com/algorand/py-algorand-sdk/pull/353
+
+### Enhancements
+* Github-Actions: Adding pr title and label checks by @algojack in https://github.com/algorand/py-algorand-sdk/pull/358
+
+### Other
+* Implement new step asserting that AtomicTransactionComposer's attempt to add a method can fail with a particular error by @tzaffi in https://github.com/algorand/py-algorand-sdk/pull/347
+* Split up  unit test files and rename tests directory to test by @algochoi in https://github.com/algorand/py-algorand-sdk/pull/351
+* App page const by @barnjamin in https://github.com/algorand/py-algorand-sdk/pull/357
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v1.15.0...v1.16.0
+
+
 # v1.15.0
 
 ## What's Changed
