@@ -185,6 +185,23 @@ def search_application2(context, creator):
 
 
 @when(
+    'we make a LookupApplicationBoxByIDandName call with applicationID {app_id} with encoded box name "{box_name}"'
+)
+def lookup_application_box(context, app_id, box_name):
+    boxes = split_and_process_app_args(box_name)[0]
+    context.response = context.icl.application_box_by_name(app_id, boxes)
+
+
+@when(
+    "we make a SearchForApplicationBoxes call with applicationID {app_id} with max {max_results}"
+)
+def search_application_boxes(context, app_id, max_results):
+    context.response = context.icl.application_boxes(
+        app_id, limit=int(max_results)
+    )
+
+
+@when(
     'I use {indexer} to search for applications with {limit}, {application_id}, "{include_all:MaybeBool}" and token "{token:MaybeString}"'
 )
 def search_applications_include_all(
