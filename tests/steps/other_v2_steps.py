@@ -8,7 +8,7 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 
 import parse
-from algosdk import dryrun_results, encoding, error, mnemonic
+from algosdk import dryrun_results, encoding, error, mnemonic, source_map
 from algosdk.error import AlgodHTTPError
 from algosdk.future import transaction
 from algosdk.testing.dryrun import DryrunTestCaseMixin
