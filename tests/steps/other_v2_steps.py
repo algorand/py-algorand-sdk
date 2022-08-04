@@ -367,6 +367,7 @@ def asset_balance(
 def asset_balance_any(context):
     context.response = context.icl.asset_balances(123, 10)
 
+
 @when(
     'we make a Lookup Asset Transactions call against asset index {index} with NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} address "{address:MaybeString}" addressRole "{addressRole:MaybeString}" ExcluseCloseTo "{excludeCloseTo:MaybeString}" RekeyTo "{rekeyTo:MaybeString}"'
 )
@@ -508,6 +509,7 @@ def parse_asset_tns(context, roundNum, length, idx, sender):
     assert len(context.response["transactions"]) == int(length)
     assert context.response["transactions"][int(idx)]["sender"] == sender
 
+
 @when(
     'we make a Lookup Account Transactions call against account "{account:MaybeString}" with NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index} rekeyTo "{rekeyTo:MaybeString}"'
 )
@@ -631,10 +633,12 @@ def parse_txns_by_addr(context, roundNum, length, idx, sender):
     if int(length) > 0:
         assert context.response["transactions"][int(idx)]["sender"] == sender
 
+
 @then("I receive status code {code}")
 def icl_health_check(context, code):
     # An exception is thrown when the code is not 200
     assert int(code) == 200
+
 
 @then(
     'The block was confirmed at {timestamp}, contains {num} transactions, has the previous block hash "{prevHash}"'
@@ -661,6 +665,7 @@ def lookup_block_any(context):
 def parse_lookup_block(context, prevHash):
     assert context.response["previous-block-hash"] == prevHash
 
+
 def parse_args(assetid):
     t = assetid.split(" ")
     l = {
@@ -672,9 +677,12 @@ def parse_args(assetid):
     }
     return l
 
+
 when(
     'The asset found has: "{name}", "{units}", "{creator}", {decimals}, "{defaultfrozen}", {total}, "{clawback}"'
 )
+
+
 def check_lookup_asset(
     context, name, units, creator, decimals, defaultfrozen, total, clawback
 ):
@@ -702,6 +710,7 @@ def lookup_asset_any(context):
 @then("the parsed LookupAssetByID response should have index {index}")
 def parse_asset(context, index):
     assert context.response["asset"]["index"] == int(index)
+
 
 @then(
     'there are {num} transactions in the response, the first is "{txid:MaybeString}".'
@@ -947,6 +956,7 @@ def parsed_search_for_txns(context, roundNum, length, index, rekeyTo):
             context.response["transactions"][int(index)]["rekey-to"] == rekeyTo
         )
 
+
 @then("there are {num} assets in the response, the first is {assetidout}.")
 def check_assets(context, num, assetidout):
     assert len(context.response["assets"]) == int(num)
@@ -1069,6 +1079,7 @@ def expect_error(context, err):
     # TODO: this should actually do the claimed action
     pass
 
+
 @given(
     'suggested transaction parameters fee {fee}, flat-fee "{flat_fee:MaybeBool}", first-valid {first_valid}, last-valid {last_valid}, genesis-hash "{genesis_hash}", genesis-id "{genesis_id}"'
 )
@@ -1083,6 +1094,7 @@ def suggested_transaction_parameters(
         gh=genesis_hash,
         gen=genesis_id,
     )
+
 
 @when(
     'I build a keyreg transaction with sender "{sender}", nonparticipation "{nonpart:MaybeBool}", vote first {vote_first}, vote last {vote_last}, key dilution {key_dilution}, vote public key "{vote_pk:MaybeString}", selection public key "{selection_pk:MaybeString}", and state proof public key "{state_proof_pk:MaybeString}"'

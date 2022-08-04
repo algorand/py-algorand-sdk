@@ -143,53 +143,9 @@ def search_application2(context, creator):
     context.response = context.icl.search_applications(creator=creator)
 
 
-@when(
-    'I use {indexer} to search for applications with {limit}, {application_id}, "{include_all:MaybeBool}" and token "{token:MaybeString}"'
-)
-def search_applications_include_all(
-    context, indexer, limit, application_id, include_all, token
-):
-    context.response = context.icls[indexer].search_applications(
-        application_id=int(application_id),
-        limit=int(limit),
-        include_all=include_all,
-        next_page=token,
-    )
-
-
-@when(
-    'I use {indexer} to search for applications with {limit}, {application_id}, and token "{token:MaybeString}"'
-)
-def search_applications(context, indexer, limit, application_id, token):
-    context.response = context.icls[indexer].search_applications(
-        application_id=int(application_id), limit=int(limit), next_page=token
-    )
-
-
-@when(
-    'I use {indexer} to lookup application with {application_id} and "{include_all:MaybeBool}"'
-)
-def lookup_application_include_all2(
-    context, indexer, application_id, include_all
-):
-    try:
-        context.response = context.icls[indexer].applications(
-            application_id=int(application_id), include_all=include_all
-        )
-    except IndexerHTTPError as e:
-        context.response = json.loads(str(e))
-
-
 @when("we make a LookupApplications call with applicationID {app_id}")
 def lookup_application(context, app_id):
     context.response = context.icl.applications(int(app_id))
-
-
-@when("I use {indexer} to lookup application with {application_id}")
-def lookup_application2(context, indexer, application_id):
-    context.response = context.icls[indexer].applications(
-        application_id=int(application_id)
-    )
 
 
 @when("we make a SearchForApplications call with {application_id} and {round}")

@@ -79,11 +79,6 @@ def lookup_account_check_holdings(context, μalgos, num, assetid, assetamount):
                 assert a["amount"] == int(assetamount)
 
 
-@when('I use {indexer} to lookup account "{account}" at round {round}')
-def icl_lookup_account_at_round(context, indexer, account, round):
-    context.response = context.icls[indexer].account_info(account, int(round))
-
-
 @when(
     'we make a Lookup Account by ID call against account "{account}" with round {block}'
 )
@@ -260,88 +255,6 @@ def search_accounts3(
     exclude,
 ):
     context.response = context.icl.accounts(exclude=exclude)
-
-
-@when(
-    'I use {indexer} to search for an account with {assetid}, {limit}, {currencygt}, {currencylt}, "{auth_addr:MaybeString}", {application_id}, "{include_all:MaybeBool}" and token "{token:MaybeString}"'
-)
-def icl_search_accounts_with_auth_addr_and_app_id_and_include_all(
-    context,
-    indexer,
-    assetid,
-    limit,
-    currencygt,
-    currencylt,
-    auth_addr,
-    application_id,
-    include_all,
-    token,
-):
-    context.response = context.icls[indexer].accounts(
-        asset_id=int(assetid),
-        limit=int(limit),
-        next_page=token,
-        min_balance=int(currencygt),
-        max_balance=int(currencylt),
-        auth_addr=auth_addr,
-        application_id=int(application_id),
-        include_all=include_all,
-    )
-
-
-@when(
-    'I use {indexer} to search for an account with {assetid}, {limit}, {currencygt}, {currencylt}, "{auth_addr:MaybeString}", {application_id} and token "{token:MaybeString}"'
-)
-def icl_search_accounts_with_auth_addr_and_app_id(
-    context,
-    indexer,
-    assetid,
-    limit,
-    currencygt,
-    currencylt,
-    auth_addr,
-    application_id,
-    token,
-):
-    context.response = context.icls[indexer].accounts(
-        asset_id=int(assetid),
-        limit=int(limit),
-        next_page=token,
-        min_balance=int(currencygt),
-        max_balance=int(currencylt),
-        auth_addr=auth_addr,
-        application_id=int(application_id),
-    )
-
-
-@when(
-    'I use {indexer} to search for an account with {assetid}, {limit}, {currencygt}, {currencylt} and token "{token:MaybeString}"'
-)
-def icl_search_accounts_legacy(
-    context, indexer, assetid, limit, currencygt, currencylt, token
-):
-    context.response = context.icls[indexer].accounts(
-        asset_id=int(assetid),
-        limit=int(limit),
-        next_page=token,
-        min_balance=int(currencygt),
-        max_balance=int(currencylt),
-    )
-
-
-@then(
-    "I get the next page using {indexer} to search for an account with {assetid}, {limit}, {currencygt} and {currencylt}"
-)
-def search_accounts_nex(
-    context, indexer, assetid, limit, currencygt, currencylt
-):
-    context.response = context.icls[indexer].accounts(
-        asset_id=int(assetid),
-        limit=int(limit),
-        min_balance=int(currencygt),
-        max_balance=int(currencylt),
-        next_page=context.response["next-token"],
-    )
 
 
 @then(
