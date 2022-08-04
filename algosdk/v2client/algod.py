@@ -1,6 +1,6 @@
 import base64
 import json
-from urllib import parse
+from urllib import parse, response
 import urllib.error
 from urllib.request import Request, urlopen
 
@@ -329,6 +329,33 @@ class AlgodClient:
 
         return self.send_raw_transaction(
             base64.b64encode(b"".join(serialized)), **kwargs
+        )
+
+    def simulate(self, txns, **kwargs):
+        serialized = []
+        for txn in txns:
+            assert not isinstance(
+                txn, future.transaction.Transaction
+            ), "Attempt to send UNSIGNED transaction {}".format(txn)
+            serialized.append(base64.b64decode(encoding.msgpack_encode(txn)))
+
+        txn = b"".join(serialized)
+
+        req = "/transactions/simulate"
+
+        headers = util.build_headers_from(
+            kwargs.get("headers", False),
+            {"Content-Type": "application/x-binary"},
+        )
+
+        kwargs["headers"] = headers
+
+        return self.algod_request(
+            "POST",
+            req,
+            data=txn,
+            response_format="application/msgpack",
+            **kwargs
         )
 
     def suggested_params(self, **kwargs):
