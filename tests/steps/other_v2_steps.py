@@ -333,21 +333,6 @@ def parse_block(context, pool):
     assert context.response["block"]["rwd"] == pool
 
 
-@when(
-    "I get the next page using {indexer} to lookup asset balances for {assetid} with {currencygt}, {currencylt}, {limit}"
-)
-def next_asset_balance(
-    context, indexer, assetid, currencygt, currencylt, limit
-):
-    context.response = context.icls[indexer].asset_balances(
-        int(assetid),
-        min_balance=int(currencygt),
-        max_balance=int(currencylt),
-        limit=int(limit),
-        next_page=context.response["next-token"],
-    )
-
-
 @then(
     'There are {numaccounts} with the asset, the first is "{account}" has "{isfrozen}" and {amount}'
 )
@@ -381,14 +366,6 @@ def asset_balance(
 @when("we make any LookupAssetBalances call")
 def asset_balance_any(context):
     context.response = context.icl.asset_balances(123, 10)
-
-
-@when("I use {indexer} to search for all {assetid} asset transactions")
-def icl_asset_txns(context, indexer, assetid):
-    context.response = context.icls[indexer].search_asset_transactions(
-        int(assetid)
-    )
-
 
 @when(
     'we make a Lookup Asset Transactions call against asset index {index} with NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} address "{address:MaybeString}" addressRole "{addressRole:MaybeString}" ExcluseCloseTo "{excludeCloseTo:MaybeString}" RekeyTo "{rekeyTo:MaybeString}"'
@@ -531,14 +508,6 @@ def parse_asset_tns(context, roundNum, length, idx, sender):
     assert len(context.response["transactions"]) == int(length)
     assert context.response["transactions"][int(idx)]["sender"] == sender
 
-
-@when('I use {indexer} to search for all "{accountid}" transactions')
-def icl_txns_by_addr(context, indexer, accountid):
-    context.response = context.icls[indexer].search_transactions_by_address(
-        accountid
-    )
-
-
 @when(
     'we make a Lookup Account Transactions call against account "{account:MaybeString}" with NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index} rekeyTo "{rekeyTo:MaybeString}"'
 )
@@ -662,22 +631,10 @@ def parse_txns_by_addr(context, roundNum, length, idx, sender):
     if int(length) > 0:
         assert context.response["transactions"][int(idx)]["sender"] == sender
 
-
-@when("I use {indexer} to check the services health")
-def icl_health(context, indexer):
-    context.response = context.icls[indexer].health()
-
-
 @then("I receive status code {code}")
 def icl_health_check(context, code):
     # An exception is thrown when the code is not 200
     assert int(code) == 200
-
-
-@when("I use {indexer} to lookup block {number}")
-def icl_lookup_block(context, indexer, number):
-    context.response = context.icls[indexer].block_info(int(number))
-
 
 @then(
     'The block was confirmed at {timestamp}, contains {num} transactions, has the previous block hash "{prevHash}"'
@@ -704,22 +661,6 @@ def lookup_block_any(context):
 def parse_lookup_block(context, prevHash):
     assert context.response["previous-block-hash"] == prevHash
 
-
-@when(
-    'I use {indexer} to lookup asset balances for {assetid} with {currencygt}, {currencylt}, {limit} and token "{token}"'
-)
-def icl_asset_balance(
-    context, indexer, assetid, currencygt, currencylt, limit, token
-):
-    context.response = context.icls[indexer].asset_balances(
-        int(assetid),
-        min_balance=int(currencygt),
-        max_balance=int(currencylt),
-        limit=int(limit),
-        next_page=token,
-    )
-
-
 def parse_args(assetid):
     t = assetid.split(" ")
     l = {
@@ -731,16 +672,7 @@ def parse_args(assetid):
     }
     return l
 
-
-@when("I use {indexer} to lookup asset {assetid}")
-def icl_lookup_asset(context, indexer, assetid):
-    try:
-        context.response = context.icls[indexer].asset_info(int(assetid))
-    except:
-        icl_asset_balance(context, indexer, **parse_args(assetid))
-
-
-@then(
+when(
     'The asset found has: "{name}", "{units}", "{creator}", {decimals}, "{defaultfrozen}", {total}, "{clawback}"'
 )
 def check_lookup_asset(
@@ -770,110 +702,6 @@ def lookup_asset_any(context):
 @then("the parsed LookupAssetByID response should have index {index}")
 def parse_asset(context, index):
     assert context.response["asset"]["index"] == int(index)
-
-
-@when(
-    "I get the next page using {indexer} to search for transactions with {limit} and {maxround}"
-)
-def search_txns_next(context, indexer, limit, maxround):
-    context.response = context.icls[indexer].search_transactions(
-        limit=int(limit),
-        max_round=int(maxround),
-        next_page=context.response["next-token"],
-    )
-
-
-@when(
-    'I use {indexer} to search for transactions with {limit}, "{noteprefix:MaybeString}", "{txtype:MaybeString}", "{sigtype:MaybeString}", "{txid:MaybeString}", {block}, {minround}, {maxround}, {assetid}, "{beforetime:MaybeString}", "{aftertime:MaybeString}", {currencygt}, {currencylt}, "{address:MaybeString}", "{addressrole:MaybeString}", "{excludecloseto:MaybeString}" and token "{token:MaybeString}"'
-)
-def icl_search_txns(
-    context,
-    indexer,
-    limit,
-    noteprefix,
-    txtype,
-    sigtype,
-    txid,
-    block,
-    minround,
-    maxround,
-    assetid,
-    beforetime,
-    aftertime,
-    currencygt,
-    currencylt,
-    address,
-    addressrole,
-    excludecloseto,
-    token,
-):
-    context.response = context.icls[indexer].search_transactions(
-        asset_id=int(assetid),
-        limit=int(limit),
-        next_page=token,
-        note_prefix=base64.b64decode(noteprefix),
-        txn_type=txtype,
-        sig_type=sigtype,
-        txid=txid,
-        block=int(block),
-        min_round=int(minround),
-        max_round=int(maxround),
-        start_time=aftertime,
-        end_time=beforetime,
-        min_amount=int(currencygt),
-        max_amount=int(currencylt),
-        address=address,
-        address_role=addressrole,
-        exclude_close_to=excludecloseto == "true",
-    )
-
-
-@when(
-    'I use {indexer} to search for transactions with {limit}, "{noteprefix:MaybeString}", "{txtype:MaybeString}", "{sigtype:MaybeString}", "{txid:MaybeString}", {block}, {minround}, {maxround}, {assetid}, "{beforetime:MaybeString}", "{aftertime:MaybeString}", {currencygt}, {currencylt}, "{address:MaybeString}", "{addressrole:MaybeString}", "{excludecloseto:MaybeString}", {application_id} and token "{token:MaybeString}"'
-)
-def icl_search_txns_with_app(
-    context,
-    indexer,
-    limit,
-    noteprefix,
-    txtype,
-    sigtype,
-    txid,
-    block,
-    minround,
-    maxround,
-    assetid,
-    beforetime,
-    aftertime,
-    currencygt,
-    currencylt,
-    address,
-    addressrole,
-    excludecloseto,
-    application_id,
-    token,
-):
-    context.response = context.icls[indexer].search_transactions(
-        asset_id=int(assetid),
-        limit=int(limit),
-        next_page=token,
-        note_prefix=base64.b64decode(noteprefix),
-        txn_type=txtype,
-        sig_type=sigtype,
-        txid=txid,
-        block=int(block),
-        min_round=int(minround),
-        max_round=int(maxround),
-        start_time=aftertime,
-        end_time=beforetime,
-        min_amount=int(currencygt),
-        max_amount=int(currencylt),
-        address=address,
-        address_role=addressrole,
-        application_id=int(application_id),
-        exclude_close_to=excludecloseto == "true",
-    )
-
 
 @then(
     'there are {num} transactions in the response, the first is "{txid:MaybeString}".'
@@ -1119,23 +947,6 @@ def parsed_search_for_txns(context, roundNum, length, index, rekeyTo):
             context.response["transactions"][int(index)]["rekey-to"] == rekeyTo
         )
 
-
-@when(
-    'I use {indexer} to search for assets with {limit}, {assetidin}, "{creator:MaybeString}", "{name:MaybeString}", "{unit:MaybeString}", and token "{token:MaybeString}"'
-)
-def icl_search_assets(
-    context, indexer, limit, assetidin, creator, name, unit, token
-):
-    context.response = context.icls[indexer].search_assets(
-        limit=int(limit),
-        next_page=token,
-        creator=creator,
-        name=name,
-        unit=unit,
-        asset_id=int(assetidin),
-    )
-
-
 @then("there are {num} assets in the response, the first is {assetidout}.")
 def check_assets(context, num, assetidout):
     assert len(context.response["assets"]) == int(num)
@@ -1258,18 +1069,6 @@ def expect_error(context, err):
     # TODO: this should actually do the claimed action
     pass
 
-
-@given(
-    'indexer client {index} at "{address}" port {port} with token "{token}"'
-)
-def indexer_client(context, index, address, port, token):
-    if not hasattr(context, "icls"):
-        context.icls = dict()
-    context.icls[index] = indexer.IndexerClient(
-        token, "http://" + address + ":" + str(port)
-    )
-
-
 @given(
     'suggested transaction parameters fee {fee}, flat-fee "{flat_fee:MaybeBool}", first-valid {first_valid}, last-valid {last_valid}, genesis-hash "{genesis_hash}", genesis-id "{genesis_id}"'
 )
@@ -1284,7 +1083,6 @@ def suggested_transaction_parameters(
         gh=genesis_hash,
         gen=genesis_id,
     )
-
 
 @when(
     'I build a keyreg transaction with sender "{sender}", nonparticipation "{nonpart:MaybeBool}", vote first {vote_first}, vote last {vote_last}, key dilution {key_dilution}, vote public key "{vote_pk:MaybeString}", selection public key "{selection_pk:MaybeString}", and state proof public key "{state_proof_pk:MaybeString}"'

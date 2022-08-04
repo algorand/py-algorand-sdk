@@ -26,12 +26,6 @@ echo "time till end of building PYSDK: " + $(($(date "+%s") - $START))
 ./test-harness/scripts/up.sh
 echo "time till end of up.sh: " + $(($(date "+%s") - $START))
 
-while [ $(curl -sL -w "%{http_code}\\n" "http://localhost:60002/v2/accounts" -o /dev/null --connect-timeout 3 --max-time 5) -ne "200" ]
-do
-  sleep 1
-done
-echo "time till indexer-live is ready: " + $(($(date "+%s") - $START))
-
 # Launch SDK testing
 docker run -it \
      --network host \
