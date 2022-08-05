@@ -943,7 +943,9 @@ class IndexerClient:
 
         return self.indexer_request("GET", req, params, **kwargs)
 
-    def application_boxes(self, application_id: int, limit: int = 0, next_page=None,**kwargs):
+    def application_boxes(
+        self, application_id: int, limit: int = 0, next_page=None, **kwargs
+    ):
         """
         Return a list of all the application's boxes.
 
@@ -954,7 +956,7 @@ class IndexerClient:
             next_page (string, optional): used for pagination
         """
         req = "/applications/" + str(application_id) + "/boxes"
-        params = {} 
+        params = {}
         if limit:
             params["limit"] = limit
         if next_page:
