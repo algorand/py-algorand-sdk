@@ -16,7 +16,7 @@ docker-pysdk-build:
 	docker build -t py-sdk-testing --build-arg PYTHON_VERSION="${PYTHON_VERSION}" .
 
 docker-pysdk-run:
-	docker ps -a
+	docker ps -a | cat
 	docker run -it --network host py-sdk-testing:latest
 
 docker-test: harness docker-pysdk-build docker-pysdk-run
