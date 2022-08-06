@@ -7,5 +7,7 @@ integration:
 	behave --tags=$(INTEGRATIONS) tests -f progress2
 
 PYTHON_VERSION ?= 3.8
+TYPE ?= channel
 docker-test:
-	PYTHON_VERSION='$(PYTHON_VERSION)' ./run_integration.sh
+	PYTHON_VERSION='$(PYTHON_VERSION)' TYPE='$(TYPE)' ./run_integration.sh
+
