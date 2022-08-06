@@ -4,10 +4,20 @@ unit:
 
 INTEGRATIONS = "@abi or @algod or @applications or @applications.verified or @assets or @auction or @c2c or @compile or @dryrun or @dryrun.testing or @indexer or @indexer.231 or @indexer.applications or @kmd or @rekey_v1 or @send.keyregtxn or @send or @compile.sourcemap"
 integration:
-	behave --tags=$(INTEGRATIONS) tests -f progress2
+	behave --tags=$(INTEGRATIONS) tests -f progress2 --no-capture
+
+# channel or source
+TYPE ?= channel
+harness:
+	TYPE='$(TYPE)' ./test-harness.sh
 
 PYTHON_VERSION ?= 3.8
-TYPE ?= channel
-docker-test:
-	PYTHON_VERSION='$(PYTHON_VERSION)' TYPE='$(TYPE)' ./run_integration.sh
+docker-pysdk-build:
+	docker build -t py-sdk-testing --build-arg PYTHON_VERSION="${PYTHON_VERSION}" .
+
+docker-pysdk-run:
+	docker run -it --network host py-sdk-testing:latest
+
+docker-test: test-harness docker-python-build docker-python-run
+
 
