@@ -39,9 +39,7 @@ else
      docker build -t py-sdk-testing --build-arg PYTHON_VERSION="${PYTHON_VERSION}" -f Dockerfile "$(pwd)"
      echo "run_integration.sh: seconds it took to finish building PYSDK: " + $(($(date "+%s") - $START))
      # Launch SDK testing
-     docker run -it \
-          --network host \
-          py-sdk-testing:latest 
+     docker run -it --network host py-sdk-testing:latest 
 fi
 
 echo "time till end of all tests: " + $(($(date "+%s") - $START))
