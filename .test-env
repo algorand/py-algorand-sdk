@@ -22,11 +22,15 @@ ALGOD_SHA=""
 NETWORK_TEMPLATE="images/algod/DevModeNetwork.json"
 NETWORK_NUM_ROUNDS=3000
 INDEXER_URL="https://github.com/algorand/indexer"
+NODE_ARCHIVAL="True"
+NODE_V1_INDEXER="True"
 INDEXER_BRANCH="tzaffi/box-search"
 INDEXER_SHA=""
 
-# Sandbox's clone folder:
-SANDBOX=".sdk-harness-sandbox"
+# Sandbox configuration:
+SANDBOX_BRANCH="configurable-ports"
+SANDBOX_URL="https://github.com/algorand/sandbox"
+SANDBOX_DIR=".sdk-harness-sandbox"
 
 # replacement values for Sandbox's docker-compose:
 ALGOD_CONTAINER=sdk-harness-algod
