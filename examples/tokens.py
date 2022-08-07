@@ -9,14 +9,14 @@ home = expanduser("~")
 # algod info is in the algod.net and algod.token files in the data directory
 # kmd info is in the kmd.net and kmd.token files in the kmd directory in data
 
-kmd_token = ""
-kmd_address = ""
+kmd_token = "a" * 64
+kmd_address = "http://localhost:4002"
 
-algod_token = ""
-algod_address = ""
+algod_token = "a" * 64
+algod_address = "http://localhost:4001"
 
 # you can also get tokens and addresses automatically
-get_automatically = True
+get_automatically = False
 
 # path to the data directory
 data_dir_path = home + "/node/network/Node"

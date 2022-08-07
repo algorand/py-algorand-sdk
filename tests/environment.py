@@ -126,6 +126,8 @@ def before_all(context):
     )
     context.response_thread.start()
 
+    setup_debug_on_error(context.config.userdata)
+
 
 def after_all(context):
     # Shutdown path server
@@ -135,3 +137,20 @@ def after_all(context):
     # Shutdown route server
     context.response_server.shutdown()
     context.response_thread.join()
+
+
+BEHAVE_DEBUG_ON_ERROR = True
+
+
+def setup_debug_on_error(userdata):
+    global BEHAVE_DEBUG_ON_ERROR
+    BEHAVE_DEBUG_ON_ERROR = userdata.getbool("BEHAVE_DEBUG_ON_ERROR")
+
+
+def after_step(context, step):
+    if BEHAVE_DEBUG_ON_ERROR and step.status == "failed":
+        # -- ENTER DEBUGGER: Zoom in on failure location.
+        # NOTE: Use IPython debugger, same for pdb (basic python debugger).
+        import ipdb
+
+        ipdb.post_mortem(step.exc_traceback)
