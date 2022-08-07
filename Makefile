@@ -20,7 +20,3 @@ docker-pysdk-run:
 	docker run -it --network host py-sdk-testing:latest
 
 docker-test: harness docker-pysdk-build docker-pysdk-run
-
-
-
-

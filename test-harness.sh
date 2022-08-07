@@ -30,4 +30,3 @@ popd
 echo "run_integration.sh: seconds it took to finish testing sdk's up.sh: " + $(($(date "+%s") - $START))
 echo "To run sandbox commands, cd into $SDK_TESTING_HARNESS/$SANDBOX"
 echo "time till end of test-harness bootstrapping: " + $(($(date "+%s") - $START))
-
