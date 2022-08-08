@@ -30,7 +30,7 @@ INDEXER_SHA=""
 # Sandbox configuration:
 SANDBOX_BRANCH="configurable-ports"
 SANDBOX_URL="https://github.com/algorand/sandbox"
-SANDBOX_DIR=".sdk-harness-sandbox"
+SANDBOX_DIR=".sandbox"
 
 # replacement values for Sandbox's docker-compose:
 ALGOD_CONTAINER=sdk-harness-algod

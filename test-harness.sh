@@ -11,7 +11,15 @@ rootdir=$(dirname "$0")
 pushd "$rootdir"
 
 ## Reset test harness
-rm -rf "$SDK_TESTING_HARNESS"
+if [ -d "$SDK_TESTING_HARNESS" ]; then
+  pushd "$SDK_TESTING_HARNESS"
+  ./scripts/down.sh
+  popd
+  rm -rf "$SDK_TESTING_HARNESS"
+else
+  echo "test-harness.sh: directory $SDK_TESTING_HARNESS does not exist - NOOP"
+fi
+
 git clone --single-branch --branch "$SDK_TESTING_BRANCH" "$SDK_TESTING_URL" "$SDK_TESTING_HARNESS"
 
 ## OVERWRITE incoming .env with .test-env

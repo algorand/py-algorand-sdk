@@ -12,4 +12,3 @@ RUN pip install . -q \
 
 # Run integration tests
 CMD ["/bin/bash", "-c", "python --version && make unit && make integration"]
-
