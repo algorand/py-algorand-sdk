@@ -1,4 +1,4 @@
-# Configs for local python sdk dockerizing:
+# Configs for python sdk docker:
 PYTHON_VERSION=${PYTHON_VERSION:-3.10}
 
 # Configs for testing repo download:
