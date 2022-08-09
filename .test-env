@@ -7,7 +7,7 @@ SDK_TESTING_BRANCH="trim-indexer"
 SDK_TESTING_HARNESS="test-harness"
 
 # Used to determine sandbox build type:
-TYPE=${TYPE:-source} # OR "channel"
+TYPE=${TYPE:-channel} # OR "source"
 
 # Used when TYPE==channel
 ALGOD_CHANNEL="nightly"
