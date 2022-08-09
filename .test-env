@@ -1,5 +1,5 @@
 # Configs for python sdk docker:
-PYTHON_VERSION=${PYTHON_VERSION:-3.10}
+PYTHON_VERSION=${PYTHON_VERSION:-3.8}
 
 # Configs for testing repo download:
 SDK_TESTING_URL="https://github.com/algorand/algorand-sdk-testing"
