@@ -17,7 +17,7 @@ ALGOD_URL="https://github.com/algorand/go-algorand"
 ALGOD_BRANCH="feature/avm-box"
 ALGOD_SHA=""
 
-# Used regardless of TYPE
+# Used regardless of the TYPE
 NETWORK_TEMPLATE="images/algod/DevModeNetwork.json"
 NETWORK_NUM_ROUNDS=3000
 INDEXER_URL="https://github.com/algorand/indexer"
