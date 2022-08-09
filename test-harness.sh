@@ -26,6 +26,7 @@ git clone --single-branch --branch "$SDK_TESTING_BRANCH" "$SDK_TESTING_URL" "$SD
 cp "$ENV_FILE" "$SDK_TESTING_HARNESS"/.env
 
 ## Copy feature files into the project resources
+rm -rf tests/features
 mkdir -p tests/features
 cp -r "$SDK_TESTING_HARNESS"/features/* tests/features
 echo "test-harness.sh: seconds it took to get to end of cloning + copying: " + $(($(date "+%s") - $START))
@@ -38,6 +39,6 @@ echo "test-harness.sh: seconds it took to finish testing sdk's up.sh: " + $(($(d
 echo ""
 echo "--------------------------------------------------------------------------------"
 echo "|"
-echo "|    To run sandbox commands, cd into $SDK_TESTING_HARNESS/$SANDBOX"
+echo "|    To run sandbox commands, cd into $SDK_TESTING_HARNESS/$SANDBOX_DIR"
 echo "|"
 echo "--------------------------------------------------------------------------------"
