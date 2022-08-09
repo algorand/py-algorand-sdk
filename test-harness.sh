@@ -30,11 +30,14 @@ mkdir -p tests/features
 cp -r "$SDK_TESTING_HARNESS"/features/* tests/features
 echo "test-harness.sh: seconds it took to get to end of cloning + copying: " + $(($(date "+%s") - $START))
 
-
 ## Start test harness environment
 pushd "$SDK_TESTING_HARNESS"
 ./scripts/up.sh
 popd
 echo "test-harness.sh: seconds it took to finish testing sdk's up.sh: " + $(($(date "+%s") - $START))
-echo "To run sandbox commands, cd into $SDK_TESTING_HARNESS/$SANDBOX"
-echo "time till end of test-harness bootstrapping: " + $(($(date "+%s") - $START))
+echo ""
+echo "--------------------------------------------------------------------------------"
+echo "|"
+echo "|    To run sandbox commands, cd into $SDK_TESTING_HARNESS/$SANDBOX"
+echo "|"
+echo "--------------------------------------------------------------------------------"
