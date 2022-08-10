@@ -47,8 +47,9 @@ class Contract:
         d = {}
         d["name"] = self.name
         d["methods"] = [m.dictify() for m in self.methods]
-        d["desc"] = self.desc
         d["networks"] = {k: v.dictify() for k, v in self.networks.items()}
+        if self.desc is not None:
+            d["desc"] = self.desc
         return d
 
     @staticmethod
