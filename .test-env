@@ -19,7 +19,7 @@ ALGOD_SHA=""
 
 # Used regardless of the TYPE
 NETWORK_TEMPLATE="images/algod/DevModeNetwork.json"  # refers to the ./images directory in the sandbox repo
-NETWORK_NUM_ROUNDS=3000
+NETWORK_NUM_ROUNDS=30000
 INDEXER_URL="https://github.com/algorand/indexer"
 NODE_ARCHIVAL="True"
 NODE_V1_INDEXER="True"
