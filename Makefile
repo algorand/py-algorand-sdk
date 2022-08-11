@@ -6,10 +6,8 @@ INTEGRATIONS = "@abi or @algod or @applications or @applications.verified or @as
 integration:
 	behave --tags=$(INTEGRATIONS) tests -f progress2 --no-capture
 
-# channel or source
-TYPE ?= channel
 harness:
-	TYPE='$(TYPE)' ./test-harness.sh
+	./test-harness.sh
 
 PYTHON_VERSION ?= 3.8
 docker-pysdk-build:
