@@ -7,6 +7,8 @@ set -e
 ENV_FILE=".test-env"
 source $ENV_FILE
 
+echo "test-harness.sh: AFTER sourcing from $ENV_FILE. Build TYPE=$TYPE"
+
 rootdir=$(dirname "$0")
 pushd "$rootdir"
 
