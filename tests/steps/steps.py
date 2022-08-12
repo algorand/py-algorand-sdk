@@ -691,15 +691,6 @@ def txns_by_addr_round(context):
     assert txns == {} or "transactions" in txns
 
 
-@then("I get transactions by address and date")
-def txns_by_addr_date(context):
-    date = datetime.today().strftime("%Y-%m-%d")
-    txns = context.acl.transactions_by_address(
-        context.accounts[0], from_date=date, to_date=date
-    )
-    assert txns == {} or "transactions" in txns
-
-
 @then("I get pending transactions")
 def txns_pending(context):
     txns = context.acl.pending_transactions()
