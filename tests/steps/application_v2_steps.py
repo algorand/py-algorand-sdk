@@ -369,6 +369,7 @@ def wait_for_algod_transaction_processing_to_complete():
     time.sleep(0.5)
 
 
+# TODO: this needs to be modified/removed when v1 is no longer supported
 @step("I wait for the transaction to be confirmed.")
 def wait_for_app_txn_confirm(context):
     wait_for_algod_transaction_processing_to_complete()
@@ -376,7 +377,7 @@ def wait_for_app_txn_confirm(context):
         assert "type" in context.acl.transaction_info(
             context.transient_pk, context.app_txid
         )
-        assert "type" in context.acl.transaction_by_id(context.app_txid)
+        # assert "type" in context.acl.transaction_by_id(context.app_txid)
     else:
         transaction.wait_for_confirmation(context.app_acl, context.app_txid, 1)
 

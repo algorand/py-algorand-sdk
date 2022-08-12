@@ -466,6 +466,7 @@ def send_msig_txn(context):
         context.error = True
 
 
+# TODO: this needs to be modified/removed when v1 is no longer supported
 @then("the transaction should go through")
 def check_txn(context):
     wait_for_algod_transaction_processing_to_complete()
@@ -475,13 +476,7 @@ def check_txn(context):
     assert "type" in context.acl.transaction_info(
         context.txn.sender, context.txn.get_txid()
     )
-    assert "type" in context.acl.transaction_by_id(context.txn.get_txid())
-
-
-@then("I can get the transaction by ID")
-def get_txn_by_id(context):
-    wait_for_algod_transaction_processing_to_complete()
-    assert "type" in context.acl.transaction_by_id(context.txn.get_txid())
+    # assert "type" in context.acl.transaction_by_id(context.txn.get_txid())
 
 
 @then("the transaction should not go through")
@@ -696,12 +691,6 @@ def txns_by_addr_round(context):
     assert txns == {} or "transactions" in txns
 
 
-@then("I get transactions by address only")
-def txns_by_addr_only(context):
-    txns = context.acl.transactions_by_address(context.accounts[0])
-    assert txns == {} or "transactions" in txns
-
-
 @then("I get transactions by address and date")
 def txns_by_addr_date(context):
     date = datetime.today().strftime("%Y-%m-%d")
@@ -791,14 +780,6 @@ def default_v2_keyreg_txn(context, type):
     context.params = context.acl.suggested_params_as_object()
     context.pk = context.accounts[0]
     context.txn = buildTxn(type, context.pk, context.params)
-
-
-@when("I get recent transactions, limited by {cnt} transactions")
-def step_impl(context, cnt):
-    txns = context.acl.transactions_by_address(
-        context.accounts[0], limit=int(cnt)
-    )
-    assert txns == {} or "transactions" in txns
 
 
 @given("default asset creation transaction with total issuance {total}")

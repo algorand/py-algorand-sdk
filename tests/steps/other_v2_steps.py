@@ -1554,4 +1554,7 @@ def check_compile_mapping(context, teal):
 @then('the resulting source map is the same as the json "{sourcemap}"')
 def check_mapping_equal(context, sourcemap):
     expected = load_resource(sourcemap).decode("utf-8").strip()
-    assert context.raw_source_map == expected
+    nl = "\n"
+    assert (
+        context.raw_source_map == expected
+    ), f"context.raw_source_map={nl}{context.raw_source_map}{nl}expected={nl}{expected}"
