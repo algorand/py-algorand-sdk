@@ -27,7 +27,7 @@ INDEXER_SHA=""
 
 # Sandbox configuration:
 SANDBOX_URL="https://github.com/algorand/sandbox"
-SANDBOX_BRANCH="bugfix-sourcing-env-can-break-aliases"
+SANDBOX_BRANCH="master"
 LOCAL_SANDBOX_DIR=".sandbox"
 
 # replacement values for Sandbox's docker-compose:
