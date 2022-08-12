@@ -41,6 +41,6 @@ echo "test-harness.sh: seconds it took to finish testing sdk's up.sh: " + $(($(d
 echo ""
 echo "--------------------------------------------------------------------------------"
 echo "|"
-echo "|    To run sandbox commands, cd into $SDK_TESTING_HARNESS/$SANDBOX_DIR"
+echo "|    To run sandbox commands, cd into $SDK_TESTING_HARNESS/$LOCAL_SANDBOX_DIR"
 echo "|"
 echo "--------------------------------------------------------------------------------"
