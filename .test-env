@@ -26,7 +26,7 @@ INDEXER_BRANCH="tzaffi/box-search"
 INDEXER_SHA=""
 
 # Sandbox configuration:
-SANDBOX_BRANCH="configurable-ports"
+SANDBOX_BRANCH="master"
 SANDBOX_URL="https://github.com/algorand/sandbox"
 SANDBOX_DIR=".sandbox"
 
