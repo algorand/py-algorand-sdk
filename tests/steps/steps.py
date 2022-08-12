@@ -466,7 +466,7 @@ def send_msig_txn(context):
         context.error = True
 
 
-# TODO: this needs to be modified/removed when v1 is no longer supported
+# TODO: this needs to be modified/removed when v1 is no longer supported!!!
 @then("the transaction should go through")
 def check_txn(context):
     wait_for_algod_transaction_processing_to_complete()
