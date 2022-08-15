@@ -369,11 +369,12 @@ def wait_for_algod_transaction_processing_to_complete():
     time.sleep(0.5)
 
 
-# TODO: this needs to be modified/removed when v1 is no longer supported
+# TODO: this needs to be modified to use v2 only
 @step("I wait for the transaction to be confirmed.")
 def wait_for_app_txn_confirm(context):
     wait_for_algod_transaction_processing_to_complete()
     if hasattr(context, "acl"):
+        # TODO: get rid of this branch of logic when v1 fully deprecated
         assert "type" in context.acl.transaction_info(
             context.transient_pk, context.app_txid
         )
