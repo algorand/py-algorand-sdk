@@ -22,7 +22,7 @@ else
   echo "test-harness.sh: directory $SDK_TESTING_HARNESS does not exist - NOOP"
 fi
 
-git clone --single-branch --branch "$SDK_TESTING_BRANCH" "$SDK_TESTING_URL" "$SDK_TESTING_HARNESS"
+git clone --depth 1 --single-branch --branch "$SDK_TESTING_BRANCH" "$SDK_TESTING_URL" "$SDK_TESTING_HARNESS"
 
 ## OVERWRITE incoming .env with .test-env
 cp "$ENV_FILE" "$SDK_TESTING_HARNESS"/.env
