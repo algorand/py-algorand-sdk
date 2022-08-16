@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
 START=$(date "+%s")
+
 THIS=$(basename "$0")
-
-
 ENV_FILE=".test-env"
-source $ENV_FILE
+
+set -a
+source "$ENV_FILE"
+set +a
 
 rootdir=$(dirname "$0")
 pushd "$rootdir"
@@ -26,7 +28,6 @@ git clone --depth 1 --single-branch --branch "$SDK_TESTING_BRANCH" "$SDK_TESTING
 
 
 if [[ $OVERWRITE_TESTING_ENVIRONMENT == 1 ]]; then
-  ## OVERWRITE incoming .env with .test-env
   echo "$THIS: OVERWRITE downloaded $SDK_TESTING_HARNESS/.env with $ENV_FILE:"
   cp "$ENV_FILE" "$SDK_TESTING_HARNESS"/.env
 fi
@@ -35,16 +36,16 @@ fi
 rm -rf tests/features
 mkdir -p tests/features
 cp -r "$SDK_TESTING_HARNESS"/features/* tests/features
-echo "$THIS: seconds it took to get to end of cloning + copying: " + $(($(date "+%s") - $START))
+echo "$THIS: seconds it took to get to end of cloning and copying: $(($(date "+%s") - START))s"
 
 ## Start test harness environment
 pushd "$SDK_TESTING_HARNESS"
 ./scripts/up.sh
 popd
-echo "$THIS: seconds it took to finish testing sdk's up.sh: " + $(($(date "+%s") - $START))
+echo "$THIS: seconds it took to finish testing sdk's up.sh: $(($(date "+%s") - START))s"
 echo ""
 echo "--------------------------------------------------------------------------------"
 echo "|"
-echo "|    To run sandbox commands, cd into $SDK_TESTING_HARNESS/$LOCAL_SANDBOX_DIR"
+echo "|    To run sandbox commands, cd into $SDK_TESTING_HARNESS/.sandbox             "
 echo "|"
 echo "--------------------------------------------------------------------------------"
