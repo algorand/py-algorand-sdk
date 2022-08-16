@@ -6,6 +6,9 @@ SDK_TESTING_URL="https://github.com/algorand/algorand-sdk-testing"
 SDK_TESTING_BRANCH="trim-indexer"
 SDK_TESTING_HARNESS="test-harness"
 
+# temporary to let builds pass until I refactor overrides
+VERBOSE_HARNESS=0
+
 # Used to determine sandbox build type:
 TYPE="channel" # OR "source"
 
