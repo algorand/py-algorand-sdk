@@ -33,52 +33,6 @@ def acc_info2(context, account):
     context.response = context.acl.account_info(account)
 
 
-@then(
-    'The account has {num} assets, the first is asset {index} has a frozen status of "{frozen}" and amount {units}.'
-)
-def lookup_account_check(context, num, index, frozen, units):
-    assert len(context.response["account"]["assets"]) == int(num)
-    assert context.response["account"]["assets"][0]["asset-id"] == int(index)
-    assert context.response["account"]["assets"][0]["is-frozen"] == (
-        frozen == "true"
-    )
-    assert context.response["account"]["assets"][0]["amount"] == int(units)
-
-
-@then(
-    'The account created {num} assets, the first is asset {index} is named "{name}" with a total amount of {total} "{unit}"'
-)
-def lookup_account_check_created(context, num, index, name, total, unit):
-    assert len(context.response["account"]["created-assets"]) == int(num)
-    assert context.response["account"]["created-assets"][0]["index"] == int(
-        index
-    )
-    assert (
-        context.response["account"]["created-assets"][0]["params"]["name"]
-        == name
-    )
-    assert (
-        context.response["account"]["created-assets"][0]["params"]["unit-name"]
-        == unit
-    )
-    assert context.response["account"]["created-assets"][0]["params"][
-        "total"
-    ] == int(total)
-
-
-@then(
-    "The account has {μalgos} μalgos and {num} assets, {assetid} has {assetamount}"
-)
-def lookup_account_check_holdings(context, μalgos, num, assetid, assetamount):
-    assert context.response["account"]["amount"] == int(μalgos)
-    assert len(context.response["account"].get("assets", [])) == int(num)
-    if int(num) > 0:
-        assets = context.response["account"]["assets"]
-        for a in assets:
-            if a["asset-id"] == int(assetid):
-                assert a["amount"] == int(assetamount)
-
-
 @when(
     'we make a Lookup Account by ID call against account "{account}" with round {block}'
 )
@@ -89,7 +43,7 @@ def lookup_account(context, account, block):
 @when(
     'we make a Lookup Account by ID call against account "{account}" with exclude "{exclude:MaybeString}"'
 )
-def lookup_account(context, account, exclude):
+def lookup_account2(context, account, exclude):
     context.response = context.icl.account_info(account, exclude=exclude)
 
 
@@ -255,69 +209,6 @@ def search_accounts3(
     exclude,
 ):
     context.response = context.icl.accounts(exclude=exclude)
-
-
-@then(
-    'There are {num}, the first has {pendingrewards}, {rewardsbase}, {rewards}, {withoutrewards}, "{address}", {amount}, "{status}", "{sigtype:MaybeString}"'
-)
-def check_search_accounts(
-    context,
-    num,
-    pendingrewards,
-    rewardsbase,
-    rewards,
-    withoutrewards,
-    address,
-    amount,
-    status,
-    sigtype,
-):
-    assert len(context.response["accounts"]) == int(num)
-    assert context.response["accounts"][0]["pending-rewards"] == int(
-        pendingrewards
-    )
-    assert context.response["accounts"][0].get("rewards-base", 0) == int(
-        rewardsbase
-    )
-    assert context.response["accounts"][0]["rewards"] == int(rewards)
-    assert context.response["accounts"][0][
-        "amount-without-pending-rewards"
-    ] == int(withoutrewards)
-    assert context.response["accounts"][0]["address"] == address
-    assert context.response["accounts"][0]["amount"] == int(amount)
-    assert context.response["accounts"][0]["status"] == status
-    assert context.response["accounts"][0].get("sig-type", "") == sigtype
-
-
-@then(
-    'The first account is online and has "{address}", {keydilution}, {firstvalid}, {lastvalid}, "{votekey}", "{selectionkey}"'
-)
-def check_search_accounts_online(
-    context, address, keydilution, firstvalid, lastvalid, votekey, selectionkey
-):
-    assert context.response["accounts"][0]["status"] == "Online"
-    assert context.response["accounts"][0]["address"] == address
-    assert context.response["accounts"][0]["participation"][
-        "vote-key-dilution"
-    ] == int(keydilution)
-    assert context.response["accounts"][0]["participation"][
-        "vote-first-valid"
-    ] == int(firstvalid)
-    assert context.response["accounts"][0]["participation"][
-        "vote-last-valid"
-    ] == int(lastvalid)
-    assert (
-        context.response["accounts"][0]["participation"][
-            "vote-participation-key"
-        ]
-        == votekey
-    )
-    assert (
-        context.response["accounts"][0]["participation"][
-            "selection-participation-key"
-        ]
-        == selectionkey
-    )
 
 
 @when("we make any SearchAccounts call")

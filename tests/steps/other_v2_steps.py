@@ -333,16 +333,6 @@ def parse_block(context, pool):
     assert context.response["block"]["rwd"] == pool
 
 
-@then(
-    'There are {numaccounts} with the asset, the first is "{account}" has "{isfrozen}" and {amount}'
-)
-def check_asset_balance(context, numaccounts, account, isfrozen, amount):
-    assert len(context.response["balances"]) == int(numaccounts)
-    assert context.response["balances"][0]["address"] == account
-    assert context.response["balances"][0]["amount"] == int(amount)
-    assert context.response["balances"][0]["is-frozen"] == (isfrozen == "true")
-
-
 @when(
     'we make a Lookup Asset Balances call against asset index {index} with limit {limit} afterAddress "{afterAddress:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan}'
 )
@@ -634,21 +624,6 @@ def parse_txns_by_addr(context, roundNum, length, idx, sender):
         assert context.response["transactions"][int(idx)]["sender"] == sender
 
 
-@then("I receive status code {code}")
-def icl_health_check(context, code):
-    # An exception is thrown when the code is not 200
-    assert int(code) == 200
-
-
-@then(
-    'The block was confirmed at {timestamp}, contains {num} transactions, has the previous block hash "{prevHash}"'
-)
-def icl_block_check(context, timestamp, num, prevHash):
-    assert context.response["previous-block-hash"] == prevHash
-    assert len(context.response["transactions"]) == int(num)
-    assert context.response["timestamp"] == int(timestamp)
-
-
 @when("we make a Lookup Block call against round {block}")
 def lookup_block(context, block):
     context.response = context.icl.block_info(int(block))
@@ -678,25 +653,6 @@ def parse_args(assetid):
     return l
 
 
-when(
-    'The asset found has: "{name}", "{units}", "{creator}", {decimals}, "{defaultfrozen}", {total}, "{clawback}"'
-)
-
-
-def check_lookup_asset(
-    context, name, units, creator, decimals, defaultfrozen, total, clawback
-):
-    assert context.response["asset"]["params"]["name"] == name
-    assert context.response["asset"]["params"]["unit-name"] == units
-    assert context.response["asset"]["params"]["creator"] == creator
-    assert context.response["asset"]["params"]["decimals"] == int(decimals)
-    assert context.response["asset"]["params"]["default-frozen"] == (
-        defaultfrozen == "true"
-    )
-    assert context.response["asset"]["params"]["total"] == int(total)
-    assert context.response["asset"]["params"]["clawback"] == clawback
-
-
 @when("we make a Lookup Asset by ID call against asset index {index}")
 def lookup_asset(context, index):
     context.response = context.icl.asset_info(int(index))
@@ -712,50 +668,6 @@ def parse_asset(context, index):
     assert context.response["asset"]["index"] == int(index)
 
 
-@then(
-    'there are {num} transactions in the response, the first is "{txid:MaybeString}".'
-)
-def check_transactions(context, num, txid):
-    assert len(context.response["transactions"]) == int(num)
-    if int(num) > 0:
-        assert context.response["transactions"][0]["id"] == txid
-
-
-@then('Every transaction has tx-type "{txtype}"')
-def check_transaction_types(context, txtype):
-    for txn in context.response["transactions"]:
-        assert txn["tx-type"] == txtype
-
-
-@then('Every transaction has sig-type "{sigtype}"')
-def check_sig_types(context, sigtype):
-    for txn in context.response["transactions"]:
-        if sigtype == "lsig":
-            assert list(txn["signature"].keys())[0] == "logicsig"
-        if sigtype == "msig":
-            assert list(txn["signature"].keys())[0] == "multisig"
-        if sigtype == "sig":
-            assert list(txn["signature"].keys())[0] == sigtype
-
-
-@then("Every transaction has round >= {minround}")
-def check_minround(context, minround):
-    for txn in context.response["transactions"]:
-        assert txn["confirmed-round"] >= int(minround)
-
-
-@then("Every transaction has round <= {maxround}")
-def check_maxround(context, maxround):
-    for txn in context.response["transactions"]:
-        assert txn["confirmed-round"] <= int(maxround)
-
-
-@then("Every transaction has round {block}")
-def check_round(context, block):
-    for txn in context.response["transactions"]:
-        assert txn["confirmed-round"] == int(block)
-
-
 @then("Every transaction works with asset-id {assetid}")
 def check_assetid(context, assetid):
     for txn in context.response["transactions"]:
@@ -766,41 +678,6 @@ def check_assetid(context, assetid):
         assert subtxn["asset-id"] == int(assetid) or txn[
             "created-asset-index"
         ] == int(assetid)
-
-
-@then('Every transaction is older than "{before}"')
-def check_before(context, before):
-    for txn in context.response["transactions"]:
-        t = datetime.fromisoformat(before.replace("Z", "+00:00"))
-        assert txn["round-time"] <= datetime.timestamp(t)
-
-
-@then('Every transaction is newer than "{after}"')
-def check_after(context, after):
-    t = True
-    for txn in context.response["transactions"]:
-        t = datetime.fromisoformat(after.replace("Z", "+00:00"))
-        if not txn["round-time"] >= datetime.timestamp(t):
-            t = False
-    assert t
-
-
-@then("Every transaction moves between {currencygt} and {currencylt} currency")
-def check_currency(context, currencygt, currencylt):
-    for txn in context.response["transactions"]:
-        amt = 0
-        if "asset-transfer-transaction" in txn:
-            amt = txn["asset-transfer-transaction"]["amount"]
-        else:
-            amt = txn["payment-transaction"]["amount"]
-        if int(currencygt) == 0:
-            if int(currencylt) > 0:
-                assert amt <= int(currencylt)
-        else:
-            if int(currencylt) > 0:
-                assert int(currencygt) <= amt <= int(currencylt)
-            else:
-                assert int(currencygt) <= amt
 
 
 @when(
@@ -955,13 +832,6 @@ def parsed_search_for_txns(context, roundNum, length, index, rekeyTo):
         assert (
             context.response["transactions"][int(index)]["rekey-to"] == rekeyTo
         )
-
-
-@then("there are {num} assets in the response, the first is {assetidout}.")
-def check_assets(context, num, assetidout):
-    assert len(context.response["assets"]) == int(num)
-    if int(num) > 0:
-        assert context.response["assets"][0]["index"] == int(assetidout)
 
 
 @then('the parsed response should equal "{jsonfile}".')
