@@ -33,9 +33,18 @@ if [[ $OVERWRITE_TESTING_ENVIRONMENT == 1 ]]; then
 fi
 
 ## Copy feature files into the project resources
-rm -rf tests/features
+if [[ $REMOVE_LOCAL_FEATURES == 1 ]]; then
+  echo "$THIS: OVERWRITE wipes clean tests/features"
+  if [[ $VERBOSE_HARNESS == 1 ]]; then
+    ( tree tests/features && echo "$THIS: see the previous for files deleted" ) || true
+  fi
+  rm -rf tests/features
+fi
 mkdir -p tests/features
 cp -r "$SDK_TESTING_HARNESS"/features/* tests/features
+if [[ $VERBOSE_HARNESS == 1 ]]; then
+  ( tree tests/features && echo "$THIS: see the previous for files copied over" ) || true
+fi
 echo "$THIS: seconds it took to get to end of cloning and copying: $(($(date "+%s") - START))s"
 
 ## Start test harness environment
