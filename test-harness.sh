@@ -6,6 +6,7 @@ START=$(date "+%s")
 
 THIS=$(basename "$0")
 ENV_FILE=".test-env"
+TEST_DIR="tests"
 
 set -a
 source "$ENV_FILE"
@@ -34,16 +35,16 @@ fi
 
 ## Copy feature files into the project resources
 if [[ $REMOVE_LOCAL_FEATURES == 1 ]]; then
-  echo "$THIS: OVERWRITE wipes clean tests/features"
+  echo "$THIS: OVERWRITE wipes clean $TEST_DIR/features"
   if [[ $VERBOSE_HARNESS == 1 ]]; then
-    ( tree tests/features && echo "$THIS: see the previous for files deleted" ) || true
+    ( tree $TEST_DIR/features && echo "$THIS: see the previous for files deleted" ) || true
   fi
-  rm -rf tests/features
+  rm -rf $TEST_DIR/features
 fi
-mkdir -p tests/features
-cp -r "$SDK_TESTING_HARNESS"/features/* tests/features
+mkdir -p $TEST_DIR/features
+cp -r "$SDK_TESTING_HARNESS"/features/* $TEST_DIR/features
 if [[ $VERBOSE_HARNESS == 1 ]]; then
-  ( tree tests/features && echo "$THIS: see the previous for files copied over" ) || true
+  ( tree $TEST_DIR/features && echo "$THIS: see the previous for files copied over" ) || true
 fi
 echo "$THIS: seconds it took to get to end of cloning and copying: $(($(date "+%s") - START))s"
 
