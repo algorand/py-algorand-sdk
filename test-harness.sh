@@ -28,7 +28,7 @@ git clone --depth 1 --single-branch --branch "$SDK_TESTING_BRANCH" "$SDK_TESTING
 
 
 if [[ $OVERWRITE_TESTING_ENVIRONMENT == 1 ]]; then
-  echo "$THIS: OVERWRITE downloaded $SDK_TESTING_HARNESS/.env with $ENV_FILE:"
+  echo "$THIS: OVERWRITE replaced $SDK_TESTING_HARNESS/.env with $ENV_FILE:"
   cp "$ENV_FILE" "$SDK_TESTING_HARNESS"/.env
 fi
 
