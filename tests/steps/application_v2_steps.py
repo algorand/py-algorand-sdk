@@ -194,11 +194,11 @@ def lookup_application_box(context, app_id, box_name):
 
 
 @when(
-    "we make a SearchForApplicationBoxes call with applicationID {app_id} with max {max_results}"
+    'we make a SearchForApplicationBoxes call with applicationID {app_id} with max {max_results} nextToken "{token:MaybeString}"'
 )
-def search_application_boxes(context, app_id, max_results):
+def search_application_boxes(context, app_id, max_results, token):
     context.response = context.icl.application_boxes(
-        app_id, limit=int(max_results)
+        app_id, limit=int(max_results), next_page=token
     )
 
 
