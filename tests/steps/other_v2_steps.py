@@ -161,6 +161,7 @@ def client_call(context, client, endpoint):
 @then("the parsed response should equal the mock response.")
 def parsed_equal_mock(context):
     if context.expected_status_code == 200:
+        print("resp:", context.response)
         assert context.expected_mock_response == context.response
 
 
@@ -1746,3 +1747,17 @@ def check_compile_mapping(context, teal):
 def check_mapping_equal(context, sourcemap):
     expected = load_resource(sourcemap).decode("utf-8").strip()
     assert context.raw_source_map == expected
+
+
+@when('we make a GetLightBlockHeaderProof call for round {round}')
+def lightblock(context, round):
+    context.response = context.acl.lightheader(round)
+
+
+@when('we make a GetStateProof call for round {round}')
+def state_proofs(context, round):
+    context.response = context.acl.stateproofs(round)
+
+@when('we make a GetTransactionProof call for round {round} txid "{txid}" and hashtype "{hashtype:MaybeString}"')
+def transaction_proof(context, round, txid, hashtype):
+    context.response = context.acl.transaction_proof(round, txid, hashtype, "msgpack")

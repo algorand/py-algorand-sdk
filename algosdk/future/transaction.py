@@ -260,6 +260,9 @@ class Transaction:
         elif txn_type == constants.appcall_txn:
             args.update(ApplicationCallTxn._undictify(d))
             txn = ApplicationCallTxn(**args)
+        elif txn_type == constants.stateproof_txn:
+            args.update(StateProofTxn._undictify(d))
+            txn = StateProofTxn(**args)
         if "grp" in d:
             txn.group = d["grp"]
         return txn
@@ -2905,6 +2908,87 @@ class LogicSigTransaction:
 
         return False
 
+
+class StateProofTxn(Transaction):
+    """
+    Represents a state proof transaction
+
+    Arguments:
+        sender (str): address of the sender
+        state_proof_type (str): state proof type
+        state_proof (dict())
+        state_proof_message (dict())
+        sp (SuggestedParams): suggested params from algod
+        receiver (str): address of the receiver
+        amt (int): amount in microAlgos to be sent
+        close_remainder_to (str, optional): if nonempty, account will be closed
+            and remaining algos will be sent to this address
+        note (bytes, optional): arbitrary optional bytes
+        lease (byte[32], optional): specifies a lease, and no other transaction
+            with the same sender and lease can be confirmed in this
+            transaction's valid rounds
+        rekey_to (str, optional): additionally rekey the sender to this address
+
+
+    Attributes:
+        sender (str)
+        sprf_type (str)
+        sprf (dict())
+        sprfmsg (dict())
+        fee (int)
+        first_valid_round (int)
+        last_valid_round (int)
+        note (bytes)
+        genesis_id (str)
+        genesis_hash (str)
+        group (bytes)
+        receiver (str)
+        amt (int)
+        close_remainder_to (str)
+        type (str)
+        lease (byte[32])
+        rekey_to (str)
+    """
+    def __init__(
+        self,
+        sender,
+        sp,
+        state_proof_type,
+        state_proof,
+        state_proof_message,
+        note=None,
+        lease=None,
+        rekey_to=None,
+    ):
+        Transaction.__init__(
+            self, sender, sp, note, lease, constants.stateproof_txn, rekey_to
+        )
+
+        self.sprf_type=state_proof_type
+        self.sprf=state_proof
+        self.sprfmsg=state_proof_message
+
+    @staticmethod
+    def _undictify(d):
+        args = {
+            "state_proof_type": d["sptype"],
+            "state_proof": d["sp"],
+            "state_proof_message": d["spmsg"]
+        }
+        return args
+
+    def __eq__(self, other):
+        if not isinstance(other, StateProofTxn):
+            return False
+        return (
+            super(StateProofTxn, self).__eq__(other)
+            and self.sprf_type == other.state_proof_type
+            and self.sprf == other.state_proof
+            and self.sprfmsg == other.state_proof_message
+        )
+
+
+        return False
 
 def write_to_file(txns, path, overwrite=True):
     """
