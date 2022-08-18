@@ -1,8 +1,9 @@
-UNITS = "@unit.abijson or @unit.abijson.byname or @unit.algod or @unit.algod.ledger_refactoring or @unit.applications or @unit.atc_method_args or @unit.atomic_transaction_composer or @unit.dryrun or @unit.dryrun.trace.application or @unit.feetest or @unit.indexer or @unit.indexer.ledger_refactoring or @unit.indexer.logs or @unit.offline or @unit.rekey or @unit.transactions.keyreg or @unit.responses or @unit.responses.231 or @unit.responses.unlimited_assets or @unit.sourcemap or @unit.tealsign or @unit.transactions or @unit.transactions.payment"
+UNIT_TAGS :=  $(subst :, or ,$(shell awk '{print $2}' tests/unit.tags | paste -s -d: -))
+INTEGRATIONS_TAGS := $(subst :, or ,$(shell awk '{print $2}' tests/integration.tags | paste -s -d: -))
+
 unit:
 	behave --tags=$(UNITS) tests -f progress2
 
-INTEGRATIONS = "@abi or @algod or @applications or @applications.verified or @assets or @auction or @c2c or @compile or @compile.sourcemap or @dryrun or @dryrun.testing or @kmd or @rekey_v1 or @send or @send.keyregtxn"
 integration:
 	behave --tags=$(INTEGRATIONS) tests -f progress2 --no-capture
 
