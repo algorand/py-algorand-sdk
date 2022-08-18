@@ -1,5 +1,5 @@
-UNIT_TAGS :=  $(subst :, or ,$(shell awk '{print $2}' tests/unit.tags | paste -s -d: -))
-INTEGRATIONS_TAGS := $(subst :, or ,$(shell awk '{print $2}' tests/integration.tags | paste -s -d: -))
+UNIT_TAGS :=  "$(subst :, or ,$(shell awk '{print $2}' tests/unit.tags | paste -s -d: -))"
+INTEGRATIONS_TAGS := "$(subst :, or ,$(shell awk '{print $2}' tests/integration.tags | paste -s -d: -))"
 
 unit:
 	behave --tags=$(UNITS) tests -f progress2
