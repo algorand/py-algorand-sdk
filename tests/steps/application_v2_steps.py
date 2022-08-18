@@ -1,20 +1,21 @@
 import base64
 import json
 import re
+import time
 
-from behave import given, step, then, when
 import pytest
-
 from algosdk import abi, atomic_transaction_composer, encoding, mnemonic
 from algosdk.abi.contract import NetworkInfo
 from algosdk.error import (
     ABITypeError,
-    IndexerHTTPError,
     AtomicTransactionComposerError,
+    IndexerHTTPError,
 )
 from algosdk.future import transaction
-
-from tests.steps.other_v2_steps import read_program
+from behave import given, step, then, when
+from tests.steps.other_v2_steps import (
+    read_program,
+)
 
 
 def operation_string_to_enum(operation):
@@ -402,20 +403,26 @@ def remember_app_id(context):
     context.app_ids.append(app_id)
 
 
+def wait_for_algod_transaction_processing_to_complete():
+    """
+    wait_for_algod_transaction_processing_to_complete is a Dev mode helper method that's a rough analog to `context.app_acl.status_after_block(last_round + 2)`.
+     * <p>
+     * Since Dev mode produces blocks on a per transaction basis, it's possible algod generates a block _before_ the corresponding SDK call to wait for a block.  Without _any_ wait, it's possible the SDK looks for the transaction before algod completes processing.  So, the method performs a local sleep to simulate waiting for a block.
+
+    """
+    time.sleep(0.5)
+
+
 @step("I wait for the transaction to be confirmed.")
 def wait_for_app_txn_confirm(context):
-    sp = context.app_acl.suggested_params()
-    last_round = sp.first
-    context.app_acl.status_after_block(last_round + 2)
+    wait_for_algod_transaction_processing_to_complete()
     if hasattr(context, "acl"):
         assert "type" in context.acl.transaction_info(
             context.transient_pk, context.app_txid
         )
         assert "type" in context.acl.transaction_by_id(context.app_txid)
     else:
-        transaction.wait_for_confirmation(
-            context.app_acl, context.app_txid, 10
-        )
+        transaction.wait_for_confirmation(context.app_acl, context.app_txid, 1)
 
 
 @given("an application id {app_id}")
