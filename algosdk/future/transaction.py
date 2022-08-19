@@ -2953,9 +2953,9 @@ class StateProofTxn(Transaction):
         self,
         sender,
         sp,
-        state_proof_type,
         state_proof,
-        state_proof_message,
+        state_proof_message=None,
+        state_proof_type=None,
         note=None,
         lease=None,
         rekey_to=None,
@@ -2968,13 +2968,28 @@ class StateProofTxn(Transaction):
         self.sprf=state_proof
         self.sprfmsg=state_proof_message
 
+    def dictify(self):
+        d = dict()
+        if self.sprf_type:
+            d["sptype"] = self.sprf_type
+        if self.sprfmsg:
+            d["spmsg"] = self.sprfmsg
+        d["sp"] = self.sprf
+        d.update(super(StateProofTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
+
+        return od
+
     @staticmethod
     def _undictify(d):
-        args = {
-            "state_proof_type": d["sptype"],
-            "state_proof": d["sp"],
-            "state_proof_message": d["spmsg"]
-        }
+        args={}
+        if "sptype" in d:
+            args["state_proof_type"]=d["sptype"]
+        if "sp" in d:
+            args["state_proof"]=d["sp"]
+        if "spmsg" in d:
+            args["state_proof_message"] = d["spmsg"]
+
         return args
 
     def __eq__(self, other):
