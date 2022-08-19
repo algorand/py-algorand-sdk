@@ -404,11 +404,7 @@ class TestMsgpack(unittest.TestCase):
             "EKNPEiLCPil1TA0Srsjo1kCGPOXiGszfzv51ULf6Fod1bAyFLigbbxqnHObpHR5cGWk"
             "c3RwZg=="
         )
-        f = open("test.base64", "w")
-        f.write(encoding.msgpack_encode(
-                encoding.future_msgpack_decode(stateprooftxn)
-            ))
-        f.close()
+
         self.assertEqual(
             stateprooftxn,
             encoding.msgpack_encode(

@@ -2915,9 +2915,9 @@ class StateProofTxn(Transaction):
 
     Arguments:
         sender (str): address of the sender
-        state_proof_type (str): state proof type
         state_proof (dict())
-        state_proof_message (dict())
+        state_proof_message (dict(), optional)
+        state_proof_type (str, optional): state proof type
         sp (SuggestedParams): suggested params from algod
         receiver (str): address of the receiver
         amt (int): amount in microAlgos to be sent
@@ -2932,9 +2932,9 @@ class StateProofTxn(Transaction):
 
     Attributes:
         sender (str)
-        sprf_type (str)
         sprf (dict())
         sprfmsg (dict())
+        sprf_type (str)
         fee (int)
         first_valid_round (int)
         last_valid_round (int)
