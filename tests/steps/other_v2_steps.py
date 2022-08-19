@@ -1748,16 +1748,20 @@ def check_mapping_equal(context, sourcemap):
     assert context.raw_source_map == expected
 
 
-@when('we make a GetLightBlockHeaderProof call for round {round}')
+@when("we make a GetLightBlockHeaderProof call for round {round}")
 def lightblock(context, round):
     context.response = context.acl.lightheader(round)
 
 
-@when('we make a GetStateProof call for round {round}')
+@when("we make a GetStateProof call for round {round}")
 def state_proofs(context, round):
     context.response = context.acl.stateproofs(round)
 
 
-@when('we make a GetTransactionProof call for round {round} txid "{txid}" and hashtype "{hashtype:MaybeString}"')
+@when(
+    'we make a GetTransactionProof call for round {round} txid "{txid}" and hashtype "{hashtype:MaybeString}"'
+)
 def transaction_proof(context, round, txid, hashtype):
-    context.response = context.acl.transaction_proof(round, txid, hashtype, "msgpack")
+    context.response = context.acl.transaction_proof(
+        round, txid, hashtype, "msgpack"
+    )

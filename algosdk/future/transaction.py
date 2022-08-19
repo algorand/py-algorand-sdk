@@ -2949,6 +2949,7 @@ class StateProofTxn(Transaction):
         lease (byte[32])
         rekey_to (str)
     """
+
     def __init__(
         self,
         sender,
@@ -2964,9 +2965,9 @@ class StateProofTxn(Transaction):
             self, sender, sp, note, lease, constants.stateproof_txn, rekey_to
         )
 
-        self.sprf_type=state_proof_type
-        self.sprf=state_proof
-        self.sprfmsg=state_proof_message
+        self.sprf_type = state_proof_type
+        self.sprf = state_proof
+        self.sprfmsg = state_proof_message
 
     def dictify(self):
         d = dict()
@@ -2982,11 +2983,11 @@ class StateProofTxn(Transaction):
 
     @staticmethod
     def _undictify(d):
-        args={}
+        args = {}
         if "sptype" in d:
-            args["state_proof_type"]=d["sptype"]
+            args["state_proof_type"] = d["sptype"]
         if "sp" in d:
-            args["state_proof"]=d["sp"]
+            args["state_proof"] = d["sp"]
         if "spmsg" in d:
             args["state_proof_message"] = d["spmsg"]
 
@@ -3002,8 +3003,8 @@ class StateProofTxn(Transaction):
             and self.sprfmsg == other.state_proof_message
         )
 
-
         return False
+
 
 def write_to_file(txns, path, overwrite=True):
     """
