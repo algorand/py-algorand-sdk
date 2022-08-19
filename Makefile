@@ -1,11 +1,11 @@
 UNIT_TAGS :=  "$(subst :, or ,$(shell awk '{print $2}' tests/unit.tags | paste -s -d: -))"
-INTEGRATIONS_TAGS := "$(subst :, or ,$(shell awk '{print $2}' tests/integration.tags | paste -s -d: -))"
+INTEGRATION_TAGS := "$(subst :, or ,$(shell awk '{print $2}' tests/integration.tags | paste -s -d: -))"
 
 unit:
-	behave --tags=$(UNITS) tests -f progress2
+	behave --tags=$(UNIT_TAGS) tests -f progress2
 
 integration:
-	behave --tags=$(INTEGRATIONS) tests -f progress2 --no-capture
+	behave --tags=$(INTEGRATION_TAGS) tests -f progress2 --no-capture
 
 harness:
 	./test-harness.sh
