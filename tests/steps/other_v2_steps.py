@@ -1757,6 +1757,7 @@ def lightblock(context, round):
 def state_proofs(context, round):
     context.response = context.acl.stateproofs(round)
 
+
 @when('we make a GetTransactionProof call for round {round} txid "{txid}" and hashtype "{hashtype:MaybeString}"')
 def transaction_proof(context, round, txid, hashtype):
     context.response = context.acl.transaction_proof(round, txid, hashtype, "msgpack")
