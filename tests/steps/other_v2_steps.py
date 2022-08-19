@@ -161,7 +161,6 @@ def client_call(context, client, endpoint):
 @then("the parsed response should equal the mock response.")
 def parsed_equal_mock(context):
     if context.expected_status_code == 200:
-        print("resp:", context.response)
         assert context.expected_mock_response == context.response
 
 
