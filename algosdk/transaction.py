@@ -1318,7 +1318,7 @@ class LogicSig:
     """
 
     def __init__(self, program, args=None):
-        if not program or not logic.check_program(program, args):
+        if not program or not logic.sanity_check_program(program):
             raise error.InvalidProgram()
         self.logic = program
         self.args = args
@@ -1361,7 +1361,7 @@ class LogicSig:
             return False
 
         try:
-            logic.check_program(self.logic, self.args)
+            logic.sanity_check_program(self.logic)
         except error.InvalidProgram:
             return False
 

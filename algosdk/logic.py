@@ -1,4 +1,5 @@
 import base64
+import binascii
 import json
 import os
 
@@ -12,8 +13,31 @@ spec = None
 opcodes = None
 
 
+def sanity_check_program(program):
+    if not program:
+        raise error.InvalidProgram("empty program")
+
+    try:
+        if base64.encodebytes(base64.b64decode(str(program))) == str(program):
+            return False
+    except binascii.Error:
+        pass
+
+    try:
+        encoding.decode_address(str(program))
+        return False
+    except error.WrongChecksumError:
+        pass
+    except error.WrongKeyLengthError:
+        pass
+
+    return True
+
+
 def check_program(program, args=None):
     """
+    NOTE: This class is deprecated
+
     Performs program checking for max length and cost
 
     Args:
@@ -31,6 +55,9 @@ def check_program(program, args=None):
 
 
 def read_program(program, args=None):
+    """
+    NOTE: This class is deprecated
+    """
     global spec, opcodes
     intcblock_opcode = 32
     bytecblock_opcode = 38
@@ -107,11 +134,17 @@ def read_program(program, args=None):
 
 
 def check_int_const_block(program, pc):
+    """
+    NOTE: This class is deprecated
+    """
     size, _ = read_int_const_block(program, pc)
     return size
 
 
 def read_int_const_block(program, pc):
+    """
+    NOTE: This class is deprecated
+    """
     size = 1
     ints = []
     num_ints, bytes_used = parse_uvarint(program[pc + size :])
@@ -134,11 +167,17 @@ def read_int_const_block(program, pc):
 
 
 def check_byte_const_block(program, pc):
+    """
+    NOTE: This class is deprecated
+    """
     size, _ = read_byte_const_block(program, pc)
     return size
 
 
 def read_byte_const_block(program, pc):
+    """
+    NOTE: This class is deprecated
+    """
     size = 1
     bytearrays = []
     num_ints, bytes_used = parse_uvarint(program[pc + size :])
@@ -164,11 +203,17 @@ def read_byte_const_block(program, pc):
 
 
 def check_push_int_block(program, pc):
+    """
+    NOTE: This class is deprecated
+    """
     size, _ = read_push_int_block(program, pc)
     return size
 
 
 def read_push_int_block(program, pc):
+    """
+    NOTE: This class is deprecated
+    """
     size = 1
     single_int, bytes_used = parse_uvarint(program[pc + size :])
     if bytes_used <= 0:
@@ -180,11 +225,17 @@ def read_push_int_block(program, pc):
 
 
 def check_push_byte_block(program, pc):
+    """
+    NOTE: This class is deprecated
+    """
     size, _ = read_push_byte_block(program, pc)
     return size
 
 
 def read_push_byte_block(program, pc):
+    """
+    NOTE: This class is deprecated
+    """
     size = 1
     item_len, bytes_used = parse_uvarint(program[pc + size :])
     if bytes_used <= 0:
@@ -200,6 +251,9 @@ def read_push_byte_block(program, pc):
 
 
 def parse_uvarint(buf):
+    """
+    NOTE: This class is deprecated
+    """
     x = 0
     s = 0
     for i, b in enumerate(buf):
@@ -215,6 +269,8 @@ def parse_uvarint(buf):
 
 def address(program):
     """
+    NOTE: This class is deprecated
+
     Return the address of the program.
 
     Args:
@@ -230,6 +286,8 @@ def address(program):
 
 def teal_sign(private_key, data, contract_addr):
     """
+    NOTE: This class is deprecated
+
     Return the signature suitable for ed25519verify TEAL opcode
 
     Args:
@@ -254,6 +312,8 @@ def teal_sign(private_key, data, contract_addr):
 
 def teal_sign_from_program(private_key, data, program):
     """
+    NOTE: This class is deprecated
+
     Return the signature suitable for ed25519verify TEAL opcode
 
     Args:
@@ -270,6 +330,8 @@ def teal_sign_from_program(private_key, data, program):
 
 def get_application_address(appID: int) -> str:
     """
+    NOTE: This class is deprecated
+
     Return the escrow address of an application.
 
     Args:
