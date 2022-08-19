@@ -7,6 +7,9 @@ unit:
 integration:
 	behave --tags=$(INTEGRATION_TAGS) tests -f progress2 --no-capture
 
+display-all-python-steps:
+	find tests/steps -name "*.py" | xargs grep "behave" 2>/dev/null | cut -d: -f1 | sort | uniq | xargs awk "/@(given|step|then|when)/,/[)]/" | grep -E "(\".+\"|\'.+\')"
+
 harness:
 	./test-harness.sh
 
