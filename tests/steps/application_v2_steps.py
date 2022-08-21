@@ -147,20 +147,6 @@ def lookup_application(context, app_id):
     context.response = context.icl.applications(int(app_id))
 
 
-@when("we make a SearchForApplications call with {application_id} and {round}")
-def search_applications2(context, application_id, round):
-    context.response = context.icl.search_applications(
-        application_id=int(application_id), round=int(round)
-    )
-
-
-@when("we make a LookupApplications call with {application_id} and {round}")
-def lookup_applications(context, application_id, round):
-    context.response = context.icl.applications(
-        application_id=int(application_id), round=int(round)
-    )
-
-
 @when(
     'I build an application transaction with operation "{operation:MaybeString}", application-id {application_id}, sender "{sender:MaybeString}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", fee {fee}, first-valid {first_valid}, last-valid {last_valid}, genesis-hash "{genesis_hash:MaybeString}", extra-pages {extra_pages}'
 )

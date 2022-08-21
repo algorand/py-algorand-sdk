@@ -667,18 +667,6 @@ def parse_asset(context, index):
     assert context.response["asset"]["index"] == int(index)
 
 
-@then("Every transaction works with asset-id {assetid}")
-def check_assetid(context, assetid):
-    for txn in context.response["transactions"]:
-        if "asset-config-transaction" in txn:
-            subtxn = txn["asset-config-transaction"]
-        else:
-            subtxn = txn["asset-transfer-transaction"]
-        assert subtxn["asset-id"] == int(assetid) or txn[
-            "created-asset-index"
-        ] == int(assetid)
-
-
 @when(
     'we make a Search For Transactions call with account "{account:MaybeString}" NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index} addressRole "{addressRole:MaybeString}" ExcluseCloseTo "{excludeCloseTo:MaybeString}" rekeyTo "{rekeyTo:MaybeString}"'
 )
@@ -833,43 +821,6 @@ def parsed_search_for_txns(context, roundNum, length, index, rekeyTo):
         )
 
 
-@then('the parsed response should equal "{jsonfile}".')
-def parsed_equals(context, jsonfile):
-    loaded_response = None
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
-    with open(dir_path + "/tests/features/resources/" + jsonfile, "rb") as f:
-        loaded_response = bytearray(f.read())
-    # sort context.response
-    def recursively_sort_on_key(dictionary):
-        returned_dict = dict()
-        for k, v in sorted(dictionary.items()):
-            if isinstance(v, dict):
-                returned_dict[k] = recursively_sort_on_key(v)
-            elif isinstance(v, list) and all(
-                isinstance(item, dict) for item in v
-            ):
-                if all("key" in item.keys() for item in v):
-                    from operator import itemgetter
-
-                    returned_dict[k] = sorted(v, key=itemgetter("key"))
-                else:
-                    sorted_list = list()
-                    for item in v:
-                        sorted_list.append(recursively_sort_on_key(item))
-                    returned_dict[k] = sorted_list
-            else:
-                returned_dict[k] = v
-        return returned_dict
-
-    context.response = recursively_sort_on_key(context.response)
-    loaded_response = recursively_sort_on_key(json.loads(loaded_response))
-    if context.response != loaded_response:
-        print("EXPECTED: " + str(loaded_response))
-        print("ACTUAL: " + str(context.response))
-    assert context.response == loaded_response
-
-
 @when(
     'we make a SearchForAssets call with limit {limit} creator "{creator:MaybeString}" name "{name:MaybeString}" unit "{unit:MaybeString}" index {index}'
 )
@@ -936,11 +887,6 @@ def expect_path(context, path):
     actual_query = urllib.parse.parse_qs(actual_query)
     assert exp_path == actual_path.replace("%3A", ":")
     assert exp_query == actual_query
-
-
-@then('we expect the path used to be "{path}"')
-def we_expect_path(context, path):
-    expect_path(context, path)
 
 
 @then('expect error string to contain "{err:MaybeString}"')

@@ -176,18 +176,6 @@ def mn_for_sk(context, mn):
     context.pk = account.address_from_private_key(context.sk)
 
 
-@when("I create the payment transaction")
-def create_paytxn(context):
-    context.txn = transaction.PaymentTxn(
-        context.pk,
-        context.params,
-        context.to,
-        context.amt,
-        context.close,
-        context.note,
-    )
-
-
 @given('multisig addresses "{addresses}"')
 def msig_addresses(context, addresses):
     addresses = addresses.split(" ")
@@ -511,48 +499,6 @@ def sign_msig_both_equal(context):
     )
 
 
-@when('I read a transaction "{txn}" from file "{num}"')
-def read_txn(context, txn, num):
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
-    context.num = num
-    context.txn = transaction.retrieve_from_file(
-        dir_path + "/temp/raw" + num + ".tx"
-    )[0]
-
-
-@when("I write the transaction to file")
-def write_txn(context):
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
-    transaction.write_to_file(
-        [context.txn], dir_path + "/temp/raw" + context.num + ".tx"
-    )
-
-
-@then("the transaction should still be the same")
-def check_enc(context):
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
-    new = transaction.retrieve_from_file(
-        dir_path + "/temp/raw" + context.num + ".tx"
-    )
-    old = transaction.retrieve_from_file(
-        dir_path + "/temp/old" + context.num + ".tx"
-    )
-    assert encoding.msgpack_encode(new[0]) == encoding.msgpack_encode(old[0])
-
-
-@then("I do my part")
-def check_save_txn(context):
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
-    stx = transaction.retrieve_from_file(dir_path + "/temp/txn.tx")[0]
-    txid = stx.transaction.get_txid()
-    wait_for_algod_transaction_processing_to_complete()
-    assert context.acl.transaction_info(stx.transaction.sender, txid)
-
-
 @then("I get the ledger supply")
 def get_ledger(context):
     context.acl.ledger_supply()
@@ -705,64 +651,6 @@ def acc_info(context):
 def new_acc_info(context):
     context.acl.account_info(context.pk)
     context.wallet.delete_key(context.pk)
-
-
-@given(
-    'key registration transaction parameters {fee} {fv} {lv} "{gh}" "{votekey}" "{selkey}" {votefst} {votelst} {votekd} "{gen}" "{note}"'
-)
-def keyreg_txn_params(
-    context,
-    fee,
-    fv,
-    lv,
-    gh,
-    votekey,
-    selkey,
-    votefst,
-    votelst,
-    votekd,
-    gen,
-    note,
-):
-    context.fee = int(fee)
-    context.fv = int(fv)
-    context.lv = int(lv)
-    context.gh = gh
-    context.votekey = votekey
-    context.selkey = selkey
-    context.votefst = int(votefst)
-    context.votelst = int(votelst)
-    context.votekd = int(votekd)
-    if gen == "none":
-        context.gen = None
-    else:
-        context.gen = gen
-    context.params = transaction.SuggestedParams(
-        context.fee, context.fv, context.lv, context.gh, context.gen
-    )
-
-    if note == "none":
-        context.note = None
-    else:
-        context.note = base64.b64decode(note)
-    if gen == "none":
-        context.gen = None
-    else:
-        context.gen = gen
-
-
-@when("I create the key registration transaction")
-def create_keyreg_txn(context):
-    context.txn = transaction.KeyregOnlineTxn(
-        context.pk,
-        context.params,
-        context.votekey,
-        context.selkey,
-        context.votefst,
-        context.votelst,
-        context.votekd,
-        context.note,
-    )
 
 
 @given("default V2 key registration transaction {type}")
