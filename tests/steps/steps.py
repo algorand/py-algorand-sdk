@@ -2,7 +2,6 @@ import base64
 import os
 import random
 import time
-from datetime import datetime
 
 from algosdk import (
     account,

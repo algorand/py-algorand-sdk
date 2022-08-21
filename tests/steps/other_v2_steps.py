@@ -3,7 +3,6 @@ import json
 import os
 import unittest
 import urllib
-from datetime import datetime
 from pathlib import Path
 from urllib.request import Request, urlopen
 

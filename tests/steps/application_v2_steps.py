@@ -9,7 +9,6 @@ from algosdk.abi.contract import NetworkInfo
 from algosdk.error import (
     ABITypeError,
     AtomicTransactionComposerError,
-    IndexerHTTPError,
 )
 from algosdk.future import transaction
 from behave import given, step, then, when
