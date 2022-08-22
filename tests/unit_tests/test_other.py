@@ -629,8 +629,8 @@ class TestLogic(unittest.TestCase):
             programv = v + program
             self.assertTrue(logic.check_program(programv, None))
 
-    def test_check_program_teal_2(self):
-        # check TEAL v2 opcodes
+    def test_check_program_avm_2(self):
+        # check AVM v2 opcodes
         self.assertIsNotNone(
             logic.spec, "Must be called after any of logic.check_program"
         )
@@ -649,8 +649,8 @@ class TestLogic(unittest.TestCase):
         program = b"\x02\x20\x01\x00\x22\x22\x70\x00"  # int 0; int 0; asset_holding_get Balance
         self.assertTrue(logic.check_program(program, None))
 
-    def test_check_program_teal_3(self):
-        # check TEAL v2 opcodes
+    def test_check_program_avm_3(self):
+        # check AVM v2 opcodes
         self.assertIsNotNone(
             logic.spec, "Must be called after any of logic.check_program"
         )
@@ -697,8 +697,8 @@ class TestLogic(unittest.TestCase):
         res = verify_key.verify(msg, sig1)
         self.assertIsNotNone(res)
 
-    def test_check_program_teal_4(self):
-        # check TEAL v4 opcodes
+    def test_check_program_avm_4(self):
+        # check AVM v4 opcodes
         self.assertIsNotNone(
             logic.spec, "Must be called after any of logic.check_program"
         )
@@ -732,8 +732,8 @@ class TestLogic(unittest.TestCase):
         program = b"\x04\x20\x04\x01\x02\x0a\x10\x22\x23\x0b\x49\x24\x0c\x40\xff\xf8\x25\x12"  # int 1; loop: int 2; *; dup; int 10; <; bnz loop; int 16; ==
         self.assertTrue(logic.check_program(program, None))
 
-    def test_check_program_teal_5(self):
-        # check TEAL v5 opcodes
+    def test_check_program_avm_5(self):
+        # check AVM v5 opcodes
         self.assertIsNotNone(
             logic.spec, "Must be called after any of logic.check_program"
         )
@@ -756,8 +756,8 @@ class TestLogic(unittest.TestCase):
         # byte "a"; byte "b"; byte "c"; cover 2; uncover 2; concat; concat; log; int 1
         self.assertTrue(logic.check_program(program, None))
 
-    def test_check_program_teal_6(self):
-        # check TEAL v6 opcodes
+    def test_check_program_avm_6(self):
+        # check AVM v6 opcodes
 
         self.assertIsNotNone(
             logic.spec, "Must be called after any of logic.check_program"

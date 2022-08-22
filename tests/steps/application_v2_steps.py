@@ -1,20 +1,20 @@
 import base64
 import json
 import re
+import time
 
-from behave import given, step, then, when
 import pytest
-
 from algosdk import abi, atomic_transaction_composer, encoding, mnemonic
 from algosdk.abi.contract import NetworkInfo
 from algosdk.error import (
     ABITypeError,
-    IndexerHTTPError,
     AtomicTransactionComposerError,
 )
 from algosdk.future import transaction
-
-from tests.steps.other_v2_steps import read_program
+from behave import given, step, then, when
+from tests.steps.other_v2_steps import (
+    read_program,
+)
 
 
 def operation_string_to_enum(operation):
@@ -142,67 +142,9 @@ def search_application2(context, creator):
     context.response = context.icl.search_applications(creator=creator)
 
 
-@when(
-    'I use {indexer} to search for applications with {limit}, {application_id}, "{include_all:MaybeBool}" and token "{token:MaybeString}"'
-)
-def search_applications_include_all(
-    context, indexer, limit, application_id, include_all, token
-):
-    context.response = context.icls[indexer].search_applications(
-        application_id=int(application_id),
-        limit=int(limit),
-        include_all=include_all,
-        next_page=token,
-    )
-
-
-@when(
-    'I use {indexer} to search for applications with {limit}, {application_id}, and token "{token:MaybeString}"'
-)
-def search_applications(context, indexer, limit, application_id, token):
-    context.response = context.icls[indexer].search_applications(
-        application_id=int(application_id), limit=int(limit), next_page=token
-    )
-
-
-@when(
-    'I use {indexer} to lookup application with {application_id} and "{include_all:MaybeBool}"'
-)
-def lookup_application_include_all2(
-    context, indexer, application_id, include_all
-):
-    try:
-        context.response = context.icls[indexer].applications(
-            application_id=int(application_id), include_all=include_all
-        )
-    except IndexerHTTPError as e:
-        context.response = json.loads(str(e))
-
-
 @when("we make a LookupApplications call with applicationID {app_id}")
 def lookup_application(context, app_id):
     context.response = context.icl.applications(int(app_id))
-
-
-@when("I use {indexer} to lookup application with {application_id}")
-def lookup_application2(context, indexer, application_id):
-    context.response = context.icls[indexer].applications(
-        application_id=int(application_id)
-    )
-
-
-@when("we make a SearchForApplications call with {application_id} and {round}")
-def search_applications2(context, application_id, round):
-    context.response = context.icl.search_applications(
-        application_id=int(application_id), round=int(round)
-    )
-
-
-@when("we make a LookupApplications call with {application_id} and {round}")
-def lookup_applications(context, application_id, round):
-    context.response = context.icl.applications(
-        application_id=int(application_id), round=int(round)
-    )
 
 
 @when(
@@ -402,20 +344,28 @@ def remember_app_id(context):
     context.app_ids.append(app_id)
 
 
+def wait_for_algod_transaction_processing_to_complete():
+    """
+    wait_for_algod_transaction_processing_to_complete is a Dev mode helper method that's a rough analog to `context.app_acl.status_after_block(last_round + 2)`.
+     * <p>
+     * Since Dev mode produces blocks on a per transaction basis, it's possible algod generates a block _before_ the corresponding SDK call to wait for a block.  Without _any_ wait, it's possible the SDK looks for the transaction before algod completes processing.  So, the method performs a local sleep to simulate waiting for a block.
+
+    """
+    time.sleep(0.5)
+
+
+# TODO: this needs to be modified to use v2 only
 @step("I wait for the transaction to be confirmed.")
 def wait_for_app_txn_confirm(context):
-    sp = context.app_acl.suggested_params()
-    last_round = sp.first
-    context.app_acl.status_after_block(last_round + 2)
+    wait_for_algod_transaction_processing_to_complete()
     if hasattr(context, "acl"):
+        # TODO: get rid of this branch of logic when v1 fully deprecated
         assert "type" in context.acl.transaction_info(
             context.transient_pk, context.app_txid
         )
-        assert "type" in context.acl.transaction_by_id(context.app_txid)
+        # assert "type" in context.acl.transaction_by_id(context.app_txid)
     else:
-        transaction.wait_for_confirmation(
-            context.app_acl, context.app_txid, 10
-        )
+        transaction.wait_for_confirmation(context.app_acl, context.app_txid, 1)
 
 
 @given("an application id {app_id}")

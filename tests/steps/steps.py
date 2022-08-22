@@ -1,6 +1,18 @@
-from behave import given, when, then
 import base64
-from algosdk import kmd
+import random
+import time
+
+from algosdk import (
+    account,
+    algod,
+    auction,
+    encoding,
+    kmd,
+    logic,
+    mnemonic,
+    util,
+    wallet,
+)
 from algosdk.future import transaction
 from algosdk import encoding
 from algosdk import algod
@@ -13,11 +25,57 @@ from algosdk import logic
 import os
 from datetime import datetime
 
+from behave import given, then, when
 from nacl.signing import SigningKey
 
 token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 algod_port = 60000
 kmd_port = 60001
+
+DEV_ACCOUNT_INITIAL_MICROALGOS: int = 10_000_000
+
+
+def wait_for_algod_transaction_processing_to_complete():
+    """
+    wait_for_algod_transaction_processing_to_complete is a Dev mode helper method that's a rough analog to `context.app_acl.status_after_block(last_round + 2)`.
+     * <p>
+     * Since Dev mode produces blocks on a per transaction basis, it's possible algod generates a block _before_ the corresponding SDK call to wait for a block.
+     * Without _any_ wait, it's possible the SDK looks for the transaction before algod completes processing.
+     * So, the method performs a local sleep to simulate waiting for a block.
+    """
+    time.sleep(0.5)
+
+
+# Initialize a transient account in dev mode to make payment transactions.
+def initialize_account(context, account):
+    payment = transaction.PaymentTxn(
+        sender=context.accounts[0],
+        sp=context.acl.suggested_params_as_object(),
+        receiver=account,
+        amt=DEV_ACCOUNT_INITIAL_MICROALGOS,
+    )
+    signed_payment = context.wallet.sign_transaction(payment)
+    context.acl.send_transaction(signed_payment)
+    # Wait to let transaction get confirmed in dev mode in v1.
+    wait_for_algod_transaction_processing_to_complete()
+
+
+# Send a self-payment transaction to itself to advance blocks in dev mode.
+def self_pay_transactions(context, num_txns=1):
+    if not hasattr(context, "dev_pk"):
+        context.dev_sk, context.dev_pk = account.generate_account()
+        initialize_account(context, context.dev_pk)
+    for _ in range(num_txns):
+        payment = transaction.PaymentTxn(
+            sender=context.dev_pk,
+            sp=context.acl.suggested_params_as_object(),
+            receiver=context.dev_pk,
+            amt=random.randint(1, int(DEV_ACCOUNT_INITIAL_MICROALGOS * 0.01)),
+        )
+        signed_payment = payment.sign(context.dev_sk)
+        context.acl.send_transaction(signed_payment)
+        # Wait to let transaction get confirmed in dev mode in v1.
+        wait_for_algod_transaction_processing_to_complete()
 
 
 @when("I create a wallet")
@@ -128,18 +186,6 @@ def mn_for_sk(context, mn):
     context.pk = account.address_from_private_key(context.sk)
 
 
-@when("I create the payment transaction")
-def create_paytxn(context):
-    context.txn = transaction.PaymentTxn(
-        context.pk,
-        context.params,
-        context.to,
-        context.amt,
-        context.close,
-        context.note,
-    )
-
-
 @given('multisig addresses "{addresses}"')
 def msig_addresses(context, addresses):
     addresses = addresses.split(" ")
@@ -222,6 +268,7 @@ def status(context):
 
 @when("I get status after this block")
 def status_block(context):
+    self_pay_transactions(context)
     context.status_after = context.acl.status_after_block(
         context.status["lastRound"]
     )
@@ -229,7 +276,8 @@ def status_block(context):
 
 @then("I can get the block info")
 def block(context):
-    context.block = context.acl.block_info(context.status["lastRound"])
+    self_pay_transactions(context)
+    context.block = context.acl.block_info(context.status["lastRound"] + 1)
 
 
 @when("I import the multisig")
@@ -269,6 +317,12 @@ def msig_not_in_wallet(context):
 @when("I generate a key using kmd")
 def gen_key_kmd(context):
     context.pk = context.wallet.generate_key()
+
+
+@when("I generate a key using kmd for rekeying and fund it")
+def gen_rekey_kmd(context):
+    context.rekey = context.wallet.generate_key()
+    initialize_account(context, context.rekey)
 
 
 @then("the key should be in the wallet")
@@ -317,6 +371,7 @@ def algod_client(context):
     algod_address = "http://localhost:" + str(algod_port)
     context.acl = algod.AlgodClient(token, algod_address)
     if context.acl.status()["lastRound"] < 2:
+        self_pay_transactions(context, 2)
         context.acl.status_after_block(2)
 
 
@@ -331,8 +386,7 @@ def wallet_info(context):
     context.accounts = context.wallet.list_keys()
 
 
-@given('default transaction with parameters {amt} "{note}"')
-def default_txn(context, amt, note):
+def default_txn_with_addr(context, amt, note, sender_addr):
     params = context.acl.suggested_params_as_object()
     context.last_round = params.first
     if note == "none":
@@ -340,9 +394,19 @@ def default_txn(context, amt, note):
     else:
         note = base64.b64decode(note)
     context.txn = transaction.PaymentTxn(
-        context.accounts[0], params, context.accounts[1], int(amt), note=note
+        sender_addr, params, context.accounts[1], int(amt), note=note
     )
-    context.pk = context.accounts[0]
+    context.pk = sender_addr
+
+
+@given('default transaction with parameters {amt} "{note}"')
+def default_txn(context, amt, note):
+    default_txn_with_addr(context, amt, note, context.accounts[0])
+
+
+@given('default transaction with parameters {amt} "{note}" and rekeying key')
+def default_txn_rekey(context, amt, note):
+    default_txn_with_addr(context, amt, note, context.rekey)
 
 
 @given('default multisig transaction with parameters {amt} "{note}"')
@@ -399,23 +463,17 @@ def send_msig_txn(context):
         context.error = True
 
 
+# TODO: this needs to be modified/removed when v1 is no longer supported!!!
 @then("the transaction should go through")
 def check_txn(context):
-    last_round = context.acl.status()["lastRound"]
+    wait_for_algod_transaction_processing_to_complete()
     assert "type" in context.acl.pending_transaction_info(
         context.txn.get_txid()
     )
-    context.acl.status_after_block(last_round + 2)
     assert "type" in context.acl.transaction_info(
         context.txn.sender, context.txn.get_txid()
     )
-    assert "type" in context.acl.transaction_by_id(context.txn.get_txid())
-
-
-@then("I can get the transaction by ID")
-def get_txn_by_id(context):
-    context.acl.status_after_block(context.last_round + 2)
-    assert "type" in context.acl.transaction_by_id(context.txn.get_txid())
+    # assert "type" in context.acl.transaction_by_id(context.txn.get_txid())
 
 
 @then("the transaction should not go through")
@@ -449,49 +507,6 @@ def sign_msig_both_equal(context):
     assert encoding.msgpack_encode(context.mtx) == encoding.msgpack_encode(
         context.mtx_kmd
     )
-
-
-@when('I read a transaction "{txn}" from file "{num}"')
-def read_txn(context, txn, num):
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
-    context.num = num
-    context.txn = transaction.retrieve_from_file(
-        dir_path + "/temp/raw" + num + ".tx"
-    )[0]
-
-
-@when("I write the transaction to file")
-def write_txn(context):
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
-    transaction.write_to_file(
-        [context.txn], dir_path + "/temp/raw" + context.num + ".tx"
-    )
-
-
-@then("the transaction should still be the same")
-def check_enc(context):
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
-    new = transaction.retrieve_from_file(
-        dir_path + "/temp/raw" + context.num + ".tx"
-    )
-    old = transaction.retrieve_from_file(
-        dir_path + "/temp/old" + context.num + ".tx"
-    )
-    assert encoding.msgpack_encode(new[0]) == encoding.msgpack_encode(old[0])
-
-
-@then("I do my part")
-def check_save_txn(context):
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
-    stx = transaction.retrieve_from_file(dir_path + "/temp/txn.tx")[0]
-    txid = stx.transaction.get_txid()
-    last_round = context.acl.status()["lastRound"]
-    context.acl.status_after_block(last_round + 2)
-    assert context.acl.transaction_info(stx.transaction.sender, txid)
 
 
 @then("I get the ledger supply")
@@ -631,21 +646,6 @@ def txns_by_addr_round(context):
     assert txns == {} or "transactions" in txns
 
 
-@then("I get transactions by address only")
-def txns_by_addr_only(context):
-    txns = context.acl.transactions_by_address(context.accounts[0])
-    assert txns == {} or "transactions" in txns
-
-
-@then("I get transactions by address and date")
-def txns_by_addr_date(context):
-    date = datetime.today().strftime("%Y-%m-%d")
-    txns = context.acl.transactions_by_address(
-        context.accounts[0], from_date=date, to_date=date
-    )
-    assert txns == {} or "transactions" in txns
-
-
 @then("I get pending transactions")
 def txns_pending(context):
     txns = context.acl.pending_transactions()
@@ -663,77 +663,11 @@ def new_acc_info(context):
     context.wallet.delete_key(context.pk)
 
 
-@given(
-    'key registration transaction parameters {fee} {fv} {lv} "{gh}" "{votekey}" "{selkey}" {votefst} {votelst} {votekd} "{gen}" "{note}"'
-)
-def keyreg_txn_params(
-    context,
-    fee,
-    fv,
-    lv,
-    gh,
-    votekey,
-    selkey,
-    votefst,
-    votelst,
-    votekd,
-    gen,
-    note,
-):
-    context.fee = int(fee)
-    context.fv = int(fv)
-    context.lv = int(lv)
-    context.gh = gh
-    context.votekey = votekey
-    context.selkey = selkey
-    context.votefst = int(votefst)
-    context.votelst = int(votelst)
-    context.votekd = int(votekd)
-    if gen == "none":
-        context.gen = None
-    else:
-        context.gen = gen
-    context.params = transaction.SuggestedParams(
-        context.fee, context.fv, context.lv, context.gh, context.gen
-    )
-
-    if note == "none":
-        context.note = None
-    else:
-        context.note = base64.b64decode(note)
-    if gen == "none":
-        context.gen = None
-    else:
-        context.gen = gen
-
-
-@when("I create the key registration transaction")
-def create_keyreg_txn(context):
-    context.txn = transaction.KeyregOnlineTxn(
-        context.pk,
-        context.params,
-        context.votekey,
-        context.selkey,
-        context.votefst,
-        context.votelst,
-        context.votekd,
-        context.note,
-    )
-
-
 @given("default V2 key registration transaction {type}")
 def default_v2_keyreg_txn(context, type):
     context.params = context.acl.suggested_params_as_object()
     context.pk = context.accounts[0]
     context.txn = buildTxn(type, context.pk, context.params)
-
-
-@when("I get recent transactions, limited by {cnt} transactions")
-def step_impl(context, cnt):
-    txns = context.acl.transactions_by_address(
-        context.accounts[0], limit=int(cnt)
-    )
-    assert txns == {} or "transactions" in txns
 
 
 @given("default asset creation transaction with total issuance {total}")
