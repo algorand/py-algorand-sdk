@@ -11,5 +11,4 @@ RUN pip install . -q \
     && pip install -r requirements.txt -q
 
 # Run integration tests
-CMD ["/bin/bash", "-c", "make unit && make integration"]
-
+CMD ["/bin/bash", "-c", "python --version && make unit && make integration"]
