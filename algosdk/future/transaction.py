@@ -261,6 +261,11 @@ class Transaction:
             args.update(ApplicationCallTxn._undictify(d))
             txn = ApplicationCallTxn(**args)
         elif txn_type == constants.stateproof_txn:
+            # a state proof txn does not have these fields
+            args.pop("note")
+            args.pop("rekey_to")
+            args.pop("lease")
+
             args.update(StateProofTxn._undictify(d))
             txn = StateProofTxn(**args)
         if "grp" in d:
