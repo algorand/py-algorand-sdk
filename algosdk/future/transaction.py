@@ -2919,15 +2919,6 @@ class StateProofTxn(Transaction):
         state_proof_message (dict(), optional)
         state_proof_type (str, optional): state proof type
         sp (SuggestedParams): suggested params from algod
-        receiver (str): address of the receiver
-        amt (int): amount in microAlgos to be sent
-        close_remainder_to (str, optional): if nonempty, account will be closed
-            and remaining algos will be sent to this address
-        note (bytes, optional): arbitrary optional bytes
-        lease (byte[32], optional): specifies a lease, and no other transaction
-            with the same sender and lease can be confirmed in this
-            transaction's valid rounds
-        rekey_to (str, optional): additionally rekey the sender to this address
 
 
     Attributes:
@@ -2935,19 +2926,11 @@ class StateProofTxn(Transaction):
         sprf (dict())
         sprfmsg (dict())
         sprf_type (str)
-        fee (int)
         first_valid_round (int)
         last_valid_round (int)
-        note (bytes)
         genesis_id (str)
         genesis_hash (str)
-        group (bytes)
-        receiver (str)
-        amt (int)
-        close_remainder_to (str)
         type (str)
-        lease (byte[32])
-        rekey_to (str)
     """
 
     def __init__(
@@ -2957,12 +2940,9 @@ class StateProofTxn(Transaction):
         state_proof,
         state_proof_message=None,
         state_proof_type=None,
-        note=None,
-        lease=None,
-        rekey_to=None,
     ):
         Transaction.__init__(
-            self, sender, sp, note, lease, constants.stateproof_txn, rekey_to
+            self, sender, sp, None, None, constants.stateproof_txn, None
         )
 
         self.sprf_type = state_proof_type

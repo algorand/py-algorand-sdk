@@ -1377,7 +1377,7 @@ def check_mapping_equal(context, sourcemap):
 
 @when("we make a GetLightBlockHeaderProof call for round {round}")
 def lightblock(context, round):
-    context.response = context.acl.lightheader(round)
+    context.response = context.acl.lightblockheader_proof(round)
 
 
 @when("we make a GetStateProof call for round {round}")

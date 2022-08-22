@@ -401,14 +401,12 @@ class AlgodClient:
         self, round_num, txid, hashtype="", response_format="json", **kwargs
     ):
         """
-        Get the proof for a given transaction in a round.
+        Get a proof for a transaction in a block.
 
         Args:
             round_num (int): The round in which the transaction appears.
             txid (str): The transaction ID for which to generate a proof.
-            hashtype (str): The state proof hash type, sha256 or sha512_256.
-            response_format (str): the format in which the response is returned: either
-                "json" or "msgpack"
+            hashtype (str): The type of hash function used to create the proof, must be either sha512_256 or sha256.
         """
         params = {"format": response_format}
         if hashtype != "":
@@ -422,33 +420,25 @@ class AlgodClient:
             **kwargs
         )
 
-    def lightheader(self, round_num, response_format="json", **kwargs):
+    def lightblockheader_proof(self, round_num, **kwargs):
         """
-        Gets a proof for a given light block header inside a state proof commitment.
+         Gets a proof for a given light block header inside a state proof commitment.
 
         Args:
-            round_num (int): The round in which the transaction appears.
-            response_format (str): the format in which the response is returned: either
-             "json" or "msgpack"
+            round_num (int): The round to which the light block header belongs.
         """
         req = "/blocks/{}/lightheader/proof".format(round_num)
-        return self.algod_request(
-            "GET", req, response_format=response_format, **kwargs
-        )
+        return self.algod_request("GET", req, **kwargs)
 
-    def stateproofs(self, round_num, response_format="json", **kwargs):
+    def stateproofs(self, round_num, **kwargs):
         """
-        Get a state proof that covers a given round.
+        Get a state proof that covers a given round
 
         Args:
-            round_num (int): The round in which the transaction appears.
-            response_format (str): the format in which the response is returned: either
-             "json" or "msgpack"
+            round_num (int): The round for which a state proof is desired.
         """
         req = "/stateproofs/{}".format(round_num)
-        return self.algod_request(
-            "GET", req, response_format=response_format, **kwargs
-        )
+        return self.algod_request("GET", req, **kwargs)
 
 
 def _specify_round_string(block, round_num):
