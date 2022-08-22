@@ -9,12 +9,9 @@ from algosdk import mnemonic
 from algosdk import wallet
 from algosdk import auction
 from algosdk import util
-from algosdk import constants
 from algosdk import logic
-from algosdk.future import template
 import os
 from datetime import datetime
-import hashlib
 
 from nacl.signing import SigningKey
 
@@ -232,7 +229,7 @@ def status_block(context):
 
 @then("I can get the block info")
 def block(context):
-    context.block = context.acl.block_info(context.status["lastRound"] + 1)
+    context.block = context.acl.block_info(context.status["lastRound"])
 
 
 @when("I import the multisig")
