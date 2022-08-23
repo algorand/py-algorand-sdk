@@ -14,7 +14,9 @@ Run `$ pip3 install py-algorand-sdk` to install the package.
 Alternatively, choose a [distribution file](https://pypi.org/project/py-algorand-sdk/#files), and run `$ pip3 install [file name]`.
 
 ## Supported Python versions
+
 py-algorand-sdk's minimum Python version policy attempts to balance several constraints.
+
 * Make it easy for the community to use py-algorand-sdk by minimizing or excluding the need to customize Python installations.
 * Provide maintainers with access to newer language features that produce more robust software.
 
@@ -22,6 +24,7 @@ Given these constraints, the minimum Python version policy is:
 Target Python version on newest [Ubuntu LTS](https://wiki.ubuntu.com/Releases) released >= 6 months ago.
 
 The rationale is:
+
 * If a major Linux OS distribution bumps a Python version, then it's sufficiently available to the community for us to upgrade.
 * The 6 month time buffer ensures we delay upgrades until the community starts using a recently released LTS version.
 
@@ -29,15 +32,19 @@ The rationale is:
 
 Install dependencies
 
-- `pip3 install -r requirements.txt`
+* `pip3 install -r requirements.txt`
 
 Run tests
 
-- `make docker-test`
+* `make docker-test`
+
+Set up the Algorand Sandbox based test-harness without running the tests
+
+* `make harness`
 
 Format code:
 
-- `black .`
+* `black .`
 
 ## Quick start
 
