@@ -3,7 +3,7 @@ SDK_TESTING_URL="https://github.com/algorand/algorand-sdk-testing"
 SDK_TESTING_BRANCH="bugfix-channel-v-source"
 SDK_TESTING_HARNESS="test-harness"
 
-VERBOSE_HARNESS=1
+VERBOSE_HARNESS=0
 
 # WARNING: If set to 1, new features will be LOST when downloading the test harness.
 # REGARDLESS: modified features are ALWAYS overwritten.
