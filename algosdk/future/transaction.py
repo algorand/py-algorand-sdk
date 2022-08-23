@@ -2505,8 +2505,9 @@ class LogicSig:
     """
 
     def __init__(self, program, args=None):
-        if not program or not logic.sanity_check_program(program):
+        if not program:
             raise error.InvalidProgram()
+        logic.sanity_check_program(program)
         self.logic = program
         self.args = args
         self.sig = None

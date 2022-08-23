@@ -14,24 +14,34 @@ opcodes = None
 
 
 def sanity_check_program(program):
-    if not program:
-        raise error.InvalidProgram("empty program")
+    def is_ascii_printable(program_bytes):
+        return all(
+            map(
+                lambda x: x == ord("\n") or (ord(" ") <= x <= ord("~")),
+                program_bytes,
+            )
+        )
 
-    try:
-        if base64.encodebytes(base64.b64decode(str(program))) == str(program):
-            return False
-    except binascii.Error:
-        pass
+    if is_ascii_printable(program):
+        try:
+            encoding.decode_address(program.decode("utf-8"))
+            raise error.InvalidProgram(
+                "requesting program bytes, get Algorand address"
+            )
+        except error.WrongChecksumError:
+            pass
+        except error.WrongKeyLengthError:
+            pass
 
-    try:
-        encoding.decode_address(str(program))
-        return False
-    except error.WrongChecksumError:
-        pass
-    except error.WrongKeyLengthError:
-        pass
+        try:
+            base64.b64decode(program.decode("utf-8"))
+            raise error.InvalidProgram("program should not be b64 encoded")
+        except binascii.Error:
+            pass
 
-    return True
+        raise error.InvalidProgram(
+            "program bytes are all ASCII printable characters, not looking like Teal byte code"
+        )
 
 
 def check_program(program, args=None):
