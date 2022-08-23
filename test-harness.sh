@@ -15,6 +15,8 @@ set +a
 rootdir=$(dirname "$0")
 pushd "$rootdir"
 
+echo "$THIS: VERBOSE_HARNESS=$VERBOSE_HARNESS"
+
 ## Reset test harness
 if [ -d "$SDK_TESTING_HARNESS" ]; then
   pushd "$SDK_TESTING_HARNESS"
@@ -28,11 +30,14 @@ fi
 git clone --depth 1 --single-branch --branch "$SDK_TESTING_BRANCH" "$SDK_TESTING_URL" "$SDK_TESTING_HARNESS"
 
 
+echo "$THIS: OVERWRITE_TESTING_ENVIRONMENT=$OVERWRITE_TESTING_ENVIRONMENT"
 if [[ $OVERWRITE_TESTING_ENVIRONMENT == 1 ]]; then
   echo "$THIS: OVERWRITE replaced $SDK_TESTING_HARNESS/.env with $ENV_FILE:"
   cp "$ENV_FILE" "$SDK_TESTING_HARNESS"/.env
 fi
 
+
+echo "$THIS: REMOVE_LOCAL_FEATURES=$REMOVE_LOCAL_FEATURES"
 ## Copy feature files into the project resources
 if [[ $REMOVE_LOCAL_FEATURES == 1 ]]; then
   echo "$THIS: OVERWRITE wipes clean $TEST_DIR/features"
