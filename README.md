@@ -36,11 +36,11 @@ Install dependencies
 
 Run tests
 
-* `make docker-test`
+* `make harness`
 
 Set up the Algorand Sandbox based test-harness without running the tests
 
-* `make harness`
+* `make docker-test`
 
 Format code:
 
