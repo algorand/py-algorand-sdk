@@ -68,6 +68,7 @@ else:
 ## Node setup
 
 Follow the instructions in Algorand's [developer resources](https://developer.algorand.org/docs/run-a-node/setup/install/) to install a node on your computer.
+You can also set up a local [Algorand Sandbox](https://github.com/algorand/sandbox) with `make harness`.
 
 ## Running examples/example.py
 
