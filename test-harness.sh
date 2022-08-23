@@ -59,6 +59,7 @@ pushd "$SDK_TESTING_HARNESS"
 [[ "$VERBOSE_HARNESS" = 1 ]] && V_FLAG="-v" || V_FLAG=""
 echo "$THIS: standing up harnness with command [./up.sh $V_FLAG]"
 ./scripts/up.sh "$V_FLAG"
+
 popd
 echo "$THIS: seconds it took to finish testing sdk's up.sh: $(($(date "+%s") - START))s"
 echo ""
