@@ -997,7 +997,7 @@ def buildTxn(t, sender, params):
 
 
 @given(
-    'a base64 encoded program bytes for heuristic sanity check "{b64encoded}"'
+    'a base64 encoded program bytes for heuristic sanity check "{b64encoded:MaybeString}"'
 )
 def take_b64_encoded_bytes(context, b64encoded):
     context.seemingly_program = base64.b64decode(b64encoded)

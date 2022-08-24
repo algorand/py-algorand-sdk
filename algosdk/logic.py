@@ -30,6 +30,9 @@ def sanity_check_program(program):
             )
         )
 
+    if program is None or len(program) == 0:
+        raise error.InvalidProgram("empty program")
+
     if is_ascii_printable(program):
         try:
             encoding.decode_address(program.decode("utf-8"))
