@@ -14,6 +14,14 @@ opcodes = None
 
 
 def sanity_check_program(program):
+    """
+    Performs heuristic program validation:
+    check if passed in bytes are Algorand address, or they are B64 encoded, rather than Teal bytes
+
+    Args:
+        program (bytes): compiled program
+    """
+
     def is_ascii_printable(program_bytes):
         return all(
             map(
@@ -46,7 +54,12 @@ def sanity_check_program(program):
 
 def check_program(program, args=None):
     """
-    NOTE: This class is deprecated
+    NOTE: This class is deprecated:
+    `langspec.json` can no longer correctly to depicting the cost model (as of 2022.08.22),
+    also to minimize the work in updating SDKs per AVM release,
+    we are deprecating`langspec.json` across all SDKs.
+    The behavior of method `checkProgram` relies on `langspec.json`.
+    Thus, this method is being deprecated.
 
     Performs program checking for max length and cost
 
@@ -66,8 +79,14 @@ def check_program(program, args=None):
 
 def read_program(program, args=None):
     """
-    NOTE: This class is deprecated
+    NOTE: This class is deprecated:
+    `langspec.json` can no longer correctly to depicting the cost model (as of 2022.08.22),
+    also to minimize the work in updating SDKs per AVM release,
+    we are deprecating`langspec.json` across all SDKs.
+    The behavior of method `checkProgram` relies on `langspec.json`.
+    Thus, this method is being deprecated.
     """
+
     global spec, opcodes
     intcblock_opcode = 32
     bytecblock_opcode = 38
