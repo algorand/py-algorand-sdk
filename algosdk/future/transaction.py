@@ -260,6 +260,11 @@ class Transaction:
         elif txn_type == constants.appcall_txn:
             args.update(ApplicationCallTxn._undictify(d))
             txn = ApplicationCallTxn(**args)
+        elif txn_type == constants.stateproof_txn:
+            # a state proof txn does not have these fields
+            args.pop("note"), args.pop("rekey_to"), args.pop("lease")
+            args.update(StateProofTxn._undictify(d))
+            txn = StateProofTxn(**args)
         if "grp" in d:
             txn.group = d["grp"]
         return txn
@@ -2902,6 +2907,84 @@ class LogicSigTransaction:
                 and self.auth_addr == other.auth_addr
                 and self.transaction == other.transaction
             )
+
+        return False
+
+
+class StateProofTxn(Transaction):
+    """
+    Represents a state proof transaction
+
+    Arguments:
+        sender (str): address of the sender
+        state_proof (dict(), optional)
+        state_proof_message (dict(), optional)
+        state_proof_type (str, optional): state proof type
+        sp (SuggestedParams): suggested params from algod
+
+
+    Attributes:
+        sender (str)
+        sprf (dict())
+        sprfmsg (dict())
+        sprf_type (str)
+        first_valid_round (int)
+        last_valid_round (int)
+        genesis_id (str)
+        genesis_hash (str)
+        type (str)
+    """
+
+    def __init__(
+        self,
+        sender,
+        sp,
+        state_proof=None,
+        state_proof_message=None,
+        state_proof_type=None,
+    ):
+        Transaction.__init__(
+            self, sender, sp, None, None, constants.stateproof_txn, None
+        )
+
+        self.sprf_type = state_proof_type
+        self.sprf = state_proof
+        self.sprfmsg = state_proof_message
+
+    def dictify(self):
+        d = dict()
+        if self.sprf_type:
+            d["sptype"] = self.sprf_type
+        if self.sprfmsg:
+            d["spmsg"] = self.sprfmsg
+        if self.sprf:
+            d["sp"] = self.sprf
+        d.update(super(StateProofTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
+
+        return od
+
+    @staticmethod
+    def _undictify(d):
+        args = {}
+        if "sptype" in d:
+            args["state_proof_type"] = d["sptype"]
+        if "sp" in d:
+            args["state_proof"] = d["sp"]
+        if "spmsg" in d:
+            args["state_proof_message"] = d["spmsg"]
+
+        return args
+
+    def __eq__(self, other):
+        if not isinstance(other, StateProofTxn):
+            return False
+        return (
+            super(StateProofTxn, self).__eq__(other)
+            and self.sprf_type == other.sprf_type
+            and self.sprf == other.sprf
+            and self.sprfmsg == other.sprfmsg
+        )
 
         return False
 
