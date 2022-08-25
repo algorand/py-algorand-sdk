@@ -2917,7 +2917,7 @@ class StateProofTxn(Transaction):
 
     Arguments:
         sender (str): address of the sender
-        state_proof (dict())
+        state_proof (dict(), optional)
         state_proof_message (dict(), optional)
         state_proof_type (str, optional): state proof type
         sp (SuggestedParams): suggested params from algod
@@ -2939,7 +2939,7 @@ class StateProofTxn(Transaction):
         self,
         sender,
         sp,
-        state_proof,
+        state_proof=None,
         state_proof_message=None,
         state_proof_type=None,
     ):
@@ -2957,7 +2957,8 @@ class StateProofTxn(Transaction):
             d["sptype"] = self.sprf_type
         if self.sprfmsg:
             d["spmsg"] = self.sprfmsg
-        d["sp"] = self.sprf
+        if self.sprf:
+            d["sp"] = self.sprf
         d.update(super(StateProofTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
 
@@ -2980,9 +2981,9 @@ class StateProofTxn(Transaction):
             return False
         return (
             super(StateProofTxn, self).__eq__(other)
-            and self.sprf_type == other.state_proof_type
-            and self.sprf == other.state_proof
-            and self.sprfmsg == other.state_proof_message
+            and self.sprf_type == other.sprf_type
+            and self.sprf == other.sprf
+            and self.sprfmsg == other.sprfmsg
         )
 
         return False
