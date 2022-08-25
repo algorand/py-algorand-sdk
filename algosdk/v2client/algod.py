@@ -397,15 +397,47 @@ class AlgodClient:
         req = "/genesis"
         return self.algod_request("GET", req, **kwargs)
 
-    def proof(self, round_num, txid, **kwargs):
+    def transaction_proof(
+        self, round_num, txid, hashtype="", response_format="json", **kwargs
+    ):
         """
-        Get the proof for a given transaction in a round.
+        Get a proof for a transaction in a block.
 
         Args:
             round_num (int): The round in which the transaction appears.
             txid (str): The transaction ID for which to generate a proof.
+            hashtype (str): The type of hash function used to create the proof, must be either sha512_256 or sha256.
         """
+        params = {"format": response_format}
+        if hashtype != "":
+            params["hashtype"] = hashtype
         req = "/blocks/{}/transactions/{}/proof".format(round_num, txid)
+        return self.algod_request(
+            "GET",
+            req,
+            params=params,
+            response_format=response_format,
+            **kwargs
+        )
+
+    def lightblockheader_proof(self, round_num, **kwargs):
+        """
+         Gets a proof for a given light block header inside a state proof commitment.
+
+        Args:
+            round_num (int): The round to which the light block header belongs.
+        """
+        req = "/blocks/{}/lightheader/proof".format(round_num)
+        return self.algod_request("GET", req, **kwargs)
+
+    def stateproofs(self, round_num, **kwargs):
+        """
+        Get a state proof that covers a given round
+
+        Args:
+            round_num (int): The round for which a state proof is desired.
+        """
+        req = "/stateproofs/{}".format(round_num)
         return self.algod_request("GET", req, **kwargs)
 
 
