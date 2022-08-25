@@ -1013,7 +1013,9 @@ def heuristic_check_over_bytes(context):
         context.sanity_check_err = str(e)
 
 
-@then('if there exists an error, the error contains "{err_msg:MaybeString}"')
+@then(
+    'if the heuristic sanity check throws an error, the error contains "{err_msg:MaybeString}"'
+)
 def check_error_if_matching(context, err_msg: str = None):
     if len(err_msg) > 0:
         assert err_msg in context.sanity_check_err
