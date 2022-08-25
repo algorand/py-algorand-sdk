@@ -2,6 +2,7 @@ import base64
 import binascii
 import json
 import os
+import warnings
 
 from . import constants
 from . import error
@@ -57,7 +58,7 @@ def _sanity_check_program(program):
 
 def check_program(program, args=None):
     """
-    NOTE: This class is deprecated:
+    NOTE: This method is deprecated:
     Validation relies on metadata (`langspec.json`) that does not accurately represent opcode behavior across program versions.
     The behavior of `check_program` relies on `langspec.json`. Thus, this method is being deprecated.
 
@@ -73,16 +74,28 @@ def check_program(program, args=None):
     Raises:
         InvalidProgram: on error
     """
+    warnings.warn(
+        "`check_program` relies on metadata (`langspec.json`) that "
+        "does not accurately represent opcode behavior across program versions. "
+        "This method is being deprecated.",
+        DeprecationWarning,
+    )
     ok, _, _ = read_program(program, args)
     return ok
 
 
 def read_program(program, args=None):
     """
-    NOTE: This class is deprecated:
+    NOTE: This method is deprecated:
     Validation relies on metadata (`langspec.json`) that does not accurately represent opcode behavior across program versions.
     The behavior of `read_program` relies on `langspec.json`. Thus, this method is being deprecated.
     """
+    warnings.warn(
+        "`read_program` relies on metadata (`langspec.json`) that "
+        "does not accurately represent opcode behavior across program versions. "
+        "This method is being deprecated.",
+        DeprecationWarning,
+    )
 
     global spec, opcodes
     intcblock_opcode = 32
@@ -161,16 +174,24 @@ def read_program(program, args=None):
 
 def check_int_const_block(program, pc):
     """
-    NOTE: This class is deprecated
+    NOTE: This method is deprecated
     """
+    warnings.warn(
+        "This method is being deprecated.",
+        DeprecationWarning,
+    )
     size, _ = read_int_const_block(program, pc)
     return size
 
 
 def read_int_const_block(program, pc):
     """
-    NOTE: This class is deprecated
+    NOTE: This method is deprecated
     """
+    warnings.warn(
+        "This method is being deprecated.",
+        DeprecationWarning,
+    )
     size = 1
     ints = []
     num_ints, bytes_used = parse_uvarint(program[pc + size :])
@@ -194,16 +215,24 @@ def read_int_const_block(program, pc):
 
 def check_byte_const_block(program, pc):
     """
-    NOTE: This class is deprecated
+    NOTE: This method is deprecated
     """
+    warnings.warn(
+        "This method is being deprecated.",
+        DeprecationWarning,
+    )
     size, _ = read_byte_const_block(program, pc)
     return size
 
 
 def read_byte_const_block(program, pc):
     """
-    NOTE: This class is deprecated
+    NOTE: This method is deprecated
     """
+    warnings.warn(
+        "This method is being deprecated.",
+        DeprecationWarning,
+    )
     size = 1
     bytearrays = []
     num_ints, bytes_used = parse_uvarint(program[pc + size :])
@@ -230,16 +259,24 @@ def read_byte_const_block(program, pc):
 
 def check_push_int_block(program, pc):
     """
-    NOTE: This class is deprecated
+    NOTE: This method is deprecated
     """
+    warnings.warn(
+        "This method is being deprecated.",
+        DeprecationWarning,
+    )
     size, _ = read_push_int_block(program, pc)
     return size
 
 
 def read_push_int_block(program, pc):
     """
-    NOTE: This class is deprecated
+    NOTE: This method is deprecated
     """
+    warnings.warn(
+        "This method is being deprecated.",
+        DeprecationWarning,
+    )
     size = 1
     single_int, bytes_used = parse_uvarint(program[pc + size :])
     if bytes_used <= 0:
@@ -252,16 +289,24 @@ def read_push_int_block(program, pc):
 
 def check_push_byte_block(program, pc):
     """
-    NOTE: This class is deprecated
+    NOTE: This method is deprecated
     """
+    warnings.warn(
+        "This method is being deprecated.",
+        DeprecationWarning,
+    )
     size, _ = read_push_byte_block(program, pc)
     return size
 
 
 def read_push_byte_block(program, pc):
     """
-    NOTE: This class is deprecated
+    NOTE: This method is deprecated
     """
+    warnings.warn(
+        "This method is being deprecated.",
+        DeprecationWarning,
+    )
     size = 1
     item_len, bytes_used = parse_uvarint(program[pc + size :])
     if bytes_used <= 0:
@@ -278,8 +323,12 @@ def read_push_byte_block(program, pc):
 
 def parse_uvarint(buf):
     """
-    NOTE: This class is deprecated
+    NOTE: This method is deprecated
     """
+    warnings.warn(
+        "This method is being deprecated.",
+        DeprecationWarning,
+    )
     x = 0
     s = 0
     for i, b in enumerate(buf):
@@ -295,8 +344,6 @@ def parse_uvarint(buf):
 
 def address(program):
     """
-    NOTE: This class is deprecated
-
     Return the address of the program.
 
     Args:
@@ -312,8 +359,6 @@ def address(program):
 
 def teal_sign(private_key, data, contract_addr):
     """
-    NOTE: This class is deprecated
-
     Return the signature suitable for ed25519verify TEAL opcode
 
     Args:
@@ -338,8 +383,6 @@ def teal_sign(private_key, data, contract_addr):
 
 def teal_sign_from_program(private_key, data, program):
     """
-    NOTE: This class is deprecated
-
     Return the signature suitable for ed25519verify TEAL opcode
 
     Args:
@@ -356,8 +399,6 @@ def teal_sign_from_program(private_key, data, program):
 
 def get_application_address(appID: int) -> str:
     """
-    NOTE: This class is deprecated
-
     Return the escrow address of an application.
 
     Args:
