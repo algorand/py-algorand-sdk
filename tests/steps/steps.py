@@ -1008,9 +1008,8 @@ def heuristic_check_over_bytes(context):
     context.sanity_check_err = ""
 
     try:
-        logic.sanity_check_program(context.seemingly_program)
+        transaction.LogicSig(context.seemingly_program)
     except Exception as e:
-        print(e)
         context.sanity_check_err = str(e)
 
 

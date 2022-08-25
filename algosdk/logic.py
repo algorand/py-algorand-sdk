@@ -13,7 +13,7 @@ spec = None
 opcodes = None
 
 
-def sanity_check_program(program):
+def _sanity_check_program(program):
     """
     Performs heuristic program validation:
     check if passed in bytes are Algorand address, or they are B64 encoded, rather than Teal bytes
@@ -30,7 +30,7 @@ def sanity_check_program(program):
             )
         )
 
-    if program is None or len(program) == 0:
+    if not program:
         raise error.InvalidProgram("empty program")
 
     if is_ascii_printable(program):
