@@ -58,11 +58,8 @@ def sanity_check_program(program):
 def check_program(program, args=None):
     """
     NOTE: This class is deprecated:
-    `langspec.json` can no longer correctly to depicting the cost model (as of 2022.08.22),
-    also to minimize the work in updating SDKs per AVM release,
-    we are deprecating`langspec.json` across all SDKs.
-    The behavior of method `checkProgram` relies on `langspec.json`.
-    Thus, this method is being deprecated.
+    Validation relies on metadata (`langspec.json`) that does not accurately represent opcode behavior across program versions.
+    The behavior of `check_program` relies on `langspec.json`. Thus, this method is being deprecated.
 
     Performs program checking for max length and cost
 
@@ -83,11 +80,8 @@ def check_program(program, args=None):
 def read_program(program, args=None):
     """
     NOTE: This class is deprecated:
-    `langspec.json` can no longer correctly to depicting the cost model (as of 2022.08.22),
-    also to minimize the work in updating SDKs per AVM release,
-    we are deprecating`langspec.json` across all SDKs.
-    The behavior of method `checkProgram` relies on `langspec.json`.
-    Thus, this method is being deprecated.
+    Validation relies on metadata (`langspec.json`) that does not accurately represent opcode behavior across program versions.
+    The behavior of `read_program` relies on `langspec.json`. Thus, this method is being deprecated.
     """
 
     global spec, opcodes
