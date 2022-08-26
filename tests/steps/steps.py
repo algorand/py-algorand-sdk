@@ -1,6 +1,9 @@
+import os
 import base64
 import random
 import time
+import parse
+from datetime import datetime
 
 from algosdk import (
     account,
@@ -22,11 +25,18 @@ from algosdk import wallet
 from algosdk import auction
 from algosdk import util
 from algosdk import logic
-import os
-from datetime import datetime
 
-from behave import given, then, when
+from behave import given, then, when, register_type
 from nacl.signing import SigningKey
+
+
+@parse.with_pattern(r".*")
+def parse_string(text):
+    return text
+
+
+register_type(MaybeString=parse_string)
+
 
 token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 algod_port = 60000
@@ -995,3 +1005,30 @@ def buildTxn(t, sender, params):
     elif "nonparticipation" in t:
         txn = transaction.KeyregNonparticipatingTxn(sender, params)
     return txn
+
+
+@given(
+    'a base64 encoded program bytes for heuristic sanity check "{b64encoded:MaybeString}"'
+)
+def take_b64_encoded_bytes(context, b64encoded):
+    context.seemingly_program = base64.b64decode(b64encoded)
+
+
+@when("I start heuristic sanity check over the bytes")
+def heuristic_check_over_bytes(context):
+    context.sanity_check_err = ""
+
+    try:
+        transaction.LogicSig(context.seemingly_program)
+    except Exception as e:
+        context.sanity_check_err = str(e)
+
+
+@then(
+    'if the heuristic sanity check throws an error, the error contains "{err_msg:MaybeString}"'
+)
+def check_error_if_matching(context, err_msg: str = None):
+    if len(err_msg) > 0:
+        assert err_msg in context.sanity_check_err
+    else:
+        assert len(context.sanity_check_err) == 0

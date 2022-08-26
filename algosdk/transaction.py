@@ -1,5 +1,6 @@
 import base64
 import msgpack
+import binascii
 from collections import OrderedDict
 from . import account
 from . import constants
@@ -1318,12 +1319,53 @@ class LogicSig:
     """
 
     def __init__(self, program, args=None):
-        if not program or not logic.check_program(program, args):
-            raise error.InvalidProgram()
+        self._sanity_check_program(program)
         self.logic = program
         self.args = args
         self.sig = None
         self.msig = None
+
+    @staticmethod
+    def _sanity_check_program(program):
+        """
+        Performs heuristic program validation:
+        check if passed in bytes are Algorand address, or they are B64 encoded, rather than Teal bytes
+
+        Args:
+            program (bytes): compiled program
+        """
+
+        def is_ascii_printable(program_bytes):
+            return all(
+                map(
+                    lambda x: x == ord("\n") or (ord(" ") <= x <= ord("~")),
+                    program_bytes,
+                )
+            )
+
+        if not program:
+            raise error.InvalidProgram("empty program")
+
+        if is_ascii_printable(program):
+            try:
+                encoding.decode_address(program.decode("utf-8"))
+                raise error.InvalidProgram(
+                    "requesting program bytes, get Algorand address"
+                )
+            except error.WrongChecksumError:
+                pass
+            except error.WrongKeyLengthError:
+                pass
+
+            try:
+                base64.b64decode(program.decode("utf-8"))
+                raise error.InvalidProgram("program should not be b64 encoded")
+            except binascii.Error:
+                pass
+
+            raise error.InvalidProgram(
+                "program bytes are all ASCII printable characters, not looking like Teal byte code"
+            )
 
     def dictify(self):
         od = OrderedDict()
@@ -1361,7 +1403,7 @@ class LogicSig:
             return False
 
         try:
-            logic.check_program(self.logic, self.args)
+            self._sanity_check_program(self.logic)
         except error.InvalidProgram:
             return False
 
