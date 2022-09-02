@@ -6,6 +6,42 @@
 
 - `class StateSchema`'s method `undictify()` now returns a `StateSchema` object instead of a python `dict`
 
+# v1.17.0
+## What's Changed
+### Bugfixes
+* Bug-fix: Pass verbosity through to testing harness by @tzaffi in https://github.com/algorand/py-algorand-sdk/pull/373
+### Enhancements
+* Enhancement: Trim the indexer images and use the sandbox instead of custom dockers by @tzaffi in https://github.com/algorand/py-algorand-sdk/pull/367
+* Enhancement: Add State Proof support by @shiqizng in https://github.com/algorand/py-algorand-sdk/pull/370
+* Enhancement: Deprecating use of langspec  by @ahangsu in https://github.com/algorand/py-algorand-sdk/pull/371
+
+## New Contributors
+* @ahangsu made their first contribution in https://github.com/algorand/py-algorand-sdk/pull/371
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v1.16.1...v1.17.0
+
+# v1.17.0b1
+## What's Changed
+### Bugfixes
+* Bug-fix: Pass verbosity through to testing harness by @tzaffi in https://github.com/algorand/py-algorand-sdk/pull/373
+### Enhancements
+* Enhancement: Trim the indexer images and use the sandbox instead of custom dockers by @tzaffi in https://github.com/algorand/py-algorand-sdk/pull/367
+* Enhancement: Add State Proof support by @shiqizng in https://github.com/algorand/py-algorand-sdk/pull/370
+* Enhancement: Deprecating use of langspec  by @ahangsu in https://github.com/algorand/py-algorand-sdk/pull/371
+
+## New Contributors
+* @ahangsu made their first contribution in https://github.com/algorand/py-algorand-sdk/pull/371
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v1.16.1...v1.17.0b1
+
+
+# v1.16.1
+### Bugfixes
+* bug-fix: add check to desc so we dont output null if undefined by @barnjamin in https://github.com/algorand/py-algorand-sdk/pull/368
+### Enhancements
+* AVM:  Consolidate TEAL and AVM versions by @michaeldiamant in https://github.com/algorand/py-algorand-sdk/pull/361
+* Testing: Modify cucumber steps to use dev mode network by @algochoi in https://github.com/algorand/py-algorand-sdk/pull/360
+
 # v1.16.0
 
 ## What's Changed

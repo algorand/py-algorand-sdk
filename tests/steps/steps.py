@@ -1,7 +1,8 @@
-import base64
 import os
+import base64
 import random
 import time
+import parse
 from datetime import datetime
 
 from algosdk import (
@@ -16,8 +17,26 @@ from algosdk import (
     wallet,
 )
 from algosdk.future import transaction
-from behave import given, then, when
+from algosdk import encoding
+from algosdk import algod
+from algosdk import account
+from algosdk import mnemonic
+from algosdk import wallet
+from algosdk import auction
+from algosdk import util
+from algosdk import logic
+
+from behave import given, then, when, register_type
 from nacl.signing import SigningKey
+
+
+@parse.with_pattern(r".*")
+def parse_string(text):
+    return text
+
+
+register_type(MaybeString=parse_string)
+
 
 token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 algod_port = 60000
@@ -175,18 +194,6 @@ def mn_for_sk(context, mn):
     context.mn = mn
     context.sk = mnemonic.to_private_key(mn)
     context.pk = account.address_from_private_key(context.sk)
-
-
-@when("I create the payment transaction")
-def create_paytxn(context):
-    context.txn = transaction.PaymentTxn(
-        context.pk,
-        context.params,
-        context.to,
-        context.amt,
-        context.close,
-        context.note,
-    )
 
 
 @given('multisig addresses "{addresses}"')
@@ -466,6 +473,7 @@ def send_msig_txn(context):
         context.error = True
 
 
+# TODO: this needs to be modified/removed when v1 is no longer supported!!!
 @then("the transaction should go through")
 def check_txn(context):
     wait_for_algod_transaction_processing_to_complete()
@@ -475,13 +483,7 @@ def check_txn(context):
     assert "type" in context.acl.transaction_info(
         context.txn.sender, context.txn.get_txid()
     )
-    assert "type" in context.acl.transaction_by_id(context.txn.get_txid())
-
-
-@then("I can get the transaction by ID")
-def get_txn_by_id(context):
-    wait_for_algod_transaction_processing_to_complete()
-    assert "type" in context.acl.transaction_by_id(context.txn.get_txid())
+    # assert "type" in context.acl.transaction_by_id(context.txn.get_txid())
 
 
 @then("the transaction should not go through")
@@ -515,48 +517,6 @@ def sign_msig_both_equal(context):
     assert encoding.msgpack_encode(context.mtx) == encoding.msgpack_encode(
         context.mtx_kmd
     )
-
-
-@when('I read a transaction "{txn}" from file "{num}"')
-def read_txn(context, txn, num):
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
-    context.num = num
-    context.txn = transaction.retrieve_from_file(
-        dir_path + "/temp/raw" + num + ".tx"
-    )[0]
-
-
-@when("I write the transaction to file")
-def write_txn(context):
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
-    transaction.write_to_file(
-        [context.txn], dir_path + "/temp/raw" + context.num + ".tx"
-    )
-
-
-@then("the transaction should still be the same")
-def check_enc(context):
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
-    new = transaction.retrieve_from_file(
-        dir_path + "/temp/raw" + context.num + ".tx"
-    )
-    old = transaction.retrieve_from_file(
-        dir_path + "/temp/old" + context.num + ".tx"
-    )
-    assert encoding.msgpack_encode(new[0]) == encoding.msgpack_encode(old[0])
-
-
-@then("I do my part")
-def check_save_txn(context):
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
-    stx = transaction.retrieve_from_file(dir_path + "/temp/txn.tx")[0]
-    txid = stx.transaction.get_txid()
-    wait_for_algod_transaction_processing_to_complete()
-    assert context.acl.transaction_info(stx.transaction.sender, txid)
 
 
 @then("I get the ledger supply")
@@ -696,21 +656,6 @@ def txns_by_addr_round(context):
     assert txns == {} or "transactions" in txns
 
 
-@then("I get transactions by address only")
-def txns_by_addr_only(context):
-    txns = context.acl.transactions_by_address(context.accounts[0])
-    assert txns == {} or "transactions" in txns
-
-
-@then("I get transactions by address and date")
-def txns_by_addr_date(context):
-    date = datetime.today().strftime("%Y-%m-%d")
-    txns = context.acl.transactions_by_address(
-        context.accounts[0], from_date=date, to_date=date
-    )
-    assert txns == {} or "transactions" in txns
-
-
 @then("I get pending transactions")
 def txns_pending(context):
     txns = context.acl.pending_transactions()
@@ -728,77 +673,11 @@ def new_acc_info(context):
     context.wallet.delete_key(context.pk)
 
 
-@given(
-    'key registration transaction parameters {fee} {fv} {lv} "{gh}" "{votekey}" "{selkey}" {votefst} {votelst} {votekd} "{gen}" "{note}"'
-)
-def keyreg_txn_params(
-    context,
-    fee,
-    fv,
-    lv,
-    gh,
-    votekey,
-    selkey,
-    votefst,
-    votelst,
-    votekd,
-    gen,
-    note,
-):
-    context.fee = int(fee)
-    context.fv = int(fv)
-    context.lv = int(lv)
-    context.gh = gh
-    context.votekey = votekey
-    context.selkey = selkey
-    context.votefst = int(votefst)
-    context.votelst = int(votelst)
-    context.votekd = int(votekd)
-    if gen == "none":
-        context.gen = None
-    else:
-        context.gen = gen
-    context.params = transaction.SuggestedParams(
-        context.fee, context.fv, context.lv, context.gh, context.gen
-    )
-
-    if note == "none":
-        context.note = None
-    else:
-        context.note = base64.b64decode(note)
-    if gen == "none":
-        context.gen = None
-    else:
-        context.gen = gen
-
-
-@when("I create the key registration transaction")
-def create_keyreg_txn(context):
-    context.txn = transaction.KeyregOnlineTxn(
-        context.pk,
-        context.params,
-        context.votekey,
-        context.selkey,
-        context.votefst,
-        context.votelst,
-        context.votekd,
-        context.note,
-    )
-
-
 @given("default V2 key registration transaction {type}")
 def default_v2_keyreg_txn(context, type):
     context.params = context.acl.suggested_params_as_object()
     context.pk = context.accounts[0]
     context.txn = buildTxn(type, context.pk, context.params)
-
-
-@when("I get recent transactions, limited by {cnt} transactions")
-def step_impl(context, cnt):
-    txns = context.acl.transactions_by_address(
-        context.accounts[0], limit=int(cnt)
-    )
-    assert txns == {} or "transactions" in txns
 
 
 @given("default asset creation transaction with total issuance {total}")
@@ -1126,3 +1005,30 @@ def buildTxn(t, sender, params):
     elif "nonparticipation" in t:
         txn = transaction.KeyregNonparticipatingTxn(sender, params)
     return txn
+
+
+@given(
+    'a base64 encoded program bytes for heuristic sanity check "{b64encoded:MaybeString}"'
+)
+def take_b64_encoded_bytes(context, b64encoded):
+    context.seemingly_program = base64.b64decode(b64encoded)
+
+
+@when("I start heuristic sanity check over the bytes")
+def heuristic_check_over_bytes(context):
+    context.sanity_check_err = ""
+
+    try:
+        transaction.LogicSig(context.seemingly_program)
+    except Exception as e:
+        context.sanity_check_err = str(e)
+
+
+@then(
+    'if the heuristic sanity check throws an error, the error contains "{err_msg:MaybeString}"'
+)
+def check_error_if_matching(context, err_msg: str = None):
+    if len(err_msg) > 0:
+        assert err_msg in context.sanity_check_err
+    else:
+        assert len(context.sanity_check_err) == 0
