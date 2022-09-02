@@ -20,7 +20,6 @@
 
 **Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v1.16.1...v1.17.0
 
-
 # v1.17.0b1
 ## What's Changed
 ### Bugfixes

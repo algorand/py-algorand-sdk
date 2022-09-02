@@ -23,6 +23,5 @@
 @unit.transactions
 @unit.transactions.keyreg
 @unit.transactions.payment
-@unit.transactions.payment
 @unit.stateproof.paths
 @unit.stateproof.responses
