@@ -511,7 +511,7 @@ class Helper:
     ):
         """
         Helper function for creation DryrunRequest object from a program.
-        By default it uses logic sig mode
+        By default, it uses logic sig mode
         and if app_idx / on_complete are set then application call is made
 
         Args:

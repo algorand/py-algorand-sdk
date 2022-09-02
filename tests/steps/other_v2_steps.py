@@ -1372,3 +1372,22 @@ def check_mapping_equal(context, sourcemap):
     assert (
         context.raw_source_map == expected
     ), f"context.raw_source_map={nl}{context.raw_source_map}{nl}expected={nl}{expected}"
+
+
+@when("we make a GetLightBlockHeaderProof call for round {round}")
+def lightblock(context, round):
+    context.response = context.acl.lightblockheader_proof(round)
+
+
+@when("we make a GetStateProof call for round {round}")
+def state_proofs(context, round):
+    context.response = context.acl.stateproofs(round)
+
+
+@when(
+    'we make a GetTransactionProof call for round {round} txid "{txid}" and hashtype "{hashtype:MaybeString}"'
+)
+def transaction_proof(context, round, txid, hashtype):
+    context.response = context.acl.transaction_proof(
+        round, txid, hashtype, "msgpack"
+    )
