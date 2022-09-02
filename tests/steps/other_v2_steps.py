@@ -3,7 +3,6 @@ import json
 import os
 import unittest
 import urllib
-from datetime import datetime
 from pathlib import Path
 from urllib.request import Request, urlopen
 
@@ -334,31 +333,6 @@ def parse_block(context, pool):
 
 
 @when(
-    "I get the next page using {indexer} to lookup asset balances for {assetid} with {currencygt}, {currencylt}, {limit}"
-)
-def next_asset_balance(
-    context, indexer, assetid, currencygt, currencylt, limit
-):
-    context.response = context.icls[indexer].asset_balances(
-        int(assetid),
-        min_balance=int(currencygt),
-        max_balance=int(currencylt),
-        limit=int(limit),
-        next_page=context.response["next-token"],
-    )
-
-
-@then(
-    'There are {numaccounts} with the asset, the first is "{account}" has "{isfrozen}" and {amount}'
-)
-def check_asset_balance(context, numaccounts, account, isfrozen, amount):
-    assert len(context.response["balances"]) == int(numaccounts)
-    assert context.response["balances"][0]["address"] == account
-    assert context.response["balances"][0]["amount"] == int(amount)
-    assert context.response["balances"][0]["is-frozen"] == (isfrozen == "true")
-
-
-@when(
     'we make a Lookup Asset Balances call against asset index {index} with limit {limit} afterAddress "{afterAddress:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan}'
 )
 def asset_balance(
@@ -381,13 +355,6 @@ def asset_balance(
 @when("we make any LookupAssetBalances call")
 def asset_balance_any(context):
     context.response = context.icl.asset_balances(123, 10)
-
-
-@when("I use {indexer} to search for all {assetid} asset transactions")
-def icl_asset_txns(context, indexer, assetid):
-    context.response = context.icls[indexer].search_asset_transactions(
-        int(assetid)
-    )
 
 
 @when(
@@ -532,13 +499,6 @@ def parse_asset_tns(context, roundNum, length, idx, sender):
     assert context.response["transactions"][int(idx)]["sender"] == sender
 
 
-@when('I use {indexer} to search for all "{accountid}" transactions')
-def icl_txns_by_addr(context, indexer, accountid):
-    context.response = context.icls[indexer].search_transactions_by_address(
-        accountid
-    )
-
-
 @when(
     'we make a Lookup Account Transactions call against account "{account:MaybeString}" with NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index} rekeyTo "{rekeyTo:MaybeString}"'
 )
@@ -663,31 +623,6 @@ def parse_txns_by_addr(context, roundNum, length, idx, sender):
         assert context.response["transactions"][int(idx)]["sender"] == sender
 
 
-@when("I use {indexer} to check the services health")
-def icl_health(context, indexer):
-    context.response = context.icls[indexer].health()
-
-
-@then("I receive status code {code}")
-def icl_health_check(context, code):
-    # An exception is thrown when the code is not 200
-    assert int(code) == 200
-
-
-@when("I use {indexer} to lookup block {number}")
-def icl_lookup_block(context, indexer, number):
-    context.response = context.icls[indexer].block_info(int(number))
-
-
-@then(
-    'The block was confirmed at {timestamp}, contains {num} transactions, has the previous block hash "{prevHash}"'
-)
-def icl_block_check(context, timestamp, num, prevHash):
-    assert context.response["previous-block-hash"] == prevHash
-    assert len(context.response["transactions"]) == int(num)
-    assert context.response["timestamp"] == int(timestamp)
-
-
 @when("we make a Lookup Block call against round {block}")
 def lookup_block(context, block):
     context.response = context.icl.block_info(int(block))
@@ -705,21 +640,6 @@ def parse_lookup_block(context, prevHash):
     assert context.response["previous-block-hash"] == prevHash
 
 
-@when(
-    'I use {indexer} to lookup asset balances for {assetid} with {currencygt}, {currencylt}, {limit} and token "{token}"'
-)
-def icl_asset_balance(
-    context, indexer, assetid, currencygt, currencylt, limit, token
-):
-    context.response = context.icls[indexer].asset_balances(
-        int(assetid),
-        min_balance=int(currencygt),
-        max_balance=int(currencylt),
-        limit=int(limit),
-        next_page=token,
-    )
-
-
 def parse_args(assetid):
     t = assetid.split(" ")
     l = {
@@ -730,31 +650,6 @@ def parse_args(assetid):
         "token": t[9][1:-1],
     }
     return l
-
-
-@when("I use {indexer} to lookup asset {assetid}")
-def icl_lookup_asset(context, indexer, assetid):
-    try:
-        context.response = context.icls[indexer].asset_info(int(assetid))
-    except:
-        icl_asset_balance(context, indexer, **parse_args(assetid))
-
-
-@then(
-    'The asset found has: "{name}", "{units}", "{creator}", {decimals}, "{defaultfrozen}", {total}, "{clawback}"'
-)
-def check_lookup_asset(
-    context, name, units, creator, decimals, defaultfrozen, total, clawback
-):
-    assert context.response["asset"]["params"]["name"] == name
-    assert context.response["asset"]["params"]["unit-name"] == units
-    assert context.response["asset"]["params"]["creator"] == creator
-    assert context.response["asset"]["params"]["decimals"] == int(decimals)
-    assert context.response["asset"]["params"]["default-frozen"] == (
-        defaultfrozen == "true"
-    )
-    assert context.response["asset"]["params"]["total"] == int(total)
-    assert context.response["asset"]["params"]["clawback"] == clawback
 
 
 @when("we make a Lookup Asset by ID call against asset index {index}")
@@ -770,200 +665,6 @@ def lookup_asset_any(context):
 @then("the parsed LookupAssetByID response should have index {index}")
 def parse_asset(context, index):
     assert context.response["asset"]["index"] == int(index)
-
-
-@when(
-    "I get the next page using {indexer} to search for transactions with {limit} and {maxround}"
-)
-def search_txns_next(context, indexer, limit, maxround):
-    context.response = context.icls[indexer].search_transactions(
-        limit=int(limit),
-        max_round=int(maxround),
-        next_page=context.response["next-token"],
-    )
-
-
-@when(
-    'I use {indexer} to search for transactions with {limit}, "{noteprefix:MaybeString}", "{txtype:MaybeString}", "{sigtype:MaybeString}", "{txid:MaybeString}", {block}, {minround}, {maxround}, {assetid}, "{beforetime:MaybeString}", "{aftertime:MaybeString}", {currencygt}, {currencylt}, "{address:MaybeString}", "{addressrole:MaybeString}", "{excludecloseto:MaybeString}" and token "{token:MaybeString}"'
-)
-def icl_search_txns(
-    context,
-    indexer,
-    limit,
-    noteprefix,
-    txtype,
-    sigtype,
-    txid,
-    block,
-    minround,
-    maxround,
-    assetid,
-    beforetime,
-    aftertime,
-    currencygt,
-    currencylt,
-    address,
-    addressrole,
-    excludecloseto,
-    token,
-):
-    context.response = context.icls[indexer].search_transactions(
-        asset_id=int(assetid),
-        limit=int(limit),
-        next_page=token,
-        note_prefix=base64.b64decode(noteprefix),
-        txn_type=txtype,
-        sig_type=sigtype,
-        txid=txid,
-        block=int(block),
-        min_round=int(minround),
-        max_round=int(maxround),
-        start_time=aftertime,
-        end_time=beforetime,
-        min_amount=int(currencygt),
-        max_amount=int(currencylt),
-        address=address,
-        address_role=addressrole,
-        exclude_close_to=excludecloseto == "true",
-    )
-
-
-@when(
-    'I use {indexer} to search for transactions with {limit}, "{noteprefix:MaybeString}", "{txtype:MaybeString}", "{sigtype:MaybeString}", "{txid:MaybeString}", {block}, {minround}, {maxround}, {assetid}, "{beforetime:MaybeString}", "{aftertime:MaybeString}", {currencygt}, {currencylt}, "{address:MaybeString}", "{addressrole:MaybeString}", "{excludecloseto:MaybeString}", {application_id} and token "{token:MaybeString}"'
-)
-def icl_search_txns_with_app(
-    context,
-    indexer,
-    limit,
-    noteprefix,
-    txtype,
-    sigtype,
-    txid,
-    block,
-    minround,
-    maxround,
-    assetid,
-    beforetime,
-    aftertime,
-    currencygt,
-    currencylt,
-    address,
-    addressrole,
-    excludecloseto,
-    application_id,
-    token,
-):
-    context.response = context.icls[indexer].search_transactions(
-        asset_id=int(assetid),
-        limit=int(limit),
-        next_page=token,
-        note_prefix=base64.b64decode(noteprefix),
-        txn_type=txtype,
-        sig_type=sigtype,
-        txid=txid,
-        block=int(block),
-        min_round=int(minround),
-        max_round=int(maxround),
-        start_time=aftertime,
-        end_time=beforetime,
-        min_amount=int(currencygt),
-        max_amount=int(currencylt),
-        address=address,
-        address_role=addressrole,
-        application_id=int(application_id),
-        exclude_close_to=excludecloseto == "true",
-    )
-
-
-@then(
-    'there are {num} transactions in the response, the first is "{txid:MaybeString}".'
-)
-def check_transactions(context, num, txid):
-    assert len(context.response["transactions"]) == int(num)
-    if int(num) > 0:
-        assert context.response["transactions"][0]["id"] == txid
-
-
-@then('Every transaction has tx-type "{txtype}"')
-def check_transaction_types(context, txtype):
-    for txn in context.response["transactions"]:
-        assert txn["tx-type"] == txtype
-
-
-@then('Every transaction has sig-type "{sigtype}"')
-def check_sig_types(context, sigtype):
-    for txn in context.response["transactions"]:
-        if sigtype == "lsig":
-            assert list(txn["signature"].keys())[0] == "logicsig"
-        if sigtype == "msig":
-            assert list(txn["signature"].keys())[0] == "multisig"
-        if sigtype == "sig":
-            assert list(txn["signature"].keys())[0] == sigtype
-
-
-@then("Every transaction has round >= {minround}")
-def check_minround(context, minround):
-    for txn in context.response["transactions"]:
-        assert txn["confirmed-round"] >= int(minround)
-
-
-@then("Every transaction has round <= {maxround}")
-def check_maxround(context, maxround):
-    for txn in context.response["transactions"]:
-        assert txn["confirmed-round"] <= int(maxround)
-
-
-@then("Every transaction has round {block}")
-def check_round(context, block):
-    for txn in context.response["transactions"]:
-        assert txn["confirmed-round"] == int(block)
-
-
-@then("Every transaction works with asset-id {assetid}")
-def check_assetid(context, assetid):
-    for txn in context.response["transactions"]:
-        if "asset-config-transaction" in txn:
-            subtxn = txn["asset-config-transaction"]
-        else:
-            subtxn = txn["asset-transfer-transaction"]
-        assert subtxn["asset-id"] == int(assetid) or txn[
-            "created-asset-index"
-        ] == int(assetid)
-
-
-@then('Every transaction is older than "{before}"')
-def check_before(context, before):
-    for txn in context.response["transactions"]:
-        t = datetime.fromisoformat(before.replace("Z", "+00:00"))
-        assert txn["round-time"] <= datetime.timestamp(t)
-
-
-@then('Every transaction is newer than "{after}"')
-def check_after(context, after):
-    t = True
-    for txn in context.response["transactions"]:
-        t = datetime.fromisoformat(after.replace("Z", "+00:00"))
-        if not txn["round-time"] >= datetime.timestamp(t):
-            t = False
-    assert t
-
-
-@then("Every transaction moves between {currencygt} and {currencylt} currency")
-def check_currency(context, currencygt, currencylt):
-    for txn in context.response["transactions"]:
-        amt = 0
-        if "asset-transfer-transaction" in txn:
-            amt = txn["asset-transfer-transaction"]["amount"]
-        else:
-            amt = txn["payment-transaction"]["amount"]
-        if int(currencygt) == 0:
-            if int(currencylt) > 0:
-                assert amt <= int(currencylt)
-        else:
-            if int(currencylt) > 0:
-                assert int(currencygt) <= amt <= int(currencylt)
-            else:
-                assert int(currencygt) <= amt
 
 
 @when(
@@ -1121,66 +822,6 @@ def parsed_search_for_txns(context, roundNum, length, index, rekeyTo):
 
 
 @when(
-    'I use {indexer} to search for assets with {limit}, {assetidin}, "{creator:MaybeString}", "{name:MaybeString}", "{unit:MaybeString}", and token "{token:MaybeString}"'
-)
-def icl_search_assets(
-    context, indexer, limit, assetidin, creator, name, unit, token
-):
-    context.response = context.icls[indexer].search_assets(
-        limit=int(limit),
-        next_page=token,
-        creator=creator,
-        name=name,
-        unit=unit,
-        asset_id=int(assetidin),
-    )
-
-
-@then("there are {num} assets in the response, the first is {assetidout}.")
-def check_assets(context, num, assetidout):
-    assert len(context.response["assets"]) == int(num)
-    if int(num) > 0:
-        assert context.response["assets"][0]["index"] == int(assetidout)
-
-
-@then('the parsed response should equal "{jsonfile}".')
-def parsed_equals(context, jsonfile):
-    loaded_response = None
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
-    with open(dir_path + "/tests/features/resources/" + jsonfile, "rb") as f:
-        loaded_response = bytearray(f.read())
-    # sort context.response
-    def recursively_sort_on_key(dictionary):
-        returned_dict = dict()
-        for k, v in sorted(dictionary.items()):
-            if isinstance(v, dict):
-                returned_dict[k] = recursively_sort_on_key(v)
-            elif isinstance(v, list) and all(
-                isinstance(item, dict) for item in v
-            ):
-                if all("key" in item.keys() for item in v):
-                    from operator import itemgetter
-
-                    returned_dict[k] = sorted(v, key=itemgetter("key"))
-                else:
-                    sorted_list = list()
-                    for item in v:
-                        sorted_list.append(recursively_sort_on_key(item))
-                    returned_dict[k] = sorted_list
-            else:
-                returned_dict[k] = v
-        return returned_dict
-
-    context.response = recursively_sort_on_key(context.response)
-    loaded_response = recursively_sort_on_key(json.loads(loaded_response))
-    if context.response != loaded_response:
-        print("EXPECTED: " + str(loaded_response))
-        print("ACTUAL: " + str(context.response))
-    assert context.response == loaded_response
-
-
-@when(
     'we make a SearchForAssets call with limit {limit} creator "{creator:MaybeString}" name "{name:MaybeString}" unit "{unit:MaybeString}" index {index}'
 )
 def search_assets(context, limit, creator, name, unit, index):
@@ -1248,26 +889,10 @@ def expect_path(context, path):
     assert exp_query == actual_query
 
 
-@then('we expect the path used to be "{path}"')
-def we_expect_path(context, path):
-    expect_path(context, path)
-
-
 @then('expect error string to contain "{err:MaybeString}"')
 def expect_error(context, err):
     # TODO: this should actually do the claimed action
     pass
-
-
-@given(
-    'indexer client {index} at "{address}" port {port} with token "{token}"'
-)
-def indexer_client(context, index, address, port, token):
-    if not hasattr(context, "icls"):
-        context.icls = dict()
-    context.icls[index] = indexer.IndexerClient(
-        token, "http://" + address + ":" + str(port)
-    )
 
 
 @given(
@@ -1744,4 +1369,26 @@ def check_compile_mapping(context, teal):
 @then('the resulting source map is the same as the json "{sourcemap}"')
 def check_mapping_equal(context, sourcemap):
     expected = load_resource(sourcemap).decode("utf-8").strip()
-    assert context.raw_source_map == expected
+    nl = "\n"
+    assert (
+        context.raw_source_map == expected
+    ), f"context.raw_source_map={nl}{context.raw_source_map}{nl}expected={nl}{expected}"
+
+
+@when("we make a GetLightBlockHeaderProof call for round {round}")
+def lightblock(context, round):
+    context.response = context.acl.lightblockheader_proof(round)
+
+
+@when("we make a GetStateProof call for round {round}")
+def state_proofs(context, round):
+    context.response = context.acl.stateproofs(round)
+
+
+@when(
+    'we make a GetTransactionProof call for round {round} txid "{txid}" and hashtype "{hashtype:MaybeString}"'
+)
+def transaction_proof(context, round, txid, hashtype):
+    context.response = context.acl.transaction_proof(
+        round, txid, hashtype, "msgpack"
+    )
