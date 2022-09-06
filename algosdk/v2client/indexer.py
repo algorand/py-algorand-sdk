@@ -952,7 +952,7 @@ class IndexerClient:
         Args:
             application_id (int): The ID of the application to look up.
             limit (int, optional): Max number of box names to return.
-                If max is not set, or max == 0, returns all box-names.
+                If max is not set, or max == 0, returns all box-names up to queried indexer's `defaultBoxesLimit`.
             next_page (string, optional): used for pagination
         """
         req = "/applications/" + str(application_id) + "/boxes"
