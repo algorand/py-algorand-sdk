@@ -1,12 +1,10 @@
-from urllib.request import Request, urlopen
-from urllib import parse
-import urllib.error
-import json
 import base64
-from . import encoding
-from . import error
-from . import transaction
-from . import constants
+import json
+import urllib.error
+from urllib import parse
+from urllib.request import Request, urlopen
+
+from . import constants, encoding, error, future
 
 api_version_path_prefix = "/v1"
 
@@ -383,7 +381,7 @@ class KMDClient:
         result = self.kmd_request("POST", req, data=query)
         pks = result["pks"]
         pks = [encoding.encode_address(base64.b64decode(p)) for p in pks]
-        msig = transaction.Multisig(
+        msig = future.transaction.Multisig(
             result["multisig_version"], result["threshold"], pks
         )
         return msig
