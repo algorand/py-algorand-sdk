@@ -1,18 +1,16 @@
-from typing import List, Union
 import base64
 import binascii
-from enum import IntEnum
-import msgpack
+import warnings
 from collections import OrderedDict
-from .. import account
-from .. import constants
-from .. import encoding
-from .. import error
-from .. import logic
-from .. import transaction
-from ..v2client import algod, models
-from nacl.signing import SigningKey, VerifyKey
+from enum import IntEnum
+from typing import List, Union
+
+import msgpack
 from nacl.exceptions import BadSignatureError
+from nacl.signing import SigningKey, VerifyKey
+
+from .. import account, constants, encoding, error, logic, transaction
+from ..v2client import algod, models
 
 
 class SuggestedParams:
@@ -273,6 +271,13 @@ class Transaction:
     def __eq__(self, other):
         if not isinstance(other, (Transaction, transaction.Transaction)):
             return False
+        if isinstance(other, transaction.Transaction):
+            warnings.warn(
+                "You are trying to check equality of an older `transaction` "
+                " format that is being deprecated. "
+                "Please use the v2 equivalent in `future.transaction` instead.",
+                DeprecationWarning,
+            )
         return (
             self.sender == other.sender
             and self.fee == other.fee
