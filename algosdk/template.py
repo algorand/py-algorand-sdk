@@ -9,6 +9,7 @@ class Template:
     """
     NOTE: This class is deprecated
     """
+
     def get_address(self):
         """
         Return the address of the contract.
@@ -170,7 +171,7 @@ class Split(Template):
 class HTLC(Template):
     """
     NOTE: This class is deprecated
-    
+
     Hash Time Locked Contract allows a user to recieve the Algo prior to a
     deadline (in terms of a round) by proving knowledge of a special value
     or to forfeit the ability to claim, returning it to the payer.
@@ -553,7 +554,7 @@ class PeriodicPayment(Template):
 class LimitOrder(Template):
     """
     NOTE: This class is deprecated
-    
+
     Limit Order allows to trade Algos for other assets given a specific ratio;
     for N Algos, swap for Rate * N Assets.
 
