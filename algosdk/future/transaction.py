@@ -3167,7 +3167,10 @@ def assign_group_id(txns, address=None):
 
 
 def wait_for_confirmation(
-    algod_client: algod.AlgodClient, txid: str, wait_rounds: int = 1000, **kwargs
+    algod_client: algod.AlgodClient,
+    txid: str,
+    wait_rounds: int = 1000,
+    **kwargs,
 ):
     """
     Block until a pending transaction is confirmed by the network.
