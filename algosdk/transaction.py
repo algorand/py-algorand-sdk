@@ -13,7 +13,7 @@ from . import account, constants, encoding, error, future, logic
 class Transaction:
     """
     NOTE: This class is deprecated:
-    Please use the v2 equivalent in `future.transaction` instead.
+    Please use the equivalent in `future.transaction` instead.
 
     Superclass for various transaction types.
     """
@@ -32,8 +32,8 @@ class Transaction:
         rekey_to,
     ):
         warnings.warn(
-            "`Transaction` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`Transaction` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         self.sender = sender
@@ -59,7 +59,7 @@ class Transaction:
     def get_txid(self):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
 
         Get the transaction's ID.
 
@@ -67,8 +67,8 @@ class Transaction:
             str: transaction ID
         """
         warnings.warn(
-            "`get_txid` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`get_txid` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         txn = encoding.msgpack_encode(self)
@@ -80,7 +80,7 @@ class Transaction:
     def sign(self, private_key):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
 
         Sign the transaction with a private key.
 
@@ -91,8 +91,8 @@ class Transaction:
             SignedTransaction: signed transaction with the signature
         """
         warnings.warn(
-            "`sign` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`sign` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         sig = self.raw_sign(private_key)
@@ -106,7 +106,7 @@ class Transaction:
     def raw_sign(self, private_key):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
 
         Sign the transaction.
 
@@ -117,8 +117,8 @@ class Transaction:
             bytes: signature
         """
         warnings.warn(
-            "`raw_sign` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`raw_sign` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         private_key = base64.b64decode(private_key)
@@ -132,11 +132,11 @@ class Transaction:
     def estimate_size(self):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`estimate_size` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`estimate_size` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         sk, _ = account.generate_account()
@@ -146,11 +146,11 @@ class Transaction:
     def dictify(self):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`dictify` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`dictify` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         d = dict()
@@ -179,11 +179,11 @@ class Transaction:
     def undictify(d):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`undictify` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`undictify` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         args = {
@@ -225,11 +225,11 @@ class Transaction:
     def __eq__(self, other):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`__eq__` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`__eq__` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         if not isinstance(
@@ -254,7 +254,7 @@ class Transaction:
 class PaymentTxn(Transaction):
     """
     NOTE: This class is deprecated:
-    Please use the v2 equivalent in `future.transaction` instead.
+    Please use the equivalent in `future.transaction` instead.
 
     Represents a payment transaction.
 
@@ -380,7 +380,7 @@ class PaymentTxn(Transaction):
 class KeyregTxn(Transaction):
     """
     NOTE: This class is deprecated:
-    Please use the v2 equivalent in `future.transaction` instead.
+    Please use the equivalent in `future.transaction` instead.
 
     Represents a key registration transaction.
 
@@ -505,7 +505,7 @@ class KeyregTxn(Transaction):
 class AssetConfigTxn(Transaction):
     """
     NOTE: This class is deprecated:
-    Please use the v2 equivalent in `future.transaction` instead.
+    Please use the equivalent in `future.transaction` instead.
 
     Represents a transaction for asset creation, reconfiguration, or
     destruction.
@@ -785,7 +785,7 @@ class AssetConfigTxn(Transaction):
 class AssetFreezeTxn(Transaction):
     """
     NOTE: This class is deprecated:
-    Please use the v2 equivalent in `future.transaction` instead.
+    Please use the equivalent in `future.transaction` instead.
 
     Represents a transaction for freezing or unfreezing an account's asset
     holdings. Must be issued by the asset's freeze manager.
@@ -904,7 +904,7 @@ class AssetFreezeTxn(Transaction):
 class AssetTransferTxn(Transaction):
     """
     NOTE: This class is deprecated:
-    Please use the v2 equivalent in `future.transaction` instead.
+    Please use the equivalent in `future.transaction` instead.
 
     Represents a transaction for asset transfer.
     To begin accepting an asset, supply the same address as both sender and
@@ -1059,7 +1059,7 @@ class AssetTransferTxn(Transaction):
 class SignedTransaction:
     """
     NOTE: This class is deprecated:
-    Please use the v2 equivalent in `future.transaction` instead.
+    Please use the equivalent in `future.transaction` instead.
 
     Represents a signed transaction.
 
@@ -1077,11 +1077,11 @@ class SignedTransaction:
     def __init__(self, transaction, signature, authorizing_address=None):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`SignedTransaction` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`SignedTransaction` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         self.signature = signature
@@ -1091,11 +1091,11 @@ class SignedTransaction:
     def dictify(self):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`dictify` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`dictify` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         od = OrderedDict()
@@ -1110,11 +1110,11 @@ class SignedTransaction:
     def undictify(d):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`undictify` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`undictify` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         sig = None
@@ -1130,11 +1130,11 @@ class SignedTransaction:
     def __eq__(self, other):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`__eq__` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`__eq__` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         if not isinstance(
@@ -1151,7 +1151,7 @@ class SignedTransaction:
 class MultisigTransaction:
     """
     NOTE: This class is deprecated:
-    Please use the v2 equivalent in `future.transaction` instead.
+    Please use the equivalent in `future.transaction` instead.
 
     Represents a signed transaction.
 
@@ -1167,11 +1167,11 @@ class MultisigTransaction:
     def __init__(self, transaction, multisig):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`MultisigTransaction` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`MultisigTransaction` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         self.transaction = transaction
@@ -1180,7 +1180,7 @@ class MultisigTransaction:
     def sign(self, private_key):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
 
         Sign the multisig transaction.
 
@@ -1195,8 +1195,8 @@ class MultisigTransaction:
             object with the same addresses.
         """
         warnings.warn(
-            "`sign` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`sign` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         self.multisig.validate()
@@ -1218,11 +1218,11 @@ class MultisigTransaction:
     def dictify(self):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`dictify` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`dictify` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         od = OrderedDict()
@@ -1235,11 +1235,11 @@ class MultisigTransaction:
     def undictify(d):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`undictify` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`undictify` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         msig = None
@@ -1253,7 +1253,7 @@ class MultisigTransaction:
     def merge(part_stxs):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
 
         Merge partially signed multisig transactions.
 
@@ -1270,8 +1270,8 @@ class MultisigTransaction:
             use MultisigTransaction.sign()
         """
         warnings.warn(
-            "`merge` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`merge` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         ref_addr = None
@@ -1301,11 +1301,11 @@ class MultisigTransaction:
     def __eq__(self, other):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`__eq__` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`__eq__` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         if not isinstance(
@@ -1322,7 +1322,7 @@ class MultisigTransaction:
 class Multisig:
     """
     NOTE: This class is deprecated:
-    Please use the v2 equivalent in `future.transaction` instead.
+    Please use the equivalent in `future.transaction` instead.
 
     Represents a multisig account and signatures.
 
@@ -1340,11 +1340,11 @@ class Multisig:
     def __init__(self, version, threshold, addresses):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`Multisig` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`Multisig` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         self.version = version
@@ -1356,13 +1356,13 @@ class Multisig:
     def validate(self):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
 
         Check if the multisig account is valid.
         """
         warnings.warn(
-            "`validate` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`validate` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         if not self.version == 1:
@@ -1379,13 +1379,13 @@ class Multisig:
     def address(self):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
 
         Return the multisig account address.
         """
         warnings.warn(
-            "`address` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`address` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         msig_bytes = (
@@ -1401,13 +1401,13 @@ class Multisig:
     def verify(self, message):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
 
         Verify that the multisig is valid for the message.
         """
         warnings.warn(
-            "`verify` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`verify` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         try:
@@ -1436,11 +1436,11 @@ class Multisig:
     def dictify(self):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`dictify` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`dictify` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         od = OrderedDict()
@@ -1452,11 +1452,11 @@ class Multisig:
     def json_dictify(self):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`json_dictify` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`json_dictify` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         d = {
@@ -1470,11 +1470,11 @@ class Multisig:
     def undictify(d):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`undictify` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`undictify` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         subsigs = [MultisigSubsig.undictify(s) for s in d["subsig"]]
@@ -1485,11 +1485,11 @@ class Multisig:
     def get_multisig_account(self):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`get_multisig_account` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`get_multisig_account` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         """Return a Multisig object without signatures."""
@@ -1501,11 +1501,11 @@ class Multisig:
     def get_public_keys(self):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`get_public_keys` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`get_public_keys` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         """Return the base32 encoded addresses for the multisig account."""
@@ -1515,11 +1515,11 @@ class Multisig:
     def __eq__(self, other):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`__eq__` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`__eq__` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         if not isinstance(other, (Multisig, future.transaction.Multisig)):
@@ -1534,7 +1534,7 @@ class Multisig:
 class MultisigSubsig:
     """
     NOTE: This class is deprecated:
-    Please use the v2 equivalent in `future.transaction` instead.
+    Please use the equivalent in `future.transaction` instead.
 
     Attributes:
         public_key (bytes)
@@ -1544,11 +1544,11 @@ class MultisigSubsig:
     def __init__(self, public_key, signature=None):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`MultisigSubsig` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`MultisigSubsig` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         self.public_key = public_key
@@ -1557,11 +1557,11 @@ class MultisigSubsig:
     def dictify(self):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`dictify` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`dictify` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         od = OrderedDict()
@@ -1573,11 +1573,11 @@ class MultisigSubsig:
     def json_dictify(self):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`json_dictify` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`json_dictify` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         d = {"pk": base64.b64encode(self.public_key).decode()}
@@ -1589,11 +1589,11 @@ class MultisigSubsig:
     def undictify(d):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`undictify` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`undictify` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         sig = None
@@ -1605,11 +1605,11 @@ class MultisigSubsig:
     def __eq__(self, other):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`__eq__` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`__eq__` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         if not isinstance(
@@ -1625,7 +1625,7 @@ class MultisigSubsig:
 class LogicSig:
     """
     NOTE: This class is deprecated:
-    Please use the v2 equivalent in `future.transaction` instead.
+    Please use the equivalent in `future.transaction` instead.
 
     Represents a logic signature.
 
@@ -1643,11 +1643,11 @@ class LogicSig:
     def __init__(self, program, args=None):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`LogicSig` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`LogicSig` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         self._sanity_check_program(program)
@@ -1660,7 +1660,7 @@ class LogicSig:
     def _sanity_check_program(program):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
 
         Performs heuristic program validation:
         check if passed in bytes are Algorand address, or they are B64 encoded, rather than Teal bytes
@@ -1678,8 +1678,8 @@ class LogicSig:
             )
 
         warnings.warn(
-            "`_sanity_check_program` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`_sanity_check_program` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         if not program:
@@ -1709,11 +1709,11 @@ class LogicSig:
     def dictify(self):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`dictify` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`dictify` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         od = OrderedDict()
@@ -1730,11 +1730,11 @@ class LogicSig:
     def undictify(d):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`undictify` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`undictify` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         lsig = LogicSig(d["l"], d.get("arg", None))
@@ -1747,7 +1747,7 @@ class LogicSig:
     def verify(self, public_key):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
 
         Verifies LogicSig against the transaction's sender address
 
@@ -1760,8 +1760,8 @@ class LogicSig:
                 address), false otherwise
         """
         warnings.warn(
-            "`verify` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`verify` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         if self.sig and self.msig:
@@ -1791,7 +1791,7 @@ class LogicSig:
     def address(self):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
 
         Compute hash of the logic sig program (that is the same as escrow
         account address) as string address
@@ -1800,8 +1800,8 @@ class LogicSig:
             str: program address
         """
         warnings.warn(
-            "`address` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`address` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         return logic.address(self.logic)
@@ -1810,11 +1810,11 @@ class LogicSig:
     def sign_program(program, private_key):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`sign_program` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`sign_program` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         private_key = base64.b64decode(private_key)
@@ -1827,11 +1827,11 @@ class LogicSig:
     def single_sig_multisig(program, private_key, multisig):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`single_sig_multisig` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`single_sig_multisig` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         index = -1
@@ -1850,7 +1850,7 @@ class LogicSig:
     def sign(self, private_key, multisig=None):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
 
         Creates signature (if no pk provided) or multi signature
 
@@ -1864,8 +1864,8 @@ class LogicSig:
                 object
         """
         warnings.warn(
-            "`sign` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`sign` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         if not multisig:
@@ -1880,7 +1880,7 @@ class LogicSig:
     def append_to_multisig(self, private_key):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
 
         Appends a signature to multi signature
 
@@ -1892,8 +1892,8 @@ class LogicSig:
                 object
         """
         warnings.warn(
-            "`append_to_multisig` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`append_to_multisig` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         if self.msig is None:
@@ -1906,11 +1906,11 @@ class LogicSig:
     def __eq__(self, other):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`__eq__` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`__eq__` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         if not isinstance(other, (LogicSig, future.transaction.LogicSig)):
@@ -1926,7 +1926,7 @@ class LogicSig:
 class LogicSigTransaction:
     """
     NOTE: This class is deprecated:
-    Please use the v2 equivalent in `future.transaction` instead.
+    Please use the equivalent in `future.transaction` instead.
 
     Represents a logic signed transaction.
 
@@ -1942,11 +1942,11 @@ class LogicSigTransaction:
     def __init__(self, transaction, lsig):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`LogicSigTransaction` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`LogicSigTransaction` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         self.transaction = transaction
@@ -1955,7 +1955,7 @@ class LogicSigTransaction:
     def verify(self):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
 
         Verify LogicSig against the transaction
 
@@ -1965,8 +1965,8 @@ class LogicSigTransaction:
                 address), false otherwise
         """
         warnings.warn(
-            "`verify` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`verify` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         public_key = encoding.decode_address(self.transaction.sender)
@@ -1975,11 +1975,11 @@ class LogicSigTransaction:
     def dictify(self):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`dictify` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`dictify` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         od = OrderedDict()
@@ -1992,11 +1992,11 @@ class LogicSigTransaction:
     def undictify(d):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`undictify` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`undictify` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         lsig = None
@@ -2009,11 +2009,11 @@ class LogicSigTransaction:
     def __eq__(self, other):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`__eq__` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`__eq__` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         if not isinstance(
@@ -2029,7 +2029,7 @@ class LogicSigTransaction:
 def write_to_file(objs, path, overwrite=True):
     """
     NOTE: This method is deprecated:
-    Please use the v2 equivalent in `future.transaction` instead.
+    Please use the equivalent in `future.transaction` instead.
 
     Write signed or unsigned transactions to a file.
 
@@ -2055,8 +2055,8 @@ def write_to_file(objs, path, overwrite=True):
         bool: true if the transactions have been written to the file
     """
     warnings.warn(
-        "`write_to_file` is a part of v1 `transaction` that is being deprecated. "
-        "Please use the v2 equivalent in `future.transaction` instead.",
+        "`write_to_file` is a part of an older `transaction` format that is being deprecated. "
+        "Please use the equivalent in `future.transaction` instead.",
         DeprecationWarning,
     )
     f = None
@@ -2082,7 +2082,7 @@ def write_to_file(objs, path, overwrite=True):
 def retrieve_from_file(path):
     """
     NOTE: This method is deprecated:
-    Please use the v2 equivalent in `future.transaction` instead.
+    Please use the equivalent in `future.transaction` instead.
 
     Retrieve encoded objects from a file.
 
@@ -2093,8 +2093,8 @@ def retrieve_from_file(path):
         Object[]: list of objects
     """
     warnings.warn(
-        "`retrieve_from_file` is a part of v1 `transaction` that is being deprecated. "
-        "Please use the v2 equivalent in `future.transaction` instead.",
+        "`retrieve_from_file` is a part of an older `transaction` format that is being deprecated. "
+        "Please use the equivalent in `future.transaction` instead.",
         DeprecationWarning,
     )
     f = open(path, "rb")
@@ -2109,17 +2109,17 @@ def retrieve_from_file(path):
 class TxGroup:
     """
     NOTE: This class is deprecated:
-    Please use the v2 equivalent in `future.transaction` instead.
+    Please use the equivalent in `future.transaction` instead.
     """
 
     def __init__(self, txns):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`TxGroup` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`TxGroup` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         assert isinstance(txns, list)
@@ -2136,11 +2136,11 @@ class TxGroup:
     def dictify(self):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`dictify` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`dictify` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         od = OrderedDict()
@@ -2151,11 +2151,11 @@ class TxGroup:
     def undictify(d):
         """
         NOTE: This method is deprecated:
-        Please use the v2 equivalent in `future.transaction` instead.
+        Please use the equivalent in `future.transaction` instead.
         """
         warnings.warn(
-            "`undictify` is a part of v1 `transaction` that is being deprecated. "
-            "Please use the v2 equivalent in `future.transaction` instead.",
+            "`undictify` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
             DeprecationWarning,
         )
         txg = TxGroup(d["txlist"])
@@ -2165,7 +2165,7 @@ class TxGroup:
 def calculate_group_id(txns):
     """
     NOTE: This method is deprecated:
-    Please use the v2 equivalent in `future.transaction` instead.
+    Please use the equivalent in `future.transaction` instead.
 
     Calculate group id for a given list of unsigned transactions
 
@@ -2176,8 +2176,8 @@ def calculate_group_id(txns):
         bytes: checksum value representing the group id
     """
     warnings.warn(
-        "`calculate_group_id` is a part of v1 `transaction` that is being deprecated. "
-        "Please use the v2 equivalent in `future.transaction` instead.",
+        "`calculate_group_id` is a part of an older `transaction` format that is being deprecated. "
+        "Please use the equivalent in `future.transaction` instead.",
         DeprecationWarning,
     )
     if len(txns) > constants.tx_group_limit:
@@ -2199,7 +2199,7 @@ def calculate_group_id(txns):
 def assign_group_id(txns, address=None):
     """
     NOTE: This method is deprecated:
-    Please use the v2 equivalent in `future.transaction` instead.
+    Please use the equivalent in `future.transaction` instead.
 
     Assign group id to a given list of unsigned transactions.
 
@@ -2212,8 +2212,8 @@ def assign_group_id(txns, address=None):
         txns (list): list of unsigned transactions with group property set
     """
     warnings.warn(
-        "`assign_group_id` is a part of v1 `transaction` that is being deprecated. "
-        "Please use the v2 equivalent in `future.transaction` instead.",
+        "`assign_group_id` is a part of an older `transaction` format that is being deprecated. "
+        "Please use the equivalent in `future.transaction` instead.",
         DeprecationWarning,
     )
     if len(txns) > constants.tx_group_limit:
