@@ -39,6 +39,7 @@ register_type(MaybeString=parse_string)
 
 
 token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+indexer_port = 59999
 algod_port = 60000
 kmd_port = 60001
 
