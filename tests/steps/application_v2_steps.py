@@ -1132,16 +1132,28 @@ def check_found_method_or_error(context, methodsig, error: str = None):
 
 
 @then(
-    'the contents of the box with name "{box_name}" in the current application should be "{box_value:MaybeString}". If there is an error it is "{error_string:MaybeString}".'
+    'according to "{from_client}", the contents of the box with name "{box_name}" in the current application should be "{box_value:MaybeString}". If there is an error it is "{error_string:MaybeString}".'
 )
 def check_box_contents(
-    context, box_name, box_value: str = None, error_string: str = None
+    context,
+    from_client,
+    box_name,
+    box_value: str = None,
+    error_string: str = None,
 ):
     try:
         box_name = split_and_process_app_args(box_name)[0]
-        box_response = context.app_acl.application_box_by_name(
-            context.current_application_id, box_name
-        )
+        if from_client == "algod":
+            box_response = context.app_acl.application_box_by_name(
+                context.current_application_id, box_name
+            )
+        elif from_client == "indexer":
+            box_response = context.app_icl.application_box_by_name(
+                context.current_application_id, box_name
+            )
+        else:
+            assert False, "expecting algod or indexer, get " + from_client
+
         actual_name = box_response["name"]
         actual_value = box_response["value"]
         assert box_name == base64.b64decode(actual_name)
@@ -1157,13 +1169,21 @@ def check_box_contents(
 
 
 @then(
-    'the current application should have the following boxes "{box_names:MaybeString}".'
+    'according to "{from_client}", the current application should have the following boxes "{box_names:MaybeString}".'
 )
-def check_all_boxes(context, box_names: str = None):
+def check_all_boxes(context, from_client: str, box_names: str = None):
     expected_box_names = split_and_process_app_args(box_names)
-    box_response = context.app_acl.application_boxes(
-        context.current_application_id
-    )
+    if from_client == "algod":
+        box_response = context.app_acl.application_boxes(
+            context.current_application_id
+        )
+    elif from_client == "indexer":
+        box_response = context.app_icl.application_boxes(
+            context.current_application_id
+        )
+    else:
+        assert False, "expecting algod or indexer, get " + from_client
+
     actual_box_names = []
     for box in box_response["boxes"]:
         box = box["name"]
