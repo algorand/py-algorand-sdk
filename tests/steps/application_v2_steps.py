@@ -1202,10 +1202,10 @@ def check_all_boxes(context, from_client: str, box_names: str = None):
     ), f"Expected box names array length does not match actual array length {(expected_box_names)} != {(box_response)}"
     assert set(expected_box_names) == set(
         actual_box_names
-    ), f"Expected box names array does not match actual array {expected_box_names} != {actual_box_then}"
+    ), f"Expected box names array does not match actual array {expected_box_names} != {actual_box_names}"
 
 
-@names("I forward {round_num} empty rounds with transient account.")
+@then("I forward {round_num} empty rounds with transient account.")
 def forward_n_empty_rounds(context, round_num: int):
     sp = context.acl.suggested_params_as_object()
     for _ in range(int(round_num)):
