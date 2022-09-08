@@ -2,9 +2,16 @@ import base64
 import json
 import re
 import time
-
+import secrets
 import pytest
-from algosdk import abi, atomic_transaction_composer, encoding, mnemonic
+
+from algosdk import (
+    abi,
+    atomic_transaction_composer,
+    encoding,
+    mnemonic,
+    constants,
+)
 from algosdk.abi.contract import NetworkInfo
 from algosdk.error import (
     ABITypeError,
@@ -12,9 +19,7 @@ from algosdk.error import (
 )
 from algosdk.future import transaction
 from behave import given, step, then, when
-from tests.steps.other_v2_steps import (
-    read_program,
-)
+from tests.steps.other_v2_steps import read_program
 
 
 def operation_string_to_enum(operation):
@@ -371,6 +376,7 @@ def build_app_txn_with_transient(
         boxes = split_and_process_boxes(boxes)
 
     sp = context.app_acl.suggested_params()
+
     context.app_transaction = transaction.ApplicationCallTxn(
         sender=context.transient_pk,
         sp=sp,
@@ -1196,4 +1202,20 @@ def check_all_boxes(context, from_client: str, box_names: str = None):
     ), f"Expected box names array length does not match actual array length {(expected_box_names)} != {(box_response)}"
     assert set(expected_box_names) == set(
         actual_box_names
-    ), f"Expected box names array does not match actual array {expected_box_names} != {actual_box_names}"
+    ), f"Expected box names array does not match actual array {expected_box_names} != {actual_box_then}"
+
+
+@names("I forward {round_num} empty rounds with transient account.")
+def forward_n_empty_rounds(context, round_num: int):
+    sp = context.acl.suggested_params_as_object()
+    for _ in range(int(round_num)):
+        dummy_tx = transaction.PaymentTxn(
+            context.transient_pk,
+            sp,
+            constants.ZERO_ADDRESS,
+            0,
+            note=secrets.token_bytes(8),
+        )
+        dummy_stx = dummy_tx.sign(context.transient_sk)
+        dummy_txid = context.app_acl.send_transaction(dummy_stx)
+        transaction.wait_for_confirmation(context.app_acl, dummy_txid, 1)
