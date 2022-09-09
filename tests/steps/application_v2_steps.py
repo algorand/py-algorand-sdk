@@ -1175,6 +1175,26 @@ def check_box_contents(
 
 
 @then(
+    'according to "{from_client}", by parameter max {limit}, the current application should have {expected_num} boxes.'
+)
+def check_box_num_by_limit(context, from_client, limit, expected_num: str):
+    limit_int = int(limit)
+    expected_num_int = int(expected_num)
+    if from_client == "algod":
+        box_response = context.app_acl.application_boxes(
+            context.current_application_id, limit=limit_int
+        )
+    elif from_client == "indexer":
+        box_response = context.app_icl.application_boxes(
+            context.current_application_id, limit=limit_int
+        )
+    else:
+        assert False, "expecting algod or indexer, get " + from_client
+
+    assert expected_num_int == len(box_response["boxes"]), "expected box num"
+
+
+@then(
     'according to "{from_client}", the current application should have the following boxes "{box_names:MaybeString}".'
 )
 def check_all_boxes(context, from_client: str, box_names: str = None):
@@ -1199,7 +1219,35 @@ def check_all_boxes(context, from_client: str, box_names: str = None):
     # Check that length of lists are equal, then check for set equality.
     assert len(expected_box_names) == len(
         actual_box_names
-    ), f"Expected box names array length does not match actual array length {(expected_box_names)} != {(box_response)}"
+    ), f"Expected box names array length does not match actual array length {(expected_box_names)} != {(actual_box_names)}"
+    assert set(expected_box_names) == set(
+        actual_box_names
+    ), f"Expected box names array does not match actual array {expected_box_names} != {actual_box_names}"
+
+
+@then(
+    'according to indexer, by parameter max {limit} and next "{next_page:MaybeString}", the current application should have the following boxes "{box_names:MaybeString}".'
+)
+def check_all_boxes_by_indexer(
+    context, limit, next_page: str = None, box_names: str = None
+):
+    expected_box_names = split_and_process_app_args(box_names)
+    limit_int = int(limit)
+    next_page = next_page if next_page else ""
+    box_response = context.app_icl.application_boxes(
+        context.current_application_id, limit=limit_int, next_page=next_page
+    )
+
+    actual_box_names = []
+    for box in box_response["boxes"]:
+        box = box["name"]
+        decoded_box = base64.b64decode(box)
+        actual_box_names.append(decoded_box)
+
+    # Check that length of lists are equal, then check for set equality.
+    assert len(expected_box_names) == len(
+        actual_box_names
+    ), f"Expected box names array length does not match actual array length {(expected_box_names)} != {(actual_box_names)}"
     assert set(expected_box_names) == set(
         actual_box_names
     ), f"Expected box names array does not match actual array {expected_box_names} != {actual_box_names}"
