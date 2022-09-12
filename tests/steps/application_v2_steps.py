@@ -1253,17 +1253,6 @@ def check_all_boxes_by_indexer(
     ), f"Expected box names array does not match actual array {expected_box_names} != {actual_box_names}"
 
 
-@then("I forward {round_num} empty rounds with transient account.")
-def forward_n_empty_rounds(context, round_num: int):
-    sp = context.acl.suggested_params_as_object()
-    for _ in range(int(round_num)):
-        dummy_tx = transaction.PaymentTxn(
-            context.transient_pk,
-            sp,
-            constants.ZERO_ADDRESS,
-            0,
-            note=secrets.token_bytes(8),
-        )
-        dummy_stx = dummy_tx.sign(context.transient_sk)
-        dummy_txid = context.app_acl.send_transaction(dummy_stx)
-        transaction.wait_for_confirmation(context.app_acl, dummy_txid, 1)
+@then("I sleep for {second_num} seconds for indexer to digest things down.")
+def sleep_for_indexer(context, second_num: int):
+    time.sleep(int(second_num))
