@@ -66,11 +66,6 @@ class Transaction:
         Returns:
             str: transaction ID
         """
-        warnings.warn(
-            "`get_txid` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         txn = encoding.msgpack_encode(self)
         to_sign = constants.txid_prefix + base64.b64decode(txn)
         txid = encoding.checksum(to_sign)
@@ -90,11 +85,6 @@ class Transaction:
         Returns:
             SignedTransaction: signed transaction with the signature
         """
-        warnings.warn(
-            "`sign` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         sig = self.raw_sign(private_key)
         sig = base64.b64encode(sig).decode()
         authorizing_address = None
@@ -116,11 +106,6 @@ class Transaction:
         Returns:
             bytes: signature
         """
-        warnings.warn(
-            "`raw_sign` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         private_key = base64.b64decode(private_key)
         txn = encoding.msgpack_encode(self)
         to_sign = constants.txid_prefix + base64.b64decode(txn)
@@ -134,11 +119,6 @@ class Transaction:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`estimate_size` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         sk, _ = account.generate_account()
         stx = self.sign(sk)
         return len(base64.b64decode(encoding.msgpack_encode(stx)))
@@ -148,11 +128,6 @@ class Transaction:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`dictify` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         d = dict()
         if self.fee:
             d["fee"] = self.fee
@@ -181,11 +156,6 @@ class Transaction:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`undictify` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         args = {
             "sender": encoding.encode_address(d["snd"]),
             "fee": d["fee"] if "fee" in d else 0,
@@ -227,11 +197,6 @@ class Transaction:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`__eq__` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         if not isinstance(
             other, (Transaction, future.transaction.Transaction)
         ):
@@ -1093,11 +1058,6 @@ class SignedTransaction:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`dictify` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         od = OrderedDict()
         if self.signature:
             od["sig"] = base64.b64decode(self.signature)
@@ -1112,11 +1072,6 @@ class SignedTransaction:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`undictify` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         sig = None
         if "sig" in d:
             sig = base64.b64encode(d["sig"]).decode()
@@ -1132,11 +1087,6 @@ class SignedTransaction:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`__eq__` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         if not isinstance(
             other, (SignedTransaction, future.transaction.SignedTransaction)
         ):
@@ -1194,11 +1144,6 @@ class MultisigTransaction:
             can use Multisig.get_multisig_account() to get a new multisig
             object with the same addresses.
         """
-        warnings.warn(
-            "`sign` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         self.multisig.validate()
         addr = self.multisig.address()
         if not self.transaction.sender == addr:
@@ -1220,11 +1165,6 @@ class MultisigTransaction:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`dictify` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         od = OrderedDict()
         if self.multisig:
             od["msig"] = self.multisig.dictify()
@@ -1237,11 +1177,6 @@ class MultisigTransaction:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`undictify` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         msig = None
         if "msig" in d:
             msig = Multisig.undictify(d["msig"])
@@ -1269,11 +1204,6 @@ class MultisigTransaction:
             transactions. To append a signature to a multisig transaction, just
             use MultisigTransaction.sign()
         """
-        warnings.warn(
-            "`merge` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         ref_addr = None
         for stx in part_stxs:
             if not ref_addr:
@@ -1303,11 +1233,6 @@ class MultisigTransaction:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`__eq__` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         if not isinstance(
             other,
             (MultisigTransaction, future.transaction.MultisigTransaction),
@@ -1360,11 +1285,6 @@ class Multisig:
 
         Check if the multisig account is valid.
         """
-        warnings.warn(
-            "`validate` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         if not self.version == 1:
             raise error.UnknownMsigVersionError
         if (
@@ -1383,11 +1303,6 @@ class Multisig:
 
         Return the multisig account address.
         """
-        warnings.warn(
-            "`address` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         msig_bytes = (
             bytes(constants.msig_addr_prefix, "utf-8")
             + bytes([self.version])
@@ -1405,11 +1320,6 @@ class Multisig:
 
         Verify that the multisig is valid for the message.
         """
-        warnings.warn(
-            "`verify` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         try:
             self.validate()
         except (error.UnknownMsigVersionError, error.InvalidThresholdError):
@@ -1438,11 +1348,6 @@ class Multisig:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`dictify` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         od = OrderedDict()
         od["subsig"] = [subsig.dictify() for subsig in self.subsigs]
         od["thr"] = self.threshold
@@ -1454,11 +1359,6 @@ class Multisig:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`json_dictify` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         d = {
             "subsig": [subsig.json_dictify() for subsig in self.subsigs],
             "thr": self.threshold,
@@ -1472,11 +1372,6 @@ class Multisig:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`undictify` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         subsigs = [MultisigSubsig.undictify(s) for s in d["subsig"]]
         msig = Multisig(d["v"], d["thr"], [])
         msig.subsigs = subsigs
@@ -1487,11 +1382,6 @@ class Multisig:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`get_multisig_account` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         """Return a Multisig object without signatures."""
         msig = Multisig(self.version, self.threshold, self.get_public_keys())
         for s in msig.subsigs:
@@ -1503,11 +1393,6 @@ class Multisig:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`get_public_keys` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         """Return the base32 encoded addresses for the multisig account."""
         pks = [encoding.encode_address(s.public_key) for s in self.subsigs]
         return pks
@@ -1517,11 +1402,6 @@ class Multisig:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`__eq__` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         if not isinstance(other, (Multisig, future.transaction.Multisig)):
             return False
         return (
@@ -1559,11 +1439,6 @@ class MultisigSubsig:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`dictify` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         od = OrderedDict()
         od["pk"] = self.public_key
         if self.signature:
@@ -1575,11 +1450,6 @@ class MultisigSubsig:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`json_dictify` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         d = {"pk": base64.b64encode(self.public_key).decode()}
         if self.signature:
             d["s"] = base64.b64encode(self.signature).decode()
@@ -1591,11 +1461,6 @@ class MultisigSubsig:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`undictify` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         sig = None
         if "s" in d:
             sig = d["s"]
@@ -1607,11 +1472,6 @@ class MultisigSubsig:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`__eq__` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         if not isinstance(
             other, (MultisigSubsig, future.transaction.MultisigSubsig)
         ):
@@ -1677,11 +1537,6 @@ class LogicSig:
                 )
             )
 
-        warnings.warn(
-            "`_sanity_check_program` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         if not program:
             raise error.InvalidProgram("empty program")
 
@@ -1711,11 +1566,6 @@ class LogicSig:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`dictify` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         od = OrderedDict()
         if self.args:
             od["arg"] = self.args
@@ -1732,11 +1582,6 @@ class LogicSig:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`undictify` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         lsig = LogicSig(d["l"], d.get("arg", None))
         if "sig" in d:
             lsig.sig = base64.b64encode(d["sig"]).decode()
@@ -1759,11 +1604,6 @@ class LogicSig:
                 the logic hash or the signature is valid against the sender\
                 address), false otherwise
         """
-        warnings.warn(
-            "`verify` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         if self.sig and self.msig:
             return False
 
@@ -1799,11 +1639,6 @@ class LogicSig:
         Returns:
             str: program address
         """
-        warnings.warn(
-            "`address` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         return logic.address(self.logic)
 
     @staticmethod
@@ -1812,11 +1647,6 @@ class LogicSig:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`sign_program` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         private_key = base64.b64decode(private_key)
         signing_key = SigningKey(private_key[: constants.key_len_bytes])
         to_sign = constants.logic_prefix + program
@@ -1829,11 +1659,6 @@ class LogicSig:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`single_sig_multisig` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         index = -1
         public_key = base64.b64decode(bytes(private_key, "utf-8"))
         public_key = public_key[constants.key_len_bytes :]
@@ -1863,11 +1688,6 @@ class LogicSig:
             InvalidSecretKeyError: if no matching private key in multisig\
                 object
         """
-        warnings.warn(
-            "`sign` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         if not multisig:
             self.sig = LogicSig.sign_program(self.logic, private_key)
         else:
@@ -1891,11 +1711,6 @@ class LogicSig:
             InvalidSecretKeyError: if no matching private key in multisig\
                 object
         """
-        warnings.warn(
-            "`append_to_multisig` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         if self.msig is None:
             raise error.InvalidSecretKeyError
         sig, index = LogicSig.single_sig_multisig(
@@ -1908,11 +1723,6 @@ class LogicSig:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`__eq__` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         if not isinstance(other, (LogicSig, future.transaction.LogicSig)):
             return False
         return (
@@ -1964,11 +1774,6 @@ class LogicSigTransaction:
                 the logic hash or the signature is valid against the sender\
                 address), false otherwise
         """
-        warnings.warn(
-            "`verify` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         public_key = encoding.decode_address(self.transaction.sender)
         return self.lsig.verify(public_key)
 
@@ -1977,11 +1782,6 @@ class LogicSigTransaction:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`dictify` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         od = OrderedDict()
         if self.lsig:
             od["lsig"] = self.lsig.dictify()
@@ -1994,11 +1794,6 @@ class LogicSigTransaction:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`undictify` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         lsig = None
         if "lsig" in d:
             lsig = LogicSig.undictify(d["lsig"])
@@ -2011,11 +1806,6 @@ class LogicSigTransaction:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`__eq__` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         if not isinstance(
             other,
             (LogicSigTransaction, future.transaction.LogicSigTransaction),
@@ -2138,11 +1928,6 @@ class TxGroup:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`dictify` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         od = OrderedDict()
         od["txlist"] = self.transactions
         return od
@@ -2153,11 +1938,6 @@ class TxGroup:
         NOTE: This method is deprecated:
         Please use the equivalent in `future.transaction` instead.
         """
-        warnings.warn(
-            "`undictify` is a part of an older `transaction` format that is being deprecated. "
-            "Please use the equivalent in `future.transaction` instead.",
-            DeprecationWarning,
-        )
         txg = TxGroup(d["txlist"])
         return txg
 
