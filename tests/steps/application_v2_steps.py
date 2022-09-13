@@ -2,7 +2,6 @@ import base64
 import json
 import re
 import time
-import secrets
 import pytest
 
 from algosdk import (
@@ -10,7 +9,6 @@ from algosdk import (
     atomic_transaction_composer,
     encoding,
     mnemonic,
-    constants,
 )
 from algosdk.abi.contract import NetworkInfo
 from algosdk.error import (
@@ -1253,6 +1251,8 @@ def check_all_boxes_by_indexer(
     ), f"Expected box names array does not match actual array {expected_box_names} != {actual_box_names}"
 
 
-@then("I sleep for {second_num} seconds for indexer to digest things down.")
-def sleep_for_indexer(context, second_num: int):
-    time.sleep(int(second_num))
+@then(
+    "I sleep for {millisecond_num} milliseconds for indexer to digest things down."
+)
+def sleep_for_indexer(context, millisecond_num):
+    time.sleep(int(millisecond_num) / 1000)
