@@ -1196,7 +1196,12 @@ def check_box_num_by_limit(context, from_client, limit, expected_num: str):
     'according to "{from_client}", the current application should have the following boxes "{box_names:MaybeString}".'
 )
 def check_all_boxes(context, from_client: str, box_names: str = None):
-    expected_box_names = split_and_process_app_args(box_names)
+    expected_box_names = []
+    if box_names:
+        expected_box_names = [
+            base64.b64decode(box_encoded)
+            for box_encoded in box_names.split(":")
+        ]
     if from_client == "algod":
         box_response = context.app_acl.application_boxes(
             context.current_application_id
@@ -1229,7 +1234,12 @@ def check_all_boxes(context, from_client: str, box_names: str = None):
 def check_all_boxes_by_indexer(
     context, limit, next_page: str = None, box_names: str = None
 ):
-    expected_box_names = split_and_process_app_args(box_names)
+    expected_box_names = []
+    if box_names:
+        expected_box_names = [
+            base64.b64decode(box_encoded)
+            for box_encoded in box_names.split(":")
+        ]
     limit_int = int(limit)
     next_page = next_page if next_page else ""
     box_response = context.app_icl.application_boxes(
