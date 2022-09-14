@@ -1156,7 +1156,7 @@ def check_box_contents(
                 context.current_application_id, box_name
             )
         else:
-            assert False, "expecting algod or indexer, get " + from_client
+            assert False, f"expecting algod or indexer, got: {from_client}"
 
         actual_name = box_response["name"]
         actual_value = box_response["value"]
