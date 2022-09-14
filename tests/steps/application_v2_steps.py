@@ -419,14 +419,19 @@ def remember_app_id(context):
     context.app_ids.append(app_id)
 
 
-def wait_for_algod_transaction_processing_to_complete():
+@then(
+    "I sleep for {millisecond_num} milliseconds for indexer to digest things down."
+)
+def wait_for_algod_transaction_processing_to_complete(
+    context=None, millisecond_num=500
+):
     """
     wait_for_algod_transaction_processing_to_complete is a Dev mode helper method that's a rough analog to `context.app_acl.status_after_block(last_round + 2)`.
      * <p>
-     * Since Dev mode produces blocks on a per transaction basis, it's possible algod generates a block _before_ the corresponding SDK call to wait for a block.  Without _any_ wait, it's possible the SDK looks for the transaction before algod completes processing.  So, the method performs a local sleep to simulate waiting for a block.
-
+     * Since Dev mode produces blocks on a per transaction basis, it's possible algod generates a block _before_ the corresponding SDK call to wait for a block.
+     * Without _any_ wait, it's possible the SDK looks for the transaction before algod completes processing.  So, the method performs a local sleep to simulate waiting for a block.
     """
-    time.sleep(0.5)
+    time.sleep(int(millisecond_num) / 1000)
 
 
 # TODO: this needs to be modified to use v2 only
@@ -1187,7 +1192,7 @@ def check_box_num_by_limit(context, from_client, limit, expected_num: str):
             context.current_application_id, limit=limit_int
         )
     else:
-        assert False, "expecting algod or indexer, get " + from_client
+        assert False, f"expecting algod or indexer, got: {from_client}"
 
     assert expected_num_int == len(
         box_response["boxes"]
@@ -1213,18 +1218,16 @@ def check_all_boxes(context, from_client: str, box_names: str = None):
             context.current_application_id
         )
     else:
-        assert False, "expecting algod or indexer, get " + from_client
+        assert False, f"expecting algod or indexer, got: {from_client}"
 
-    actual_box_names = []
-    for box in box_response["boxes"]:
-        box = box["name"]
-        decoded_box = base64.b64decode(box)
-        actual_box_names.append(decoded_box)
+    actual_box_names = [
+        base64.b64decode(box["name"]) for box in box_response["boxes"]
+    ]
 
     # Check that length of lists are equal, then check for set equality.
     assert len(expected_box_names) == len(
         actual_box_names
-    ), f"Expected box names array length does not match actual array length {(expected_box_names)} != {(actual_box_names)}"
+    ), f"Expected box names array length does not match actual array length {len(expected_box_names)} != {len(actual_box_names)}"
     assert set(expected_box_names) == set(
         actual_box_names
     ), f"Expected box names array does not match actual array {expected_box_names} != {actual_box_names}"
@@ -1248,23 +1251,14 @@ def check_all_boxes_by_indexer(
         context.current_application_id, limit=limit_int, next_page=next_page
     )
 
-    actual_box_names = []
-    for box in box_response["boxes"]:
-        box = box["name"]
-        decoded_box = base64.b64decode(box)
-        actual_box_names.append(decoded_box)
+    actual_box_names = [
+        base64.b64decode(box["name"]) for box in box_response["boxes"]
+    ]
 
     # Check that length of lists are equal, then check for set equality.
     assert len(expected_box_names) == len(
         actual_box_names
-    ), f"Expected box names array length does not match actual array length {(expected_box_names)} != {(actual_box_names)}"
+    ), f"Expected box names array length does not match actual array length {len(expected_box_names)} != {len(actual_box_names)}"
     assert set(expected_box_names) == set(
         actual_box_names
     ), f"Expected box names array does not match actual array {expected_box_names} != {actual_box_names}"
-
-
-@then(
-    "I sleep for {millisecond_num} milliseconds for indexer to digest things down."
-)
-def sleep_for_indexer(context, millisecond_num):
-    time.sleep(int(millisecond_num) / 1000)
