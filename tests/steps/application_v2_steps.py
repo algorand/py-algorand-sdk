@@ -2,9 +2,14 @@ import base64
 import json
 import re
 import time
-
 import pytest
-from algosdk import abi, atomic_transaction_composer, encoding, mnemonic
+
+from algosdk import (
+    abi,
+    atomic_transaction_composer,
+    encoding,
+    mnemonic,
+)
 from algosdk.abi.contract import NetworkInfo
 from algosdk.error import (
     ABITypeError,
@@ -12,9 +17,7 @@ from algosdk.error import (
 )
 from algosdk.future import transaction
 from behave import given, step, then, when
-from tests.steps.other_v2_steps import (
-    read_program,
-)
+from tests.steps.other_v2_steps import read_program
 
 
 def operation_string_to_enum(operation):
@@ -371,6 +374,7 @@ def build_app_txn_with_transient(
         boxes = split_and_process_boxes(boxes)
 
     sp = context.app_acl.suggested_params()
+
     context.app_transaction = transaction.ApplicationCallTxn(
         sender=context.transient_pk,
         sp=sp,
@@ -415,14 +419,19 @@ def remember_app_id(context):
     context.app_ids.append(app_id)
 
 
-def wait_for_algod_transaction_processing_to_complete():
+@then(
+    "I sleep for {millisecond_num} milliseconds for indexer to digest things down."
+)
+def wait_for_algod_transaction_processing_to_complete(
+    context=None, millisecond_num=500
+):
     """
     wait_for_algod_transaction_processing_to_complete is a Dev mode helper method that's a rough analog to `context.app_acl.status_after_block(last_round + 2)`.
      * <p>
-     * Since Dev mode produces blocks on a per transaction basis, it's possible algod generates a block _before_ the corresponding SDK call to wait for a block.  Without _any_ wait, it's possible the SDK looks for the transaction before algod completes processing.  So, the method performs a local sleep to simulate waiting for a block.
-
+     * Since Dev mode produces blocks on a per transaction basis, it's possible algod generates a block _before_ the corresponding SDK call to wait for a block.
+     * Without _any_ wait, it's possible the SDK looks for the transaction before algod completes processing.  So, the method performs a local sleep to simulate waiting for a block.
     """
-    time.sleep(0.5)
+    time.sleep(int(millisecond_num) / 1000)
 
 
 # TODO: this needs to be modified to use v2 only
@@ -1132,16 +1141,28 @@ def check_found_method_or_error(context, methodsig, error: str = None):
 
 
 @then(
-    'the contents of the box with name "{box_name}" in the current application should be "{box_value:MaybeString}". If there is an error it is "{error_string:MaybeString}".'
+    'according to "{from_client}", the contents of the box with name "{box_name}" in the current application should be "{box_value:MaybeString}". If there is an error it is "{error_string:MaybeString}".'
 )
 def check_box_contents(
-    context, box_name, box_value: str = None, error_string: str = None
+    context,
+    from_client,
+    box_name,
+    box_value: str = None,
+    error_string: str = None,
 ):
     try:
         box_name = split_and_process_app_args(box_name)[0]
-        box_response = context.app_acl.application_box_by_name(
-            context.current_application_id, box_name
-        )
+        if from_client == "algod":
+            box_response = context.app_acl.application_box_by_name(
+                context.current_application_id, box_name
+            )
+        elif from_client == "indexer":
+            box_response = context.app_icl.application_box_by_name(
+                context.current_application_id, box_name
+            )
+        else:
+            assert False, f"expecting algod or indexer, got: {from_client}"
+
         actual_name = box_response["name"]
         actual_value = box_response["value"]
         assert box_name == base64.b64decode(actual_name)
@@ -1157,23 +1178,87 @@ def check_box_contents(
 
 
 @then(
-    'the current application should have the following boxes "{box_names:MaybeString}".'
+    'according to "{from_client}", with {limit} being the parameter that limits results, the current application should have {expected_num} boxes.'
 )
-def check_all_boxes(context, box_names: str = None):
-    expected_box_names = split_and_process_app_args(box_names)
-    box_response = context.app_acl.application_boxes(
-        context.current_application_id
-    )
-    actual_box_names = []
-    for box in box_response["boxes"]:
-        box = box["name"]
-        decoded_box = base64.b64decode(box)
-        actual_box_names.append(decoded_box)
+def check_box_num_by_limit(context, from_client, limit, expected_num: str):
+    limit_int = int(limit)
+    expected_num_int = int(expected_num)
+    if from_client == "algod":
+        box_response = context.app_acl.application_boxes(
+            context.current_application_id, limit=limit_int
+        )
+    elif from_client == "indexer":
+        box_response = context.app_icl.application_boxes(
+            context.current_application_id, limit=limit_int
+        )
+    else:
+        assert False, f"expecting algod or indexer, got: {from_client}"
+
+    assert expected_num_int == len(
+        box_response["boxes"]
+    ), f"expected box num: {expected_num_int}, got {len(box_response['boxes'])}"
+
+
+@then(
+    'according to "{from_client}", the current application should have the following boxes "{box_names:MaybeString}".'
+)
+def check_all_boxes(context, from_client: str, box_names: str = None):
+    expected_box_names = []
+    if box_names:
+        expected_box_names = [
+            base64.b64decode(box_encoded)
+            for box_encoded in box_names.split(":")
+        ]
+    if from_client == "algod":
+        box_response = context.app_acl.application_boxes(
+            context.current_application_id
+        )
+    elif from_client == "indexer":
+        box_response = context.app_icl.application_boxes(
+            context.current_application_id
+        )
+    else:
+        assert False, f"expecting algod or indexer, got: {from_client}"
+
+    actual_box_names = [
+        base64.b64decode(box["name"]) for box in box_response["boxes"]
+    ]
 
     # Check that length of lists are equal, then check for set equality.
     assert len(expected_box_names) == len(
         actual_box_names
-    ), f"Expected box names array length does not match actual array length {(expected_box_names)} != {(box_response)}"
+    ), f"Expected box names array length does not match actual array length {len(expected_box_names)} != {len(actual_box_names)}"
+    assert set(expected_box_names) == set(
+        actual_box_names
+    ), f"Expected box names array does not match actual array {expected_box_names} != {actual_box_names}"
+
+
+@then(
+    'according to indexer, with {limit} being the parameter that limits results, and "{next_page:MaybeString}" being the parameter that sets the next result, the current application should have the following boxes "{box_names:MaybeString}".'
+)
+def check_all_boxes_by_indexer(
+    context, limit, next_page: str = None, box_names: str = None
+):
+    expected_box_names = []
+    if box_names:
+        expected_box_names = [
+            base64.b64decode(box_encoded)
+            for box_encoded in box_names.split(":")
+        ]
+    limit_int = int(limit)
+    next_page = next_page if next_page else ""
+    box_response = context.app_icl.application_boxes(
+        context.current_application_id, limit=limit_int, next_page=next_page
+    )
+
+    actual_box_names = [
+        base64.b64decode(box["name"]) for box in box_response["boxes"]
+    ]
+
+    # Check that length of lists are equal, then check for set equality.
+    assert len(expected_box_names) == len(
+        actual_box_names
+    ), f"Expected box names array length does not match actual array length {len(expected_box_names)} != {len(actual_box_names)}"
     assert set(expected_box_names) == set(
         actual_box_names
     ), f"Expected box names array does not match actual array {expected_box_names} != {actual_box_names}"
