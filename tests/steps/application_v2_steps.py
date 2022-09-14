@@ -1173,7 +1173,7 @@ def check_box_contents(
 
 
 @then(
-    'according to "{from_client}", by parameter max {limit}, the current application should have {expected_num} boxes.'
+    'according to "{from_client}", with {limit} being the parameter that limits results, the current application should have {expected_num} boxes.'
 )
 def check_box_num_by_limit(context, from_client, limit, expected_num: str):
     limit_int = int(limit)
@@ -1229,7 +1229,7 @@ def check_all_boxes(context, from_client: str, box_names: str = None):
 
 
 @then(
-    'according to indexer, by parameter max {limit} and next "{next_page:MaybeString}", the current application should have the following boxes "{box_names:MaybeString}".'
+    'according to indexer, with {limit} being the parameter that limits results, and "{next_page:MaybeString}" being the parameter that sets the next result, the current application should have the following boxes "{box_names:MaybeString}".'
 )
 def check_all_boxes_by_indexer(
     context, limit, next_page: str = None, box_names: str = None
