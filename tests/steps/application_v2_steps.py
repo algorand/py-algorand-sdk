@@ -1189,7 +1189,9 @@ def check_box_num_by_limit(context, from_client, limit, expected_num: str):
     else:
         assert False, "expecting algod or indexer, get " + from_client
 
-    assert expected_num_int == len(box_response["boxes"]), "expected box num"
+    assert expected_num_int == len(
+        box_response["boxes"]
+    ), f"expected box num: {expected_num_int}, got {len(box_response['boxes'])}"
 
 
 @then(
