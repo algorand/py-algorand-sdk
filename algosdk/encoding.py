@@ -1,8 +1,11 @@
 import base64
-import msgpack
+import warnings
 from collections import OrderedDict
+
+import msgpack
 from Cryptodome.Hash import SHA512
-from . import transaction, error, auction, constants, future
+
+from . import auction, constants, error, future, transaction
 
 
 def msgpack_encode(obj):
@@ -94,6 +97,9 @@ def future_msgpack_decode(enc):
 
 def msgpack_decode(enc):
     """
+    NOTE: This method is deprecated:
+    Please use `future_msgpack_decode` instead.
+
     Decode a msgpack encoded object from a string.
 
     Args:
@@ -103,6 +109,11 @@ def msgpack_decode(enc):
         Transaction, SignedTransaction, Multisig, Bid, or SignedBid:\
             decoded object
     """
+    warnings.warn(
+        "`msgpack_decode` is being deprecated. "
+        "Please use `future_msgpack_decode` instead.",
+        DeprecationWarning,
+    )
     decoded = enc
     if not isinstance(enc, dict):
         decoded = msgpack.unpackb(base64.b64decode(enc), raw=False)

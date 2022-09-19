@@ -1,19 +1,20 @@
 import base64
-import msgpack
 import binascii
+import warnings
 from collections import OrderedDict
-from . import account
-from . import constants
-from . import encoding
-from . import error
-from . import logic
-from . import future
-from nacl.signing import SigningKey, VerifyKey
+
+import msgpack
 from nacl.exceptions import BadSignatureError
+from nacl.signing import SigningKey, VerifyKey
+
+from . import account, constants, encoding, error, future, logic
 
 
 class Transaction:
     """
+    NOTE: This class is deprecated:
+    Please use the equivalent in `future.transaction` instead.
+
     Superclass for various transaction types.
     """
 
@@ -30,6 +31,11 @@ class Transaction:
         txn_type,
         rekey_to,
     ):
+        warnings.warn(
+            "`Transaction` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
+            DeprecationWarning,
+        )
         self.sender = sender
         self.fee = fee
         self.first_valid_round = first
@@ -52,6 +58,9 @@ class Transaction:
 
     def get_txid(self):
         """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+
         Get the transaction's ID.
 
         Returns:
@@ -65,6 +74,9 @@ class Transaction:
 
     def sign(self, private_key):
         """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+
         Sign the transaction with a private key.
 
         Args:
@@ -83,6 +95,9 @@ class Transaction:
 
     def raw_sign(self, private_key):
         """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+
         Sign the transaction.
 
         Args:
@@ -100,11 +115,19 @@ class Transaction:
         return sig
 
     def estimate_size(self):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         sk, _ = account.generate_account()
         stx = self.sign(sk)
         return len(base64.b64decode(encoding.msgpack_encode(stx)))
 
     def dictify(self):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         d = dict()
         if self.fee:
             d["fee"] = self.fee
@@ -129,6 +152,10 @@ class Transaction:
 
     @staticmethod
     def undictify(d):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         args = {
             "sender": encoding.encode_address(d["snd"]),
             "fee": d["fee"] if "fee" in d else 0,
@@ -166,6 +193,10 @@ class Transaction:
         return txn
 
     def __eq__(self, other):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         if not isinstance(
             other, (Transaction, future.transaction.Transaction)
         ):
@@ -187,6 +218,9 @@ class Transaction:
 
 class PaymentTxn(Transaction):
     """
+    NOTE: This class is deprecated:
+    Please use the equivalent in `future.transaction` instead.
+
     Represents a payment transaction.
 
     Args:
@@ -310,6 +344,9 @@ class PaymentTxn(Transaction):
 
 class KeyregTxn(Transaction):
     """
+    NOTE: This class is deprecated:
+    Please use the equivalent in `future.transaction` instead.
+
     Represents a key registration transaction.
 
     Args:
@@ -432,6 +469,9 @@ class KeyregTxn(Transaction):
 
 class AssetConfigTxn(Transaction):
     """
+    NOTE: This class is deprecated:
+    Please use the equivalent in `future.transaction` instead.
+
     Represents a transaction for asset creation, reconfiguration, or
     destruction.
 
@@ -709,6 +749,9 @@ class AssetConfigTxn(Transaction):
 
 class AssetFreezeTxn(Transaction):
     """
+    NOTE: This class is deprecated:
+    Please use the equivalent in `future.transaction` instead.
+
     Represents a transaction for freezing or unfreezing an account's asset
     holdings. Must be issued by the asset's freeze manager.
 
@@ -825,6 +868,9 @@ class AssetFreezeTxn(Transaction):
 
 class AssetTransferTxn(Transaction):
     """
+    NOTE: This class is deprecated:
+    Please use the equivalent in `future.transaction` instead.
+
     Represents a transaction for asset transfer.
     To begin accepting an asset, supply the same address as both sender and
     receiver, and set amount to 0.
@@ -977,6 +1023,9 @@ class AssetTransferTxn(Transaction):
 
 class SignedTransaction:
     """
+    NOTE: This class is deprecated:
+    Please use the equivalent in `future.transaction` instead.
+
     Represents a signed transaction.
 
     Args:
@@ -991,11 +1040,24 @@ class SignedTransaction:
     """
 
     def __init__(self, transaction, signature, authorizing_address=None):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
+        warnings.warn(
+            "`SignedTransaction` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
+            DeprecationWarning,
+        )
         self.signature = signature
         self.transaction = transaction
         self.authorizing_address = authorizing_address
 
     def dictify(self):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         od = OrderedDict()
         if self.signature:
             od["sig"] = base64.b64decode(self.signature)
@@ -1006,6 +1068,10 @@ class SignedTransaction:
 
     @staticmethod
     def undictify(d):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         sig = None
         if "sig" in d:
             sig = base64.b64encode(d["sig"]).decode()
@@ -1017,6 +1083,10 @@ class SignedTransaction:
         return stx
 
     def __eq__(self, other):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         if not isinstance(
             other, (SignedTransaction, future.transaction.SignedTransaction)
         ):
@@ -1030,6 +1100,9 @@ class SignedTransaction:
 
 class MultisigTransaction:
     """
+    NOTE: This class is deprecated:
+    Please use the equivalent in `future.transaction` instead.
+
     Represents a signed transaction.
 
     Args:
@@ -1042,11 +1115,23 @@ class MultisigTransaction:
     """
 
     def __init__(self, transaction, multisig):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
+        warnings.warn(
+            "`MultisigTransaction` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
+            DeprecationWarning,
+        )
         self.transaction = transaction
         self.multisig = multisig
 
     def sign(self, private_key):
         """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+
         Sign the multisig transaction.
 
         Args:
@@ -1076,6 +1161,10 @@ class MultisigTransaction:
         self.multisig.subsigs[index].signature = sig
 
     def dictify(self):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         od = OrderedDict()
         if self.multisig:
             od["msig"] = self.multisig.dictify()
@@ -1084,6 +1173,10 @@ class MultisigTransaction:
 
     @staticmethod
     def undictify(d):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         msig = None
         if "msig" in d:
             msig = Multisig.undictify(d["msig"])
@@ -1094,6 +1187,9 @@ class MultisigTransaction:
     @staticmethod
     def merge(part_stxs):
         """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+
         Merge partially signed multisig transactions.
 
         Args:
@@ -1133,6 +1229,10 @@ class MultisigTransaction:
         return msigstx
 
     def __eq__(self, other):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         if not isinstance(
             other,
             (MultisigTransaction, future.transaction.MultisigTransaction),
@@ -1146,6 +1246,9 @@ class MultisigTransaction:
 
 class Multisig:
     """
+    NOTE: This class is deprecated:
+    Please use the equivalent in `future.transaction` instead.
+
     Represents a multisig account and signatures.
 
     Args:
@@ -1160,6 +1263,15 @@ class Multisig:
     """
 
     def __init__(self, version, threshold, addresses):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
+        warnings.warn(
+            "`Multisig` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
+            DeprecationWarning,
+        )
         self.version = version
         self.threshold = threshold
         self.subsigs = []
@@ -1167,7 +1279,12 @@ class Multisig:
             self.subsigs.append(MultisigSubsig(encoding.decode_address(a)))
 
     def validate(self):
-        """Check if the multisig account is valid."""
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+
+        Check if the multisig account is valid.
+        """
         if not self.version == 1:
             raise error.UnknownMsigVersionError
         if (
@@ -1180,7 +1297,12 @@ class Multisig:
             raise error.MultisigAccountSizeError
 
     def address(self):
-        """Return the multisig account address."""
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+
+        Return the multisig account address.
+        """
         msig_bytes = (
             bytes(constants.msig_addr_prefix, "utf-8")
             + bytes([self.version])
@@ -1192,7 +1314,12 @@ class Multisig:
         return encoding.encode_address(addr)
 
     def verify(self, message):
-        """Verify that the multisig is valid for the message."""
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+
+        Verify that the multisig is valid for the message.
+        """
         try:
             self.validate()
         except (error.UnknownMsigVersionError, error.InvalidThresholdError):
@@ -1217,6 +1344,10 @@ class Multisig:
         return True
 
     def dictify(self):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         od = OrderedDict()
         od["subsig"] = [subsig.dictify() for subsig in self.subsigs]
         od["thr"] = self.threshold
@@ -1224,6 +1355,10 @@ class Multisig:
         return od
 
     def json_dictify(self):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         d = {
             "subsig": [subsig.json_dictify() for subsig in self.subsigs],
             "thr": self.threshold,
@@ -1233,12 +1368,20 @@ class Multisig:
 
     @staticmethod
     def undictify(d):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         subsigs = [MultisigSubsig.undictify(s) for s in d["subsig"]]
         msig = Multisig(d["v"], d["thr"], [])
         msig.subsigs = subsigs
         return msig
 
     def get_multisig_account(self):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         """Return a Multisig object without signatures."""
         msig = Multisig(self.version, self.threshold, self.get_public_keys())
         for s in msig.subsigs:
@@ -1246,11 +1389,19 @@ class Multisig:
         return msig
 
     def get_public_keys(self):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         """Return the base32 encoded addresses for the multisig account."""
         pks = [encoding.encode_address(s.public_key) for s in self.subsigs]
         return pks
 
     def __eq__(self, other):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         if not isinstance(other, (Multisig, future.transaction.Multisig)):
             return False
         return (
@@ -1262,16 +1413,32 @@ class Multisig:
 
 class MultisigSubsig:
     """
+    NOTE: This class is deprecated:
+    Please use the equivalent in `future.transaction` instead.
+
     Attributes:
         public_key (bytes)
         signature (bytes)
     """
 
     def __init__(self, public_key, signature=None):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
+        warnings.warn(
+            "`MultisigSubsig` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
+            DeprecationWarning,
+        )
         self.public_key = public_key
         self.signature = signature
 
     def dictify(self):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         od = OrderedDict()
         od["pk"] = self.public_key
         if self.signature:
@@ -1279,6 +1446,10 @@ class MultisigSubsig:
         return od
 
     def json_dictify(self):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         d = {"pk": base64.b64encode(self.public_key).decode()}
         if self.signature:
             d["s"] = base64.b64encode(self.signature).decode()
@@ -1286,6 +1457,10 @@ class MultisigSubsig:
 
     @staticmethod
     def undictify(d):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         sig = None
         if "s" in d:
             sig = d["s"]
@@ -1293,6 +1468,10 @@ class MultisigSubsig:
         return mss
 
     def __eq__(self, other):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         if not isinstance(
             other, (MultisigSubsig, future.transaction.MultisigSubsig)
         ):
@@ -1305,6 +1484,9 @@ class MultisigSubsig:
 
 class LogicSig:
     """
+    NOTE: This class is deprecated:
+    Please use the equivalent in `future.transaction` instead.
+
     Represents a logic signature.
 
     Arguments:
@@ -1319,6 +1501,15 @@ class LogicSig:
     """
 
     def __init__(self, program, args=None):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
+        warnings.warn(
+            "`LogicSig` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
+            DeprecationWarning,
+        )
         self._sanity_check_program(program)
         self.logic = program
         self.args = args
@@ -1328,6 +1519,9 @@ class LogicSig:
     @staticmethod
     def _sanity_check_program(program):
         """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+
         Performs heuristic program validation:
         check if passed in bytes are Algorand address, or they are B64 encoded, rather than Teal bytes
 
@@ -1368,6 +1562,10 @@ class LogicSig:
             )
 
     def dictify(self):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         od = OrderedDict()
         if self.args:
             od["arg"] = self.args
@@ -1380,6 +1578,10 @@ class LogicSig:
 
     @staticmethod
     def undictify(d):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         lsig = LogicSig(d["l"], d.get("arg", None))
         if "sig" in d:
             lsig.sig = base64.b64encode(d["sig"]).decode()
@@ -1389,6 +1591,9 @@ class LogicSig:
 
     def verify(self, public_key):
         """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+
         Verifies LogicSig against the transaction's sender address
 
         Args:
@@ -1425,6 +1630,9 @@ class LogicSig:
 
     def address(self):
         """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+
         Compute hash of the logic sig program (that is the same as escrow
         account address) as string address
 
@@ -1435,6 +1643,10 @@ class LogicSig:
 
     @staticmethod
     def sign_program(program, private_key):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         private_key = base64.b64decode(private_key)
         signing_key = SigningKey(private_key[: constants.key_len_bytes])
         to_sign = constants.logic_prefix + program
@@ -1443,6 +1655,10 @@ class LogicSig:
 
     @staticmethod
     def single_sig_multisig(program, private_key, multisig):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         index = -1
         public_key = base64.b64decode(bytes(private_key, "utf-8"))
         public_key = public_key[constants.key_len_bytes :]
@@ -1458,6 +1674,9 @@ class LogicSig:
 
     def sign(self, private_key, multisig=None):
         """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+
         Creates signature (if no pk provided) or multi signature
 
         Args:
@@ -1469,7 +1688,6 @@ class LogicSig:
             InvalidSecretKeyError: if no matching private key in multisig\
                 object
         """
-
         if not multisig:
             self.sig = LogicSig.sign_program(self.logic, private_key)
         else:
@@ -1481,6 +1699,9 @@ class LogicSig:
 
     def append_to_multisig(self, private_key):
         """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+
         Appends a signature to multi signature
 
         Args:
@@ -1490,7 +1711,6 @@ class LogicSig:
             InvalidSecretKeyError: if no matching private key in multisig\
                 object
         """
-
         if self.msig is None:
             raise error.InvalidSecretKeyError
         sig, index = LogicSig.single_sig_multisig(
@@ -1499,6 +1719,10 @@ class LogicSig:
         self.msig.subsigs[index].signature = base64.b64decode(sig)
 
     def __eq__(self, other):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         if not isinstance(other, (LogicSig, future.transaction.LogicSig)):
             return False
         return (
@@ -1511,6 +1735,9 @@ class LogicSig:
 
 class LogicSigTransaction:
     """
+    NOTE: This class is deprecated:
+    Please use the equivalent in `future.transaction` instead.
+
     Represents a logic signed transaction.
 
     Arguments:
@@ -1523,11 +1750,23 @@ class LogicSigTransaction:
     """
 
     def __init__(self, transaction, lsig):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
+        warnings.warn(
+            "`LogicSigTransaction` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
+            DeprecationWarning,
+        )
         self.transaction = transaction
         self.lsig = lsig
 
     def verify(self):
         """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+
         Verify LogicSig against the transaction
 
         Returns:
@@ -1539,6 +1778,10 @@ class LogicSigTransaction:
         return self.lsig.verify(public_key)
 
     def dictify(self):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         od = OrderedDict()
         if self.lsig:
             od["lsig"] = self.lsig.dictify()
@@ -1547,6 +1790,10 @@ class LogicSigTransaction:
 
     @staticmethod
     def undictify(d):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         lsig = None
         if "lsig" in d:
             lsig = LogicSig.undictify(d["lsig"])
@@ -1555,6 +1802,10 @@ class LogicSigTransaction:
         return lstx
 
     def __eq__(self, other):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         if not isinstance(
             other,
             (LogicSigTransaction, future.transaction.LogicSigTransaction),
@@ -1567,6 +1818,9 @@ class LogicSigTransaction:
 
 def write_to_file(objs, path, overwrite=True):
     """
+    NOTE: This method is deprecated:
+    Please use the equivalent in `future.transaction` instead.
+
     Write signed or unsigned transactions to a file.
 
     Args:
@@ -1590,7 +1844,11 @@ def write_to_file(objs, path, overwrite=True):
     Returns:
         bool: true if the transactions have been written to the file
     """
-
+    warnings.warn(
+        "`write_to_file` is a part of an older `transaction` format that is being deprecated. "
+        "Please use the equivalent in `future.transaction` instead.",
+        DeprecationWarning,
+    )
     f = None
     if overwrite:
         f = open(path, "wb")
@@ -1613,6 +1871,9 @@ def write_to_file(objs, path, overwrite=True):
 
 def retrieve_from_file(path):
     """
+    NOTE: This method is deprecated:
+    Please use the equivalent in `future.transaction` instead.
+
     Retrieve encoded objects from a file.
 
     Args:
@@ -1621,7 +1882,11 @@ def retrieve_from_file(path):
     Returns:
         Object[]: list of objects
     """
-
+    warnings.warn(
+        "`retrieve_from_file` is a part of an older `transaction` format that is being deprecated. "
+        "Please use the equivalent in `future.transaction` instead.",
+        DeprecationWarning,
+    )
     f = open(path, "rb")
     objs = []
     unp = msgpack.Unpacker(f, raw=False)
@@ -1632,7 +1897,21 @@ def retrieve_from_file(path):
 
 
 class TxGroup:
+    """
+    NOTE: This class is deprecated:
+    Please use the equivalent in `future.transaction` instead.
+    """
+
     def __init__(self, txns):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
+        warnings.warn(
+            "`TxGroup` is a part of an older `transaction` format that is being deprecated. "
+            "Please use the equivalent in `future.transaction` instead.",
+            DeprecationWarning,
+        )
         assert isinstance(txns, list)
         """
         Transactions specifies a list of transactions that must appear
@@ -1645,18 +1924,29 @@ class TxGroup:
         self.transactions = txns
 
     def dictify(self):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         od = OrderedDict()
         od["txlist"] = self.transactions
         return od
 
     @staticmethod
     def undictify(d):
+        """
+        NOTE: This method is deprecated:
+        Please use the equivalent in `future.transaction` instead.
+        """
         txg = TxGroup(d["txlist"])
         return txg
 
 
 def calculate_group_id(txns):
     """
+    NOTE: This method is deprecated:
+    Please use the equivalent in `future.transaction` instead.
+
     Calculate group id for a given list of unsigned transactions
 
     Args:
@@ -1665,6 +1955,11 @@ def calculate_group_id(txns):
     Returns:
         bytes: checksum value representing the group id
     """
+    warnings.warn(
+        "`calculate_group_id` is a part of an older `transaction` format that is being deprecated. "
+        "Please use the equivalent in `future.transaction` instead.",
+        DeprecationWarning,
+    )
     if len(txns) > constants.tx_group_limit:
         raise error.TransactionGroupSizeError
     txids = []
@@ -1683,6 +1978,9 @@ def calculate_group_id(txns):
 
 def assign_group_id(txns, address=None):
     """
+    NOTE: This method is deprecated:
+    Please use the equivalent in `future.transaction` instead.
+
     Assign group id to a given list of unsigned transactions.
 
     Args:
@@ -1693,6 +1991,11 @@ def assign_group_id(txns, address=None):
     Returns:
         txns (list): list of unsigned transactions with group property set
     """
+    warnings.warn(
+        "`assign_group_id` is a part of an older `transaction` format that is being deprecated. "
+        "Please use the equivalent in `future.transaction` instead.",
+        DeprecationWarning,
+    )
     if len(txns) > constants.tx_group_limit:
         raise error.TransactionGroupSizeError
     gid = calculate_group_id(txns)
