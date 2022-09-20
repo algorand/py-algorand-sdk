@@ -134,7 +134,7 @@ def wait_for_transaction_processing_to_complete_in_dev_mode(
 @then(
     "I sleep for {millisecond_num} milliseconds for indexer to digest things down."
 )
-def wait_for_indexer_in_dev_mode(millisecond_num):
+def wait_for_indexer_in_dev_mode(context, millisecond_num):
     wait_for_transaction_processing_to_complete_in_dev_mode(
         int(millisecond_num)
     )
