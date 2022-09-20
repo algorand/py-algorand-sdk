@@ -127,7 +127,7 @@ def wait_for_transaction_processing_to_complete_in_dev_mode(
      * Since Dev mode produces blocks on a per transaction basis, it's possible algod generates a block _before_ the corresponding SDK call to wait for a block.
      * Without _any_ wait, it's possible the SDK looks for the transaction before algod completes processing. The analogous problem may also exist in indexer. So, the method performs a local sleep to simulate waiting for a block.
     """
-    time.sleep(int(millisecond_num) / 1000)
+    time.sleep(millisecond_num / 1000)
 
 
 # Dev mode helper step
@@ -135,7 +135,9 @@ def wait_for_transaction_processing_to_complete_in_dev_mode(
     "I sleep for {millisecond_num} milliseconds for indexer to digest things down."
 )
 def wait_for_indexer_in_dev_mode(millisecond_num):
-    wait_for_transaction_processing_to_complete_in_dev_mode(millisecond_num)
+    wait_for_transaction_processing_to_complete_in_dev_mode(
+        int(millisecond_num)
+    )
 
 
 @step(
