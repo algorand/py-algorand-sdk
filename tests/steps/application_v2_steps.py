@@ -45,7 +45,7 @@ def operation_string_to_enum(operation):
 
 # Takes in a tuple where first element is the encoding and second element is value.
 # If there is only one element, then it is assumed to be an int.
-def process_app_args(sub_arg):
+def process_app_arg(sub_arg):
     if len(sub_arg) == 1:  # assume int
         return int(sub_arg[0])
     elif sub_arg[0] == "str":
@@ -65,7 +65,7 @@ def split_and_process_app_args(in_args):
     sub_args = [sub_arg.split(":") for sub_arg in split_args]
     app_args = []
     for sub_arg in sub_args:
-        app_args.append(process_app_args(sub_arg))
+        app_args.append(process_app_arg(sub_arg))
     return app_args
 
 
@@ -79,7 +79,7 @@ def split_and_process_boxes(box_str: str):
             app_id = int(token)
         except ValueError:
             sub_arg = token.split(":")
-            sub_arg = process_app_args(sub_arg)
+            sub_arg = process_app_arg(sub_arg)
             boxes.append((app_id, sub_arg))
     # Sanity check that input correctly alternates between int and str.
     assert len(boxes) == len(split_args) // 2
@@ -115,6 +115,27 @@ def composer_status_string_to_enum(status):
 
 def s512_256_uint64(witness):
     return int.from_bytes(encoding.checksum(witness)[:8], "big")
+
+
+# Dev mode helper functions
+def wait_for_transaction_processing_to_complete_in_dev_mode(
+    context=None, millisecond_num=500
+):
+    """
+    wait_for_transaction_processing_to_complete_in_dev_mode is a Dev mode helper method that waits for a transaction to be processed and serves as a rough analog to `context.app_acl.status_after_block(last_round + 2)`.
+     * <p>
+     * Since Dev mode produces blocks on a per transaction basis, it's possible algod generates a block _before_ the corresponding SDK call to wait for a block.
+     * Without _any_ wait, it's possible the SDK looks for the transaction before algod completes processing. The analogous problem may also exist in indexer. So, the method performs a local sleep to simulate waiting for a block.
+    """
+    time.sleep(int(millisecond_num) / 1000)
+
+
+# Dev mode helper step
+@then(
+    "I sleep for {millisecond_num} milliseconds for indexer to digest things down."
+)
+def wait_for_indexer_in_dev_mode():
+    wait_for_transaction_processing_to_complete_in_dev_mode()
 
 
 @step(
@@ -419,25 +440,10 @@ def remember_app_id(context):
     context.app_ids.append(app_id)
 
 
-@then(
-    "I sleep for {millisecond_num} milliseconds for indexer to digest things down."
-)
-def wait_for_algod_transaction_processing_to_complete(
-    context=None, millisecond_num=500
-):
-    """
-    wait_for_algod_transaction_processing_to_complete is a Dev mode helper method that's a rough analog to `context.app_acl.status_after_block(last_round + 2)`.
-     * <p>
-     * Since Dev mode produces blocks on a per transaction basis, it's possible algod generates a block _before_ the corresponding SDK call to wait for a block.
-     * Without _any_ wait, it's possible the SDK looks for the transaction before algod completes processing.  So, the method performs a local sleep to simulate waiting for a block.
-    """
-    time.sleep(int(millisecond_num) / 1000)
-
-
 # TODO: this needs to be modified to use v2 only
 @step("I wait for the transaction to be confirmed.")
 def wait_for_app_txn_confirm(context):
-    wait_for_algod_transaction_processing_to_complete()
+    wait_for_transaction_processing_to_complete_in_dev_mode()
     if hasattr(context, "acl"):
         # TODO: get rid of this branch of logic when v1 fully deprecated
         assert "type" in context.acl.transaction_info(
