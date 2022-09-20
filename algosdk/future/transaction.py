@@ -1,5 +1,6 @@
 import base64
 import binascii
+import warnings
 import msgpack
 from enum import IntEnum
 from typing import List, Union
@@ -270,6 +271,13 @@ class Transaction:
     def __eq__(self, other):
         if not isinstance(other, (Transaction, transaction.Transaction)):
             return False
+        if isinstance(other, transaction.Transaction):
+            warnings.warn(
+                "You are trying to check equality of an older `transaction` "
+                " format that is being deprecated. "
+                "Please use the v2 equivalent in `future.transaction` instead.",
+                DeprecationWarning,
+            )
         return (
             self.sender == other.sender
             and self.fee == other.fee

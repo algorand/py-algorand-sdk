@@ -1,14 +1,13 @@
-from urllib.request import Request, urlopen
-from urllib import parse
-import urllib.error
-import json
 import base64
+import json
+import urllib.error
+import warnings
+from urllib import parse
+from urllib.request import Request, urlopen
+
 import msgpack
-from . import error
-from . import encoding
-from . import constants
-from . import transaction
-from . import future
+
+from . import constants, encoding, error, future
 from .v2client.algod import _specify_round_string
 
 api_version_path_prefix = "/v1"
@@ -16,6 +15,10 @@ api_version_path_prefix = "/v1"
 
 class AlgodClient:
     """
+    NOTE: This class is deprecated:
+    v1 algod APIs are deprecated.
+    Please use the v2 equivalent in `v2client.algod` instead.
+
     Client class for kmd. Handles all algod requests.
 
     Args:
@@ -30,6 +33,11 @@ class AlgodClient:
     """
 
     def __init__(self, algod_token, algod_address, headers=None):
+        warnings.warn(
+            "`AlgodClient` is a part of v1 algod APIs that is deprecated. "
+            "Please use the v2 equivalent in `v2client.algod` instead.",
+            DeprecationWarning,
+        )
         self.algod_token = algod_token
         self.algod_address = algod_address
         self.headers = headers
