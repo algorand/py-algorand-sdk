@@ -119,7 +119,7 @@ def s512_256_uint64(witness):
 
 # Dev mode helper functions
 def wait_for_transaction_processing_to_complete_in_dev_mode(
-    context=None, millisecond_num=500
+    millisecond_num=500,
 ):
     """
     wait_for_transaction_processing_to_complete_in_dev_mode is a Dev mode helper method that waits for a transaction to be processed and serves as a rough analog to `context.app_acl.status_after_block(last_round + 2)`.
@@ -134,8 +134,8 @@ def wait_for_transaction_processing_to_complete_in_dev_mode(
 @then(
     "I sleep for {millisecond_num} milliseconds for indexer to digest things down."
 )
-def wait_for_indexer_in_dev_mode():
-    wait_for_transaction_processing_to_complete_in_dev_mode()
+def wait_for_indexer_in_dev_mode(millisecond_num):
+    wait_for_transaction_processing_to_complete_in_dev_mode(millisecond_num)
 
 
 @step(
