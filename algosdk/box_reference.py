@@ -84,8 +84,8 @@ class BoxReference:
     @staticmethod
     def undictify(d):
         return BoxReference(
-            d["i"] if "i" in d else None,
-            d["n"] if "n" in d else None,
+            d["i"] if "i" in d else 0,
+            d["n"] if "n" in d else b"",
         )
 
     def __eq__(self, other):

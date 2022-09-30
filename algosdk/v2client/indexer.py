@@ -932,6 +932,8 @@ class IndexerClient:
         """
         Return the value of an application's box.
 
+        NOTE: box values are returned as base64-encoded strings.
+
         Args:
             application_id (int): application index
             box_name (bytes): The name (key) of the box.
@@ -948,6 +950,8 @@ class IndexerClient:
     ):
         """
         Return a list of all the application's boxes.
+
+        NOTE: box names are returned as base64-encoded strings.
 
         Args:
             application_id (int): The ID of the application to look up.
