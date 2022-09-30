@@ -132,6 +132,8 @@ class AlgodClient:
         """
         Return the value of an application's box.
 
+        NOTE: box values are returned as base64-encoded strings.
+
         Args:
             application_id (int): The ID of the application to look up.
             box_name (bytes): The name or key of the box.
@@ -145,6 +147,8 @@ class AlgodClient:
     def application_boxes(self, application_id: int, limit: int = 0, **kwargs):
         """
         Return a list of all the application's boxes.
+
+        NOTE: box names are returned as base64-encoded strings.
 
         Args:
             application_id (int): The ID of the application to look up.
