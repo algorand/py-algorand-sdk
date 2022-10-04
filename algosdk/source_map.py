@@ -247,6 +247,8 @@ class FunctionalSourceMapper:
     def target(self) -> str:
         return self.generate_target(self.chunks)
 
+    # TODO: clean up the API - probly don't need the following:
+
     @classmethod
     def generate_target(cls, chunks: Iterable[Chunk]) -> str:
         return "\n".join(map(lambda chunk: chunk.target_line, chunks))
