@@ -1,7 +1,7 @@
 import json
 from typing import List
 
-from algosdk.source_map import Chunk, FunctionalSourceMapper, TealSourceMap
+from algosdk.source_map import Chunk, FunctionalSourceMapper, SourceMap
 
 
 ###### FIXTURES ######
@@ -123,12 +123,14 @@ def test_chunk():
     ) == Chunk.simple(snum, source, tnum, target)
 
 
-def source_mapper_invariants(qsm):
-    assert len(qsm.chunks) == len(qsm.index)
-    assert all(idx < qsm.index[i + 1] for i, idx in enumerate(qsm.index[:-1]))
+def source_mapper_invariants(smapper):
+    assert len(smapper.chunks) == len(smapper.index)
     assert all(
-        qsm(idx[0], idx[1] - 1) == qsm.chunks[i]
-        for i, idx in enumerate(qsm.index)
+        idx < smapper.index[i + 1] for i, idx in enumerate(smapper.index[:-1])
+    )
+    assert all(
+        smapper(idx[0], idx[1] - 1) == smapper.chunks[i]
+        for i, idx in enumerate(smapper.index)
     )
 
 
@@ -149,7 +151,7 @@ def construct_sourcemap():
 
 def test_compose_sourcemap():
     quine_d = json.loads(quine_json)
-    tsm = TealSourceMap(quine_d)
+    tsm = SourceMap(quine_d)
     teal_source_mapper = FunctionalSourceMapper(
         Chunk.simple(line, f"quine line {line}", pc, f"PC[{pc}]")
         for pc, line in tsm.pc_to_line.items()

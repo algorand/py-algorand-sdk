@@ -49,7 +49,7 @@ class SourceMap:
 """
 
 
-class TealSourceMap:
+class SourceMap:
     """
     Decodes a VLQ-encoded source mapping between PC values and TEAL source code lines.
     Spec available here: https://sourcemaps.info/spec.html
