@@ -39,9 +39,9 @@ def parse_string(text):
 register_type(MaybeString=parse_string)
 
 
-@parse.with_pattern(r"true|false")
+@parse.with_pattern(r"true|false|")
 def parse_bool(value):
-    if value not in ("true", "false"):
+    if value not in ("true", "false", ""):
         raise ValueError("Unknown value for include_all: {}".format(value))
     return value == "true"
 
@@ -622,11 +622,14 @@ def parse_txns_by_addr(context, roundNum, length, idx, sender):
     if int(length) > 0:
         assert context.response["transactions"][int(idx)]["sender"] == sender
 
+@when('we make a Lookup Block call against round {block:d} and header "{headerOnly:MaybeBool}"')
+def lookup_block(context, block, headerOnly):
+    print("Header only = " + str(headerOnly))
+    context.response = context.icl.block_info(block=block, header_only=headerOnly)
 
-@when("we make a Lookup Block call against round {block}")
+@when("we make a Lookup Block call against round {block:d}")
 def lookup_block(context, block):
-    context.response = context.icl.block_info(int(block))
-
+    context.response = context.icl.block_info(block)
 
 @when("we make any LookupBlock call")
 def lookup_block_any(context):
@@ -1392,3 +1395,8 @@ def transaction_proof(context, round, txid, hashtype):
     context.response = context.acl.transaction_proof(
         round, txid, hashtype, "msgpack"
     )
+
+@when(u'we make a Lookup Block Hash call against round {round}')
+def get_block_hash(context, round):
+    context.response = context.acl.get_block_hash(round)
+
