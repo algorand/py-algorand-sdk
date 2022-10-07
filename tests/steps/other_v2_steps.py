@@ -622,14 +622,21 @@ def parse_txns_by_addr(context, roundNum, length, idx, sender):
     if int(length) > 0:
         assert context.response["transactions"][int(idx)]["sender"] == sender
 
-@when('we make a Lookup Block call against round {block:d} and header "{headerOnly:MaybeBool}"')
+
+@when(
+    'we make a Lookup Block call against round {block:d} and header "{headerOnly:MaybeBool}"'
+)
 def lookup_block(context, block, headerOnly):
     print("Header only = " + str(headerOnly))
-    context.response = context.icl.block_info(block=block, header_only=headerOnly)
+    context.response = context.icl.block_info(
+        block=block, header_only=headerOnly
+    )
+
 
 @when("we make a Lookup Block call against round {block:d}")
 def lookup_block(context, block):
     context.response = context.icl.block_info(block)
+
 
 @when("we make any LookupBlock call")
 def lookup_block_any(context):
@@ -1396,7 +1403,7 @@ def transaction_proof(context, round, txid, hashtype):
         round, txid, hashtype, "msgpack"
     )
 
-@when(u'we make a Lookup Block Hash call against round {round}')
+
+@when("we make a Lookup Block Hash call against round {round}")
 def get_block_hash(context, round):
     context.response = context.acl.get_block_hash(round)
-
