@@ -52,7 +52,9 @@ quine_json = '{"version":3,"sources":[],"names":[],"mapping":";AAOA;;;;;;;;;;;;;
 ### An artificial compiler, to demonstrate composability and `FunctionalSourceMapper`
 
 
-def pre_compile(pre_teal: str) -> List[Chunk]:
+def example_pre_compile(pre_teal: str) -> List[Chunk]:
+    """Example revision source chunks generator"""
+
     def at_comment(line: str, idx: int) -> bool:
         return idx < len(line) - 1 and line[idx] == line[idx + 1] == "/"
 
@@ -135,32 +137,35 @@ def source_mapper_invariants(smapper):
 
 
 def construct_sourcemap():
-    quine_chunks = pre_compile(quine_preteal)
+    quine_chunks = example_pre_compile(quine_preteal)
     for chunk in quine_chunks:
         print(chunk.target_line)
 
-    quine_precompiled, qsm = FunctionalSourceMapper.construct(quine_chunks)
+    quine_precompiled, quine_sourcemapper = FunctionalSourceMapper.construct(
+        quine_chunks
+    )
 
     assert quine_teal == quine_precompiled
+    assert quine_chunks == quine_sourcemapper.chunks
 
-    assert quine_chunks == qsm.chunks
-
-    source_mapper_invariants(qsm)
-    return qsm
+    source_mapper_invariants(quine_sourcemapper)
+    return quine_sourcemapper
 
 
 def test_compose_sourcemap():
     quine_d = json.loads(quine_json)
-    tsm = SourceMap(quine_d)
-    teal_source_mapper = FunctionalSourceMapper(
-        Chunk.simple(line, f"quine line {line}", pc, f"PC[{pc}]")
-        for pc, line in tsm.pc_to_line.items()
-    )
-    source_mapper_invariants(teal_source_mapper)
+    pc_sourcemap = SourceMap(quine_d)
+    # teal_sourcemapper = FunctionalSourceMapper(
+    #     Chunk.simple(line, f"quine line {line}", pc, f"PC[{pc}]")
+    #     for pc, line in pc_sourcemap.pc_to_line.items()
+    # )
+    teal2pc_chunks = pc_sourcemap.get_chunks_with_source(quine_teal)
+    teal_sourcemapper = FunctionalSourceMapper(teal2pc_chunks)
+    source_mapper_invariants(teal_sourcemapper)
 
-    quine_source_mapper = construct_sourcemap()
-    product_source_mapper = teal_source_mapper * quine_source_mapper
-    source_mapper_invariants(product_source_mapper)
+    quine_sourcemapper = construct_sourcemap()
+    product_sourcemapper = teal_sourcemapper * quine_sourcemapper
+    source_mapper_invariants(product_sourcemapper)
 
-    assert teal_source_mapper.target() == product_source_mapper.target()
-    assert len(teal_source_mapper.chunks) == len(product_source_mapper.chunks)
+    assert teal_sourcemapper.target() == product_sourcemapper.target()
+    assert len(teal_sourcemapper.chunks) == len(product_sourcemapper.chunks)

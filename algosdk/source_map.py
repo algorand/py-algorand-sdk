@@ -89,11 +89,22 @@ class SourceMap:
             self.line_to_pc[last_line].append(index)
             self.pc_to_line[index] = last_line
 
-    def get_line_for_pc(self, pc: int) -> int:
+    def get_line_for_pc(self, pc: int) -> Optional[int]:
         return self.pc_to_line.get(pc, None)
 
-    def get_pcs_for_line(self, line: int) -> List[int]:
+    def get_pcs_for_line(self, line: int) -> Optional[List[int]]:
         return self.line_to_pc.get(line, None)
+
+    def get_chunks_with_source(self, teal: str) -> List["Chunk"]:
+        lines = teal.split("\n")
+        assert max(self.pc_to_line.values()) < len(
+            lines
+        ), f"teal had {len(lines)} lines which can't accommodate the biggest expected line number {max(self.pc_to_line.values())}"
+
+        return [
+            Chunk.simple(line, lines[line], pc, f"PC[{pc}]")
+            for pc, line in self.pc_to_line.items()
+        ]
 
 
 def _decode_int_value(value: str) -> int:
