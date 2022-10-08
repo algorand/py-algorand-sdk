@@ -1,5 +1,5 @@
 import bisect
-from typing import Dict, Any, List, Optional, Iterable, Tuple
+from typing import cast, Dict, Any, List, Optional, Iterable, Tuple
 
 from algosdk.error import SourceMapVersionError
 
@@ -126,12 +126,13 @@ for i, b in enumerate(_b64chars):
 shiftsize, flag, mask = 5, 1 << 5, (1 << 5) - 1
 
 
-def _base64vlq_decode(vlqval: str) -> Tuple:
+def _base64vlq_decode(vlqval: str) -> List[int]:
     """Decode Base64 VLQ value"""
     results = []
     shift = value = 0
     # use byte values and a table to go from base64 characters to integers
     for v in map(_b64table.__getitem__, vlqval.encode("ascii")):
+        v = cast(int, v)
         value += (v & mask) << shift
         if v & flag:
             shift += shiftsize
