@@ -119,7 +119,7 @@ Source taken from: https://gist.github.com/mjpieters/86b0d152bb51d5f5979346d1100
 """
 
 _b64chars = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-_b64table = [None] * (max(_b64chars) + 1)
+_b64table = [-1] * (max(_b64chars) + 1)
 for i, b in enumerate(_b64chars):
     _b64table[b] = i
 
@@ -141,6 +141,21 @@ def _base64vlq_decode(vlqval: str) -> List[int]:
         results.append((value >> 1) * (-1 if value & 1 else 1))
         shift = value = 0
     return results
+
+
+def _base64vlq_encode(*values: int) -> str:
+    """Encode integers to a VLQ value"""
+    results = []
+    add = results.append
+    for v in values:
+        # add sign bit
+        v = (abs(v) << 1) | int(v < 0)
+        while True:
+            toencode, v = v & mask, v >> shiftsize
+            add(toencode | (v and flag))
+            if not v:
+                break
+    return bytes(map(_b64chars.__getitem__, results)).decode()
 
 
 from dataclasses import dataclass
@@ -194,23 +209,45 @@ class FunctionalSourceMapper:
     Callable object mapping target back to original source
     """
 
-    def __init__(self, chunks: Iterable[Chunk]):
-        self.chunks = list(chunks)
-        self.index = [
+    def __init__(self, indexer: List[Tuple[int, int]], chunks: List[Chunk]):
+        self.index = indexer
+        self.chunks = chunks
+        # self.index = [
+        #     (line, chunk.source_col_bounds[1])
+        #     for line, chunk in enumerate(self.chunks)
+        # ]
+
+        # # TODO: these assertions probly don't belong here
+
+        # assert len(self.chunks) == len(self.index)
+        # assert all(
+        #     idx < self.index[i + 1] for i, idx in enumerate(self.index[:-1])
+        # )
+        # assert all(
+        #     self(idx[0], idx[1] - 1) == self.chunks[i]
+        #     for i, idx in enumerate(self.index)
+        # )
+
+    @staticmethod
+    def from_chunks(chunks: Iterable[Chunk]) -> "FunctionalSourceMapper":
+        chunks = list(chunks)
+        indexer = [
             (line, chunk.source_col_bounds[1])
-            for line, chunk in enumerate(self.chunks)
+            for line, chunk in enumerate(chunks)
         ]
 
         # TODO: these assertions probly don't belong here
 
-        assert len(self.chunks) == len(self.index)
+        assert len(chunks) == len(indexer)
+        assert all(idx < indexer[i + 1] for i, idx in enumerate(indexer[:-1]))
+
+        fsm = FunctionalSourceMapper(indexer, chunks)
         assert all(
-            idx < self.index[i + 1] for i, idx in enumerate(self.index[:-1])
+            fsm(idx[0], idx[1] - 1) == chunks[i]
+            for i, idx in enumerate(indexer)
         )
-        assert all(
-            self(idx[0], idx[1] - 1) == self.chunks[i]
-            for i, idx in enumerate(self.index)
-        )
+
+        return fsm
 
     def __repr__(self) -> str:
         return repr(self.chunks)
@@ -254,7 +291,7 @@ class FunctionalSourceMapper:
                 )
             )
 
-        return FunctionalSourceMapper(chunks)
+        return FunctionalSourceMapper.from_chunks(chunks)
 
     def target(self) -> str:
         return self.generate_target(self.chunks)
@@ -271,4 +308,4 @@ class FunctionalSourceMapper:
     ) -> Tuple[str, "FunctionalSourceMapper"]:
         return FunctionalSourceMapper.generate_target(
             chunks
-        ), FunctionalSourceMapper(chunks)
+        ), FunctionalSourceMapper.from_chunks(chunks)
