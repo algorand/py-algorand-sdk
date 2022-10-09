@@ -410,6 +410,16 @@ class SourceMapping:
                 "Invalid source mapping; name entry without source location info"
             )
 
+    def __lt__(self, other: "SourceMapping") -> bool:
+        assert isinstance(
+            other, type(self)
+        ), f"received incomparable {type(other)}"
+
+        return (self.line, self.column) < (other.line, other.column)
+
+    def __ge__(self, other: "SourceMapping") -> bool:
+        return not self < other
+
     def location(self, source=False) -> Tuple[str, int, int]:
         return (
             (
@@ -475,6 +485,17 @@ class MJPSourceMap:
     source_files: Optional[List[str]] = None
     source_files_lines: Optional[List[List[str]]] = None
 
+    def __post_init__(self):
+        entries = list(self.entries.values())
+        for i, entry in enumerate(entries):
+            if i + 1 >= len(entries):
+                return
+
+            if entry >= entries[i + 1]:
+                raise TypeError(
+                    f"Invalid source map as entries aren't properly ordered: entries[{i}] = {entry} >= entries[{i+1}] = {entries[i + 1]}"
+                )
+
     def __repr__(self) -> str:
         parts = []
         if self.file is not None:
@@ -491,6 +512,7 @@ class MJPSourceMap:
         sources: List[str] = [],
         source_files: Optional[List[str]] = None,
         target: Optional[str] = None,
+        add_right_bounds: bool = True,
     ) -> "MJPSourceMap":
         # TODO: the following mypy errors goes away with the dataclass
         if smap["version"] != 3:
@@ -547,7 +569,7 @@ class MJPSourceMap:
                 )
                 index[gline].append(gcol)
 
-        return cls(
+        sourcemap = cls(
             smap.get("file"),
             smap.get("sourceRoot"),
             entries,
@@ -556,6 +578,9 @@ class MJPSourceMap:
             source_files,
             sp_conts,
         )
+        if add_right_bounds:
+            sourcemap.add_right_bounds()
+        return sourcemap
 
     def add_right_bounds(self) -> None:
         entries = list(self.entries.values())
@@ -565,10 +590,12 @@ class MJPSourceMap:
 
             next_entry = entries[i + 1]
 
-            def less_than(lc, nlc):
+            def same_line_less_than(lc, nlc):
                 return (lc[0], lc[1]) == (nlc[0], nlc[1]) and lc[2] < nlc[2]
 
-            if not less_than(entry.location(), next_entry.location()):
+            if not same_line_less_than(
+                entry.location(), next_entry.location()
+            ):
                 continue
             entry.column_rbound = next_entry.column
             entry.target_extract = entry.extract_window(
@@ -580,7 +607,7 @@ class MJPSourceMap:
                     self.source_files,
                     self.source_files_lines,
                     next_entry.source,
-                    less_than(
+                    same_line_less_than(
                         entry.location(source=True),
                         next_entry.location(source=True),
                     ),

@@ -235,7 +235,7 @@ def test_i_need_coffee():
     coffee_mapper = FunctionalSourceMapper.from_map(coffee2js_d, source=coffee)
     coffee2js_j = JSONSourceMap(coffee2js_d)
     coffee2js_mjpsm = MJPSourceMap.from_json(
-        coffee2js_j, sources=[coffee], target=js
+        coffee2js_j, sources=[coffee], target=js, add_right_bounds=False
     )
     coffee2js_j_re_j = coffee2js_mjpsm.to_json()
     assert "sourcesContent" in coffee2js_j_re_j
@@ -250,7 +250,9 @@ def test_i_need_coffee():
     )
     quine2pc_j = JSONSourceMap(quine2pc_d)
     # TODO: make compatible with previous version
-    quine2pc_mjpsm = MJPSourceMap.from_json(quine2pc_j, sources=[quine_teal])
+    quine2pc_mjpsm = MJPSourceMap.from_json(
+        quine2pc_j, sources=[quine_teal], add_right_bounds=False
+    )
     quine2pc_j_re_j = quine2pc_mjpsm.to_json()
     assert "sourcesContent" in quine2pc_j_re_j
     assert "sourcesContent" not in coffee2js_j
@@ -269,10 +271,16 @@ def test_i_need_coffee():
     # COFFEE:
     coffee_entries = deepcopy(coffee2js_mjpsm.entries)
     coffee2js_mjpsm.add_right_bounds()
-    # assert quine_entries == quine2pc_mjpsm.entries
+    assert coffee_entries != coffee2js_mjpsm.entries
+    coffee2js_mjpsm2 = MJPSourceMap.from_json(
+        coffee2js_j, sources=[coffee], target=js
+    )
+    assert coffee2js_mjpsm.entries == coffee2js_mjpsm2.entries
 
     # QUINE:
     quine_entries = deepcopy(quine2pc_mjpsm.entries)
     quine2pc_mjpsm.add_right_bounds()
     # it didn't change anything B/C only infer rbounds from multiple entries on a single target line
     assert quine_entries == quine2pc_mjpsm.entries
+    quine2pc_mjpsm2 = MJPSourceMap.from_json(quine2pc_j, sources=[quine_teal])
+    assert quine2pc_mjpsm.entries == quine2pc_mjpsm2.entries
