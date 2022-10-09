@@ -1,10 +1,55 @@
 import bisect
-from typing import cast, Dict, Any, List, Optional, Iterable, Tuple
+from copy import deepcopy
+from dataclasses import dataclass
+from typing import (
+    Literal,
+    Mapping,
+    cast,
+    Dict,
+    Any,
+    List,
+    Optional,
+    Iterable,
+    Tuple,
+    TypedDict,
+)
 
 from algosdk.error import SourceMapVersionError
 
 
+# class SourceMapJSON(TypedDict, total=False):
+#     version: Literal[3]
+#     file: str
+#     sourceRoot: Optional[str]
+#     sources: List[str]
+#     sourcesContent: List[Optional[str]]
+#     names: List[str]
+#     mappings: str
+
+
+@dataclass(frozen=True)
+class SourceMapJSON:
+    version: Literal[3]
+    sources: List[str]
+    names: List[str]
+    mappings: str
+    file: Optional[str] = None
+    sourceRoot: Optional[str] = None
+    sourcesContent: Optional[List[Optional[str]]] = None
+
+
 """
+
+{
+"version" : 3,
+"file": "out.js",
+"sourceRoot": "",
+"sources": ["foo.js", "bar.js"],
+"sourcesContent": [null, null],
+"names": ["src", "maps", "are", "fun"],
+"mappings": "A,AAAB;;ABCDE;"
+}
+
 TODO: enable sequences of Chunk's to define a Revision 3 Source Map.
 e.g cf:
 * https://gist.github.com/mjpieters/86b0d152bb51d5f5979346d11005588b
@@ -107,7 +152,7 @@ class SourceMap:
         ]
 
 
-def _decode_int_value(value: str) -> int:
+def _decode_int_value(value: str) -> Optional[int]:
     # Mappings may have up to 5 segments:
     # Third segment represents the zero-based starting line in the original source represented.
     decoded_value = _base64vlq_decode(value)
@@ -209,24 +254,15 @@ class FunctionalSourceMapper:
     Callable object mapping target back to original source
     """
 
-    def __init__(self, indexer: List[Tuple[int, int]], chunks: List[Chunk]):
+    def __init__(
+        self,
+        indexer: List[Tuple[int, int]],
+        chunks: List[Chunk],
+        source_map: Optional[SourceMapJSON] = None,
+    ):
         self.index = indexer
         self.chunks = chunks
-        # self.index = [
-        #     (line, chunk.source_col_bounds[1])
-        #     for line, chunk in enumerate(self.chunks)
-        # ]
-
-        # # TODO: these assertions probly don't belong here
-
-        # assert len(self.chunks) == len(self.index)
-        # assert all(
-        #     idx < self.index[i + 1] for i, idx in enumerate(self.index[:-1])
-        # )
-        # assert all(
-        #     self(idx[0], idx[1] - 1) == self.chunks[i]
-        #     for i, idx in enumerate(self.index)
-        # )
+        self.source_map: Optional[SourceMapJSON] = source_map
 
     @staticmethod
     def from_chunks(chunks: Iterable[Chunk]) -> "FunctionalSourceMapper":
@@ -248,6 +284,17 @@ class FunctionalSourceMapper:
         )
 
         return fsm
+
+    @staticmethod
+    def from_map(
+        m: Mapping[str, Any], source: str, pop_mapping: bool = False
+    ) -> SourceMapJSON:
+        if pop_mapping:
+            m = {**m}
+            m.pop("mapping")
+        smj = SourceMapJSON(**m)
+
+        return smj
 
     def __repr__(self) -> str:
         return repr(self.chunks)
@@ -309,3 +356,212 @@ class FunctionalSourceMapper:
         return FunctionalSourceMapper.generate_target(
             chunks
         ), FunctionalSourceMapper.from_chunks(chunks)
+
+
+#### ---- ORIGINAL mjpieters CODE ---- ####
+
+"""Extract generated -> source mappings"""
+
+from collections import defaultdict
+from dataclasses import dataclass, field
+from functools import partial
+from itertools import count
+from typing import List, Literal, Mapping, Optional, Tuple, TypedDict, Union
+
+
+class autoindex(defaultdict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(partial(next, count()), *args, **kwargs)
+
+
+class JSONSourceMap(TypedDict, total=False):
+    version: Literal[3]
+    file: Optional[str]
+    sourceRoot: Optional[str]
+    sources: List[str]
+    sourcesContent: Optional[List[Optional[str]]]
+    names: List[str]
+    mappings: str
+
+
+@dataclass(frozen=True)
+class SourceMapping:
+    line: int
+    column: int
+    source: Optional[str] = None
+    source_line: Optional[int] = None
+    source_column: Optional[int] = None
+    name: Optional[str] = None
+    source_extract: Optional[str] = None
+    target_extract: Optional[str] = None
+    source_content: Optional[List[str]] = None
+
+    def __post_init__(self):
+        if self.source is not None and (
+            self.source_line is None or self.source_column is None
+        ):
+            raise TypeError(
+                "Invalid source mapping; missing line and column for source file"
+            )
+        if self.name is not None and self.source is None:
+            raise TypeError(
+                "Invalid source mapping; name entry without source location info"
+            )
+
+    @property
+    def content_line(self) -> Optional[str]:
+        try:
+            # self.source_content.splitlines()[self.source_line]  # type: ignore
+            self.source_content[self.source_line]  # type: ignore
+        except (TypeError, IndexError):
+            return None
+
+
+@dataclass(frozen=True)
+class MJPSourceMap:
+    file: Optional[str]
+    source_root: Optional[str]
+    entries: Mapping[Tuple[int, int], SourceMapping]
+    _index: List[Tuple[int, ...]] = field(default_factory=list)
+
+    def __repr__(self) -> str:
+        parts = []
+        if self.file is not None:
+            parts += [f"file={self.file!r}"]
+        if self.source_root is not None:
+            parts += [f"source_root={self.source_root!r}"]
+        parts += [f"len={len(self.entries)}"]
+        return f"<MJPSourceMap({', '.join(parts)})>"
+
+    @classmethod
+    def from_json(
+        cls,
+        smap: JSONSourceMap,
+        sources: List[str] = [],
+        source_files: Optional[List[str]] = None,
+        target: Optional[str] = None,
+    ) -> "MJPSourceMap":
+        # TODO: the following mypy errors goes away with the dataclass
+        if smap["version"] != 3:
+            raise ValueError("Only version 3 sourcemaps are supported")
+        entries, index = {}, []
+        spos = npos = sline = scol = 0
+        jsource_files = smap.get("sources")
+        if not (source_files or jsource_files):
+            source_files = ["unknown"]
+        elif not source_files:
+            source_files = jsource_files
+        assert source_files
+
+        names, contents = (
+            smap.get("names"),
+            smap.get("sourcesContent", sources),
+        )  # type: ignore
+        sp_conts = [c.splitlines() for c in contents]
+        tcont = target.splitlines() if target else None
+        for gline, vlqs in enumerate(smap["mappings"].split(";")):
+            index += [[]]
+            if not vlqs:
+                continue
+            gcol = 0
+            for gcd, *ref in map(_base64vlq_decode, vlqs.split(",")):
+                gcol += gcd
+                kwargs = {}
+                if len(ref) >= 3:
+                    sd, sld, scd, *namedelta = ref
+                    spos, sline, scol = spos + sd, sline + sld, scol + scd
+                    # scont = contents[spos] if len(contents) > spos else None  # type: ignore
+                    scont = sp_conts[spos] if len(sp_conts) > spos else None  # type: ignore
+                    # extract the referenced source till the end of the current line
+                    scont_extract = scont[sline][scol:] if scont else None
+                    tcont_extract = tcont[gline][gcol:] if tcont else None
+                    kwargs = {
+                        "source": source_files[spos]
+                        if spos < len(source_files)
+                        else None,
+                        "source_line": sline,
+                        "source_column": scol,
+                        "source_content": scont,
+                        "source_extract": scont_extract,
+                        "target_extract": tcont_extract,
+                    }
+                    if namedelta:
+                        npos += namedelta[0]
+                        kwargs["name"] = names[npos]
+                entries[gline, gcol] = SourceMapping(
+                    line=gline, column=gcol, **kwargs
+                )
+                index[gline].append(gcol)
+
+        return cls(
+            smap.get("file"),
+            smap.get("sourceRoot"),
+            entries,
+            [tuple(cs) for cs in index],
+        )
+
+    def to_json(self) -> JSONSourceMap:
+        content, mappings = [], []
+        sources, names = autoindex(), autoindex()
+        entries = self.entries
+        spos = sline = scol = npos = 0
+        for gline, cols in enumerate(self._index):
+            gcol = 0
+            mapping = []
+            for col in cols:
+                entry = entries[gline, col]
+                ds, gcol = [col - gcol], col
+
+                if entry.source is not None:
+                    assert entry.source_line is not None
+                    assert entry.source_column is not None
+                    ds += (
+                        sources[entry.source] - spos,
+                        entry.source_line - sline,
+                        entry.source_column - scol,
+                    )
+                    spos, sline, scol = (
+                        spos + ds[1],
+                        sline + ds[2],
+                        scol + ds[3],
+                    )
+                    if spos == len(content):
+                        c = entry.source_content
+                        content.append("\n".join(c) if c else None)
+                    if entry.name is not None:
+                        ds += (names[entry.name] - npos,)
+                        npos += ds[-1]
+                mapping.append(_base64vlq_encode(*ds))
+
+            mappings.append(",".join(mapping))
+
+        encoded = {
+            "version": 3,
+            "sources": [
+                s for s, _ in sorted(sources.items(), key=lambda si: si[1])
+            ],
+            "sourcesContent": content,
+            "names": [
+                n for n, _ in sorted(names.items(), key=lambda ni: ni[1])
+            ],
+            "mappings": ";".join(mappings),
+        }
+        if self.file is not None:
+            encoded["file"] = self.file
+        if self.source_root is not None:
+            encoded["sourceRoot"] = self.source_root
+        return encoded  # type: ignore
+
+    def __getitem__(self, idx: Union[int, Tuple[int, int]]):
+        try:
+            l, c = idx  # type: ignore
+        except TypeError:
+            l, c = idx, 0
+        try:
+            return self.entries[l, c]  # type: ignore
+        except KeyError:
+            # find the closest column
+            if not (cols := self._index[l]):  # type: ignore
+                raise IndexError(idx)
+            cidx = bisect.bisect(cols, c)
+            return self.entries[l, cols[cidx and cidx - 1]]  # type: ignore
