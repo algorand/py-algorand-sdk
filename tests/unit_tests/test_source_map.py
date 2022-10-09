@@ -1,3 +1,4 @@
+from copy import deepcopy
 import json
 from typing import List
 
@@ -228,6 +229,7 @@ def test_compose_sourcemap():
 
 
 def test_i_need_coffee():
+    # COFFEE:
     coffee2js_d = json.loads(coffee2js)
     # TODO: Do I still need FunctionalSourceMapper?
     coffee_mapper = FunctionalSourceMapper.from_map(coffee2js_d, source=coffee)
@@ -241,6 +243,7 @@ def test_i_need_coffee():
     assert coffee2js_j_re_j.pop("sourcesContent") == [coffee]
     assert coffee2js_j == coffee2js_j_re_j
 
+    # QUINE:
     quine2pc_d = json.loads(quine2pc)
     quine_mapper = FunctionalSourceMapper.from_map(
         quine2pc_d, source=coffee, pop_mapping=True
@@ -260,3 +263,16 @@ def test_i_need_coffee():
     assert ["unknown"] == quine2pc_j_re_j.pop("sources")
     assert [] == quine2pc_j.pop("sources")
     assert quine2pc_j == quine2pc_j_re_j
+
+    # Next, try and add right bounds
+
+    # COFFEE:
+    coffee_entries = deepcopy(coffee2js_mjpsm.entries)
+    coffee2js_mjpsm.add_right_bounds()
+    # assert quine_entries == quine2pc_mjpsm.entries
+
+    # QUINE:
+    quine_entries = deepcopy(quine2pc_mjpsm.entries)
+    quine2pc_mjpsm.add_right_bounds()
+    # it didn't change anything B/C only infer rbounds from multiple entries on a single target line
+    assert quine_entries == quine2pc_mjpsm.entries

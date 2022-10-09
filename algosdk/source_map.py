@@ -384,13 +384,15 @@ class JSONSourceMap(TypedDict, total=False):
     mappings: str
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class SourceMapping:
     line: int
     column: int
+    column_rbound: Optional[int] = None
     source: Optional[str] = None
     source_line: Optional[int] = None
     source_column: Optional[int] = None
+    source_column_rbound: Optional[int] = None
     name: Optional[str] = None
     source_extract: Optional[str] = None
     target_extract: Optional[str] = None
@@ -408,6 +410,17 @@ class SourceMapping:
                 "Invalid source mapping; name entry without source location info"
             )
 
+    def location(self, source=False) -> Tuple[str, int, int]:
+        return (
+            (
+                self.source if self.source else "",
+                self.source_line if self.source_line else -1,
+                self.source_column if self.source_column else -1,
+            )
+            if source
+            else ("", self.line, self.column)
+        )
+
     @property
     def content_line(self) -> Optional[str]:
         try:
@@ -416,6 +429,41 @@ class SourceMapping:
         except (TypeError, IndexError):
             return None
 
+    @classmethod
+    def extract_window(
+        cls,
+        source_lines: Optional[List[str]],
+        line: int,
+        column: int,
+        right_column: Optional[int],
+    ) -> Optional[str]:
+        return (
+            (
+                source_lines[line][column:right_column]
+                if right_column is not None
+                else source_lines[line][column:]
+            )
+            if source_lines
+            else None
+        )
+
+    def __str__(self) -> str:
+        def swindow(file, line, col, rcol, extract):
+            if file == "unknown":
+                file = None
+            if not rcol:
+                rcol = ""
+            if extract is None:
+                extract = "?"
+            return f"{file + '::' if file else ''}L{line}C{col}-{rcol}='{extract}'"
+
+        return (
+            f"{swindow(self.source, self.source_line, self.source_column, self.source_column_rbound, self.source_extract)} <- "
+            f"{swindow(None, self.line, self.column, self.column_rbound, self.target_extract)}"
+        )
+
+    __repr__ = __str__
+
 
 @dataclass(frozen=True)
 class MJPSourceMap:
@@ -423,6 +471,9 @@ class MJPSourceMap:
     source_root: Optional[str]
     entries: Mapping[Tuple[int, int], SourceMapping]
     _index: List[Tuple[int, ...]] = field(default_factory=list)
+    file_lines: Optional[List[str]] = None
+    source_files: Optional[List[str]] = None
+    source_files_lines: Optional[List[List[str]]] = None
 
     def __repr__(self) -> str:
         parts = []
@@ -457,8 +508,12 @@ class MJPSourceMap:
             smap.get("names"),
             smap.get("sourcesContent", sources),
         )  # type: ignore
-        sp_conts = [c.splitlines() for c in contents]
-        tcont = target.splitlines() if target else None
+
+        tcont, sp_conts = (
+            target.splitlines() if target else None,
+            [c.splitlines() for c in contents],
+        )
+
         for gline, vlqs in enumerate(smap["mappings"].split(";")):
             index += [[]]
             if not vlqs:
@@ -473,8 +528,7 @@ class MJPSourceMap:
                     # scont = contents[spos] if len(contents) > spos else None  # type: ignore
                     scont = sp_conts[spos] if len(sp_conts) > spos else None  # type: ignore
                     # extract the referenced source till the end of the current line
-                    scont_extract = scont[sline][scol:] if scont else None
-                    tcont_extract = tcont[gline][gcol:] if tcont else None
+                    extract = SourceMapping.extract_window
                     kwargs = {
                         "source": source_files[spos]
                         if spos < len(source_files)
@@ -482,8 +536,8 @@ class MJPSourceMap:
                         "source_line": sline,
                         "source_column": scol,
                         "source_content": scont,
-                        "source_extract": scont_extract,
-                        "target_extract": tcont_extract,
+                        "source_extract": extract(scont, sline, scol, None),
+                        "target_extract": extract(tcont, gline, gcol, None),
                     }
                     if namedelta:
                         npos += namedelta[0]
@@ -498,7 +552,52 @@ class MJPSourceMap:
             smap.get("sourceRoot"),
             entries,
             [tuple(cs) for cs in index],
+            tcont,
+            source_files,
+            sp_conts,
         )
+
+    def add_right_bounds(self) -> None:
+        entries = list(self.entries.values())
+        for i, entry in enumerate(entries):
+            if i + 1 >= len(entries):
+                continue
+
+            next_entry = entries[i + 1]
+
+            def less_than(lc, nlc):
+                return (lc[0], lc[1]) == (nlc[0], nlc[1]) and lc[2] < nlc[2]
+
+            if not less_than(entry.location(), next_entry.location()):
+                continue
+            entry.column_rbound = next_entry.column
+            entry.target_extract = entry.extract_window(
+                self.file_lines, entry.line, entry.column, entry.column_rbound
+            )
+
+            if not all(
+                [
+                    self.source_files,
+                    self.source_files_lines,
+                    next_entry.source,
+                    less_than(
+                        entry.location(source=True),
+                        next_entry.location(source=True),
+                    ),
+                ]
+            ):
+                continue
+            entry.source_column_rbound = next_entry.source_column
+            try:
+                fidx = self.source_files.index(next_entry.source)  # type: ignore
+            except ValueError:
+                continue
+            entry.source_extract = entry.extract_window(
+                self.source_files_lines[fidx],
+                entry.source_line,  # type: ignore
+                entry.source_column,  # type: ignore
+                next_entry.source_column,
+            )
 
     def to_json(self) -> JSONSourceMap:
         content, mappings = [], []
