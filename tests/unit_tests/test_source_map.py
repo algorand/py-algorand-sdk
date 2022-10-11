@@ -56,6 +56,7 @@ return"""
 quine2pc = '{"version":3,"sources":[],"names":[],"mapping":";AAOA;;;;;;;;;;;;;;;;;;;;;;;;;;;;AACA;AACA;;;AACA;;;AACA;AACA;;AACA;AACA;;;AACA;AACA;AACA;;AACA;;AACA;AACA;AACA","mappings":";AAOA;;;;;;;;;;;;;;;;;;;;;;;;;;;;AACA;AACA;;;AACA;;;AACA;AACA;;AACA;AACA;;;AACA;AACA;AACA;;AACA;;AACA;AACA;AACA"}'
 
 # coffee examples from https://github.com/firefox-devtools/devtools-examples/blob/main/sourcemaps-in-console/js
+# (license CC https://github.com/firefox-devtools/devtools-examples/blob/main/LICENSE)
 
 coffee = """person = document.getElementById('person')
 

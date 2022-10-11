@@ -200,6 +200,7 @@ def _base64vlq_encode(*values: int) -> str:
             add(toencode | (v and flag))
             if not v:
                 break
+    # TODO: latest version of gist avoids the decode() step
     return bytes(map(_b64chars.__getitem__, results)).decode()
 
 
@@ -251,6 +252,7 @@ class Chunk:
 
 class FunctionalSourceMapper:
     """
+    TODO: this is probly going away completely
     Callable object mapping target back to original source
     """
 
@@ -392,6 +394,7 @@ class SourceMapping:
     source: Optional[str] = None
     source_line: Optional[int] = None
     source_column: Optional[int] = None
+    source_line_end: Optional[int] = None
     source_column_rbound: Optional[int] = None
     name: Optional[str] = None
     source_extract: Optional[str] = None
