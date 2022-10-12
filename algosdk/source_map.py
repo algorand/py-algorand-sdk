@@ -1,16 +1,21 @@
 import bisect
-from dataclasses import dataclass
+from collections import defaultdict
+from dataclasses import dataclass, field
+from functools import partial
+from itertools import count
+
 from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
     Literal,
     Mapping,
-    cast,
-    Dict,
-    Any,
-    List,
     Optional,
-    Iterable,
     Tuple,
     TypedDict,
+    Union,
+    cast,
 )
 
 from algosdk.error import SourceMapVersionError
@@ -352,38 +357,23 @@ class FunctionalSourceMapper:
 
 """Extract generated -> source mappings"""
 
-from collections import defaultdict
-from dataclasses import dataclass, field
-from functools import partial
-from itertools import count
-from typing import List, Literal, Mapping, Optional, Tuple, TypedDict, Union
-
 
 class autoindex(defaultdict):
     def __init__(self, *args, **kwargs):
         super().__init__(partial(next, count()), *args, **kwargs)
 
 
-class JSONSourceMap(TypedDict, total=False):
-    version: Literal[3]
-    file: Optional[str]
-    sourceRoot: Optional[str]
-    sources: List[str]
-    sourcesContent: Optional[List[Optional[str]]]
-    names: List[str]
-    mappings: str
-
-
 @dataclass(frozen=False)
-class SourceMapping:
+class R3SourceMapping:
     line: int
+    # line_end: Optional[int] = None #### NOT PROVIDED (AND NOT CONFORMING WITH R3 SPEC) AS TARGETS ARE ASSUMED TO SPAN AT MOST ONE LINE ####
     column: int
-    column_rbound: Optional[int] = None
+    column_end: Optional[int] = None
     source: Optional[str] = None
     source_line: Optional[int] = None
     source_column: Optional[int] = None
     source_line_end: Optional[int] = None
-    source_column_rbound: Optional[int] = None
+    source_column_end: Optional[int] = None
     name: Optional[str] = None
     source_extract: Optional[str] = None
     target_extract: Optional[str] = None
@@ -401,14 +391,14 @@ class SourceMapping:
                 "Invalid source mapping; name entry without source location info"
             )
 
-    def __lt__(self, other: "SourceMapping") -> bool:
+    def __lt__(self, other: "R3SourceMapping") -> bool:
         assert isinstance(
             other, type(self)
         ), f"received incomparable {type(other)}"
 
         return (self.line, self.column) < (other.line, other.column)
 
-    def __ge__(self, other: "SourceMapping") -> bool:
+    def __ge__(self, other: "R3SourceMapping") -> bool:
         return not self < other
 
     def location(self, source=False) -> Tuple[str, int, int]:
@@ -459,11 +449,21 @@ class SourceMapping:
             return f"{file + '::' if file else ''}L{line}C{col}-{rcol}='{extract}'"
 
         return (
-            f"{swindow(self.source, self.source_line, self.source_column, self.source_column_rbound, self.source_extract)} <- "
-            f"{swindow(None, self.line, self.column, self.column_rbound, self.target_extract)}"
+            f"{swindow(self.source, self.source_line, self.source_column, self.source_column_end, self.source_extract)} <- "
+            f"{swindow(None, self.line, self.column, self.column_end, self.target_extract)}"
         )
 
     __repr__ = __str__
+
+
+class R3SourceMapJSON(TypedDict, total=False):
+    version: Literal[3]
+    file: Optional[str]
+    sourceRoot: Optional[str]
+    sources: List[str]
+    sourcesContent: Optional[List[Optional[str]]]
+    names: List[str]
+    mappings: str
 
 
 @dataclass(frozen=True)
@@ -475,7 +475,7 @@ class R3SourceMap:
 
     file: Optional[str]
     source_root: Optional[str]
-    entries: Mapping[Tuple[int, int], SourceMapping]
+    entries: Mapping[Tuple[int, int], R3SourceMapping]
     _index: List[Tuple[int, ...]] = field(default_factory=list)
     file_lines: Optional[List[str]] = None
     source_files: Optional[List[str]] = None
@@ -504,28 +504,44 @@ class R3SourceMap:
     @classmethod
     def from_json(
         cls,
-        smap: JSONSourceMap,
-        sources: List[str] = [],
-        source_files: Optional[List[str]] = None,
+        smap: R3SourceMapJSON,
+        sources_override: Optional[List[str]] = None,
+        sources_content_override: List[str] = [],
         target: Optional[str] = None,
         add_right_bounds: bool = True,
     ) -> "R3SourceMap":
+        """
+        NOTE about `*_if_missing` arguments
+        * sources_override - STRICTLY SPEAKING `sources` OUGHT NOT BE MISSING OR EMPTY in R3SourceMapJSON.
+            However, currently the POST v2/teal/compile endpoint populate this field with an empty list, as it is not provided the name of the
+            Teal file which is being compiled. In order comply with the R3 spec, this field is populated with ["unknown"] when either missing or empty
+            in the JSON and not supplied during construction.
+            An error will be raised when attempting to replace a nonempty R3SourceMapJSON.sources.
+        * sources_content_override - `sourcesContent` is optional and this provides a way at runtime to supply the actual source.
+            When provided, and the R3SourceMapJSON is either missing or empty, this will be substituted.
+            An error will be raised when attempting to replace a nonempty R3SourceMapJSON.sourcesContent.
+        """
         # TODO: the following mypy errors goes away with the dataclass
         if smap["version"] != 3:
-            raise ValueError("Only version 3 sourcemaps are supported")
+            raise ValueError("Only version 3 sourcemaps are supported ")
         entries, index = {}, []
         spos = npos = sline = scol = 0
-        jsource_files = smap.get("sources")
-        if not (source_files or jsource_files):
-            source_files = ["unknown"]
-        elif not source_files:
-            source_files = jsource_files
-        assert source_files
 
-        names, contents = (
-            smap.get("names"),
-            smap.get("sourcesContent", sources),
-        )  # type: ignore
+        sources = smap.get("sources")
+        if sources and sources_override:
+            raise AssertionError(
+                "ambiguous sources from JSON and method argument"
+            )
+        sources = sources or sources_override or ["unknown"]
+
+        contents = smap.get("sourcesContent")
+        if contents and sources_content_override:
+            raise AssertionError(
+                "ambiguous sourcesContent from JSON and method argument"
+            )
+        contents = contents or sources_content_override
+
+        names = smap.get("names")
 
         tcont, sp_conts = (
             target.splitlines() if target else None,
@@ -545,10 +561,10 @@ class R3SourceMap:
                     spos, sline, scol = spos + sd, sline + sld, scol + scd
                     scont = sp_conts[spos] if len(sp_conts) > spos else None  # type: ignore
                     # extract the referenced source till the end of the current line
-                    extract = SourceMapping.extract_window
+                    extract = R3SourceMapping.extract_window
                     kwargs = {
-                        "source": source_files[spos]
-                        if spos < len(source_files)
+                        "source": sources[spos]
+                        if spos < len(sources)
                         else None,
                         "source_line": sline,
                         "source_column": scol,
@@ -559,7 +575,7 @@ class R3SourceMap:
                     if namedelta:
                         npos += namedelta[0]
                         kwargs["name"] = names[npos]
-                entries[gline, gcol] = SourceMapping(
+                entries[gline, gcol] = R3SourceMapping(
                     line=gline, column=gcol, **kwargs
                 )
                 index[gline].append(gcol)
@@ -570,7 +586,7 @@ class R3SourceMap:
             entries,
             [tuple(cs) for cs in index],
             tcont,
-            source_files,
+            sources,
             sp_conts,
         )
         if add_right_bounds:
@@ -592,9 +608,9 @@ class R3SourceMap:
                 entry.location(), next_entry.location()
             ):
                 continue
-            entry.column_rbound = next_entry.column
+            entry.column_end = next_entry.column
             entry.target_extract = entry.extract_window(
-                self.file_lines, entry.line, entry.column, entry.column_rbound
+                self.file_lines, entry.line, entry.column, entry.column_end
             )
 
             if not all(
@@ -609,7 +625,7 @@ class R3SourceMap:
                 ]
             ):
                 continue
-            entry.source_column_rbound = next_entry.source_column
+            entry.source_column_end = next_entry.source_column
             try:
                 fidx = self.source_files.index(next_entry.source)  # type: ignore
             except ValueError:
@@ -621,7 +637,7 @@ class R3SourceMap:
                 next_entry.source_column,
             )
 
-    def to_json(self) -> JSONSourceMap:
+    def to_json(self) -> R3SourceMapJSON:
         content, mappings = [], []
         sources, names = autoindex(), autoindex()
         entries = self.entries
