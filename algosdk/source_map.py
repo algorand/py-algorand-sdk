@@ -476,7 +476,7 @@ class R3SourceMap:
     file: Optional[str]
     source_root: Optional[str]
     entries: Mapping[Tuple[int, int], R3SourceMapping]
-    _index: List[Tuple[int, ...]] = field(default_factory=list)
+    index: List[Tuple[int, ...]] = field(default_factory=list)
     file_lines: Optional[List[str]] = None
     source_files: Optional[List[str]] = None
     source_files_lines: Optional[List[List[str]]] = None
@@ -637,12 +637,12 @@ class R3SourceMap:
                 next_entry.source_column,
             )
 
-    def to_json(self) -> R3SourceMapJSON:
+    def to_json(self, with_contents: bool = False) -> R3SourceMapJSON:
         content, mappings = [], []
         sources, names = autoindex(), autoindex()
         entries = self.entries
         spos = sline = scol = npos = 0
-        for gline, cols in enumerate(self._index):
+        for gline, cols in enumerate(self.index):
             gcol = 0
             mapping = []
             for col in cols:
@@ -677,12 +677,13 @@ class R3SourceMap:
             "sources": [
                 s for s, _ in sorted(sources.items(), key=lambda si: si[1])
             ],
-            "sourcesContent": content,
             "names": [
                 n for n, _ in sorted(names.items(), key=lambda ni: ni[1])
             ],
             "mappings": ";".join(mappings),
         }
+        if with_contents:
+            encoded["sourcesContent"] = content
         if self.file is not None:
             encoded["file"] = self.file
         if self.source_root is not None:
@@ -700,7 +701,7 @@ class R3SourceMap:
             return self.entries[l, c]
         except KeyError:
             # find the closest column
-            if not (cols := self._index[l]):
+            if not (cols := self.index[l]):
                 raise IndexError(idx)
             cidx = bisect.bisect(cols, c)
             return self.entries[l, cols[cidx and cidx - 1]]

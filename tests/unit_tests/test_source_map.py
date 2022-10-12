@@ -242,7 +242,7 @@ def test_i_need_coffee():
         target=js,
         add_right_bounds=False,
     )
-    coffee2js_j_re_j = coffee2js_mjpsm.to_json()
+    coffee2js_j_re_j = coffee2js_mjpsm.to_json(with_contents=True)
     assert "sourcesContent" in coffee2js_j_re_j
     assert "sourcesContent" not in coffee2js_j
     assert coffee2js_j_re_j.pop("sourcesContent") == [coffee]
@@ -261,11 +261,9 @@ def test_i_need_coffee():
         add_right_bounds=False,
     )
     quine2pc_j_re_j = quine2pc_mjpsm.to_json()
-    assert "sourcesContent" in quine2pc_j_re_j
+    assert "sourcesContent" not in quine2pc_j_re_j
     assert "sourcesContent" not in coffee2js_j
 
-    # empty "sourcesContent" because "content" defines it and it is erroneously empty...
-    assert quine2pc_j_re_j.pop("sourcesContent") == [quine_teal]
     # remove deprecated "mapping"
     deprecated_mapping = quine2pc_j.pop("mapping")
     assert quine2pc_j_re_j["mappings"] == deprecated_mapping
