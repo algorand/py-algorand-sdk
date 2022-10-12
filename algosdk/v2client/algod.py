@@ -440,6 +440,16 @@ class AlgodClient:
         req = "/stateproofs/{}".format(round_num)
         return self.algod_request("GET", req, **kwargs)
 
+    def get_block_hash(self, round_num, **kwargs):
+        """
+        Get the block hash for the block on the given round.
+
+        Args:
+            round_num (int): The round in which the transaction appears.
+        """
+        req = "/blocks/{}/hash".format(round_num)
+        return self.algod_request("GET", req, **kwargs)
+
 
 def _specify_round_string(block, round_num):
     """
