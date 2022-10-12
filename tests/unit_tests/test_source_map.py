@@ -7,7 +7,7 @@ from algosdk.source_map import (
     FunctionalSourceMapper,
     SourceMap as TealSourceMap,
     JSONSourceMap,
-    MJPSourceMap,
+    R3SourceMap,
 )
 
 
@@ -215,6 +215,7 @@ def construct_sourcemap():
 
 
 def test_compose_sourcemap():
+    # TODO: this is probly going away
     quine2pc_d = json.loads(quine2pc)
     pc_sourcemap = TealSourceMap(quine2pc_d)
     teal2pc_chunks = pc_sourcemap.get_chunks_with_source(quine_teal)
@@ -235,7 +236,7 @@ def test_i_need_coffee():
     # TODO: Do I still need FunctionalSourceMapper?
     coffee_mapper = FunctionalSourceMapper.from_map(coffee2js_d, source=coffee)
     coffee2js_j = JSONSourceMap(coffee2js_d)
-    coffee2js_mjpsm = MJPSourceMap.from_json(
+    coffee2js_mjpsm = R3SourceMap.from_json(
         coffee2js_j, sources=[coffee], target=js, add_right_bounds=False
     )
     coffee2js_j_re_j = coffee2js_mjpsm.to_json()
@@ -251,7 +252,7 @@ def test_i_need_coffee():
     )
     quine2pc_j = JSONSourceMap(quine2pc_d)
     # TODO: make compatible with previous version
-    quine2pc_mjpsm = MJPSourceMap.from_json(
+    quine2pc_mjpsm = R3SourceMap.from_json(
         quine2pc_j, sources=[quine_teal], add_right_bounds=False
     )
     quine2pc_j_re_j = quine2pc_mjpsm.to_json()
@@ -273,7 +274,7 @@ def test_i_need_coffee():
     coffee_entries = deepcopy(coffee2js_mjpsm.entries)
     coffee2js_mjpsm.add_right_bounds()
     assert coffee_entries != coffee2js_mjpsm.entries
-    coffee2js_mjpsm2 = MJPSourceMap.from_json(
+    coffee2js_mjpsm2 = R3SourceMap.from_json(
         coffee2js_j, sources=[coffee], target=js
     )
     assert coffee2js_mjpsm.entries == coffee2js_mjpsm2.entries
@@ -283,5 +284,5 @@ def test_i_need_coffee():
     quine2pc_mjpsm.add_right_bounds()
     # it didn't change anything B/C only infer rbounds from multiple entries on a single target line
     assert quine_entries == quine2pc_mjpsm.entries
-    quine2pc_mjpsm2 = MJPSourceMap.from_json(quine2pc_j, sources=[quine_teal])
+    quine2pc_mjpsm2 = R3SourceMap.from_json(quine2pc_j, sources=[quine_teal])
     assert quine2pc_mjpsm.entries == quine2pc_mjpsm2.entries

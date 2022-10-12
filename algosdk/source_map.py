@@ -1,5 +1,4 @@
 import bisect
-from copy import deepcopy
 from dataclasses import dataclass
 from typing import (
     Literal,
@@ -15,16 +14,6 @@ from typing import (
 )
 
 from algosdk.error import SourceMapVersionError
-
-
-# class SourceMapJSON(TypedDict, total=False):
-#     version: Literal[3]
-#     file: str
-#     sourceRoot: Optional[str]
-#     sources: List[str]
-#     sourcesContent: List[Optional[str]]
-#     names: List[str]
-#     mappings: str
 
 
 @dataclass(frozen=True)
@@ -204,12 +193,11 @@ def _base64vlq_encode(*values: int) -> str:
     return bytes(map(_b64chars.__getitem__, results)).decode()
 
 
-from dataclasses import dataclass
-
-
 @dataclass(frozen=True)
 class Chunk:
-    """Practical data needed for a useful source map"""
+    """THIS IS DEPRECATED
+    Practical data needed for a useful source map
+    """
 
     source_line_number: int
     source_line: str
@@ -479,7 +467,12 @@ class SourceMapping:
 
 
 @dataclass(frozen=True)
-class MJPSourceMap:
+class R3SourceMap:
+    """
+    Modified from the original `SourceMap` available under MIT License here (as of Oct. 12, 2022): https://gist.github.com/mjpieters/86b0d152bb51d5f5979346d11005588b
+    `R3` is a nod to "Revision 3" of John Lenz's Source Map Proposal: https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit?hl=en_US&pli=1&pli=1
+    """
+
     file: Optional[str]
     source_root: Optional[str]
     entries: Mapping[Tuple[int, int], SourceMapping]
@@ -516,7 +509,7 @@ class MJPSourceMap:
         source_files: Optional[List[str]] = None,
         target: Optional[str] = None,
         add_right_bounds: bool = True,
-    ) -> "MJPSourceMap":
+    ) -> "R3SourceMap":
         # TODO: the following mypy errors goes away with the dataclass
         if smap["version"] != 3:
             raise ValueError("Only version 3 sourcemaps are supported")
@@ -550,7 +543,6 @@ class MJPSourceMap:
                 if len(ref) >= 3:
                     sd, sld, scd, *namedelta = ref
                     spos, sline, scol = spos + sd, sline + sld, scol + scd
-                    # scont = contents[spos] if len(contents) > spos else None  # type: ignore
                     scont = sp_conts[spos] if len(sp_conts) > spos else None  # type: ignore
                     # extract the referenced source till the end of the current line
                     extract = SourceMapping.extract_window
@@ -682,15 +674,17 @@ class MJPSourceMap:
         return encoded  # type: ignore
 
     def __getitem__(self, idx: Union[int, Tuple[int, int]]):
+        l: int
+        c: int
         try:
-            l, c = idx  # type: ignore
+            l, c = idx  # type: ignore   # The exception handler deals with the int case
         except TypeError:
-            l, c = idx, 0
+            l, c = idx, 0  # type: ignore   # yes, idx is guaranteed to be an int
         try:
-            return self.entries[l, c]  # type: ignore
+            return self.entries[l, c]
         except KeyError:
             # find the closest column
-            if not (cols := self._index[l]):  # type: ignore
+            if not (cols := self._index[l]):
                 raise IndexError(idx)
             cidx = bisect.bisect(cols, c)
-            return self.entries[l, cols[cidx and cidx - 1]]  # type: ignore
+            return self.entries[l, cols[cidx and cidx - 1]]
