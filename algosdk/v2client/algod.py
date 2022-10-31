@@ -146,7 +146,7 @@ class AlgodClient:
 
     def application_boxes(self, application_id: int, limit: int = 0, **kwargs):
         """
-        Return a list of all the application's boxes.
+        Given an application ID, return all Box names. No particular ordering is guaranteed. Request fails when client or server-side configured limits prevent returning all Box names.
 
         NOTE: box names are returned as base64-encoded strings.
 
