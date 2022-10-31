@@ -6,6 +6,7 @@
 @unit.applications.boxes
 @unit.atc_method_args
 @unit.atomic_transaction_composer
+@unit.blocksummary
 @unit.dryrun
 @unit.dryrun.trace.application
 @unit.feetest
@@ -17,6 +18,7 @@
 @unit.rekey
 @unit.responses
 @unit.responses.231
+@unit.responses.blocksummary
 @unit.responses.participationupdates
 @unit.responses.unlimited_assets
 @unit.sourcemap
