@@ -146,7 +146,7 @@ class AlgodClient:
 
     def application_boxes(self, application_id: int, limit: int = 0, **kwargs):
         """
-        Return a list of all the application's boxes.
+        Given an application ID, return all Box names. No particular ordering is guaranteed. Request fails when client or server-side configured limits prevent returning all Box names.
 
         NOTE: box names are returned as base64-encoded strings.
 
@@ -471,6 +471,16 @@ class AlgodClient:
             round_num (int): The round for which a state proof is desired.
         """
         req = "/stateproofs/{}".format(round_num)
+        return self.algod_request("GET", req, **kwargs)
+
+    def get_block_hash(self, round_num, **kwargs):
+        """
+        Get the block hash for the block on the given round.
+
+        Args:
+            round_num (int): The round in which the transaction appears.
+        """
+        req = "/blocks/{}/hash".format(round_num)
         return self.algod_request("GET", req, **kwargs)
 
 
