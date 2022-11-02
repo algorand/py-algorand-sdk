@@ -1,10 +1,10 @@
 import base64
 import json
-from urllib import parse
 import urllib.error
+from urllib import parse
 from urllib.request import Request, urlopen
 
-from .. import constants, encoding, error, future, logic, util
+from algosdk import constants, encoding, error, future, util
 
 api_version_path_prefix = "/v2"
 
@@ -125,6 +125,39 @@ class AlgodClient:
         """
         req = "/applications/" + str(application_id)
         return self.algod_request("GET", req, **kwargs)
+
+    def application_box_by_name(
+        self, application_id: int, box_name: bytes, **kwargs
+    ):
+        """
+        Return the value of an application's box.
+
+        NOTE: box values are returned as base64-encoded strings.
+
+        Args:
+            application_id (int): The ID of the application to look up.
+            box_name (bytes): The name or key of the box.
+        """
+        encoded_box = base64.b64encode(box_name).decode()
+        box_name_encoded = "b64:" + encoded_box
+        req = "/applications/" + str(application_id) + "/box"
+        params = {"name": box_name_encoded}
+        return self.algod_request("GET", req, params=params, **kwargs)
+
+    def application_boxes(self, application_id: int, limit: int = 0, **kwargs):
+        """
+        Given an application ID, return all Box names. No particular ordering is guaranteed. Request fails when client or server-side configured limits prevent returning all Box names.
+
+        NOTE: box names are returned as base64-encoded strings.
+
+        Args:
+            application_id (int): The ID of the application to look up.
+            limit (int, optional): Max number of box names to return.
+                If max is not set, or max == 0, returns all box-names up to the maximum configured by the algod server being queried.
+        """
+        req = "/applications/" + str(application_id) + "/boxes"
+        params = {"max": limit} if limit else {}
+        return self.algod_request("GET", req, params=params, **kwargs)
 
     def account_asset_info(self, address, asset_id, **kwargs):
         """

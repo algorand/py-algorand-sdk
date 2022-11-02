@@ -1,5 +1,22 @@
 # Changelog
 
+# v1.20.0
+
+## What's Changed
+### New Features
+* Boxes: Add support for Boxes by @algochoi in https://github.com/algorand/py-algorand-sdk/pull/348
+* `class StateSchema`'s method `undictify()` now returns a `StateSchema` object instead of a python `dict`
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v1.19.0...v1.20.0
+
+# v1.19.0
+
+## What's Changed
+### Enhancements
+* REST API: Add algod block hash endpoint, add indexer block header-only param. by @winder in https://github.com/algorand/py-algorand-sdk/pull/390
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v1.18.0...v1.19.0
+
 # v1.18.0
 ### Enhancements
 * Deprecation: Add deprecation warnings on v1 algod API and old transaction format by @algochoi in https://github.com/algorand/py-algorand-sdk/pull/381

@@ -1,11 +1,12 @@
 import base64
 import warnings
 from collections import OrderedDict
+from typing import Union
 
 import msgpack
 from Cryptodome.Hash import SHA512
 
-from . import auction, constants, error, future, transaction
+from algosdk import auction, constants, error, future, transaction
 
 
 def msgpack_encode(obj):
@@ -246,3 +247,17 @@ def checksum(data):
     chksum = SHA512.new(truncate="256")
     chksum.update(data)
     return chksum.digest()
+
+
+def encode_as_bytes(
+    e: Union[bytes, bytearray, str, int]
+) -> Union[bytes, bytearray]:
+    """Confirm or coerce element to bytes."""
+    if isinstance(e, (bytes, bytearray)):
+        return e
+    if isinstance(e, str):
+        return e.encode()
+    if isinstance(e, int):
+        # Uses 8 bytes, big endian to match TEAL's btoi
+        return e.to_bytes(8, "big")  # raises for negative or too big
+    raise TypeError("{} is not bytes, bytearray, str, or int".format(e))
