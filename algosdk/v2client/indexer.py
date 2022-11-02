@@ -211,20 +211,26 @@ class IndexerClient:
             query["include-all"] = include_all
         return self.indexer_request("GET", req, query, **kwargs)
 
-    def block_info(self, block=None, round_num=None, **kwargs):
+    def block_info(
+        self, block=None, round_num=None, header_only=None, **kwargs
+    ):
         """
         Get the block for the given round.
 
         Args:
             block (int, optional): block number
             round_num (int, optional): alias for block; specify one of these
+            header_only (bool, optional):
         """
-        req = "/blocks/"
         if block is None and round_num is None:
             raise error.UnderspecifiedRoundError
         req = "/blocks/" + _specify_round_string(block, round_num)
 
-        return self.indexer_request("GET", req, **kwargs)
+        query = dict()
+        if header_only:
+            query["header-only"] = "true"
+
+        return self.indexer_request("GET", req, query, **kwargs)
 
     def account_info(
         self,
