@@ -1,5 +1,11 @@
 # Changelog
 
+# BOX-STORAGE-VERSION TBD
+
+## Changed
+
+- `class StateSchema`'s method `undictify()` now returns a `StateSchema` object instead of a python `dict`
+
 # v1.18.0
 ### Enhancements
 * Deprecation: Add deprecation warnings on v1 algod API and old transaction format by @algochoi in https://github.com/algorand/py-algorand-sdk/pull/381
