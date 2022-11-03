@@ -932,6 +932,48 @@ class IndexerClient:
 
         return self.indexer_request("GET", req, query, **kwargs)
 
+    def application_box_by_name(
+        self, application_id: int, box_name: bytes, **kwargs
+    ):
+        """
+        Return the value of an application's box.
+
+        NOTE: box values are returned as base64-encoded strings.
+
+        Args:
+            application_id (int): application index
+            box_name (bytes): The name (key) of the box.
+        """
+        encoded_box = base64.b64encode(box_name).decode()
+        box_name_encoded = "b64:" + encoded_box
+        req = "/applications/" + str(application_id) + "/box"
+        params = {"name": box_name_encoded}
+
+        return self.indexer_request("GET", req, params, **kwargs)
+
+    def application_boxes(
+        self, application_id: int, limit: int = 0, next_page=None, **kwargs
+    ):
+        """
+        Return a list of all the application's boxes.
+
+        NOTE: box names are returned as base64-encoded strings.
+
+        Args:
+            application_id (int): The ID of the application to look up.
+            limit (int, optional): Max number of box names to return.
+                If max is not set, or max == 0, returns all box-names up to queried indexer's `defaultBoxesLimit`.
+            next_page (string, optional): used for pagination
+        """
+        req = "/applications/" + str(application_id) + "/boxes"
+        params = {}
+        if limit:
+            params["limit"] = limit
+        if next_page:
+            params["next"] = next_page
+
+        return self.indexer_request("GET", req, params, **kwargs)
+
 
 def _specify_round(query, block, round_num):
     """

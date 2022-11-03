@@ -2,9 +2,14 @@ import base64
 import json
 import re
 import time
-
 import pytest
-from algosdk import abi, atomic_transaction_composer, encoding, mnemonic
+
+from algosdk import (
+    abi,
+    atomic_transaction_composer,
+    encoding,
+    mnemonic,
+)
 from algosdk.abi.contract import NetworkInfo
 from algosdk.error import (
     ABITypeError,
@@ -12,9 +17,7 @@ from algosdk.error import (
 )
 from algosdk.future import transaction
 from behave import given, step, then, when
-from tests.steps.other_v2_steps import (
-    read_program,
-)
+from tests.steps.other_v2_steps import read_program
 
 
 def operation_string_to_enum(operation):
@@ -40,22 +43,47 @@ def operation_string_to_enum(operation):
         )
 
 
+# Takes in a tuple where first element is the encoding and second element is value.
+# If there is only one element, then it is assumed to be an int.
+def process_app_arg(sub_arg):
+    if len(sub_arg) == 1:  # assume int
+        return int(sub_arg[0])
+    elif sub_arg[0] == "str":
+        return bytes(sub_arg[1], "ascii")
+    elif sub_arg[0] == "b64":
+        return base64.decodebytes(sub_arg[1].encode())
+    elif sub_arg[0] == "int":
+        return int(sub_arg[1])
+    elif sub_arg[0] == "addr":
+        return encoding.decode_address(sub_arg[1])
+
+
 def split_and_process_app_args(in_args):
+    if not in_args:
+        return []
     split_args = in_args.split(",")
     sub_args = [sub_arg.split(":") for sub_arg in split_args]
     app_args = []
     for sub_arg in sub_args:
-        if len(sub_arg) == 1:  # assume int
-            app_args.append(int(sub_arg[0]))
-        elif sub_arg[0] == "str":
-            app_args.append(bytes(sub_arg[1], "ascii"))
-        elif sub_arg[0] == "b64":
-            app_args.append(base64.decodebytes(sub_arg[1].encode()))
-        elif sub_arg[0] == "int":
-            app_args.append(int(sub_arg[1]))
-        elif sub_arg[0] == "addr":
-            app_args.append(encoding.decode_address(sub_arg[1]))
+        app_args.append(process_app_arg(sub_arg))
     return app_args
+
+
+def split_and_process_boxes(box_str: str):
+    boxes = []
+    app_id = 0
+    split_args = box_str.split(",")
+    # Box strings alternate between the app ID and the encoded app arg.
+    for token in split_args:
+        try:
+            app_id = int(token)
+        except ValueError:
+            sub_arg = token.split(":")
+            sub_arg = process_app_arg(sub_arg)
+            boxes.append((app_id, sub_arg))
+    # Sanity check that input correctly alternates between int and str.
+    assert len(boxes) == len(split_args) // 2
+    return boxes
 
 
 def composer_status_string_to_enum(status):
@@ -89,6 +117,29 @@ def s512_256_uint64(witness):
     return int.from_bytes(encoding.checksum(witness)[:8], "big")
 
 
+# Dev mode helper functions
+def wait_for_transaction_processing_to_complete_in_dev_mode(
+    millisecond_num=500,
+):
+    """
+    wait_for_transaction_processing_to_complete_in_dev_mode is a Dev mode helper method that waits for a transaction to be processed and serves as a rough analog to `context.app_acl.status_after_block(last_round + 2)`.
+     * <p>
+     * Since Dev mode produces blocks on a per transaction basis, it's possible algod generates a block _before_ the corresponding SDK call to wait for a block.
+     * Without _any_ wait, it's possible the SDK looks for the transaction before algod completes processing. The analogous problem may also exist in indexer. So, the method performs a local sleep to simulate waiting for a block.
+    """
+    time.sleep(millisecond_num / 1000)
+
+
+# Dev mode helper step
+@then(
+    "I sleep for {millisecond_num} milliseconds for indexer to digest things down."
+)
+def wait_for_indexer_in_dev_mode(context, millisecond_num):
+    wait_for_transaction_processing_to_complete_in_dev_mode(
+        int(millisecond_num)
+    )
+
+
 @step(
     'I sign and submit the transaction, saving the txid. If there is an error it is "{error_string:MaybeString}".'
 )
@@ -113,6 +164,23 @@ def sign_submit_save_txid_with_error(context, error_string):
 @when("we make a GetApplicationByID call for applicationID {app_id}")
 def application_info(context, app_id):
     context.response = context.acl.application_info(int(app_id))
+
+
+@when(
+    'we make a GetApplicationBoxByName call for applicationID {app_id} with encoded box name "{box_name}"'
+)
+def application_box_by_name(context, app_id, box_name):
+    boxes = split_and_process_app_args(box_name)[0]
+    context.response = context.acl.application_box_by_name(app_id, boxes)
+
+
+@when(
+    "we make a GetApplicationBoxes call for applicationID {app_id} with max {max_results}"
+)
+def application_boxes(context, app_id, max_results):
+    context.response = context.acl.application_boxes(
+        app_id, limit=int(max_results)
+    )
 
 
 @when(
@@ -142,13 +210,30 @@ def search_application2(context, creator):
     context.response = context.icl.search_applications(creator=creator)
 
 
+@when(
+    'we make a LookupApplicationBoxByIDandName call with applicationID {app_id} with encoded box name "{box_name}"'
+)
+def lookup_application_box(context, app_id, box_name):
+    boxes = split_and_process_app_args(box_name)[0]
+    context.response = context.icl.application_box_by_name(app_id, boxes)
+
+
+@when(
+    'we make a SearchForApplicationBoxes call with applicationID {app_id} with max {max_results} nextToken "{token:MaybeString}"'
+)
+def search_application_boxes(context, app_id, max_results, token):
+    context.response = context.icl.application_boxes(
+        app_id, limit=int(max_results), next_page=token
+    )
+
+
 @when("we make a LookupApplications call with applicationID {app_id}")
 def lookup_application(context, app_id):
     context.response = context.icl.applications(int(app_id))
 
 
 @when(
-    'I build an application transaction with operation "{operation:MaybeString}", application-id {application_id}, sender "{sender:MaybeString}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", fee {fee}, first-valid {first_valid}, last-valid {last_valid}, genesis-hash "{genesis_hash:MaybeString}", extra-pages {extra_pages}'
+    'I build an application transaction with operation "{operation:MaybeString}", application-id {application_id}, sender "{sender:MaybeString}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", fee {fee}, first-valid {first_valid}, last-valid {last_valid}, genesis-hash "{genesis_hash:MaybeString}", extra-pages {extra_pages}, boxes "{boxes:MaybeString}"'
 )
 def build_app_transaction(
     context,
@@ -170,6 +255,7 @@ def build_app_transaction(
     last_valid,
     genesis_hash,
     extra_pages,
+    boxes,
 ):
     if operation == "none":
         operation = None
@@ -203,6 +289,10 @@ def build_app_transaction(
         app_accounts = [
             account_pubkey for account_pubkey in app_accounts.split(",")
         ]
+    if boxes == "none":
+        boxes = None
+    elif boxes:
+        boxes = split_and_process_boxes(boxes)
     if genesis_hash == "none":
         genesis_hash = None
     local_schema = transaction.StateSchema(
@@ -235,11 +325,12 @@ def build_app_transaction(
         note=None,
         lease=None,
         rekey_to=None,
+        boxes=boxes,
     )
 
 
 @step(
-    'I build an application transaction with the transient account, the current application, suggested params, operation "{operation}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", extra-pages {extra_pages}'
+    'I build an application transaction with the transient account, the current application, suggested params, operation "{operation}", approval-program "{approval_program:MaybeString}", clear-program "{clear_program:MaybeString}", global-bytes {global_bytes}, global-ints {global_ints}, local-bytes {local_bytes}, local-ints {local_ints}, app-args "{app_args:MaybeString}", foreign-apps "{foreign_apps:MaybeString}", foreign-assets "{foreign_assets:MaybeString}", app-accounts "{app_accounts:MaybeString}", extra-pages {extra_pages}, boxes "{boxes:MaybeString}"'
 )
 def build_app_txn_with_transient(
     context,
@@ -255,6 +346,7 @@ def build_app_txn_with_transient(
     foreign_assets,
     app_accounts,
     extra_pages,
+    boxes,
 ):
     application_id = 0
     if operation == "none":
@@ -299,8 +391,13 @@ def build_app_txn_with_transient(
         app_accounts = [
             account_pubkey for account_pubkey in app_accounts.split(",")
         ]
+    if boxes == "none":
+        boxes = None
+    elif boxes:
+        boxes = split_and_process_boxes(boxes)
 
     sp = context.app_acl.suggested_params()
+
     context.app_transaction = transaction.ApplicationCallTxn(
         sender=context.transient_pk,
         sp=sp,
@@ -318,6 +415,7 @@ def build_app_txn_with_transient(
         note=None,
         lease=None,
         rekey_to=None,
+        boxes=boxes,
     )
 
 
@@ -344,20 +442,10 @@ def remember_app_id(context):
     context.app_ids.append(app_id)
 
 
-def wait_for_algod_transaction_processing_to_complete():
-    """
-    wait_for_algod_transaction_processing_to_complete is a Dev mode helper method that's a rough analog to `context.app_acl.status_after_block(last_round + 2)`.
-     * <p>
-     * Since Dev mode produces blocks on a per transaction basis, it's possible algod generates a block _before_ the corresponding SDK call to wait for a block.  Without _any_ wait, it's possible the SDK looks for the transaction before algod completes processing.  So, the method performs a local sleep to simulate waiting for a block.
-
-    """
-    time.sleep(0.5)
-
-
 # TODO: this needs to be modified to use v2 only
 @step("I wait for the transaction to be confirmed.")
 def wait_for_app_txn_confirm(context):
-    wait_for_algod_transaction_processing_to_complete()
+    wait_for_transaction_processing_to_complete_in_dev_mode()
     if hasattr(context, "acl"):
         # TODO: get rid of this branch of logic when v1 fully deprecated
         assert "type" in context.acl.transaction_info(
@@ -1058,3 +1146,127 @@ def check_found_method_or_error(context, methodsig, error: str = None):
         assert error in context.error
     else:
         assert False, "Both retrieved method and error string are None"
+
+
+@then(
+    'according to "{from_client}", the contents of the box with name "{box_name}" in the current application should be "{box_value:MaybeString}". If there is an error it is "{error_string:MaybeString}".'
+)
+def check_box_contents(
+    context,
+    from_client,
+    box_name,
+    box_value: str = None,
+    error_string: str = None,
+):
+    try:
+        box_name = split_and_process_app_args(box_name)[0]
+        if from_client == "algod":
+            box_response = context.app_acl.application_box_by_name(
+                context.current_application_id, box_name
+            )
+        elif from_client == "indexer":
+            box_response = context.app_icl.application_box_by_name(
+                context.current_application_id, box_name
+            )
+        else:
+            assert False, f"expecting algod or indexer, got: {from_client}"
+
+        actual_name = box_response["name"]
+        actual_value = box_response["value"]
+        assert box_name == base64.b64decode(actual_name)
+        assert box_value == str(actual_value)
+    except Exception as e:
+        if not error_string or error_string not in str(e):
+            raise RuntimeError(
+                "error string "
+                + error_string
+                + " not in actual error "
+                + str(e)
+            )
+
+
+@then(
+    'according to "{from_client}", with {limit} being the parameter that limits results, the current application should have {expected_num} boxes.'
+)
+def check_box_num_by_limit(context, from_client, limit, expected_num: str):
+    limit_int = int(limit)
+    expected_num_int = int(expected_num)
+    if from_client == "algod":
+        box_response = context.app_acl.application_boxes(
+            context.current_application_id, limit=limit_int
+        )
+    elif from_client == "indexer":
+        box_response = context.app_icl.application_boxes(
+            context.current_application_id, limit=limit_int
+        )
+    else:
+        assert False, f"expecting algod or indexer, got: {from_client}"
+
+    assert expected_num_int == len(
+        box_response["boxes"]
+    ), f"expected box num: {expected_num_int}, got {len(box_response['boxes'])}"
+
+
+@then(
+    'according to "{from_client}", the current application should have the following boxes "{box_names:MaybeString}".'
+)
+def check_all_boxes(context, from_client: str, box_names: str = None):
+    expected_box_names = []
+    if box_names:
+        expected_box_names = [
+            base64.b64decode(box_encoded)
+            for box_encoded in box_names.split(":")
+        ]
+    if from_client == "algod":
+        box_response = context.app_acl.application_boxes(
+            context.current_application_id
+        )
+    elif from_client == "indexer":
+        box_response = context.app_icl.application_boxes(
+            context.current_application_id
+        )
+    else:
+        assert False, f"expecting algod or indexer, got: {from_client}"
+
+    actual_box_names = [
+        base64.b64decode(box["name"]) for box in box_response["boxes"]
+    ]
+
+    # Check that length of lists are equal, then check for set equality.
+    assert len(expected_box_names) == len(
+        actual_box_names
+    ), f"Expected box names array length does not match actual array length {len(expected_box_names)} != {len(actual_box_names)}"
+    assert set(expected_box_names) == set(
+        actual_box_names
+    ), f"Expected box names array does not match actual array {expected_box_names} != {actual_box_names}"
+
+
+@then(
+    'according to indexer, with {limit} being the parameter that limits results, and "{next_page:MaybeString}" being the parameter that sets the next result, the current application should have the following boxes "{box_names:MaybeString}".'
+)
+def check_all_boxes_by_indexer(
+    context, limit, next_page: str = None, box_names: str = None
+):
+    expected_box_names = []
+    if box_names:
+        expected_box_names = [
+            base64.b64decode(box_encoded)
+            for box_encoded in box_names.split(":")
+        ]
+    limit_int = int(limit)
+    next_page = next_page if next_page else ""
+    box_response = context.app_icl.application_boxes(
+        context.current_application_id, limit=limit_int, next_page=next_page
+    )
+
+    actual_box_names = [
+        base64.b64decode(box["name"]) for box in box_response["boxes"]
+    ]
+
+    # Check that length of lists are equal, then check for set equality.
+    assert len(expected_box_names) == len(
+        actual_box_names
+    ), f"Expected box names array length does not match actual array length {len(expected_box_names)} != {len(actual_box_names)}"
+    assert set(expected_box_names) == set(
+        actual_box_names
+    ), f"Expected box names array does not match actual array {expected_box_names} != {actual_box_names}"

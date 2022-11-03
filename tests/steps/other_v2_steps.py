@@ -7,13 +7,7 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 
 import parse
-from algosdk import (
-    dryrun_results,
-    encoding,
-    error,
-    mnemonic,
-    source_map,
-)
+from algosdk import dryrun_results, encoding, error, mnemonic, source_map
 from algosdk.error import AlgodHTTPError
 from algosdk.future import transaction
 from algosdk.testing.dryrun import DryrunTestCaseMixin
@@ -24,10 +18,15 @@ from algosdk.v2client.models import (
     DryrunRequest,
     DryrunSource,
 )
-from behave import register_type  # pylint: disable=no-name-in-module
-from behave import given, step, then, when
+from behave import (
+    given,
+    register_type,  # pylint: disable=no-name-in-module
+    step,
+    then,
+    when,
+)
 from glom import glom
-from tests.steps.steps import algod_port
+from tests.steps.steps import algod_port, indexer_port
 from tests.steps.steps import token as daemon_token
 
 
@@ -1032,6 +1031,12 @@ def algod_v2_client_at_host_port_and_token(context, host, port, token):
 def algod_v2_client(context):
     algod_address = "http://localhost" + ":" + str(algod_port)
     context.app_acl = algod.AlgodClient(daemon_token, algod_address)
+
+
+@given("an indexer v2 client")
+def indexer_v2_client(context):
+    indexer_address = "http://localhost" + ":" + str(indexer_port)
+    context.app_icl = indexer.IndexerClient("", indexer_address)
 
 
 @when('I compile a teal program "{program}"')

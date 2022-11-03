@@ -224,6 +224,11 @@ class AtomicTransactionComposerError(Exception):
         super().__init__(msg)
 
 
+class InvalidForeignIndexError(Exception):
+    def __init__(self, msg):
+        super().__init__(msg)
+
+
 class SourceMapVersionError(Exception):
     def __init__(self, version):
         Exception.__init__(
