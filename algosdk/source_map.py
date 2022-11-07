@@ -353,7 +353,7 @@ class FunctionalSourceMapper:
         ), FunctionalSourceMapper.from_chunks(chunks)
 
 
-#### ---- ORIGINAL mjpieters CODE ---- ####
+#### ---- Based on mjpieters CODE ---- ####
 
 """Extract generated -> source mappings"""
 

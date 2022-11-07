@@ -403,6 +403,32 @@ class AlgodClient:
             "POST", req, params=params, data=source.encode("utf-8"), **kwargs
         )
 
+    def disassemble(self, program_bytes, **kwargs):
+        """
+        Disassable TEAL program bytes with remote algod.
+
+        Args:
+            program (bytes): byecodes to be disassembled
+            request_header (dict, optional): additional header for request
+
+        Returns: ???
+            dict: loaded from json response body. "result" property contains compiled bytes, "hash" - program hash (escrow address)
+
+        """
+        if not isinstance(program_bytes, bytes):
+            raise error.InvalidProgram(
+                message=f"dissasemble endpoints only accepts bytes but request program_bytes of type {type(program_bytes)}"
+            )
+
+        req = "/teal/disassemble"
+        headers = util.build_headers_from(
+            kwargs.get("headers", False),
+            {"Content-Type": "application/x-binary"},
+        )
+        kwargs["headers"] = headers
+        # params = {"source": program_bytes}
+        return self.algod_request("POST", req, data=program_bytes, **kwargs)
+
     def dryrun(self, drr, **kwargs):
         """
         Dryrun with remote algod.
@@ -450,7 +476,7 @@ class AlgodClient:
             req,
             params=params,
             response_format=response_format,
-            **kwargs
+            **kwargs,
         )
 
     def lightblockheader_proof(self, round_num, **kwargs):
