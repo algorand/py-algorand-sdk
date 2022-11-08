@@ -23,10 +23,16 @@ class BoxReference:
 
     @staticmethod
     def translate_box_reference(
-        ref: Tuple[int, Union[bytes, bytearray, str, int]],
+        ref: Union[
+            Tuple[int, Union[bytes, bytearray, str, int]], "BoxReference"
+        ],
         foreign_apps: List[int],
         this_app_id: int,
     ) -> "BoxReference":
+        # Check if references are already BoxReference typed
+        if isinstance(ref, BoxReference):
+            return ref
+
         # Try checking reference id and name type.
         ref_id, ref_name = ref[0], encoding.encode_as_bytes(ref[1])
         if not isinstance(ref_id, int):
