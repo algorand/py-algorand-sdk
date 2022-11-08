@@ -29,7 +29,7 @@ class BoxReference:
         foreign_apps: List[int],
         this_app_id: int,
     ) -> "BoxReference":
-        # Check if references are already BoxReference typed
+        # Do not need to translate the references if they are already BoxReference type.
         if isinstance(ref, BoxReference):
             return ref
 
