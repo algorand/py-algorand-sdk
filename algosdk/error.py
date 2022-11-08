@@ -208,8 +208,10 @@ class IndexerHTTPError(Exception):
 class ConfirmationTimeoutError(Exception):
     pass
 
+
 class TransactionRejectedError(Exception):
     pass
+
 
 class ABITypeError(Exception):
     def __init__(self, msg):
