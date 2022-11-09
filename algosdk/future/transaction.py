@@ -1519,8 +1519,8 @@ class StateSchema:
     @staticmethod
     def undictify(d):
         return StateSchema(
-            num_uints=d["nui"] if "nui" in d else None,
-            num_byte_slices=d["nbs"] if "nbs" in d else None,
+            num_uints=d["nui"] if "nui" in d else 0,
+            num_byte_slices=d["nbs"] if "nbs" in d else 0,
         )
 
     def __eq__(self, other):
@@ -1628,13 +1628,13 @@ class ApplicationCallTxn(Transaction):
             self, sender, sp, note, lease, constants.appcall_txn, rekey_to
         )
         self.index = self.creatable_index(index)
-        self.on_complete = on_complete
+        self.on_complete = on_complete if on_complete else 0
         self.local_schema = self.state_schema(local_schema)
         self.global_schema = self.state_schema(global_schema)
         self.approval_program = self.teal_bytes(approval_program)
         self.clear_program = self.teal_bytes(clear_program)
         self.app_args = self.bytes_list(app_args)
-        self.accounts = accounts
+        self.accounts = accounts if accounts else None
         self.foreign_apps = self.int_list(foreign_apps)
         self.foreign_assets = self.int_list(foreign_assets)
         self.extra_pages = extra_pages
