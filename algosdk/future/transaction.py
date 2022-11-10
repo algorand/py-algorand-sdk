@@ -3,7 +3,7 @@ import binascii
 import warnings
 import msgpack
 from enum import IntEnum
-from typing import List, Union
+from typing import List, Union, Optional, cast
 from collections import OrderedDict
 
 from algosdk import account, constants, encoding, error, logic, transaction
@@ -2161,7 +2161,9 @@ class SignedTransaction:
         authorizing_address (str)
     """
 
-    def __init__(self, transaction, signature, authorizing_address=None):
+    def __init__(
+        self, transaction: Transaction, signature, authorizing_address=None
+    ):
         self.signature = signature
         self.transaction = transaction
         self.authorizing_address = authorizing_address
@@ -2291,7 +2293,9 @@ class MultisigTransaction:
         return mtx
 
     @staticmethod
-    def merge(part_stxs: List["MultisigTransaction"]) -> "MultisigTransaction":
+    def merge(
+        part_stxs: List["MultisigTransaction"],
+    ) -> Optional["MultisigTransaction"]:
         """
         Merge partially signed multisig transactions.
 
@@ -2733,7 +2737,9 @@ class LogicSigAccount:
     Represents an account that can sign with a LogicSig program.
     """
 
-    def __init__(self, program: bytes, args: List[bytes] = None) -> None:
+    def __init__(
+        self, program: bytes, args: Optional[list[bytes]] = None
+    ) -> None:
         """
         Create a new LogicSigAccount. By default this will create an escrow
         LogicSig account. Call `sign` or `sign_multisig` on the newly created
@@ -2746,7 +2752,7 @@ class LogicSigAccount:
                 program.
         """
         self.lsig = LogicSig(program, args)
-        self.sigkey = None
+        self.sigkey: Optional[bytes] = None
 
     def dictify(self):
         od = OrderedDict()
@@ -2907,7 +2913,7 @@ class LogicSigTransaction:
             self.lsig = lsig
 
         if transaction.sender != lsigAddr:
-            self.auth_addr = lsigAddr
+            self.auth_addr: Optional[str] = lsigAddr
         else:
             self.auth_addr = None
 
@@ -3276,9 +3282,9 @@ def create_dryrun(
             accts.append(txn.sender)
 
             # Add foreign args if they're set
-            if txn.accounts:
+            if hasattr(txn, "accounts"):
                 accts.extend(txn.accounts)
-            if txn.foreign_apps:
+            if hasattr(txn, "foreign_apps"):
                 apps.extend(txn.foreign_apps)
                 accts.extend(
                     [
@@ -3286,41 +3292,56 @@ def create_dryrun(
                         for aidx in txn.foreign_apps
                     ]
                 )
-            if txn.foreign_assets:
+            if hasattr(txn, "foreign_assets"):
                 assets.extend(txn.foreign_assets)
 
             # For creates, we need to add the source directly from the transaction
-            if txn.index == 0:
+            if hasattr(txn, "index") and txn.index == 0:
                 appId = defaultAppId
                 # Make up app id, since tealdbg/dryrun doesnt like 0s
                 # https://github.com/algorand/go-algorand/blob/e466aa18d4d963868d6d15279b1c881977fa603f/libgoal/libgoal.go#L1089-L1090
 
-                ls = txn.local_schema
+                ls = txn.local_schema if hasattr(txn, "local_schema") else None
                 if ls is not None:
                     ls = models.ApplicationStateSchema(
                         ls.num_uints, ls.num_byte_slices
                     )
 
-                gs = txn.global_schema
+                gs = (
+                    txn.global_schema
+                    if hasattr(txn, "global_schema")
+                    else None
+                )
                 if gs is not None:
                     gs = models.ApplicationStateSchema(
                         gs.num_uints, gs.num_byte_slices
                     )
 
+                approval_program = (
+                    txn.approval_program
+                    if hasattr(txn, "approval_program")
+                    else None
+                )
+                clear_program = (
+                    txn.clear_program
+                    if hasattr(txn, "clear_program")
+                    else None
+                )
                 app_infos.append(
                     models.Application(
                         id=appId,
                         params=models.ApplicationParams(
                             creator=txn.sender,
-                            approval_program=txn.approval_program,
-                            clear_state_program=txn.clear_program,
+                            approval_program=approval_program,
+                            clear_state_program=clear_program,
                             local_state_schema=ls,
                             global_state_schema=gs,
                         ),
                     )
                 )
             else:
-                apps.append(txn.index)
+                if hasattr(txn, "index"):
+                    apps.append(txn.index)
 
     # Dedupe and filter none, reset programs to bytecode instead of b64
     apps = [i for i in set(apps) if i]
