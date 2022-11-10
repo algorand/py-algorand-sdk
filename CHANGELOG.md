@@ -1,4 +1,12 @@
 # Changelog
+# v1.20.1
+
+## What's Changed
+### Bugfixes
+* Bug-fix: Implement `TransactionRejectedError` by @jdtzmn in https://github.com/algorand/py-algorand-sdk/pull/396
+* Decoding: Fix roundtrip encode/decode tests for transactions by @algochoi in https://github.com/algorand/py-algorand-sdk/pull/398
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v1.20.0...v1.20.1
 
 # v1.20.0
 
