@@ -446,14 +446,7 @@ def remember_app_id(context):
 @step("I wait for the transaction to be confirmed.")
 def wait_for_app_txn_confirm(context):
     wait_for_transaction_processing_to_complete_in_dev_mode()
-    if hasattr(context, "acl"):
-        # TODO: get rid of this branch of logic when v1 fully deprecated
-        assert "type" in context.acl.transaction_info(
-            context.transient_pk, context.app_txid
-        )
-        # assert "type" in context.acl.transaction_by_id(context.app_txid)
-    else:
-        transaction.wait_for_confirmation(context.app_acl, context.app_txid, 1)
+    transaction.wait_for_confirmation(context.app_acl, context.app_txid, 1)
 
 
 @given("an application id {app_id}")

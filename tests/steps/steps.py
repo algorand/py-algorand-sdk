@@ -1,13 +1,13 @@
-import os
 import base64
 import random
 import time
+
 import parse
-from datetime import datetime
+from behave import given, register_type, then, when
+from nacl.signing import SigningKey
 
 from algosdk import (
     account,
-    algod,
     auction,
     encoding,
     kmd,
@@ -17,17 +17,6 @@ from algosdk import (
     wallet,
 )
 from algosdk.future import transaction
-from algosdk import encoding
-from algosdk import algod
-from algosdk import account
-from algosdk import mnemonic
-from algosdk import wallet
-from algosdk import auction
-from algosdk import util
-from algosdk import logic
-
-from behave import given, then, when, register_type
-from nacl.signing import SigningKey
 
 
 @parse.with_pattern(r".*")
@@ -61,12 +50,12 @@ def wait_for_algod_transaction_processing_to_complete():
 def initialize_account(context, account):
     payment = transaction.PaymentTxn(
         sender=context.accounts[0],
-        sp=context.acl.suggested_params_as_object(),
+        sp=context.app_acl.suggested_params(),
         receiver=account,
         amt=DEV_ACCOUNT_INITIAL_MICROALGOS,
     )
     signed_payment = context.wallet.sign_transaction(payment)
-    context.acl.send_transaction(signed_payment)
+    context.app_acl.send_transaction(signed_payment)
     # Wait to let transaction get confirmed in dev mode in v1.
     wait_for_algod_transaction_processing_to_complete()
 
@@ -79,12 +68,12 @@ def self_pay_transactions(context, num_txns=1):
     for _ in range(num_txns):
         payment = transaction.PaymentTxn(
             sender=context.dev_pk,
-            sp=context.acl.suggested_params_as_object(),
+            sp=context.app_acl.suggested_params(),
             receiver=context.dev_pk,
             amt=random.randint(1, int(DEV_ACCOUNT_INITIAL_MICROALGOS * 0.01)),
         )
         signed_payment = payment.sign(context.dev_sk)
-        context.acl.send_transaction(signed_payment)
+        context.app_acl.send_transaction(signed_payment)
         # Wait to let transaction get confirmed in dev mode in v1.
         wait_for_algod_transaction_processing_to_complete()
 
@@ -266,6 +255,7 @@ def acl_v(context):
 def v1_in_versions(context):
     assert "v1" in context.versions
 
+
 @then("v2 should be in the versions")
 def v2_in_versions(context):
     assert "v2" in context.versions
@@ -274,25 +264,6 @@ def v2_in_versions(context):
 @when("I get versions with kmd")
 def kcl_v(context):
     context.versions = context.kcl.versions()
-
-
-@when("I get the status")
-def status(context):
-    context.status = context.acl.status()
-
-
-@when("I get status after this block")
-def status_block(context):
-    self_pay_transactions(context)
-    context.status_after = context.acl.status_after_block(
-        context.status["lastRound"]
-    )
-
-
-@then("I can get the block info")
-def block(context):
-    self_pay_transactions(context)
-    context.block = context.acl.block_info(context.status["lastRound"] + 1)
 
 
 @when("I import the multisig")
@@ -381,15 +352,6 @@ def kmd_client(context):
     context.kcl = kmd.KMDClient(token, kmd_address)
 
 
-@given("an algod client")
-def algod_client(context):
-    algod_address = "http://localhost:" + str(algod_port)
-    context.acl = algod.AlgodClient(token, algod_address)
-    if context.acl.status()["lastRound"] < 2:
-        self_pay_transactions(context, 2)
-        context.acl.status_after_block(2)
-
-
 @given("wallet information")
 def wallet_info(context):
     context.wallet_name = "unencrypted-default-wallet"
@@ -402,7 +364,7 @@ def wallet_info(context):
 
 
 def default_txn_with_addr(context, amt, note, sender_addr):
-    params = context.acl.suggested_params_as_object()
+    params = context.app_acl.suggested_params()
     context.last_round = params.first
     if note == "none":
         note = None
@@ -426,7 +388,7 @@ def default_txn_rekey(context, amt, note):
 
 @given('default multisig transaction with parameters {amt} "{note}"')
 def default_msig_txn(context, amt, note):
-    params = context.acl.suggested_params_as_object()
+    params = context.app_acl.suggested_params()
     context.last_round = params.first
     if note == "none":
         note = None
@@ -452,20 +414,20 @@ def get_sk(context):
 @when("I send the transaction")
 def send_txn(context):
     try:
-        context.acl.send_transaction(context.stx)
+        context.app_txid = context.app_acl.send_transaction(context.stx)
     except:
         context.error = True
 
 
 @when("I send the kmd-signed transaction")
 def send_txn_kmd(context):
-    context.acl.send_transaction(context.stx_kmd)
+    context.app_txid = context.app_acl.send_transaction(context.stx_kmd)
 
 
 @when("I send the bogus kmd-signed transaction")
 def send_txn_kmd_bogus(context):
     try:
-        context.acl.send_transaction(context.stx_kmd)
+        context.app_acl.send_transaction(context.stx_kmd)
     except:
         context.error = True
 
@@ -473,22 +435,9 @@ def send_txn_kmd_bogus(context):
 @when("I send the multisig transaction")
 def send_msig_txn(context):
     try:
-        context.acl.send_transaction(context.mtx)
+        context.app_acl.send_transaction(context.mtx)
     except:
         context.error = True
-
-
-# TODO: this needs to be modified/removed when v1 is no longer supported!!!
-@then("the transaction should go through")
-def check_txn(context):
-    wait_for_algod_transaction_processing_to_complete()
-    assert "type" in context.acl.pending_transaction_info(
-        context.txn.get_txid()
-    )
-    assert "type" in context.acl.transaction_info(
-        context.txn.sender, context.txn.get_txid()
-    )
-    # assert "type" in context.acl.transaction_by_id(context.txn.get_txid())
 
 
 @then("the transaction should not go through")
@@ -524,11 +473,6 @@ def sign_msig_both_equal(context):
     )
 
 
-@then("I get the ledger supply")
-def get_ledger(context):
-    context.acl.ledger_supply()
-
-
 @then("the node should be healthy")
 def check_health(context):
     assert context.app_acl.health() == None
@@ -536,17 +480,7 @@ def check_health(context):
 
 @when("I get the suggested params")
 def suggested_params(context):
-    context.params = context.acl.suggested_params_as_object()
-
-
-@when("I get the suggested fee")
-def suggested_fee(context):
-    context.fee = context.acl.suggested_fee()["fee"]
-
-
-@then("the fee in the suggested params should equal the suggested fee")
-def check_suggested(context):
-    assert context.params.fee == context.fee
+    context.params = context.app_acl.suggested_params()
 
 
 @when("I create a bid")
@@ -653,34 +587,20 @@ def check_microalgos(context, microalgos):
     assert int(microalgos) == context.microalgos
 
 
-@then("I get transactions by address and round")
-def txns_by_addr_round(context):
-    txns = context.acl.transactions_by_address(
-        context.accounts[0], first=1, last=context.acl.status()["lastRound"]
-    )
-    assert txns == {} or "transactions" in txns
-
-
-@then("I get pending transactions")
-def txns_pending(context):
-    txns = context.acl.pending_transactions()
-    assert txns == {} or "truncatedTxns" in txns
-
-
 @then("I get account information")
 def acc_info(context):
-    context.acl.account_info(context.accounts[0])
+    context.app_acl.account_info(context.accounts[0])
 
 
 @then("I can get account information")
 def new_acc_info(context):
-    context.acl.account_info(context.pk)
+    context.app_acl.account_info(context.pk)
     context.wallet.delete_key(context.pk)
 
 
 @given("default V2 key registration transaction {type}")
 def default_v2_keyreg_txn(context, type):
-    context.params = context.acl.suggested_params_as_object()
+    context.params = context.app_acl.suggested_params()
     context.pk = context.accounts[0]
     context.txn = buildTxn(type, context.pk, context.params)
 
@@ -688,7 +608,7 @@ def default_v2_keyreg_txn(context, type):
 @given("default asset creation transaction with total issuance {total}")
 def default_asset_creation_txn(context, total):
     context.total = int(total)
-    params = context.acl.suggested_params_as_object()
+    params = context.app_acl.suggested_params()
     context.last_round = params.first
     context.pk = context.accounts[0]
     asset_name = "asset"
@@ -708,17 +628,17 @@ def default_asset_creation_txn(context, total):
     )
 
     context.expected_asset_info = {
-        "defaultfrozen": False,
-        "unitname": "unit",
-        "assetname": "asset",
-        "managerkey": context.pk,
-        "reserveaddr": context.pk,
-        "freezeaddr": context.pk,
-        "clawbackaddr": context.pk,
+        "default-frozen": False,
+        "unit-name": "unit",
+        "name": "asset",
+        "manager": context.pk,
+        "reserve": context.pk,
+        "freeze": context.pk,
+        "clawback": context.pk,
         "creator": context.pk,
         "total": context.total,
         "decimals": 0,
-        "metadatahash": None,
+        "metadata-hash": None,
         "url": "",
     }
 
@@ -726,7 +646,7 @@ def default_asset_creation_txn(context, total):
 @given("default-frozen asset creation transaction with total issuance {total}")
 def default_frozen_asset_creation_txn(context, total):
     context.total = int(total)
-    params = context.acl.suggested_params_as_object()
+    params = context.app_acl.suggested_params()
     context.last_round = params.first
     context.pk = context.accounts[0]
     asset_name = "asset"
@@ -746,17 +666,17 @@ def default_frozen_asset_creation_txn(context, total):
     )
 
     context.expected_asset_info = {
-        "defaultfrozen": False,
-        "unitname": "unit",
-        "assetname": "asset",
-        "managerkey": context.pk,
-        "reserveaddr": context.pk,
-        "freezeaddr": context.pk,
-        "clawbackaddr": context.pk,
+        "default-frozen": False,
+        "unit-name": "unit",
+        "name": "asset",
+        "manager": context.pk,
+        "reserve": context.pk,
+        "freeze": context.pk,
+        "clawback": context.pk,
         "creator": context.pk,
         "total": context.total,
         "decimals": 0,
-        "metadatahash": None,
+        "metadata-hash": None,
         "url": "",
     }
 
@@ -769,24 +689,25 @@ def asset_fixture(context):
 
 @when("I update the asset index")
 def update_asset_index(context):
-    assets = context.acl.list_assets()["assets"]
-    indices = [a["AssetIndex"] for a in assets]
+    assets = context.app_acl.account_info(context.pk)["created-assets"]
+    indices = [a["index"] for a in assets]
     context.asset_index = max(indices)
 
 
 @when("I get the asset info")
 def get_asset_info(context):
-    context.asset_info = context.acl.asset_info(context.asset_index)
+    context.asset_info = context.app_acl.asset_info(context.asset_index)
 
 
 @then("the asset info should match the expected asset info")
 def asset_info_match(context):
     for k in context.expected_asset_info:
         assert (
-            context.expected_asset_info[k] == context.asset_info.get(k)
+            context.expected_asset_info[k]
+            == context.asset_info["params"].get(k)
         ) or (
             (not context.expected_asset_info[k])
-            and (not context.asset_info.get(k))
+            and (not context.asset_info["params"].get(k))
         )
 
 
@@ -794,7 +715,7 @@ def asset_info_match(context):
 def create_asset_destroy_txn(context):
     context.txn = transaction.AssetConfigTxn(
         context.pk,
-        context.acl.suggested_params_as_object(),
+        context.app_acl.suggested_params(),
         index=context.asset_index,
         strict_empty_address_check=False,
     )
@@ -804,7 +725,7 @@ def create_asset_destroy_txn(context):
 def err_asset_info(context):
     err = False
     try:
-        context.acl.asset_info(context.pk, context.asset_index)
+        context.app_acl.asset_info(context.asset_index)
     except:
         err = True
     assert err
@@ -814,7 +735,7 @@ def err_asset_info(context):
 def no_manager_txn(context):
     context.txn = transaction.AssetConfigTxn(
         context.pk,
-        context.acl.suggested_params_as_object(),
+        context.app_acl.suggested_params(),
         index=context.asset_index,
         reserve=context.pk,
         clawback=context.pk,
@@ -822,14 +743,14 @@ def no_manager_txn(context):
         strict_empty_address_check=False,
     )
 
-    context.expected_asset_info["managerkey"] = ""
+    context.expected_asset_info["manager"] = ""
 
 
 @when(
     "I create a transaction for a second account, signalling asset acceptance"
 )
 def accept_asset_txn(context):
-    params = context.acl.suggested_params_as_object()
+    params = context.app_acl.suggested_params()
     context.txn = transaction.AssetTransferTxn(
         context.rcv, params, context.rcv, 0, context.asset_index
     )
@@ -839,7 +760,7 @@ def accept_asset_txn(context):
     "I create a transaction transferring {amount} assets from creator to a second account"
 )
 def transfer_assets(context, amount):
-    params = context.acl.suggested_params_as_object()
+    params = context.app_acl.suggested_params()
     context.txn = transaction.AssetTransferTxn(
         context.pk, params, context.rcv, int(amount), context.asset_index
     )
@@ -849,7 +770,7 @@ def transfer_assets(context, amount):
     "I create a transaction transferring {amount} assets from a second account to creator"
 )
 def transfer_assets_to_creator(context, amount):
-    params = context.acl.suggested_params_as_object()
+    params = context.app_acl.suggested_params()
     context.txn = transaction.AssetTransferTxn(
         context.rcv, params, context.pk, int(amount), context.asset_index
     )
@@ -857,15 +778,16 @@ def transfer_assets_to_creator(context, amount):
 
 @then("the creator should have {exp_balance} assets remaining")
 def check_asset_balance(context, exp_balance):
-    asset_info = context.acl.account_info(context.pk)["assets"][
-        str(context.asset_index)
-    ]
-    assert asset_info["amount"] == int(exp_balance)
+    asset_info_resp = context.app_acl.account_info(context.pk)["assets"]
+    asset_info = None
+    for a in asset_info_resp:
+        if a["asset-id"] == context.asset_index:
+            assert a["amount"] == int(exp_balance)
 
 
 @when("I create a freeze transaction targeting the second account")
 def freeze_txn(context):
-    params = context.acl.suggested_params_as_object()
+    params = context.app_acl.suggested_params()
     context.txn = transaction.AssetFreezeTxn(
         context.pk, params, context.asset_index, context.rcv, True
     )
@@ -873,7 +795,7 @@ def freeze_txn(context):
 
 @when("I create an un-freeze transaction targeting the second account")
 def unfreeze_txn(context):
-    params = context.acl.suggested_params_as_object()
+    params = context.app_acl.suggested_params()
     context.txn = transaction.AssetFreezeTxn(
         context.pk, params, context.asset_index, context.rcv, False
     )
@@ -883,7 +805,7 @@ def unfreeze_txn(context):
     "I create a transaction revoking {amount} assets from a second account to creator"
 )
 def revoke_txn(context, amount):
-    params = context.acl.suggested_params_as_object()
+    params = context.app_acl.suggested_params()
     context.txn = transaction.AssetTransferTxn(
         context.pk,
         params,
