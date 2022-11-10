@@ -9,7 +9,7 @@ INDEXER_AUTH_HEADER = "X-Indexer-API-Token"
 """str: header key for indexer requests"""
 UNVERSIONED_PATHS = ["/health", "/versions", "/metrics", "/genesis"]
 """str[]: paths that don't use the version path prefix"""
-NO_AUTH = []
+NO_AUTH: list[str] = []
 """str[]: requests that don't require authentication"""
 
 
