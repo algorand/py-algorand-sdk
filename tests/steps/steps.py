@@ -259,12 +259,16 @@ def equal_msig_golden(context, golden):
 
 @when("I get versions with algod")
 def acl_v(context):
-    context.versions = context.acl.versions()["versions"]
+    context.versions = context.app_acl.versions()["versions"]
 
 
 @then("v1 should be in the versions")
 def v1_in_versions(context):
     assert "v1" in context.versions
+
+@then("v2 should be in the versions")
+def v2_in_versions(context):
+    assert "v2" in context.versions
 
 
 @when("I get versions with kmd")
@@ -527,7 +531,7 @@ def get_ledger(context):
 
 @then("the node should be healthy")
 def check_health(context):
-    assert context.acl.health() == None
+    assert context.app_acl.health() == None
 
 
 @when("I get the suggested params")
