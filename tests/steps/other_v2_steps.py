@@ -7,6 +7,10 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 
 import parse
+from behave import register_type  # pylint: disable=no-name-in-module
+from behave import given, step, then, when
+from glom import glom
+
 from algosdk import dryrun_results, encoding, error, mnemonic, source_map
 from algosdk.error import AlgodHTTPError
 from algosdk.future import transaction
@@ -18,14 +22,6 @@ from algosdk.v2client.models import (
     DryrunRequest,
     DryrunSource,
 )
-from behave import (
-    given,
-    register_type,  # pylint: disable=no-name-in-module
-    step,
-    then,
-    when,
-)
-from glom import glom
 from tests.steps.steps import algod_port, indexer_port
 from tests.steps.steps import token as daemon_token
 

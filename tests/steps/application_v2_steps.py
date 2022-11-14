@@ -2,21 +2,14 @@ import base64
 import json
 import re
 import time
-import pytest
 
-from algosdk import (
-    abi,
-    atomic_transaction_composer,
-    encoding,
-    mnemonic,
-)
-from algosdk.abi.contract import NetworkInfo
-from algosdk.error import (
-    ABITypeError,
-    AtomicTransactionComposerError,
-)
-from algosdk.future import transaction
+import pytest
 from behave import given, step, then, when
+
+from algosdk import abi, atomic_transaction_composer, encoding, mnemonic
+from algosdk.abi.contract import NetworkInfo
+from algosdk.error import ABITypeError, AtomicTransactionComposerError
+from algosdk.future import transaction
 from tests.steps.other_v2_steps import read_program
 
 

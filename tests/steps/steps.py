@@ -779,7 +779,6 @@ def transfer_assets_to_creator(context, amount):
 @then("the creator should have {exp_balance} assets remaining")
 def check_asset_balance(context, exp_balance):
     asset_info_resp = context.app_acl.account_info(context.pk)["assets"]
-    asset_info = None
     for a in asset_info_resp:
         if a["asset-id"] == context.asset_index:
             assert a["amount"] == int(exp_balance)
