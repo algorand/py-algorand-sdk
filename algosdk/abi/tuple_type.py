@@ -1,4 +1,4 @@
-from typing import Any, List, Union
+from typing import Any, List, Union, Optional, cast
 
 from algosdk.abi.base_type import ABI_LENGTH_SIZE, ABIType
 from algosdk.abi.bool_type import BoolType
@@ -175,8 +175,11 @@ class TupleType(ABIType):
                             "expected before index should have number of bool mod 8 equal 0"
                         )
                     after = min(7, after)
+                    consecutive_bool_list = cast(
+                        list[bool], values[i : i + after + 1]
+                    )
                     compressed_int = TupleType._compress_multiple_bool(
-                        values[i : i + after + 1]
+                        consecutive_bool_list
                     )
                     heads.append(bytes([compressed_int]))
                     i += after
@@ -229,10 +232,10 @@ class TupleType(ABIType):
                 "value string must be in bytes: {}".format(bytestring)
             )
         tuple_elements = self.child_types
-        dynamic_segments = (
-            list()
-        )  # Store the start and end of a dynamic element
-        value_partitions = list()
+        dynamic_segments: list[
+            list[int]
+        ] = list()  # Store the start and end of a dynamic element
+        value_partitions: list[Optional[bytes | bytearray]] = list()
         i = 0
         array_index = 0
 
