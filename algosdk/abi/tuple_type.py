@@ -291,9 +291,7 @@ class TupleType(ABIType):
                     array_index += curr_len
             if array_index >= len(bytestring) and i != len(tuple_elements) - 1:
                 raise error.ABIEncodingError(
-                    "input string is not long enough to be decoded: {}".format(
-                        bytestring
-                    )
+                    f"input string is not long enough to be decoded: {bytestring!r}"
                 )
             i += 1
 
@@ -302,7 +300,7 @@ class TupleType(ABIType):
             array_index = len(bytestring)
         if array_index < len(bytestring):
             raise error.ABIEncodingError(
-                "input string was not fully consumed: {}".format(bytestring)
+                f"input string was not fully consumed: {bytestring!r}"
             )
 
         # Check dynamic element partitions
