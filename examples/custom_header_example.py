@@ -5,7 +5,7 @@
 # key, instead of a string, as the token.
 
 import tokens
-from algosdk import algod
+from algosdk.v2client import algod
 
 headers = {
     "X-API-Key": "#######",

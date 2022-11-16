@@ -1,8 +1,10 @@
 # Example: working with transaction groups
 
 import tokens
-from algosdk import algod, kmd, account
+
+from algosdk import account, kmd
 from algosdk.future import transaction
+from algosdk.v2client import algod
 
 # generate accounts
 private_key_sender, sender = account.generate_account()
@@ -13,7 +15,7 @@ acl = algod.AlgodClient(tokens.algod_token, tokens.algod_address)
 kcl = kmd.KMDClient(tokens.kmd_token, tokens.kmd_address)
 
 # get suggested parameters
-sp = acl.suggested_params_as_object()
+sp = acl.suggested_params()
 
 # create a transaction
 amount = 10000
