@@ -473,6 +473,11 @@ def sign_msig_both_equal(context):
     )
 
 
+@then("I get the ledger supply")
+def get_ledger(context):
+    context.acl.ledger_supply()
+
+
 @then("the node should be healthy")
 def check_health(context):
     assert context.app_acl.health() == None
