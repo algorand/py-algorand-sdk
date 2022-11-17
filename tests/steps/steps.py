@@ -483,11 +483,6 @@ def check_health(context):
     assert context.app_acl.health() == None
 
 
-@when("I get the suggested params")
-def suggested_params(context):
-    context.params = context.app_acl.suggested_params()
-
-
 @when("I create a bid")
 def create_bid(context):
     context.sk, pk = account.generate_account()
@@ -590,11 +585,6 @@ def convert_algos(context, microalgos):
 @then("it should still be the same amount of microalgos {microalgos}")
 def check_microalgos(context, microalgos):
     assert int(microalgos) == context.microalgos
-
-
-@then("I get account information")
-def acc_info(context):
-    context.app_acl.account_info(context.accounts[0])
 
 
 @then("I can get account information")
