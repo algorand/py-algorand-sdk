@@ -2,7 +2,17 @@ import base64
 import copy
 from abc import ABC, abstractmethod
 from enum import IntEnum
-from typing import Any, List, Optional, Tuple, TypeVar, Union
+from typing import (
+    Any,
+    List,
+    Dict,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+    Generic,
+    cast,
+)
 
 from algosdk import abi, error
 from algosdk.abi.address_type import AddressType
@@ -37,7 +47,7 @@ class AtomicTransactionComposerStatus(IntEnum):
 
 
 def populate_foreign_array(
-    value_to_add: T, foreign_array: List[T], zero_value: T = None
+    value_to_add: T, foreign_array: List[T], zero_value: Optional[T] = None
 ) -> int:
     """
     Add a value to an application call's foreign array. The addition will be as
@@ -68,6 +78,13 @@ def populate_foreign_array(
     return offset + len(foreign_array) - 1
 
 
+SignedTransaction = Union[
+    transaction.SignedTransaction,
+    transaction.LogicSigTransaction,
+    transaction.MultisigTransaction,
+]
+
+
 class AtomicTransactionComposer:
     """
     Constructs an atomic transaction group which may contain a combination of
@@ -88,10 +105,10 @@ class AtomicTransactionComposer:
 
     def __init__(self) -> None:
         self.status = AtomicTransactionComposerStatus.BUILDING
-        self.method_dict = {}
-        self.txn_list = []
-        self.signed_txns = []
-        self.tx_ids = []
+        self.method_dict: dict[int, abi.Method] = {}
+        self.txn_list: list[TransactionWithSigner] = []
+        self.signed_txns: list[SignedTransaction] = []
+        self.tx_ids: list[str] = []
 
     def get_status(self) -> AtomicTransactionComposerStatus:
         """
@@ -160,20 +177,22 @@ class AtomicTransactionComposer:
         sender: str,
         sp: transaction.SuggestedParams,
         signer: "TransactionSigner",
-        method_args: List[Union[Any, "TransactionWithSigner"]] = None,
+        method_args: Optional[
+            List[Union[Any, "TransactionWithSigner"]]
+        ] = None,
         on_complete: transaction.OnComplete = transaction.OnComplete.NoOpOC,
-        local_schema: transaction.StateSchema = None,
-        global_schema: transaction.StateSchema = None,
-        approval_program: bytes = None,
-        clear_program: bytes = None,
-        extra_pages: int = None,
-        accounts: List[str] = None,
-        foreign_apps: List[int] = None,
-        foreign_assets: List[int] = None,
-        note: bytes = None,
-        lease: bytes = None,
-        rekey_to: str = None,
-        boxes: List[Tuple[int, bytes]] = None,
+        local_schema: Optional[transaction.StateSchema] = None,
+        global_schema: Optional[transaction.StateSchema] = None,
+        approval_program: Optional[bytes] = None,
+        clear_program: Optional[bytes] = None,
+        extra_pages: Optional[int] = None,
+        accounts: Optional[List[str]] = None,
+        foreign_apps: Optional[List[int]] = None,
+        foreign_assets: Optional[List[int]] = None,
+        note: Optional[bytes] = None,
+        lease: Optional[bytes] = None,
+        rekey_to: Optional[str] = None,
+        boxes: Optional[List[Tuple[int, bytes]]] = None,
     ) -> "AtomicTransactionComposer":
         """
         Add a smart contract method call to this atomic group.
@@ -264,7 +283,7 @@ class AtomicTransactionComposer:
         boxes = boxes[:] if boxes else []
 
         app_args = []
-        raw_values = []
+        raw_values: List[Any] = []
         raw_types = []
         txn_list = []
 
@@ -288,22 +307,24 @@ class AtomicTransactionComposer:
                 txn_list.append(method_args[i])
             else:
                 if abi.is_abi_reference_type(arg.type):
-                    current_type = abi.UintType(8)
+                    current_type: str | abi.ABIType = abi.UintType(8)
                     if arg.type == abi.ABIReferenceType.ACCOUNT:
                         address_type = AddressType()
                         account_arg = address_type.decode(
-                            address_type.encode(method_args[i])
+                            address_type.encode(
+                                cast(Union[str, bytes], method_args[i])
+                            )
                         )
-                        current_arg = populate_foreign_array(
+                        current_arg: Any = populate_foreign_array(
                             account_arg, accounts, sender
                         )
                     elif arg.type == abi.ABIReferenceType.ASSET:
-                        asset_arg = int(method_args[i])
+                        asset_arg = int(cast(int, method_args[i]))
                         current_arg = populate_foreign_array(
                             asset_arg, foreign_assets
                         )
                     elif arg.type == abi.ABIReferenceType.APPLICATION:
-                        app_arg = int(method_args[i])
+                        app_arg = int(cast(int, method_args[i]))
                         current_arg = populate_foreign_array(
                             app_arg, foreign_apps, app_id
                         )
@@ -404,8 +425,12 @@ class AtomicTransactionComposer:
             # Return cached versions of the signatures
             return self.signed_txns
 
-        stxn_list = [None] * len(self.txn_list)
-        signer_indexes = {}  # Map a signer to a list of indices to sign
+        stxn_list: List[Optional[SignedTransaction]] = [None] * len(
+            self.txn_list
+        )
+        signer_indexes: Dict[
+            TransactionSigner, List[int]
+        ] = {}  # Map a signer to a list of indices to sign
         txn_list = self.build_group()
         for i, txn_with_signer in enumerate(txn_list):
             if txn_with_signer.signer not in signer_indexes:
@@ -424,9 +449,10 @@ class AtomicTransactionComposer:
             raise error.AtomicTransactionComposerError(
                 "missing signatures, got {}".format(stxn_list)
             )
+        full_stxn_list = cast(List[SignedTransaction], stxn_list)
 
         self.status = AtomicTransactionComposerStatus.SIGNED
-        self.signed_txns = stxn_list
+        self.signed_txns = full_stxn_list
         return self.signed_txns
 
     def submit(self, client: algod.AlgodClient) -> list:
@@ -496,10 +522,10 @@ class AtomicTransactionComposer:
         method_results = []
 
         for i, tx_id in enumerate(self.tx_ids):
-            raw_value = None
+            raw_value: Optional[bytes] = None
             return_value = None
             decode_error = None
-            tx_info = None
+            tx_info: Optional[Any] = None
 
             if i not in self.method_dict:
                 continue
@@ -511,7 +537,7 @@ class AtomicTransactionComposer:
                     method_results.append(
                         ABIResult(
                             tx_id=tx_id,
-                            raw_value=raw_value,
+                            raw_value=cast(bytes, raw_value),
                             return_value=return_value,
                             decode_error=decode_error,
                             tx_info=tx_info,
@@ -538,18 +564,19 @@ class AtomicTransactionComposer:
                         "app call transaction did not log a return value"
                     )
                 raw_value = result_bytes[4:]
-                return_value = self.method_dict[i].returns.type.decode(
-                    raw_value
+                method_return_type = cast(
+                    abi.ABIType, self.method_dict[i].returns.type
                 )
+                return_value = method_return_type.decode(raw_value)
             except Exception as e:
                 decode_error = e
 
             abi_result = ABIResult(
                 tx_id=tx_id,
-                raw_value=raw_value,
+                raw_value=cast(bytes, raw_value),
                 return_value=return_value,
                 decode_error=decode_error,
-                tx_info=tx_info,
+                tx_info=cast(Any, tx_info),
                 method=self.method_dict[i],
             )
             method_results.append(abi_result)
@@ -693,7 +720,7 @@ class TransactionWithSigner:
 class ABIResult:
     def __init__(
         self,
-        tx_id: int,
+        tx_id: str,
         raw_value: bytes,
         return_value: Any,
         decode_error: Optional[Exception],
