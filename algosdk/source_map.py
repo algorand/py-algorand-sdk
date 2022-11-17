@@ -75,7 +75,7 @@ def _base64vlq_decode(vlqval: str) -> tuple[int, ...]:
     shift = value = 0
     # use byte values and a table to go from base64 characters to integers
     for v in map(_b64table.__getitem__, vlqval.encode("ascii")):
-        v = cast(int, v) # force int type given context
+        v = cast(int, v)  # force int type given context
         value += (v & mask) << shift
         if v & flag:
             shift += shiftsize
