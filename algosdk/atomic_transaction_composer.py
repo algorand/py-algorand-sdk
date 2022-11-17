@@ -105,10 +105,10 @@ class AtomicTransactionComposer:
 
     def __init__(self) -> None:
         self.status = AtomicTransactionComposerStatus.BUILDING
-        self.method_dict: dict[int, abi.Method] = {}
-        self.txn_list: list[TransactionWithSigner] = []
-        self.signed_txns: list[SignedTransaction] = []
-        self.tx_ids: list[str] = []
+        self.method_dict: Dict[int, abi.Method] = {}
+        self.txn_list: List[TransactionWithSigner] = []
+        self.signed_txns: List[SignedTransaction] = []
+        self.tx_ids: List[str] = []
 
     def get_status(self) -> AtomicTransactionComposerStatus:
         """
@@ -307,7 +307,7 @@ class AtomicTransactionComposer:
                 txn_list.append(method_args[i])
             else:
                 if abi.is_abi_reference_type(arg.type):
-                    current_type: str | abi.ABIType = abi.UintType(8)
+                    current_type: Union[str, abi.ABIType] = abi.UintType(8)
                     if arg.type == abi.ABIReferenceType.ACCOUNT:
                         address_type = AddressType()
                         account_arg = address_type.decode(

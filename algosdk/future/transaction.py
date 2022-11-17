@@ -2738,7 +2738,7 @@ class LogicSigAccount:
     """
 
     def __init__(
-        self, program: bytes, args: Optional[list[bytes]] = None
+        self, program: bytes, args: Optional[List[bytes]] = None
     ) -> None:
         """
         Create a new LogicSigAccount. By default this will create an escrow

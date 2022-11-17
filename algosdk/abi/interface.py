@@ -10,7 +10,7 @@ class InterfaceDict_Optional(TypedDict, total=False):
 
 class InterfaceDict(InterfaceDict_Optional):
     name: str
-    methods: list[MethodDict]
+    methods: List[MethodDict]
 
 
 class Interface:

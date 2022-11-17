@@ -1,4 +1,4 @@
-from typing import Dict, Any, List, Final, Optional, cast
+from typing import Dict, Any, List, Tuple, Final, Optional, cast
 
 from algosdk.error import SourceMapVersionError
 
@@ -62,14 +62,14 @@ Source taken from: https://gist.github.com/mjpieters/86b0d152bb51d5f5979346d1100
 """
 
 _b64chars = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-_b64table: Final[list[Optional[int]]] = [None] * (max(_b64chars) + 1)
+_b64table: Final[List[Optional[int]]] = [None] * (max(_b64chars) + 1)
 for i, b in enumerate(_b64chars):
     _b64table[b] = i
 
 shiftsize, flag, mask = 5, 1 << 5, (1 << 5) - 1
 
 
-def _base64vlq_decode(vlqval: str) -> tuple[int, ...]:
+def _base64vlq_decode(vlqval: str) -> Tuple[int, ...]:
     """Decode Base64 VLQ value"""
     results = []
     shift = value = 0

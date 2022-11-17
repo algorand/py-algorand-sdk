@@ -176,7 +176,7 @@ class TupleType(ABIType):
                         )
                     after = min(7, after)
                     consecutive_bool_list = cast(
-                        list[bool], values[i : i + after + 1]
+                        List[bool], values[i : i + after + 1]
                     )
                     compressed_int = TupleType._compress_multiple_bool(
                         consecutive_bool_list
@@ -232,10 +232,10 @@ class TupleType(ABIType):
                 "value string must be in bytes: {}".format(bytestring)
             )
         tuple_elements = self.child_types
-        dynamic_segments: list[
-            list[int]
+        dynamic_segments: List[
+            List[int]
         ] = list()  # Store the start and end of a dynamic element
-        value_partitions: list[Optional[bytes | bytearray]] = list()
+        value_partitions: List[Optional[Union[bytes, bytearray]]] = list()
         i = 0
         array_index = 0
 

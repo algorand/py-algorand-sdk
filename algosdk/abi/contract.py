@@ -15,8 +15,8 @@ class ContractDict_Optional(TypedDict, total=False):
 
 class ContractDict(ContractDict_Optional):
     name: str
-    methods: list[MethodDict]
-    networks: dict[str, NetworkInfoDict]
+    methods: List[MethodDict]
+    networks: Dict[str, NetworkInfoDict]
 
 
 class Contract:

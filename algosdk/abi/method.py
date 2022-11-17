@@ -12,7 +12,7 @@ class MethodDict_Optional(TypedDict, total=False):
 
 class MethodDict(MethodDict_Optional):
     name: str
-    args: list[dict]
+    args: List[dict]
     returns: dict
 
 
@@ -175,7 +175,7 @@ class Argument:
         if abi.is_abi_transaction_type(arg_type) or abi.is_abi_reference_type(
             arg_type
         ):
-            self.type: str | abi.ABIType = arg_type
+            self.type: Union[str, abi.ABIType] = arg_type
         else:
             # If the type cannot be parsed into an ABI type, it will error
             self.type = abi.ABIType.from_string(arg_type)
@@ -224,7 +224,7 @@ class Returns:
 
     def __init__(self, arg_type: str, desc: Optional[str] = None) -> None:
         if arg_type == "void":
-            self.type: str | abi.ABIType = self.VOID
+            self.type: Union[str, abi.ABIType] = self.VOID
         else:
             # If the type cannot be parsed into an ABI type, it will error.
             self.type = abi.ABIType.from_string(arg_type)

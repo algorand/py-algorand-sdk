@@ -2,7 +2,7 @@ import base64
 import binascii
 import string
 from dataclasses import dataclass
-from typing import Union, Optional
+from typing import Union, List, Optional
 
 from algosdk.constants import payment_txn, appcall_txn, ZERO_ADDRESS
 from algosdk.future import transaction
@@ -25,7 +25,7 @@ PRINTABLE = frozenset(string.printable)
 class LSig:
     """Logic Sig program parameters"""
 
-    args: Optional[list[bytes]] = None
+    args: Optional[List[bytes]] = None
 
 
 @dataclass
@@ -36,9 +36,9 @@ class App:
     round: Optional[int] = None
     app_idx: int = 0
     on_complete: int = 0
-    args: Optional[list[bytes]] = None
-    accounts: Optional[list[Union[str, Account]]] = None
-    global_state: Optional[list[TealKeyValue]] = None
+    args: Optional[List[bytes]] = None
+    accounts: Optional[List[Union[str, Account]]] = None
+    global_state: Optional[List[TealKeyValue]] = None
 
 
 class DryrunTestCaseMixin:
