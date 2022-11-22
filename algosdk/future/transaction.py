@@ -3279,69 +3279,56 @@ def create_dryrun(
 
         # we only care about app call transactions
         if issubclass(type(txn), ApplicationCallTxn):
-            accts.append(txn.sender)
+            appTxn = cast(ApplicationCallTxn, txn)
+            accts.append(appTxn.sender)
 
             # Add foreign args if they're set
-            if hasattr(txn, "accounts"):
-                accts.extend(txn.accounts)
-            if hasattr(txn, "foreign_apps"):
-                apps.extend(txn.foreign_apps)
+            if appTxn.accounts:
+                accts.extend(appTxn.accounts)
+            if appTxn.foreign_apps:
+                apps.extend(appTxn.foreign_apps)
                 accts.extend(
                     [
                         logic.get_application_address(aidx)
-                        for aidx in txn.foreign_apps
+                        for aidx in appTxn.foreign_apps
                     ]
                 )
-            if hasattr(txn, "foreign_assets"):
-                assets.extend(txn.foreign_assets)
+            if appTxn.foreign_assets:
+                assets.extend(appTxn.foreign_assets)
 
             # For creates, we need to add the source directly from the transaction
-            if hasattr(txn, "index") and txn.index == 0:
+            if appTxn.index == 0:
                 appId = defaultAppId
                 # Make up app id, since tealdbg/dryrun doesnt like 0s
                 # https://github.com/algorand/go-algorand/blob/e466aa18d4d963868d6d15279b1c881977fa603f/libgoal/libgoal.go#L1089-L1090
 
-                ls = txn.local_schema if hasattr(txn, "local_schema") else None
+                ls = appTxn.local_schema
                 if ls is not None:
                     ls = models.ApplicationStateSchema(
                         ls.num_uints, ls.num_byte_slices
                     )
 
-                gs = (
-                    txn.global_schema
-                    if hasattr(txn, "global_schema")
-                    else None
-                )
+                gs = appTxn.global_schema
                 if gs is not None:
                     gs = models.ApplicationStateSchema(
                         gs.num_uints, gs.num_byte_slices
                     )
 
-                approval_program = (
-                    txn.approval_program
-                    if hasattr(txn, "approval_program")
-                    else None
-                )
-                clear_program = (
-                    txn.clear_program
-                    if hasattr(txn, "clear_program")
-                    else None
-                )
                 app_infos.append(
                     models.Application(
                         id=appId,
                         params=models.ApplicationParams(
-                            creator=txn.sender,
-                            approval_program=approval_program,
-                            clear_state_program=clear_program,
+                            creator=appTxn.sender,
+                            approval_program=appTxn.approval_program,
+                            clear_state_program=appTxn.clear_program,
                             local_state_schema=ls,
                             global_state_schema=gs,
                         ),
                     )
                 )
             else:
-                if hasattr(txn, "index"):
-                    apps.append(txn.index)
+                if appTxn.index:
+                    apps.append(appTxn.index)
 
     # Dedupe and filter none, reset programs to bytecode instead of b64
     apps = [i for i in set(apps) if i]
