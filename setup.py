@@ -23,6 +23,6 @@ setuptools.setup(
     ],
     packages=setuptools.find_packages(),
     python_requires=">=3.8",
-    package_data={"": ["data/langspec.json"]},
+    package_data={"": ["data/langspec.json", "*.pyi", "py.typed"]},
     include_package_data=True,
 )

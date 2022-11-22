@@ -1,1 +1,3 @@
 include algosdk/data/langspec.json
+global-include *.pyi
+global-include *.typed
