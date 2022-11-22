@@ -1638,7 +1638,9 @@ class ApplicationCallTxn(Transaction):
         self.foreign_apps = self.int_list(foreign_apps)
         self.foreign_assets = self.int_list(foreign_assets)
         self.extra_pages = extra_pages
-        self.boxes = BoxReference.translate_box_references(boxes, self.foreign_apps, self.index)  # type: ignore
+        self.boxes = BoxReference.translate_box_references(
+            boxes, self.foreign_apps, self.index
+        )
         if not sp.flat_fee:
             self.fee = max(
                 self.estimate_size() * self.fee, constants.min_txn_fee

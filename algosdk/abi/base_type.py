@@ -77,8 +77,8 @@ class ABIType(ABC):
         elif s.endswith("]"):
             matches = re.search(STATIC_ARRAY_REGEX, s)
             try:
-                static_length = int(matches.group(2))  # type: ignore # we allow attribute errors to be caught
-                array_type = ABIType.from_string(matches.group(1))  # type: ignore # we allow attribute errors to be caught
+                static_length = int(matches.group(2))  # type: ignore[union-attr] # we allow attribute errors to be caught
+                array_type = ABIType.from_string(matches.group(1))  # type: ignore[union-attr] # we allow attribute errors to be caught
                 return ArrayStaticType(array_type, static_length)
             except Exception as e:
                 raise error.ABITypeError(
@@ -103,8 +103,8 @@ class ABIType(ABC):
         elif s.startswith("ufixed"):
             matches = re.search(UFIXED_REGEX, s)
             try:
-                bit_size = int(matches.group(1))  # type: ignore # we allow attribute errors to be caught
-                precision = int(matches.group(2))  # type: ignore # we allow attribute errors to be caught
+                bit_size = int(matches.group(1))  # type: ignore[union-attr] # we allow attribute errors to be caught
+                precision = int(matches.group(2))  # type: ignore[union-attr] # we allow attribute errors to be caught
                 return UfixedType(bit_size, precision)
             except Exception as e:
                 raise error.ABITypeError(

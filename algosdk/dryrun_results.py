@@ -63,13 +63,13 @@ class DryrunTransactionResult:
     def app_call_rejected(self) -> bool:
         return (
             False
-            if self.app_call_messages is None  # type: ignore  # dynamic attribute
-            else "REJECT" in self.app_call_messages  # type: ignore  # dynamic attribute
+            if self.app_call_messages is None  # type: ignore[attr-defined]  # dynamic attribute
+            else "REJECT" in self.app_call_messages  # type: ignore[attr-defined]  # dynamic attribute
         )
 
     def logic_sig_rejected(self) -> bool:
-        if self.logic_sig_messages is not None:  # type: ignore  # dynamic attribute
-            return "REJECT" in self.logic_sig_messages  # type: ignore  # dynamic attribute
+        if self.logic_sig_messages is not None:  # type: ignore[attr-defined]  # dynamic attribute
+            return "REJECT" in self.logic_sig_messages  # type: ignore[attr-defined]  # dynamic attribute
         return False
 
     @classmethod
@@ -144,7 +144,7 @@ class DryrunTransactionResult:
             spc = StackPrinterConfig(top_of_stack_first=False)
 
         return self.trace(
-            self.logic_sig_trace, self.logic_sig_disassembly, spc=spc  # type: ignore  # dynamic attribute
+            self.logic_sig_trace, self.logic_sig_disassembly, spc=spc  # type: ignore[attr-defined]  # dynamic attribute
         )
 
 
