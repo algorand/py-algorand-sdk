@@ -22,9 +22,9 @@ class ArrayStaticType(ABIType):
     """
 
     def __init__(self, arg_type: ABIType, array_len: int) -> None:
-        if array_len < 1:
+        if array_len < 0:
             raise error.ABITypeError(
-                "static array length must be a positive integer: {}".format(
+                "static array length {} must be a non-negative integer".format(
                     array_len
                 )
             )
