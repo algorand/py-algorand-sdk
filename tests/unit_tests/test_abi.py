@@ -179,6 +179,7 @@ class TestABIType(unittest.TestCase):
             "[][][]",
             "stuff[]",
             # static array
+            "bool[01]",
             "byte[10 ]",
             "uint64[0x21]",
             # tuple
