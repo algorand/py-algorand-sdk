@@ -50,7 +50,7 @@ class ByteType(ABIType):
             bytestring (bytes | bytearray): bytestring to be decoded
 
         Returns:
-            bytes: byte of the encoded bytestring
+            int: byte value of the encoded bytestring
         """
         if (
             not (

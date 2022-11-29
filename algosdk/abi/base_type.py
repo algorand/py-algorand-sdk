@@ -124,9 +124,6 @@ class ABIType(ABC):
                 if isinstance(tup, str):
                     tt = ABIType.from_string(tup)
                     tuple_list.append(tt)
-                elif isinstance(tup, list):
-                    tts = [ABIType.from_string(t_) for t_ in tup]
-                    tuple_list.extend(tts)
                 else:
                     raise error.ABITypeError(
                         "cannot convert {} to an ABI type".format(tup)

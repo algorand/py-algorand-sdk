@@ -73,7 +73,7 @@ class TupleType(ABIType):
         return until
 
     @staticmethod
-    def _parse_tuple(s: str) -> list:
+    def _parse_tuple(s: str) -> List[str]:
         """
         Given a tuple string, parses one layer of the tuple and returns tokens as a list.
         i.e. 'x,(y,(z))' -> ['x', '(y,(z))']
@@ -92,7 +92,7 @@ class TupleType(ABIType):
                 "cannot have consecutive commas in {}".format(s)
             )
 
-        tuple_strs = []
+        tuple_strs: List[str] = []
         depth = 0
         word = ""
         for char in s:
