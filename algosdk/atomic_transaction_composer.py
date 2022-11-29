@@ -77,7 +77,7 @@ def populate_foreign_array(
     return offset + len(foreign_array) - 1
 
 
-SignedTransaction = Union[
+GenericSignedTransaction = Union[
     transaction.SignedTransaction,
     transaction.LogicSigTransaction,
     transaction.MultisigTransaction,
@@ -93,7 +93,7 @@ class AtomicTransactionComposer:
         status (AtomicTransactionComposerStatus): IntEnum representing the current state of the composer
         method_dict (dict): dictionary of an index in the transaction list to a Method object
         txn_list (list[TransactionWithSigner]): list of transactions with signers
-        signed_txns (list[SignedTransaction]): list of signed transactions
+        signed_txns (list[GenericSignedTransaction]): list of signed transactions
         tx_ids (list[str]): list of individual transaction IDs in this atomic group
     """
 
@@ -106,7 +106,7 @@ class AtomicTransactionComposer:
         self.status = AtomicTransactionComposerStatus.BUILDING
         self.method_dict: Dict[int, abi.Method] = {}
         self.txn_list: List[TransactionWithSigner] = []
-        self.signed_txns: List[SignedTransaction] = []
+        self.signed_txns: List[GenericSignedTransaction] = []
         self.tx_ids: List[str] = []
 
     def get_status(self) -> AtomicTransactionComposerStatus:
@@ -418,13 +418,13 @@ class AtomicTransactionComposer:
         An error will be thrown if signing any of the transactions fails.
 
         Returns:
-            List[SignedTransaction]: list of signed transactions
+            List[GenericSignedTransaction]: list of signed transactions
         """
         if self.status >= AtomicTransactionComposerStatus.SIGNED:
             # Return cached versions of the signatures
             return self.signed_txns
 
-        stxn_list: List[Optional[SignedTransaction]] = [None] * len(
+        stxn_list: List[Optional[GenericSignedTransaction]] = [None] * len(
             self.txn_list
         )
         signer_indexes: Dict[
@@ -448,7 +448,7 @@ class AtomicTransactionComposer:
             raise error.AtomicTransactionComposerError(
                 "missing signatures, got {}".format(stxn_list)
             )
-        full_stxn_list = cast(List[SignedTransaction], stxn_list)
+        full_stxn_list = cast(List[GenericSignedTransaction], stxn_list)
 
         self.status = AtomicTransactionComposerStatus.SIGNED
         self.signed_txns = full_stxn_list
@@ -598,7 +598,7 @@ class TransactionSigner(ABC):
     @abstractmethod
     def sign_transactions(
         self, txn_group: List[transaction.Transaction], indexes: List[int]
-    ) -> List[SignedTransaction]:
+    ) -> List[GenericSignedTransaction]:
         pass
 
 
@@ -617,7 +617,7 @@ class AccountTransactionSigner(TransactionSigner):
 
     def sign_transactions(
         self, txn_group: List[transaction.Transaction], indexes: List[int]
-    ) -> List[SignedTransaction]:
+    ) -> List[GenericSignedTransaction]:
         """
         Sign transactions in a transaction group given the indexes.
 
@@ -651,7 +651,7 @@ class LogicSigTransactionSigner(TransactionSigner):
 
     def sign_transactions(
         self, txn_group: List[transaction.Transaction], indexes: List[int]
-    ) -> List[SignedTransaction]:
+    ) -> List[GenericSignedTransaction]:
         """
         Sign transactions in a transaction group given the indexes.
 
@@ -663,7 +663,7 @@ class LogicSigTransactionSigner(TransactionSigner):
             txn_group (list[Transaction]): atomic group of transactions
             indexes (list[int]): array of indexes in the atomic transaction group that should be signed
         """
-        stxns: List[SignedTransaction] = []
+        stxns: List[GenericSignedTransaction] = []
         for i in indexes:
             stxn = transaction.LogicSigTransaction(txn_group[i], self.lsig)
             stxns.append(stxn)
@@ -687,7 +687,7 @@ class MultisigTransactionSigner(TransactionSigner):
 
     def sign_transactions(
         self, txn_group: List[transaction.Transaction], indexes: List[int]
-    ) -> List[SignedTransaction]:
+    ) -> List[GenericSignedTransaction]:
         """
         Sign transactions in a transaction group given the indexes.
 
@@ -699,7 +699,7 @@ class MultisigTransactionSigner(TransactionSigner):
             txn_group (list[Transaction]): atomic group of transactions
             indexes (list[int]): array of indexes in the atomic transaction group that should be signed
         """
-        stxns: List[SignedTransaction] = []
+        stxns: List[GenericSignedTransaction] = []
         for i in indexes:
             mtxn = transaction.MultisigTransaction(txn_group[i], self.msig)
             for sk in self.sks:
