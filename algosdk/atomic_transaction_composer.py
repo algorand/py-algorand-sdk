@@ -10,7 +10,6 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
-    Generic,
     cast,
 )
 
@@ -419,7 +418,7 @@ class AtomicTransactionComposer:
         An error will be thrown if signing any of the transactions fails.
 
         Returns:
-            list[SignedTransactions]: list of signed transactions
+            List[SignedTransaction]: list of signed transactions
         """
         if self.status >= AtomicTransactionComposerStatus.SIGNED:
             # Return cached versions of the signatures
@@ -455,7 +454,7 @@ class AtomicTransactionComposer:
         self.signed_txns = full_stxn_list
         return self.signed_txns
 
-    def submit(self, client: algod.AlgodClient) -> list:
+    def submit(self, client: algod.AlgodClient) -> List[str]:
         """
         Send the transaction group to the network, but don't wait for it to be
         committed to a block. An error will be thrown if submission fails.
@@ -468,7 +467,7 @@ class AtomicTransactionComposer:
             client (AlgodClient): Algod V2 client
 
         Returns:
-            list[Transaction]: list of submitted transactions
+            List[str]: list of submitted transaction IDs
         """
         if self.status <= AtomicTransactionComposerStatus.SUBMITTED:
             self.gather_signatures()
@@ -599,7 +598,7 @@ class TransactionSigner(ABC):
     @abstractmethod
     def sign_transactions(
         self, txn_group: List[transaction.Transaction], indexes: List[int]
-    ) -> list:
+    ) -> List[SignedTransaction]:
         pass
 
 
@@ -618,7 +617,7 @@ class AccountTransactionSigner(TransactionSigner):
 
     def sign_transactions(
         self, txn_group: List[transaction.Transaction], indexes: List[int]
-    ) -> list:
+    ) -> List[SignedTransaction]:
         """
         Sign transactions in a transaction group given the indexes.
 
@@ -652,7 +651,7 @@ class LogicSigTransactionSigner(TransactionSigner):
 
     def sign_transactions(
         self, txn_group: List[transaction.Transaction], indexes: List[int]
-    ) -> list:
+    ) -> List[SignedTransaction]:
         """
         Sign transactions in a transaction group given the indexes.
 
@@ -664,7 +663,7 @@ class LogicSigTransactionSigner(TransactionSigner):
             txn_group (list[Transaction]): atomic group of transactions
             indexes (list[int]): array of indexes in the atomic transaction group that should be signed
         """
-        stxns = []
+        stxns: List[SignedTransaction] = []
         for i in indexes:
             stxn = transaction.LogicSigTransaction(txn_group[i], self.lsig)
             stxns.append(stxn)
@@ -688,7 +687,7 @@ class MultisigTransactionSigner(TransactionSigner):
 
     def sign_transactions(
         self, txn_group: List[transaction.Transaction], indexes: List[int]
-    ) -> list:
+    ) -> List[SignedTransaction]:
         """
         Sign transactions in a transaction group given the indexes.
 
@@ -700,7 +699,7 @@ class MultisigTransactionSigner(TransactionSigner):
             txn_group (list[Transaction]): atomic group of transactions
             indexes (list[int]): array of indexes in the atomic transaction group that should be signed
         """
-        stxns = []
+        stxns: List[SignedTransaction] = []
         for i in indexes:
             mtxn = transaction.MultisigTransaction(txn_group[i], self.msig)
             for sk in self.sks:
