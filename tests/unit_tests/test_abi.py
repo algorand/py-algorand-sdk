@@ -425,6 +425,32 @@ class TestABIEncoding(unittest.TestCase):
             actual = str_type.decode(actual)
             self.assertEqual(actual, test_case)
 
+        self.assertEqual(
+            StringType().encode("What’s new"),
+            bytearray(
+                [
+                    0,
+                    12,
+                    87,
+                    104,
+                    97,
+                    116,
+                    226,
+                    128,
+                    153,
+                    115,
+                    32,
+                    110,
+                    101,
+                    119,
+                ]
+            ),
+        )
+        self.assertEqual(
+            StringType().encode("😅🔨"),
+            bytearray([0, 8, 240, 159, 152, 133, 240, 159, 148, 168]),
+        )
+
         with self.assertRaises(error.ABIEncodingError) as e:
             StringType().decode((0).to_bytes(1, byteorder="big"))
         with self.assertRaises(error.ABIEncodingError) as e:

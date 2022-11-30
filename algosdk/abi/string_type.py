@@ -38,8 +38,8 @@ class StringType(ABIType):
         Returns:
             bytes: encoded bytes of the string
         """
-        length_to_encode = len(string_val).to_bytes(2, byteorder="big")
         encoded = string_val.encode("utf-8")
+        length_to_encode = len(encoded).to_bytes(2, byteorder="big")
         return length_to_encode + encoded
 
     def decode(self, bytestring: Union[bytes, bytearray]) -> str:
