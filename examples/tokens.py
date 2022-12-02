@@ -7,7 +7,7 @@ home = expanduser("~")
 
 # These values are initialized for the SDK sandbox harness.
 # You can bring the harness up by running `make harness`.
-# 
+#
 # If you are using your own node installation, change these after starting the node and kmd.
 # algod info is in the algod.net and algod.token files in the data directory
 # kmd info is in the kmd.net and kmd.token files in the kmd directory in data
