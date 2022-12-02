@@ -90,7 +90,7 @@ Next, create a wallet and an account:
 
 Visit the [Algorand dispenser](https://bank.testnet.algorand.network/) and enter the account address to fund your account.
 
-Next, in [tokens.py](https://github.com/algorand/py-algorand-sdk/blob/master/examples/tokens.py), either update the tokens and addresses, or provide a path to the data directory.
+Next, in [tokens.py](https://github.com/algorand/py-algorand-sdk/blob/master/examples/tokens.py), either update the tokens and addresses, or provide a path to the data directory. Alternatively, `tokens.py` also defaults to the sandbox harness configurations for algod and kmd, which can be brought up by running `make harness`.
 
 You're now ready to run example.py!
 
