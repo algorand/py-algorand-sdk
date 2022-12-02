@@ -1,8 +1,10 @@
 # Example: manipulating multisig transactions
 
 import tokens
-from algosdk import account, algod, encoding
+
+from algosdk import account, encoding
 from algosdk.future import transaction
+from algosdk.v2client import algod
 
 # generate three accounts
 private_key_1, account_1 = account.generate_account()
@@ -16,7 +18,7 @@ msig = transaction.Multisig(version, threshold, [account_1, account_2])
 
 # get suggested parameters
 acl = algod.AlgodClient(tokens.algod_token, tokens.algod_address)
-suggested_params = acl.suggested_params_as_object()
+suggested_params = acl.suggested_params()
 
 # create a transaction
 sender = msig.address()
