@@ -56,7 +56,7 @@ def populate_foreign_array(
             `value_to_add` will not be added to the array and the 0 index will
             be returned.
     """
-    if zero_value and value_to_add == zero_value:
+    if zero_value is not None and value_to_add == zero_value:
         return 0
 
     offset = 0 if zero_value is None else 1
