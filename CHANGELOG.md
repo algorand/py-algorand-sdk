@@ -1,4 +1,18 @@
 # Changelog
+
+# v1.20.2
+
+## What's Changed
+### Bugfixes
+* Bug-Fix: encode ABI string with non-ASCII characters by @ahangsu in https://github.com/algorand/py-algorand-sdk/pull/402
+### Enhancements
+* Tests: Migrate v1 algod dependencies to v2 in cucumber tests by @algochoi in https://github.com/algorand/py-algorand-sdk/pull/400
+* Enhancement: allowing zero length static array by @ahangsu in https://github.com/algorand/py-algorand-sdk/pull/401
+* README: Delete Travis CI Badge  by @algochoi in https://github.com/algorand/py-algorand-sdk/pull/404
+* examples: Migrate v1 algod usage to v2 algod by @algochoi in https://github.com/algorand/py-algorand-sdk/pull/403
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v1.20.1...v1.20.2
+
 # v1.20.1
 
 ## What's Changed
