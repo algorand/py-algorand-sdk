@@ -5,7 +5,7 @@
 # key, instead of a string, as the token.
 
 import tokens
-from algosdk import algod
+from algosdk.v2client import algod
 
 headers = {
     "X-API-Key": "#######",
@@ -37,7 +37,7 @@ def main():
         )
 
     # Retrieve latest block information
-    last_round = algod_client.status().get("lastRound")
+    last_round = algod_client.status().get("last-round")
     print("####################")
     block = algod_client.block_info(last_round)
     print(block)

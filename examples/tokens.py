@@ -1,22 +1,24 @@
-# examples helper file
+# Examples helper file
 
 from os import listdir
 from os.path import expanduser
 
 home = expanduser("~")
 
-# change these after starting the node and kmd
+# These values are initialized for the SDK sandbox harness.
+# You can bring the harness up by running `make harness`.
+#
+# If you are using your own node installation, change these after starting the node and kmd.
 # algod info is in the algod.net and algod.token files in the data directory
 # kmd info is in the kmd.net and kmd.token files in the kmd directory in data
+kmd_token = "a" * 64
+kmd_address = "http://localhost:59999"
 
-kmd_token = ""
-kmd_address = ""
-
-algod_token = ""
-algod_address = ""
+algod_token = "a" * 64
+algod_address = "http://localhost:60000"
 
 # you can also get tokens and addresses automatically
-get_automatically = True
+get_automatically = False
 
 # path to the data directory
 data_dir_path = home + "/node/network/Node"

@@ -8,7 +8,7 @@ from algosdk import error
 # Globals
 ABI_LENGTH_SIZE = 2  # We use 2 bytes to encode the length of a dynamic element
 UFIXED_REGEX = r"^ufixed([1-9][\d]*)x([1-9][\d]*)$"
-STATIC_ARRAY_REGEX = r"^([a-z\d\[\](),]+)\[([1-9][\d]*)]$"
+STATIC_ARRAY_REGEX = r"^([a-z\d\[\](),]+)\[(0|[1-9][\d]*)]$"
 
 
 class ABIType(ABC):

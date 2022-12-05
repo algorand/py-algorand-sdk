@@ -3,10 +3,13 @@
 # with an auction bid. Note that you can put any bytes you want in the "note"
 # field; you don't have to use the NoteField object.
 
-import tokens
-from algosdk import algod, mnemonic, account, auction, constants, encoding
-from algosdk.future import transaction
 import base64
+
+import tokens
+
+from algosdk import account, auction, constants, encoding
+from algosdk.future import transaction
+from algosdk.v2client import algod
 
 acl = algod.AlgodClient(tokens.algod_token, tokens.algod_address)
 
@@ -14,7 +17,7 @@ acl = algod.AlgodClient(tokens.algod_token, tokens.algod_address)
 private_key, public_key = account.generate_account()
 
 # get suggested parameters
-sp = acl.suggested_params_as_object()
+sp = acl.suggested_params()
 
 # Set other parameters
 amount = 100000

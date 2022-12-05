@@ -1,8 +1,10 @@
 # Example: rekeying
 
-from algosdk import account, algod
-from algosdk.future import transaction
 import tokens
+
+from algosdk import account
+from algosdk.future import transaction
+from algosdk.v2client import algod
 
 # this should be the current account
 sender_private_key, sender = account.generate_account()
@@ -12,7 +14,7 @@ amount = 0
 
 # get suggested parameters
 acl = algod.AlgodClient(tokens.algod_token, tokens.algod_address)
-suggested_params = acl.suggested_params_as_object()
+suggested_params = acl.suggested_params()
 
 # To rekey an account to a new address, add the `rekey_to` argument to creation.
 # After sending this rekeying transaction, every transaction needs to be signed by the private key of the new address
