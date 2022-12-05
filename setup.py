@@ -12,6 +12,7 @@ setuptools.setup(
     version="v1.20.2",
     long_description=long_description,
     long_description_content_type="text/markdown",
+    url="https://github.com/algorand/py-algorand-sdk",
     license="MIT",
     project_urls={
         "Source": "https://github.com/algorand/py-algorand-sdk",
