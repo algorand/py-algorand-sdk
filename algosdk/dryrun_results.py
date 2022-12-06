@@ -39,7 +39,6 @@ class DryrunTransactionResult:
             "global-delta",
             "budget-added",
             "budget-consumed",
-            "cost",
             "logic-sig-messages",
             "logic-sig-disassembly",
             "logs",
