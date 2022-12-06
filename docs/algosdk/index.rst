@@ -15,7 +15,6 @@ algosdk
    kmd
    logic
    mnemonic
-   template
    transaction
    util
    v2client/index
