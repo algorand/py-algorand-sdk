@@ -82,9 +82,7 @@ class UintType(ABIType):
             or len(bytestring) != self.bit_size // 8
         ):
             raise error.ABIEncodingError(
-                "value string must be in bytes and correspond to a uint{}: {}".format(
-                    self.bit_size, bytestring
-                )
+                f"value string must be in bytes and correspond to a uint{self.bit_size}: {bytestring!r}"
             )
         # Convert bytes into an unsigned integer
         return int.from_bytes(bytestring, byteorder="big", signed=False)

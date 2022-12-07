@@ -3,7 +3,7 @@ import binascii
 import warnings
 import msgpack
 from enum import IntEnum
-from typing import List, Union
+from typing import List, Union, Optional, cast
 from collections import OrderedDict
 
 from algosdk import account, constants, encoding, error, logic, transaction
@@ -1638,7 +1638,9 @@ class ApplicationCallTxn(Transaction):
         self.foreign_apps = self.int_list(foreign_apps)
         self.foreign_assets = self.int_list(foreign_assets)
         self.extra_pages = extra_pages
-        self.boxes = BoxReference.translate_box_references(boxes, self.foreign_apps, self.index)  # type: ignore
+        self.boxes = BoxReference.translate_box_references(
+            boxes, self.foreign_apps, self.index
+        )
         if not sp.flat_fee:
             self.fee = max(
                 self.estimate_size() * self.fee, constants.min_txn_fee
@@ -2161,7 +2163,9 @@ class SignedTransaction:
         authorizing_address (str)
     """
 
-    def __init__(self, transaction, signature, authorizing_address=None):
+    def __init__(
+        self, transaction: Transaction, signature, authorizing_address=None
+    ):
         self.signature = signature
         self.transaction = transaction
         self.authorizing_address = authorizing_address
@@ -2291,7 +2295,9 @@ class MultisigTransaction:
         return mtx
 
     @staticmethod
-    def merge(part_stxs: List["MultisigTransaction"]) -> "MultisigTransaction":
+    def merge(
+        part_stxs: List["MultisigTransaction"],
+    ) -> Optional["MultisigTransaction"]:
         """
         Merge partially signed multisig transactions.
 
@@ -2733,7 +2739,9 @@ class LogicSigAccount:
     Represents an account that can sign with a LogicSig program.
     """
 
-    def __init__(self, program: bytes, args: List[bytes] = None) -> None:
+    def __init__(
+        self, program: bytes, args: Optional[List[bytes]] = None
+    ) -> None:
         """
         Create a new LogicSigAccount. By default this will create an escrow
         LogicSig account. Call `sign` or `sign_multisig` on the newly created
@@ -2746,7 +2754,7 @@ class LogicSigAccount:
                 program.
         """
         self.lsig = LogicSig(program, args)
-        self.sigkey = None
+        self.sigkey: Optional[bytes] = None
 
     def dictify(self):
         od = OrderedDict()
@@ -2907,7 +2915,7 @@ class LogicSigTransaction:
             self.lsig = lsig
 
         if transaction.sender != lsigAddr:
-            self.auth_addr = lsigAddr
+            self.auth_addr: Optional[str] = lsigAddr
         else:
             self.auth_addr = None
 
@@ -3273,35 +3281,36 @@ def create_dryrun(
 
         # we only care about app call transactions
         if issubclass(type(txn), ApplicationCallTxn):
-            accts.append(txn.sender)
+            appTxn = cast(ApplicationCallTxn, txn)
+            accts.append(appTxn.sender)
 
             # Add foreign args if they're set
-            if txn.accounts:
-                accts.extend(txn.accounts)
-            if txn.foreign_apps:
-                apps.extend(txn.foreign_apps)
+            if appTxn.accounts:
+                accts.extend(appTxn.accounts)
+            if appTxn.foreign_apps:
+                apps.extend(appTxn.foreign_apps)
                 accts.extend(
                     [
                         logic.get_application_address(aidx)
-                        for aidx in txn.foreign_apps
+                        for aidx in appTxn.foreign_apps
                     ]
                 )
-            if txn.foreign_assets:
-                assets.extend(txn.foreign_assets)
+            if appTxn.foreign_assets:
+                assets.extend(appTxn.foreign_assets)
 
             # For creates, we need to add the source directly from the transaction
-            if txn.index == 0:
+            if appTxn.index == 0:
                 appId = defaultAppId
                 # Make up app id, since tealdbg/dryrun doesnt like 0s
                 # https://github.com/algorand/go-algorand/blob/e466aa18d4d963868d6d15279b1c881977fa603f/libgoal/libgoal.go#L1089-L1090
 
-                ls = txn.local_schema
+                ls = appTxn.local_schema
                 if ls is not None:
                     ls = models.ApplicationStateSchema(
                         ls.num_uints, ls.num_byte_slices
                     )
 
-                gs = txn.global_schema
+                gs = appTxn.global_schema
                 if gs is not None:
                     gs = models.ApplicationStateSchema(
                         gs.num_uints, gs.num_byte_slices
@@ -3311,16 +3320,17 @@ def create_dryrun(
                     models.Application(
                         id=appId,
                         params=models.ApplicationParams(
-                            creator=txn.sender,
-                            approval_program=txn.approval_program,
-                            clear_state_program=txn.clear_program,
+                            creator=appTxn.sender,
+                            approval_program=appTxn.approval_program,
+                            clear_state_program=appTxn.clear_program,
                             local_state_schema=ls,
                             global_state_schema=gs,
                         ),
                     )
                 )
             else:
-                apps.append(txn.index)
+                if appTxn.index:
+                    apps.append(appTxn.index)
 
     # Dedupe and filter none, reset programs to bytecode instead of b64
     apps = [i for i in set(apps) if i]

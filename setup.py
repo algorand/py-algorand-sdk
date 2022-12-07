@@ -12,6 +12,7 @@ setuptools.setup(
     version="v1.20.2",
     long_description=long_description,
     long_description_content_type="text/markdown",
+    url="https://github.com/algorand/py-algorand-sdk",
     license="MIT",
     project_urls={
         "Source": "https://github.com/algorand/py-algorand-sdk",
@@ -23,6 +24,6 @@ setuptools.setup(
     ],
     packages=setuptools.find_packages(),
     python_requires=">=3.8",
-    package_data={"": ["data/langspec.json"]},
+    package_data={"": ["data/langspec.json", "*.pyi", "py.typed"]},
     include_package_data=True,
 )

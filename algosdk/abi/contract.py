@@ -1,7 +1,22 @@
 import json
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Optional, TypedDict
 
-from algosdk.abi.method import Method, get_method_by_name
+from algosdk.abi.method import Method, MethodDict, get_method_by_name
+
+
+class NetworkInfoDict(TypedDict):
+    appID: int
+
+
+# In Python 3.11+ the following classes should be combined using `NotRequired`
+class ContractDict_Optional(TypedDict, total=False):
+    desc: str
+
+
+class ContractDict(ContractDict_Optional):
+    name: str
+    methods: List[MethodDict]
+    networks: Dict[str, NetworkInfoDict]
 
 
 class Contract:
@@ -20,8 +35,8 @@ class Contract:
         self,
         name: str,
         methods: List[Method],
-        desc: str = None,
-        networks: Dict[str, "NetworkInfo"] = None,
+        desc: Optional[str] = None,
+        networks: Optional[Dict[str, "NetworkInfo"]] = None,
     ) -> None:
         self.name = name
         self.methods = methods
@@ -43,11 +58,12 @@ class Contract:
         d = json.loads(resp)
         return Contract.undictify(d)
 
-    def dictify(self) -> dict:
-        d = {}
-        d["name"] = self.name
-        d["methods"] = [m.dictify() for m in self.methods]
-        d["networks"] = {k: v.dictify() for k, v in self.networks.items()}
+    def dictify(self) -> ContractDict:
+        d: ContractDict = {
+            "name": self.name,
+            "methods": [m.dictify() for m in self.methods],
+            "networks": {k: v.dictify() for k, v in self.networks.items()},
+        }
         if self.desc is not None:
             d["desc"] = self.desc
         return d
@@ -84,7 +100,7 @@ class NetworkInfo:
             return False
         return self.app_id == o.app_id
 
-    def dictify(self) -> dict:
+    def dictify(self) -> NetworkInfoDict:
         return {"appID": self.app_id}
 
     @staticmethod
