@@ -97,9 +97,7 @@ class UfixedType(ABIType):
             or len(bytestring) != self.bit_size // 8
         ):
             raise error.ABIEncodingError(
-                "value string must be in bytes and correspond to a ufixed{}x{}: {}".format(
-                    self.bit_size, self.precision, bytestring
-                )
+                f"value string must be in bytes and correspond to a ufixed{self.bit_size}x{self.precision}: {bytestring!r}"
             )
         # Convert bytes into an unsigned integer numerator
         return int.from_bytes(bytestring, byteorder="big", signed=False)

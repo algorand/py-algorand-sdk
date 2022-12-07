@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, cast
 
 from algosdk.abi.base_type import ABIType
 from algosdk.abi.byte_type import ByteType
@@ -53,15 +53,16 @@ class AddressType(ABIType):
                 value = encoding.decode_address(value)
             except Exception as e:
                 raise error.ABIEncodingError(
-                    "cannot encode the following address: {}".format(value)
+                    f"cannot encode the following address: {value!r}"
                 ) from e
         elif (
             not (isinstance(value, bytes) or isinstance(value, bytearray))
             or len(value) != 32
         ):
             raise error.ABIEncodingError(
-                "cannot encode the following public key: {}".format(value)
+                f"cannot encode the following public key: {value!r}"
             )
+        value = cast(bytes, value)
         return bytes(value)
 
     def decode(self, bytestring: Union[bytearray, bytes]) -> str:
@@ -82,9 +83,7 @@ class AddressType(ABIType):
             or len(bytestring) != 32
         ):
             raise error.ABIEncodingError(
-                "address string must be in bytes and correspond to a byte[32]: {}".format(
-                    bytestring
-                )
+                f"address string must be in bytes and correspond to a byte[32]: {bytestring!r}"
             )
         # Return the base32 encoded address string
         return encoding.encode_address(bytestring)
