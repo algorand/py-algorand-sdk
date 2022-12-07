@@ -33,13 +33,13 @@ class DryrunTransactionResult:
 
         self.disassembly = dr["disassembly"]
 
+        # cost is separated into 2 fields: `budget-added` and `budget-consumed`
         optionals = [
             "app-call-messages",
             "local-deltas",
             "global-delta",
             "budget-added",
             "budget-consumed",
-            "cost",
             "logic-sig-messages",
             "logic-sig-disassembly",
             "logs",
