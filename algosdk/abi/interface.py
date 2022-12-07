@@ -1,7 +1,16 @@
 import json
-from typing import List, Union
+from typing import List, Union, Optional, TypedDict
 
-from algosdk.abi.method import Method, get_method_by_name
+from algosdk.abi.method import Method, MethodDict, get_method_by_name
+
+# In Python 3.11+ the following classes should be combined using `NotRequired`
+class InterfaceDict_Optional(TypedDict, total=False):
+    desc: str
+
+
+class InterfaceDict(InterfaceDict_Optional):
+    name: str
+    methods: List[MethodDict]
 
 
 class Interface:
@@ -15,7 +24,7 @@ class Interface:
     """
 
     def __init__(
-        self, name: str, methods: List[Method], desc: str = None
+        self, name: str, methods: List[Method], desc: Optional[str] = None
     ) -> None:
         self.name = name
         self.methods = methods
@@ -35,10 +44,11 @@ class Interface:
         d = json.loads(resp)
         return Interface.undictify(d)
 
-    def dictify(self) -> dict:
-        d = {}
-        d["name"] = self.name
-        d["methods"] = [m.dictify() for m in self.methods]
+    def dictify(self) -> InterfaceDict:
+        d: InterfaceDict = {
+            "name": self.name,
+            "methods": [m.dictify() for m in self.methods],
+        }
         if self.desc:
             d["desc"] = self.desc
         return d

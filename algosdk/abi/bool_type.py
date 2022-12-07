@@ -60,9 +60,7 @@ class BoolType(ABIType):
             or len(bytestring) != 1
         ):
             raise error.ABIEncodingError(
-                "value string must be in bytes and correspond to a bool: {}".format(
-                    bytestring
-                )
+                f"value string must be in bytes and correspond to a bool: {bytestring!r}"
             )
         if bytestring == b"\x80":
             return True
@@ -70,5 +68,5 @@ class BoolType(ABIType):
             return False
         else:
             raise error.ABIEncodingError(
-                "boolean value could not be decoded: {}".format(bytestring)
+                f"boolean value could not be decoded: {bytestring!r}"
             )

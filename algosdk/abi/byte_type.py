@@ -42,7 +42,7 @@ class ByteType(ABIType):
             )
         return bytes([value])
 
-    def decode(self, bytestring: Union[bytes, bytearray]) -> bytes:
+    def decode(self, bytestring: Union[bytes, bytearray]) -> int:
         """
         Decodes a bytestring to a single byte.
 
@@ -50,7 +50,7 @@ class ByteType(ABIType):
             bytestring (bytes | bytearray): bytestring to be decoded
 
         Returns:
-            bytes: byte of the encoded bytestring
+            int: byte value of the encoded bytestring
         """
         if (
             not (
@@ -60,8 +60,6 @@ class ByteType(ABIType):
             or len(bytestring) != 1
         ):
             raise error.ABIEncodingError(
-                "value string must be in bytes and correspond to a byte: {}".format(
-                    bytestring
-                )
+                f"value string must be in bytes and correspond to a byte: {bytestring!r}"
             )
         return bytestring[0]

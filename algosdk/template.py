@@ -3,6 +3,7 @@ import random
 from . import error, encoding, constants, transaction, logic, account
 from Cryptodome.Hash import SHA256, keccak
 import base64
+from typing import Optional
 
 
 class Template:
@@ -329,8 +330,8 @@ class DynamicFee(Template):
         receiver: str,
         amount: int,
         first_valid: int,
-        last_valid: int = None,
-        close_remainder_address: str = None,
+        last_valid: Optional[int] = None,
+        close_remainder_address: Optional[str] = None,
     ):
         self.lease_value = bytes(
             [random.randint(0, 255) for x in range(constants.lease_length)]
