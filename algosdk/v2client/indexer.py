@@ -4,7 +4,6 @@ import urllib.error
 import json
 import base64
 from .. import error
-from .. import encoding
 from .. import constants
 from .algod import _specify_round_string
 

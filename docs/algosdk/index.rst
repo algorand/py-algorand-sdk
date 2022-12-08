@@ -5,7 +5,6 @@ algosdk
 
    abi/index
    account
-   algod
    atomic_transaction_composer
    auction
    constants

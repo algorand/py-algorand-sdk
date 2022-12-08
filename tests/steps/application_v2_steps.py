@@ -419,14 +419,9 @@ def reset_appid_list(context):
 
 @step("I remember the new application ID.")
 def remember_app_id(context):
-    if hasattr(context, "acl"):
-        app_id = context.acl.pending_transaction_info(context.app_txid)[
-            "txresults"
-        ]["createdapp"]
-    else:
-        app_id = context.app_acl.pending_transaction_info(context.app_txid)[
-            "application-index"
-        ]
+    app_id = context.app_acl.pending_transaction_info(context.app_txid)[
+        "application-index"
+    ]
 
     context.current_application_id = app_id
     if not hasattr(context, "app_ids"):
