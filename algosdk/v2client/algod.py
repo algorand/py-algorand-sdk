@@ -483,6 +483,40 @@ class AlgodClient:
         req = "/blocks/{}/hash".format(round_num)
         return self.algod_request("GET", req, **kwargs)
 
+    def simulate_transactions(self, txns, **kwargs):
+        """
+        Simulate a list of a signed transaction objects being sent to the network.
+
+        Args:
+            txns (SignedTransaction[] or MultisigTransaction[]):
+                transactions to send
+            request_header (dict, optional): additional header for request
+
+        Returns:
+            str: first transaction ID
+        """
+        serialized = []
+        for txn in txns:
+            assert not isinstance(
+                txn, future.transaction.Transaction
+            ), "Attempt to send UNSIGNED transaction {}".format(txn)
+            serialized.append(base64.b64decode(encoding.msgpack_encode(txn)))
+
+        return self.send_raw_transaction(
+            base64.b64encode(b"".join(serialized)), **kwargs
+        )
+
+    def simulate_raw_transaction(self, txn, **kwargs):
+        txn = base64.b64decode(txn)
+        req = "/transactions/simulate"
+        headers = util.build_headers_from(
+            kwargs.get("headers", False),
+            {"Content-Type": "application/x-binary"},
+        )
+        kwargs["headers"] = headers
+
+        return self.algod_request("POST", req, data=txn, **kwargs)
+
 
 def _specify_round_string(block, round_num):
     """
