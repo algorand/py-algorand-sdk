@@ -1,7 +1,6 @@
 from typing import Union
 
-from algosdk import account, encoding, logic
-from algosdk.future import transaction
+from algosdk import account, encoding, logic, transaction
 from behave import given, then, when
 import tests.steps.other_v2_steps  # Imports MaybeString
 

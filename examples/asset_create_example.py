@@ -1,7 +1,6 @@
 # Example: creating an asset
 
-from algosdk import account
-from algosdk.future import transaction
+from algosdk import account, transaction
 
 # creator
 private_key, address = account.generate_account()

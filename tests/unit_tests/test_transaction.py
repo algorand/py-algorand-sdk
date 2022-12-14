@@ -4,8 +4,15 @@ import os
 import unittest
 import uuid
 
-from algosdk import account, constants, encoding, error, logic, mnemonic
-from algosdk.future import transaction
+from algosdk import (
+    account,
+    constants,
+    encoding,
+    error,
+    logic,
+    mnemonic,
+    transaction,
+)
 
 
 class TestPaymentTransaction(unittest.TestCase):

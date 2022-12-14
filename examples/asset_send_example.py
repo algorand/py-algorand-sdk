@@ -1,7 +1,6 @@
 # Example: sending assets
 
-from algosdk import account
-from algosdk.future import transaction
+from algosdk import account, transaction
 
 sender_private_key, sender_address = account.generate_account()
 
