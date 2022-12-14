@@ -199,7 +199,7 @@ class TestPaymentTransaction(unittest.TestCase):
 
     def test_sign_logic_multisig(self):
         program = b"\x01\x20\x01\x01\x22"
-        lsig = transaction.LogicSig(program)
+        lsig = transaction._LogicSig(program)
         passphrase = "sight garment riot tattoo tortoise identify left talk sea ill walnut leg robot myth toe perfect rifle dizzy spend april build legend brother above hospital"
         sk = mnemonic.to_private_key(passphrase)
         addr = account.address_from_private_key(sk)

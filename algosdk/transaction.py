@@ -2503,7 +2503,7 @@ class MultisigSubsig:
         )
 
 
-class LogicSig:
+class _LogicSig:
     """
     Represents a logic signature
 
@@ -2582,7 +2582,7 @@ class LogicSig:
 
     @staticmethod
     def undictify(d):
-        lsig = LogicSig(d["l"], d.get("arg", None))
+        lsig = _LogicSig(d["l"], d.get("arg", None))
         if "sig" in d:
             lsig.sig = base64.b64encode(d["sig"]).decode()
         elif "msig" in d:
@@ -2654,7 +2654,7 @@ class LogicSig:
                 break
         if index == -1:
             raise error.InvalidSecretKeyError
-        sig = LogicSig.sign_program(program, private_key)
+        sig = _LogicSig.sign_program(program, private_key)
 
         return sig, index
 
@@ -2676,11 +2676,11 @@ class LogicSig:
         if not multisig:
             if self.msig:
                 raise error.LogicSigOverspecifiedSignature
-            self.sig = LogicSig.sign_program(self.logic, private_key)
+            self.sig = _LogicSig.sign_program(self.logic, private_key)
         else:
             if self.sig:
                 raise error.LogicSigOverspecifiedSignature
-            sig, index = LogicSig.single_sig_multisig(
+            sig, index = _LogicSig.single_sig_multisig(
                 self.logic, private_key, multisig
             )
             multisig.subsigs[index].signature = base64.b64decode(sig)
@@ -2699,13 +2699,13 @@ class LogicSig:
         """
         if self.msig is None:
             raise error.InvalidSecretKeyError
-        sig, index = LogicSig.single_sig_multisig(
+        sig, index = _LogicSig.single_sig_multisig(
             self.logic, private_key, self.msig
         )
         self.msig.subsigs[index].signature = base64.b64decode(sig)
 
     def __eq__(self, other):
-        if not isinstance(other, LogicSig):
+        if not isinstance(other, _LogicSig):
             return False
         return (
             self.logic == other.logic
@@ -2734,7 +2734,7 @@ class LogicSigAccount:
             args (List[bytes], optional): An optional array of arguments for the
                 program.
         """
-        self.lsig = LogicSig(program, args)
+        self.lsig = _LogicSig(program, args)
         self.sigkey: Optional[bytes] = None
 
     def dictify(self):
@@ -2746,7 +2746,7 @@ class LogicSigAccount:
 
     @staticmethod
     def undictify(d):
-        lsig = LogicSig.undictify(d["lsig"])
+        lsig = _LogicSig.undictify(d["lsig"])
         lsigAccount = LogicSigAccount(lsig.logic, lsig.args)
         lsigAccount.lsig = lsig
         if "sigkey" in d:
@@ -2866,16 +2866,16 @@ class LogicSigTransaction:
 
     Arguments:
         transaction (Transaction)
-        lsig (LogicSig or LogicSigAccount)
+        lsig (_LogicSig or LogicSigAccount)
 
     Attributes:
         transaction (Transaction)
-        lsig (LogicSig)
+        lsig (_LogicSig)
         auth_addr (str, optional)
     """
 
     def __init__(
-        self, transaction: Transaction, lsig: Union[LogicSig, LogicSigAccount]
+        self, transaction: Transaction, lsig: Union[_LogicSig, LogicSigAccount]
     ) -> None:
         self.transaction = transaction
 
@@ -2938,7 +2938,7 @@ class LogicSigTransaction:
     def undictify(d):
         lsig = None
         if "lsig" in d:
-            lsig = LogicSig.undictify(d["lsig"])
+            lsig = _LogicSig.undictify(d["lsig"])
         auth_addr = None
         if "sgnr" in d:
             auth_addr = encoding.encode_address(d["sgnr"])

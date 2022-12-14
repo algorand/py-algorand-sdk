@@ -72,7 +72,7 @@ def msgpack_decode(enc):
     if "type" in decoded:
         return transaction.Transaction.undictify(decoded)
     if "l" in decoded:
-        return transaction.LogicSig.undictify(decoded)
+        return transaction._LogicSig.undictify(decoded)
     if "msig" in decoded:
         return transaction.MultisigTransaction.undictify(decoded)
     if "lsig" in decoded:

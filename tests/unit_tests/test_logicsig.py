@@ -7,10 +7,10 @@ from algosdk import account, encoding, error, mnemonic, transaction
 class TestLogicSig(unittest.TestCase):
     def test_basic(self):
         with self.assertRaises(error.InvalidProgram):
-            lsig = transaction.LogicSig(None)
+            lsig = transaction._LogicSig(None)
 
         with self.assertRaises(error.InvalidProgram):
-            lsig = transaction.LogicSig(b"")
+            lsig = transaction._LogicSig(b"")
 
         program = b"\x01\x20\x01\x01\x22"  # int 1
         program_hash = (
@@ -18,7 +18,7 @@ class TestLogicSig(unittest.TestCase):
         )
         public_key = encoding.decode_address(program_hash)
 
-        lsig = transaction.LogicSig(program)
+        lsig = transaction._LogicSig(program)
         self.assertEqual(lsig.logic, program)
         self.assertEqual(lsig.args, None)
         self.assertEqual(lsig.sig, None)
@@ -31,7 +31,7 @@ class TestLogicSig(unittest.TestCase):
             b"\x01\x02\x03",
             b"\x04\x05\x06",
         ]
-        lsig = transaction.LogicSig(program, args)
+        lsig = transaction._LogicSig(program, args)
         self.assertEqual(lsig.logic, program)
         self.assertEqual(lsig.args, args)
         self.assertEqual(lsig.sig, None)
@@ -48,7 +48,7 @@ class TestLogicSig(unittest.TestCase):
 
         # check signature verification on modified program
         program = b"\x01\x20\x01\x03\x22"
-        lsig = transaction.LogicSig(program)
+        lsig = transaction._LogicSig(program)
         self.assertEqual(lsig.logic, program)
         verified = lsig.verify(public_key)
         self.assertFalse(verified)
@@ -56,7 +56,7 @@ class TestLogicSig(unittest.TestCase):
 
         # check invalid program fails
         program = b"\x00\x20\x01\x03\x22"
-        lsig = transaction.LogicSig(program)
+        lsig = transaction._LogicSig(program)
         verified = lsig.verify(public_key)
         self.assertFalse(verified)
 
@@ -64,7 +64,7 @@ class TestLogicSig(unittest.TestCase):
         private_key, address = account.generate_account()
         public_key = encoding.decode_address(address)
         program = b"\x01\x20\x01\x01\x22"  # int 1
-        lsig = transaction.LogicSig(program)
+        lsig = transaction._LogicSig(program)
         lsig.sign(private_key)
         self.assertEqual(lsig.logic, program)
         self.assertEqual(lsig.args, None)
@@ -89,7 +89,7 @@ class TestLogicSig(unittest.TestCase):
         # create multisig address with invalid version
         msig = transaction.Multisig(1, 2, [account_1, account_2])
         program = b"\x01\x20\x01\x01\x22"  # int 1
-        lsig = transaction.LogicSig(program)
+        lsig = transaction._LogicSig(program)
         lsig.sign(private_key_1, msig)
         self.assertEqual(lsig.logic, program)
         self.assertEqual(lsig.args, None)
@@ -109,7 +109,7 @@ class TestLogicSig(unittest.TestCase):
         self.assertTrue(verified)
 
         # combine sig and multisig, ensure it fails
-        lsigf = transaction.LogicSig(program)
+        lsigf = transaction._LogicSig(program)
         lsigf.sign(private_key)
         lsig.sig = lsigf.sig
         verified = lsig.verify(public_key)
@@ -171,7 +171,7 @@ class TestLogicSig(unittest.TestCase):
         program = b"\x01\x20\x01\x01\x22"  # int 1
         args = [b"123", b"456"]
         sk = mnemonic.to_private_key(mn)
-        lsig = transaction.LogicSig(program, args)
+        lsig = transaction._LogicSig(program, args)
         lsig.sign(sk)
         lstx = transaction.LogicSigTransaction(tx, lsig)
         verified = lstx.verify()
@@ -426,7 +426,7 @@ class TestLogicSigTransaction(unittest.TestCase):
         self.assertEqual(decoded, actual)
 
     def test_LogicSig_escrow(self):
-        lsig = transaction.LogicSig(
+        lsig = transaction._LogicSig(
             TestLogicSigTransaction.program, TestLogicSigTransaction.args
         )
 
@@ -435,7 +435,7 @@ class TestLogicSigTransaction(unittest.TestCase):
         self._test_sign_txn(lsig, sender, expected)
 
     def test_LogicSig_escrow_different_sender(self):
-        lsig = transaction.LogicSig(
+        lsig = transaction._LogicSig(
             TestLogicSigTransaction.program, TestLogicSigTransaction.args
         )
 
@@ -448,7 +448,7 @@ class TestLogicSigTransaction(unittest.TestCase):
             "olympic cricket tower model share zone grid twist sponsor avoid eight apology patient party success claim famous rapid donor pledge bomb mystery security ability often"
         )
 
-        lsig = transaction.LogicSig(
+        lsig = transaction._LogicSig(
             TestLogicSigTransaction.program, TestLogicSigTransaction.args
         )
         lsig.sign(sk)
@@ -462,7 +462,7 @@ class TestLogicSigTransaction(unittest.TestCase):
             "olympic cricket tower model share zone grid twist sponsor avoid eight apology patient party success claim famous rapid donor pledge bomb mystery security ability often"
         )
 
-        lsig = transaction.LogicSig(
+        lsig = transaction._LogicSig(
             TestLogicSigTransaction.program, TestLogicSigTransaction.args
         )
         lsig.sign(sk)
@@ -471,7 +471,7 @@ class TestLogicSigTransaction(unittest.TestCase):
         self._test_sign_txn(lsig, sender, None, False)
 
     def test_LogicSig_msig_delegated(self):
-        lsig = transaction.LogicSig(
+        lsig = transaction._LogicSig(
             TestLogicSigTransaction.program, TestLogicSigTransaction.args
         )
         lsig.sign(sampleAccount1, sampleMsig)
@@ -482,7 +482,7 @@ class TestLogicSigTransaction(unittest.TestCase):
         self._test_sign_txn(lsig, sender, expected)
 
     def test_LogicSig_msig_delegated_different_sender(self):
-        lsig = transaction.LogicSig(
+        lsig = transaction._LogicSig(
             TestLogicSigTransaction.program, TestLogicSigTransaction.args
         )
         lsig.sign(sampleAccount1, sampleMsig)
