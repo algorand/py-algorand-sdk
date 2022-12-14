@@ -502,7 +502,9 @@ class AlgodClient:
             ), "Attempt to send UNSIGNED transaction {}".format(txn)
             serialized.append(base64.b64decode(encoding.msgpack_encode(txn)))
 
-        return self.send_raw_transaction(
+        kwargs["response_format"] = "msgpack"
+
+        return self.simulate_raw_transaction(
             base64.b64encode(b"".join(serialized)), **kwargs
         )
 
