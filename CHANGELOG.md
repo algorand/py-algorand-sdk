@@ -6,6 +6,7 @@
 
 ### Breaking Changes
 
+* Removed `mnemonic.to_public_key` in favor of `account.address_from_private_key`.
 * Removed `future` package in favor of `transaction` pacakge.
 * Removed `encoding.future_msgpack_decode` method in favor of `encoding.msgpack_decode` method.
 

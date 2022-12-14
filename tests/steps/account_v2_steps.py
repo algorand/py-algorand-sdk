@@ -239,6 +239,7 @@ def parse_accounts_auth(context, roundNum, length, index, authAddr):
 
 @given('a signing account with address "{address}" and mnemonic "{mnemonic}"')
 def signing_account(context, address, mnemonic):
+    context.signing_address = address
     context.signing_mnemonic = mnemonic
 
 
