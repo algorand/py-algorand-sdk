@@ -1,5 +1,12 @@
 # Changelog
 
+# v2.0.0
+
+## What's Changed
+
+## Breaking changes
+* Removed `mnemonic.to_public_key` in favor of `account.address_from_private_key`.
+
 # v1.20.2
 
 ## What's Changed

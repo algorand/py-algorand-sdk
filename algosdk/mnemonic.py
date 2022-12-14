@@ -78,28 +78,6 @@ def to_private_key(mnemonic):
     return base64.b64encode(key.encode() + key.verify_key.encode()).decode()
 
 
-def to_public_key(mnemonic):
-    """
-    Return the public key for the mnemonic.
-    This method returns the Algorand address and will be deprecated, use
-    account.address_from_private_key instead.
-
-    Args:
-        mnemonic (str): mnemonic of the private key
-
-    Returns:
-        str: public key in base32
-    """
-    warnings.warn(
-        "to_public_key returns the Algorand address and will be "
-        "deprecated, use account.address_from_private_key instead",
-        DeprecationWarning,
-    )
-    key_bytes = _to_key(mnemonic)
-    key = signing.SigningKey(key_bytes)
-    return encoding.encode_address(key.verify_key.encode())
-
-
 def _from_key(key):
     """
     Return the mnemonic for the key.

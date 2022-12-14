@@ -451,7 +451,7 @@ class TestPaymentTransaction(unittest.TestCase):
             "asure need above hundred"
         )
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
         fee = 1000
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
         votepk = "Kv7QI7chi1y6axoy+t7wzAVpePqRq/rkjzWh/RMYyLo="
@@ -493,7 +493,7 @@ class TestPaymentTransaction(unittest.TestCase):
             "asure need above hundred"
         )
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
         fee = 1000
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
         votepk = "Kv7QI7chi1y6axoy+t7wzAVpePqRq/rkjzWh/RMYyLo="
@@ -530,7 +530,8 @@ class TestPaymentTransaction(unittest.TestCase):
             "asure need above hundred"
         )
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
+
         fee = 1000
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
         votepk = "Kv7QI7chi1y6axoy+t7wzAVpePqRq/rkjzWh/RMYyLo="
@@ -563,7 +564,7 @@ class TestPaymentTransaction(unittest.TestCase):
             "measure need above hundred"
         )
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
         fee = 1000
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
 
@@ -610,7 +611,7 @@ class TestPaymentTransaction(unittest.TestCase):
             "measure need above hundred"
         )
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
         fee = 1000
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
 
