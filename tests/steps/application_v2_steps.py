@@ -6,7 +6,13 @@ import time
 import pytest
 from behave import given, step, then, when
 
-from algosdk import abi, account, atomic_transaction_composer, encoding, mnemonic
+from algosdk import (
+    abi,
+    account,
+    atomic_transaction_composer,
+    encoding,
+    mnemonic,
+)
 from algosdk.abi.contract import NetworkInfo
 from algosdk.error import ABITypeError, AtomicTransactionComposerError
 from algosdk.future import transaction
