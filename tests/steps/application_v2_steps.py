@@ -6,7 +6,7 @@ import time
 import pytest
 from behave import given, step, then, when
 
-from algosdk import abi, atomic_transaction_composer, encoding, mnemonic
+from algosdk import abi, account, atomic_transaction_composer, encoding, mnemonic
 from algosdk.abi.contract import NetworkInfo
 from algosdk.error import ABITypeError, AtomicTransactionComposerError
 from algosdk.future import transaction
@@ -632,7 +632,7 @@ def abi_method_adder(
     if account_type == "transient":
         sender = context.transient_pk
     elif account_type == "signing":
-        sender = mnemonic.to_public_key(context.signing_mnemonic)
+        sender = context.signing_address
     else:
         raise NotImplementedError(
             "cannot make transaction signer for " + account_type
