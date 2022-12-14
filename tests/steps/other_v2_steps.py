@@ -1083,7 +1083,7 @@ def dryrun_step(context, kind, program):
     sources = []
 
     if kind == "compiled":
-        lsig = transaction._LogicSig(data)
+        lsig = transaction.LogicSigAccount(bytes(data)).lsig
         txns = [transaction.LogicSigTransaction(txn, lsig)]
     elif kind == "source":
         txns = [transaction.SignedTransaction(txn, None)]
