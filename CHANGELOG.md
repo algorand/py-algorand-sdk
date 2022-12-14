@@ -1,5 +1,14 @@
 # Changelog
 
+# v2.0.0
+
+## What's Changed
+
+### Breaking Changes
+
+* Removed `future` package in favor of `transaction` pacakge.
+* Removed `encoding.future_msgpack_decode` method in favor of `encoding.msgpack_decode` method.
+
 # v1.20.2
 
 ## What's Changed
