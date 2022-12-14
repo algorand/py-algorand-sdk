@@ -4,8 +4,11 @@
 
 ## What's Changed
 
-## Breaking changes
+### Breaking Changes
+
 * Removed `mnemonic.to_public_key` in favor of `account.address_from_private_key`.
+* Removed `algosdk.future` package.  Moved package contents to `algosdk`.
+* Removed `encoding.future_msgpack_decode` method in favor of `encoding.msgpack_decode` method.
 
 # v1.20.2
 

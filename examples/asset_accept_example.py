@@ -1,7 +1,6 @@
 # Example: accepting assets
 
-from algosdk import account
-from algosdk.future import transaction
+from algosdk import account, transaction
 
 private_key, address = account.generate_account()
 

@@ -2,8 +2,7 @@
 
 import tokens
 
-from algosdk import account, kmd
-from algosdk.future import transaction
+from algosdk import account, kmd, transaction
 from algosdk.v2client import algod
 
 # generate accounts

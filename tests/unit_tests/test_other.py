@@ -177,7 +177,7 @@ class TestMsgpack(unittest.TestCase):
         )
         self.assertEqual(
             paytxn,
-            encoding.msgpack_encode(encoding.future_msgpack_decode(paytxn)),
+            encoding.msgpack_encode(encoding.msgpack_decode(paytxn)),
         )
 
     def test_asset_xfer_txn_future(self):
@@ -189,7 +189,7 @@ class TestMsgpack(unittest.TestCase):
         )
         self.assertEqual(
             axfer,
-            encoding.msgpack_encode(encoding.future_msgpack_decode(axfer)),
+            encoding.msgpack_encode(encoding.msgpack_decode(axfer)),
         )
 
     def test_multisig_txn(self):
@@ -227,11 +227,9 @@ class TestMsgpack(unittest.TestCase):
             "OUJOiKibHbOALuxk6NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tu"
             "H9pHR5cGWma2V5cmVn"
         )
-        # using future_msgpack_decode instead of msgpack_decode
-        # because non-future transactions do not support offline keyreg
         self.assertEqual(
             keyregtxn,
-            encoding.msgpack_encode(encoding.future_msgpack_decode(keyregtxn)),
+            encoding.msgpack_encode(encoding.msgpack_decode(keyregtxn)),
         )
 
     def test_keyreg_txn_nonpart(self):
@@ -240,11 +238,9 @@ class TestMsgpack(unittest.TestCase):
             "OUJOiKibHbOALuxk6dub25wYXJ0w6NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUO"
             "B+jFx2mGR9tuH9pHR5cGWma2V5cmVn"
         )
-        # using future_msgpack_decode instead of msgpack_decode
-        # because non-future transactions do not support nonpart keyreg
         self.assertEqual(
             keyregtxn,
-            encoding.msgpack_encode(encoding.future_msgpack_decode(keyregtxn)),
+            encoding.msgpack_encode(encoding.msgpack_decode(keyregtxn)),
         )
 
     def test_stateproof_txn(self):
@@ -406,9 +402,7 @@ class TestMsgpack(unittest.TestCase):
 
         self.assertEqual(
             stateprooftxn,
-            encoding.msgpack_encode(
-                encoding.future_msgpack_decode(stateprooftxn)
-            ),
+            encoding.msgpack_encode(encoding.msgpack_decode(stateprooftxn)),
         )
 
     def test_asset_create(self):

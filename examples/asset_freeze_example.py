@@ -1,7 +1,6 @@
 # Example: freezing or unfreezing an account
 
-from algosdk import account
-from algosdk.future import transaction
+from algosdk import account, transaction
 
 # this transaction must be sent from the account specified as the freeze manager for the asset
 freeze_private_key, freeze_address = account.generate_account()

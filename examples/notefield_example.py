@@ -7,8 +7,7 @@ import base64
 
 import tokens
 
-from algosdk import account, auction, constants, encoding
-from algosdk.future import transaction
+from algosdk import account, auction, constants, encoding, transaction
 from algosdk.v2client import algod
 
 acl = algod.AlgodClient(tokens.algod_token, tokens.algod_address)

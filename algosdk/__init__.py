@@ -5,7 +5,6 @@ from . import constants
 from . import dryrun_results
 from . import encoding
 from . import error
-from . import future
 from . import kmd
 from . import logic
 from . import mnemonic

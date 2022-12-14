@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Union, List, Optional
 
 from algosdk.constants import payment_txn, appcall_txn, ZERO_ADDRESS
-from algosdk.future import transaction
+from algosdk import transaction
 from algosdk.encoding import encode_address, msgpack_encode
 from algosdk.v2client.models import (
     DryrunRequest,
