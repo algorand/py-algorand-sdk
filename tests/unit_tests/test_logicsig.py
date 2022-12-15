@@ -7,7 +7,7 @@ from algosdk import account, encoding, error, mnemonic, transaction
 class TestLogicSig(unittest.TestCase):
     def test_basic(self):
         with self.assertRaises(error.InvalidProgram):
-            lsig = transaction._LogicSig(None)
+            lsig = transaction.LogicSig(None)
 
         with self.assertRaises(error.InvalidProgram):
             lsig = transaction.LogicSigAccount(b"")
