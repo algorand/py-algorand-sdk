@@ -621,7 +621,7 @@ class Helper:
         # replacing program with an empty one is OK since it set by source
         # LogicSig does not like None/invalid programs because of validation
         program = program if isinstance(program, bytes) else b"\x01"
-        logicsig = transaction.LogicSig(program, lsig.args)
+        logicsig = transaction.LogicSigAccount(program, lsig.args)
         return transaction.LogicSigTransaction(txn, logicsig)
 
     @staticmethod

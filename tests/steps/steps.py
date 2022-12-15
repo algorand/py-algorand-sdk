@@ -940,7 +940,7 @@ def heuristic_check_over_bytes(context):
     context.sanity_check_err = ""
 
     try:
-        transaction.LogicSig(context.seemingly_program)
+        transaction.LogicSigAccount(context.seemingly_program)
     except Exception as e:
         context.sanity_check_err = str(e)
 

@@ -2507,7 +2507,7 @@ class LogicSig:
     """
     Represents a logic signature
 
-    NOTE: This type is deprecated. Use LogicSigAccount instead.
+    NOTE: LogicSig is safe for non-rekeying usage.  If using rekeyed accounts, use LogicSigAccount instead.
 
     Arguments:
         logic (bytes): compiled program
