@@ -6,9 +6,12 @@
 
 ### Breaking Changes
 
-* Removed `mnemonic.to_public_key` in favor of `account.address_from_private_key`.
-* Removed `algosdk.future` package.  Moved package contents to `algosdk`.
-* Removed `encoding.future_msgpack_decode` method in favor of `encoding.msgpack_decode` method.
+* Remove v1 algod API (`algosdk/algod.py`) due to API end-of-life (2022-12-01).  Instead, use v2 algod API (`algosdk/v2client/algod.py`).
+* Remove `algosdk.future` package.  Move package contents to `algosdk`.
+* Remove `encoding.future_msgpack_decode` method in favor of `encoding.msgpack_decode` method.
+* Remove `cost` field in `DryrunTxnResult` in favor of 2 fields:  `budget-added` and `budget-consumed`.  `cost` can be derived by `budget-consumed - budget-added`.
+* Remove `mnemonic.to_public_key` in favor of `account.address_from_private_key`.
+* Remove logicsig templates, `algosdk/data/langspec.json` and all methods in `logic` depending on it.
 * Mark `LogicSig` class as hidden in favor of internal use, renaming it to `_LogicSig`.
 
 # v1.20.2
