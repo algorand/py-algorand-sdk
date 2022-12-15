@@ -1,7 +1,6 @@
 from typing import Union
 
-from algosdk import account, encoding, logic
-from algosdk.future import transaction
+from algosdk import account, encoding, logic, transaction
 from behave import given, then, when
 import tests.steps.other_v2_steps  # Imports MaybeString
 
@@ -240,6 +239,7 @@ def parse_accounts_auth(context, roundNum, length, index, authAddr):
 
 @given('a signing account with address "{address}" and mnemonic "{mnemonic}"')
 def signing_account(context, address, mnemonic):
+    context.signing_address = address
     context.signing_mnemonic = mnemonic
 
 

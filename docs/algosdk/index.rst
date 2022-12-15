@@ -5,7 +5,6 @@ algosdk
 
    abi/index
    account
-   algod
    atomic_transaction_composer
    auction
    constants
@@ -15,7 +14,6 @@ algosdk
    kmd
    logic
    mnemonic
-   template
    transaction
    util
    v2client/index

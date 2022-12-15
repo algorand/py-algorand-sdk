@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Union, List, Optional
 
 from algosdk.constants import payment_txn, appcall_txn, ZERO_ADDRESS
-from algosdk.future import transaction
+from algosdk import transaction
 from algosdk.encoding import encode_address, msgpack_encode
 from algosdk.v2client.models import (
     DryrunRequest,
@@ -621,7 +621,7 @@ class Helper:
         # replacing program with an empty one is OK since it set by source
         # LogicSig does not like None/invalid programs because of validation
         program = program if isinstance(program, bytes) else b"\x01"
-        logicsig = transaction.LogicSig(program, lsig.args)
+        logicsig = transaction.LogicSigAccount(program, lsig.args)
         return transaction.LogicSigTransaction(txn, logicsig)
 
     @staticmethod

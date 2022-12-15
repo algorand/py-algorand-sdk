@@ -11,9 +11,15 @@ from behave import register_type  # pylint: disable=no-name-in-module
 from behave import given, step, then, when
 from glom import glom
 
-from algosdk import dryrun_results, encoding, error, mnemonic, source_map
+from algosdk import (
+    dryrun_results,
+    encoding,
+    error,
+    mnemonic,
+    source_map,
+    transaction,
+)
 from algosdk.error import AlgodHTTPError
-from algosdk.future import transaction
 from algosdk.testing.dryrun import DryrunTestCaseMixin
 from algosdk.v2client import *
 from algosdk.v2client.models import (
@@ -1011,7 +1017,7 @@ def compare_to_base64_golden(context, golden):
 @then("the decoded transaction should equal the original")
 def compare_to_original(context):
     encoded = encoding.msgpack_encode(context.signed_transaction)
-    decoded = encoding.future_msgpack_decode(encoded)
+    decoded = encoding.msgpack_decode(encoded)
     assert decoded.transaction == context.transaction
 
 
@@ -1077,7 +1083,7 @@ def dryrun_step(context, kind, program):
     sources = []
 
     if kind == "compiled":
-        lsig = transaction.LogicSig(data)
+        lsig = transaction.LogicSigAccount(bytes(data))
         txns = [transaction.LogicSigTransaction(txn, lsig)]
     elif kind == "source":
         txns = [transaction.SignedTransaction(txn, None)]

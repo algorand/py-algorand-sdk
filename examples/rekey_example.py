@@ -2,8 +2,7 @@
 
 import tokens
 
-from algosdk import account
-from algosdk.future import transaction
+from algosdk import account, transaction
 from algosdk.v2client import algod
 
 # this should be the current account

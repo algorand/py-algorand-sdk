@@ -4,8 +4,15 @@ import os
 import unittest
 import uuid
 
-from algosdk import account, constants, encoding, error, logic, mnemonic
-from algosdk.future import transaction
+from algosdk import (
+    account,
+    constants,
+    encoding,
+    error,
+    logic,
+    mnemonic,
+    transaction,
+)
 
 
 class TestPaymentTransaction(unittest.TestCase):
@@ -192,7 +199,7 @@ class TestPaymentTransaction(unittest.TestCase):
 
     def test_sign_logic_multisig(self):
         program = b"\x01\x20\x01\x01\x22"
-        lsig = transaction.LogicSig(program)
+        lsig_account = transaction.LogicSigAccount(program)
         passphrase = "sight garment riot tattoo tortoise identify left talk sea ill walnut leg robot myth toe perfect rifle dizzy spend april build legend brother above hospital"
         sk = mnemonic.to_private_key(passphrase)
         addr = account.address_from_private_key(sk)
@@ -202,8 +209,8 @@ class TestPaymentTransaction(unittest.TestCase):
         addr2 = account.address_from_private_key(sk2)
 
         msig = transaction.Multisig(1, 2, [addr, addr2])
-        lsig.sign(sk, msig)
-        lsig.append_to_multisig(sk2)
+        lsig_account.sign_multisig(msig, sk)
+        lsig_account.append_to_multisig(sk2)
 
         receiver = "DOMUC6VGZH7SSY5V332JR5HRLZSOJDWNPBI4OI2IIBU6A3PFLOBOXZ3KFY"
         gh = "zNQES/4IqimxRif40xYvzBBIYCZSbYvNSRIzVIh4swo="
@@ -212,7 +219,7 @@ class TestPaymentTransaction(unittest.TestCase):
             0, 447, 1447, gh, gen="network-v1"
         )
         txn = transaction.PaymentTxn(msig.address(), params, receiver, 1000000)
-        lstx = transaction.LogicSigTransaction(txn, lsig)
+        lstx = transaction.LogicSigTransaction(txn, lsig_account)
 
         golden = (
             "gqRsc2lngqFsxAUBIAEBIqRtc2lng6ZzdWJzaWeSgqJwa8QgeUdQSBmJmLH5xdID"
@@ -451,7 +458,7 @@ class TestPaymentTransaction(unittest.TestCase):
             "asure need above hundred"
         )
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
         fee = 1000
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
         votepk = "Kv7QI7chi1y6axoy+t7wzAVpePqRq/rkjzWh/RMYyLo="
@@ -493,7 +500,7 @@ class TestPaymentTransaction(unittest.TestCase):
             "asure need above hundred"
         )
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
         fee = 1000
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
         votepk = "Kv7QI7chi1y6axoy+t7wzAVpePqRq/rkjzWh/RMYyLo="
@@ -530,7 +537,8 @@ class TestPaymentTransaction(unittest.TestCase):
             "asure need above hundred"
         )
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
+
         fee = 1000
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
         votepk = "Kv7QI7chi1y6axoy+t7wzAVpePqRq/rkjzWh/RMYyLo="
@@ -563,7 +571,7 @@ class TestPaymentTransaction(unittest.TestCase):
             "measure need above hundred"
         )
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
         fee = 1000
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
 
@@ -610,7 +618,7 @@ class TestPaymentTransaction(unittest.TestCase):
             "measure need above hundred"
         )
         sk = mnemonic.to_private_key(mn)
-        pk = mnemonic.to_public_key(mn)
+        pk = account.address_from_private_key(sk)
         fee = 1000
         gh = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
 

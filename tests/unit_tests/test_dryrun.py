@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import Mock
 
-from algosdk.future import transaction
+from algosdk import transaction
 from algosdk.testing import dryrun
 
 

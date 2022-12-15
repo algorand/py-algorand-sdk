@@ -4,7 +4,7 @@ import urllib.error
 from urllib import parse
 from urllib.request import Request, urlopen
 
-from algosdk import constants, encoding, error, future, util
+from algosdk import constants, encoding, error, transaction, util
 
 api_version_path_prefix = "/v2"
 
@@ -265,7 +265,7 @@ class AlgodClient:
             str: transaction ID
         """
         assert not isinstance(
-            txn, future.transaction.Transaction
+            txn, transaction.Transaction
         ), "Attempt to send UNSIGNED transaction {}".format(txn)
         return self.send_raw_transaction(
             encoding.msgpack_encode(txn), **kwargs
@@ -356,7 +356,7 @@ class AlgodClient:
         serialized = []
         for txn in txns:
             assert not isinstance(
-                txn, future.transaction.Transaction
+                txn, transaction.Transaction
             ), "Attempt to send UNSIGNED transaction {}".format(txn)
             serialized.append(base64.b64decode(encoding.msgpack_encode(txn)))
 
@@ -369,7 +369,7 @@ class AlgodClient:
         req = "/transactions/params"
         res = self.algod_request("GET", req, **kwargs)
 
-        return future.transaction.SuggestedParams(
+        return transaction.SuggestedParams(
             res["fee"],
             res["last-round"],
             res["last-round"] + 1000,

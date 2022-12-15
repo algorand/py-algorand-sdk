@@ -1,8 +1,7 @@
 import base64
 import unittest
 
-from algosdk import account, encoding, error, mnemonic
-from algosdk.future import transaction
+from algosdk import account, encoding, error, mnemonic, transaction
 
 
 class TestLogicSig(unittest.TestCase):
@@ -11,7 +10,7 @@ class TestLogicSig(unittest.TestCase):
             lsig = transaction.LogicSig(None)
 
         with self.assertRaises(error.InvalidProgram):
-            lsig = transaction.LogicSig(b"")
+            lsig = transaction.LogicSigAccount(b"")
 
         program = b"\x01\x20\x01\x01\x22"  # int 1
         program_hash = (
@@ -19,7 +18,7 @@ class TestLogicSig(unittest.TestCase):
         )
         public_key = encoding.decode_address(program_hash)
 
-        lsig = transaction.LogicSig(program)
+        lsig = transaction.LogicSigAccount(program).lsig
         self.assertEqual(lsig.logic, program)
         self.assertEqual(lsig.args, None)
         self.assertEqual(lsig.sig, None)
@@ -32,7 +31,7 @@ class TestLogicSig(unittest.TestCase):
             b"\x01\x02\x03",
             b"\x04\x05\x06",
         ]
-        lsig = transaction.LogicSig(program, args)
+        lsig = transaction.LogicSigAccount(program, args).lsig
         self.assertEqual(lsig.logic, program)
         self.assertEqual(lsig.args, args)
         self.assertEqual(lsig.sig, None)
@@ -49,7 +48,7 @@ class TestLogicSig(unittest.TestCase):
 
         # check signature verification on modified program
         program = b"\x01\x20\x01\x03\x22"
-        lsig = transaction.LogicSig(program)
+        lsig = transaction.LogicSigAccount(program).lsig
         self.assertEqual(lsig.logic, program)
         verified = lsig.verify(public_key)
         self.assertFalse(verified)
@@ -57,7 +56,7 @@ class TestLogicSig(unittest.TestCase):
 
         # check invalid program fails
         program = b"\x00\x20\x01\x03\x22"
-        lsig = transaction.LogicSig(program)
+        lsig = transaction.LogicSigAccount(program).lsig
         verified = lsig.verify(public_key)
         self.assertFalse(verified)
 
@@ -65,7 +64,7 @@ class TestLogicSig(unittest.TestCase):
         private_key, address = account.generate_account()
         public_key = encoding.decode_address(address)
         program = b"\x01\x20\x01\x01\x22"  # int 1
-        lsig = transaction.LogicSig(program)
+        lsig = transaction.LogicSigAccount(program).lsig
         lsig.sign(private_key)
         self.assertEqual(lsig.logic, program)
         self.assertEqual(lsig.args, None)
@@ -90,7 +89,7 @@ class TestLogicSig(unittest.TestCase):
         # create multisig address with invalid version
         msig = transaction.Multisig(1, 2, [account_1, account_2])
         program = b"\x01\x20\x01\x01\x22"  # int 1
-        lsig = transaction.LogicSig(program)
+        lsig = transaction.LogicSigAccount(program).lsig
         lsig.sign(private_key_1, msig)
         self.assertEqual(lsig.logic, program)
         self.assertEqual(lsig.args, None)
@@ -110,7 +109,7 @@ class TestLogicSig(unittest.TestCase):
         self.assertTrue(verified)
 
         # combine sig and multisig, ensure it fails
-        lsigf = transaction.LogicSig(program)
+        lsigf = transaction.LogicSigAccount(program).lsig
         lsigf.sign(private_key)
         lsig.sig = lsigf.sig
         verified = lsig.verify(public_key)
@@ -172,7 +171,7 @@ class TestLogicSig(unittest.TestCase):
         program = b"\x01\x20\x01\x01\x22"  # int 1
         args = [b"123", b"456"]
         sk = mnemonic.to_private_key(mn)
-        lsig = transaction.LogicSig(program, args)
+        lsig = transaction.LogicSigAccount(program, args).lsig
         lsig.sign(sk)
         lstx = transaction.LogicSigTransaction(tx, lsig)
         verified = lstx.verify()
@@ -218,7 +217,7 @@ class TestLogicSigAccount(unittest.TestCase):
         expectedEncoded = "gaRsc2lngaFsxAUBIAEBIg=="
         self.assertEqual(encoded, expectedEncoded)
 
-        decoded = encoding.future_msgpack_decode(encoded)
+        decoded = encoding.msgpack_decode(encoded)
         self.assertEqual(decoded, lsigAccount)
 
     def test_create_with_args(self):
@@ -238,7 +237,7 @@ class TestLogicSigAccount(unittest.TestCase):
         expectedEncoded = "gaRsc2lngqNhcmeSxAEBxAICA6FsxAUBIAEBIg=="
         self.assertEqual(encoded, expectedEncoded)
 
-        decoded = encoding.future_msgpack_decode(encoded)
+        decoded = encoding.msgpack_decode(encoded)
         self.assertEqual(decoded, lsigAccount)
 
     def test_sign(self):
@@ -264,7 +263,7 @@ class TestLogicSigAccount(unittest.TestCase):
         expectedEncoded = "gqRsc2lng6NhcmeSxAEBxAICA6FsxAUBIAEBIqNzaWfEQEkTuAXRnn8sEID2M34YVKfO6u4Q3b0TZYS/k7dfMGMVkcojDO3vI9F0G1KdsP/vN1TWRvS1YfyLvC17TmNcvQKmc2lna2V5xCAbfsCwS+pht5aQl+bL9AfhCKcFNR0LyYq+sSIJqKuBeA=="
         self.assertEqual(encoded, expectedEncoded)
 
-        decoded = encoding.future_msgpack_decode(encoded)
+        decoded = encoding.msgpack_decode(encoded)
         self.assertEqual(decoded, lsigAccount)
 
     def test_sign_multisig(self):
@@ -277,7 +276,7 @@ class TestLogicSigAccount(unittest.TestCase):
         expectedSig = base64.b64decode(
             "SRO4BdGefywQgPYzfhhUp87q7hDdvRNlhL+Tt18wYxWRyiMM7e8j0XQbUp2w/+83VNZG9LVh/Iu8LXtOY1y9Ag=="
         )
-        expectedMsig = encoding.future_msgpack_decode(
+        expectedMsig = encoding.msgpack_decode(
             encoding.msgpack_encode(sampleMsig)
         )
         expectedMsig.subsigs[0].signature = expectedSig
@@ -293,7 +292,7 @@ class TestLogicSigAccount(unittest.TestCase):
         expectedEncoded = "gaRsc2lng6NhcmeSxAEBxAICA6FsxAUBIAEBIqRtc2lng6ZzdWJzaWeTgqJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC8mKvrEiCairgXihc8RASRO4BdGefywQgPYzfhhUp87q7hDdvRNlhL+Tt18wYxWRyiMM7e8j0XQbUp2w/+83VNZG9LVh/Iu8LXtOY1y9AoGicGvEIAljMglTc4nwdWcRdzmRx9A+G3PIxPUr9q/wGqJc+cJxgaJwa8Qg5/D4TQaBHfnzHI2HixFV9GcdUaGFwgCQhmf0SVhwaKGjdGhyAqF2AQ=="
         self.assertEqual(encoded, expectedEncoded)
 
-        decoded = encoding.future_msgpack_decode(encoded)
+        decoded = encoding.msgpack_decode(encoded)
         self.assertEqual(decoded, lsigAccount)
 
     def test_append_to_multisig(self):
@@ -301,7 +300,7 @@ class TestLogicSigAccount(unittest.TestCase):
         args = [b"\x01", b"\x02\x03"]
 
         msig1of3Encoded = "gaRsc2lng6NhcmeSxAEBxAICA6FsxAUBIAEBIqRtc2lng6ZzdWJzaWeTgqJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC8mKvrEiCairgXihc8RASRO4BdGefywQgPYzfhhUp87q7hDdvRNlhL+Tt18wYxWRyiMM7e8j0XQbUp2w/+83VNZG9LVh/Iu8LXtOY1y9AoGicGvEIAljMglTc4nwdWcRdzmRx9A+G3PIxPUr9q/wGqJc+cJxgaJwa8Qg5/D4TQaBHfnzHI2HixFV9GcdUaGFwgCQhmf0SVhwaKGjdGhyAqF2AQ=="
-        lsigAccount = encoding.future_msgpack_decode(msig1of3Encoded)
+        lsigAccount = encoding.msgpack_decode(msig1of3Encoded)
 
         lsigAccount.append_to_multisig(sampleAccount2)
 
@@ -311,7 +310,7 @@ class TestLogicSigAccount(unittest.TestCase):
         expectedSig2 = base64.b64decode(
             "ZLxV2+2RokHUKrZg9+FKuZmaUrOxcVjO/D9P58siQRStqT1ehAUCChemaYMDIk6Go4tqNsVUviBQ/9PuqLMECQ=="
         )
-        expectedMsig = encoding.future_msgpack_decode(
+        expectedMsig = encoding.msgpack_decode(
             encoding.msgpack_encode(sampleMsig)
         )
         expectedMsig.subsigs[0].signature = expectedSig1
@@ -328,16 +327,16 @@ class TestLogicSigAccount(unittest.TestCase):
         expectedEncoded = "gaRsc2lng6NhcmeSxAEBxAICA6FsxAUBIAEBIqRtc2lng6ZzdWJzaWeTgqJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC8mKvrEiCairgXihc8RASRO4BdGefywQgPYzfhhUp87q7hDdvRNlhL+Tt18wYxWRyiMM7e8j0XQbUp2w/+83VNZG9LVh/Iu8LXtOY1y9AoKicGvEIAljMglTc4nwdWcRdzmRx9A+G3PIxPUr9q/wGqJc+cJxoXPEQGS8VdvtkaJB1Cq2YPfhSrmZmlKzsXFYzvw/T+fLIkEUrak9XoQFAgoXpmmDAyJOhqOLajbFVL4gUP/T7qizBAmBonBrxCDn8PhNBoEd+fMcjYeLEVX0Zx1RoYXCAJCGZ/RJWHBooaN0aHICoXYB"
         self.assertEqual(encoded, expectedEncoded)
 
-        decoded = encoding.future_msgpack_decode(encoded)
+        decoded = encoding.msgpack_decode(encoded)
         self.assertEqual(decoded, lsigAccount)
 
     def test_verify(self):
         escrowEncoded = "gaRsc2lngqNhcmeSxAEBxAICA6FsxAUBIAEBIg=="
-        escrowLsigAccount = encoding.future_msgpack_decode(escrowEncoded)
+        escrowLsigAccount = encoding.msgpack_decode(escrowEncoded)
         self.assertEqual(escrowLsigAccount.verify(), True)
 
         sigEncoded = "gqRsc2lng6NhcmeSxAEBxAICA6FsxAUBIAEBIqNzaWfEQEkTuAXRnn8sEID2M34YVKfO6u4Q3b0TZYS/k7dfMGMVkcojDO3vI9F0G1KdsP/vN1TWRvS1YfyLvC17TmNcvQKmc2lna2V5xCAbfsCwS+pht5aQl+bL9AfhCKcFNR0LyYq+sSIJqKuBeA=="
-        sigLsigAccount = encoding.future_msgpack_decode(sigEncoded)
+        sigLsigAccount = encoding.msgpack_decode(sigEncoded)
         self.assertEqual(sigLsigAccount.verify(), True)
 
         sigLsigAccount.lsig.sig = "AQ=="  # wrong length of bytes
@@ -347,7 +346,7 @@ class TestLogicSigAccount(unittest.TestCase):
         self.assertEqual(sigLsigAccount.verify(), False)
 
         msigEncoded = "gaRsc2lng6NhcmeSxAEBxAICA6FsxAUBIAEBIqRtc2lng6ZzdWJzaWeTgqJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC8mKvrEiCairgXihc8RASRO4BdGefywQgPYzfhhUp87q7hDdvRNlhL+Tt18wYxWRyiMM7e8j0XQbUp2w/+83VNZG9LVh/Iu8LXtOY1y9AoKicGvEIAljMglTc4nwdWcRdzmRx9A+G3PIxPUr9q/wGqJc+cJxoXPEQGS8VdvtkaJB1Cq2YPfhSrmZmlKzsXFYzvw/T+fLIkEUrak9XoQFAgoXpmmDAyJOhqOLajbFVL4gUP/T7qizBAmBonBrxCDn8PhNBoEd+fMcjYeLEVX0Zx1RoYXCAJCGZ/RJWHBooaN0aHICoXYB"
-        msigLsigAccount = encoding.future_msgpack_decode(msigEncoded)
+        msigLsigAccount = encoding.msgpack_decode(msigEncoded)
         self.assertEqual(msigLsigAccount.verify(), True)
 
         msigLsigAccount.lsig.msig.subsigs[0].signature = None
@@ -355,34 +354,34 @@ class TestLogicSigAccount(unittest.TestCase):
 
     def test_is_delegated(self):
         escrowEncoded = "gaRsc2lngqNhcmeSxAEBxAICA6FsxAUBIAEBIg=="
-        escrowLsigAccount = encoding.future_msgpack_decode(escrowEncoded)
+        escrowLsigAccount = encoding.msgpack_decode(escrowEncoded)
         self.assertEqual(escrowLsigAccount.is_delegated(), False)
 
         sigEncoded = "gqRsc2lng6NhcmeSxAEBxAICA6FsxAUBIAEBIqNzaWfEQEkTuAXRnn8sEID2M34YVKfO6u4Q3b0TZYS/k7dfMGMVkcojDO3vI9F0G1KdsP/vN1TWRvS1YfyLvC17TmNcvQKmc2lna2V5xCAbfsCwS+pht5aQl+bL9AfhCKcFNR0LyYq+sSIJqKuBeA=="
-        sigLsigAccount = encoding.future_msgpack_decode(sigEncoded)
+        sigLsigAccount = encoding.msgpack_decode(sigEncoded)
         self.assertEqual(sigLsigAccount.is_delegated(), True)
 
         msigEncoded = "gaRsc2lng6NhcmeSxAEBxAICA6FsxAUBIAEBIqRtc2lng6ZzdWJzaWeTgqJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC8mKvrEiCairgXihc8RASRO4BdGefywQgPYzfhhUp87q7hDdvRNlhL+Tt18wYxWRyiMM7e8j0XQbUp2w/+83VNZG9LVh/Iu8LXtOY1y9AoKicGvEIAljMglTc4nwdWcRdzmRx9A+G3PIxPUr9q/wGqJc+cJxoXPEQGS8VdvtkaJB1Cq2YPfhSrmZmlKzsXFYzvw/T+fLIkEUrak9XoQFAgoXpmmDAyJOhqOLajbFVL4gUP/T7qizBAmBonBrxCDn8PhNBoEd+fMcjYeLEVX0Zx1RoYXCAJCGZ/RJWHBooaN0aHICoXYB"
-        msigLsigAccount = encoding.future_msgpack_decode(msigEncoded)
+        msigLsigAccount = encoding.msgpack_decode(msigEncoded)
         self.assertEqual(msigLsigAccount.is_delegated(), True)
 
     def test_address(self):
         escrowEncoded = "gaRsc2lngqNhcmeSxAEBxAICA6FsxAUBIAEBIg=="
-        escrowLsigAccount = encoding.future_msgpack_decode(escrowEncoded)
+        escrowLsigAccount = encoding.msgpack_decode(escrowEncoded)
         escrowExpectedAddr = (
             "6Z3C3LDVWGMX23BMSYMANACQOSINPFIRF77H7N3AWJZYV6OH6GWTJKVMXY"
         )
         self.assertEqual(escrowLsigAccount.address(), escrowExpectedAddr)
 
         sigEncoded = "gqRsc2lng6NhcmeSxAEBxAICA6FsxAUBIAEBIqNzaWfEQEkTuAXRnn8sEID2M34YVKfO6u4Q3b0TZYS/k7dfMGMVkcojDO3vI9F0G1KdsP/vN1TWRvS1YfyLvC17TmNcvQKmc2lna2V5xCAbfsCwS+pht5aQl+bL9AfhCKcFNR0LyYq+sSIJqKuBeA=="
-        sigLsigAccount = encoding.future_msgpack_decode(sigEncoded)
+        sigLsigAccount = encoding.msgpack_decode(sigEncoded)
         sigExpectedAddr = (
             "DN7MBMCL5JQ3PFUQS7TMX5AH4EEKOBJVDUF4TCV6WERATKFLQF4MQUPZTA"
         )
         self.assertEqual(sigLsigAccount.address(), sigExpectedAddr)
 
         msigEncoded = "gaRsc2lng6NhcmeSxAEBxAICA6FsxAUBIAEBIqRtc2lng6ZzdWJzaWeTgqJwa8QgG37AsEvqYbeWkJfmy/QH4QinBTUdC8mKvrEiCairgXihc8RASRO4BdGefywQgPYzfhhUp87q7hDdvRNlhL+Tt18wYxWRyiMM7e8j0XQbUp2w/+83VNZG9LVh/Iu8LXtOY1y9AoKicGvEIAljMglTc4nwdWcRdzmRx9A+G3PIxPUr9q/wGqJc+cJxoXPEQGS8VdvtkaJB1Cq2YPfhSrmZmlKzsXFYzvw/T+fLIkEUrak9XoQFAgoXpmmDAyJOhqOLajbFVL4gUP/T7qizBAmBonBrxCDn8PhNBoEd+fMcjYeLEVX0Zx1RoYXCAJCGZ/RJWHBooaN0aHICoXYB"
-        msigLsigAccount = encoding.future_msgpack_decode(msigEncoded)
+        msigLsigAccount = encoding.msgpack_decode(msigEncoded)
         msigExpectedAddr = (
             "RWJLJCMQAFZ2ATP2INM2GZTKNL6OULCCUBO5TQPXH3V2KR4AG7U5UA5JNM"
         )
@@ -423,22 +422,22 @@ class TestLogicSigTransaction(unittest.TestCase):
         actualEncoded = encoding.msgpack_encode(actual)
         self.assertEqual(actualEncoded, expectedEncoded)
 
-        decoded = encoding.future_msgpack_decode(actualEncoded)
+        decoded = encoding.msgpack_decode(actualEncoded)
         self.assertEqual(decoded, actual)
 
     def test_LogicSig_escrow(self):
-        lsig = transaction.LogicSig(
+        lsig = transaction.LogicSigAccount(
             TestLogicSigTransaction.program, TestLogicSigTransaction.args
-        )
+        ).lsig
 
         sender = lsig.address()
         expected = "gqRsc2lngqNhcmeSxAEBxAICA6FsxAUBIAEBIqN0eG6Ko2FtdM0TiKNmZWXOAANPqKJmds4ADtbco2dlbq10ZXN0bmV0LXYzMS4womdoxCAmCyAJoJOohot5WHIvpeVG7eftF+TYXEx4r7BFJpDt0qJsds4ADtrEpG5vdGXECLRReTn8+tJxo3JjdsQgtMYiaKTDNVD1im3UuMojnJ8dELNBqn4aNuPOYfv8+Yqjc25kxCD2di2sdbGZfWwslhgGgFB0kNeVES/+f7dgsnOK+cfxraR0eXBlo3BheQ=="
         self._test_sign_txn(lsig, sender, expected)
 
     def test_LogicSig_escrow_different_sender(self):
-        lsig = transaction.LogicSig(
+        lsig = transaction.LogicSigAccount(
             TestLogicSigTransaction.program, TestLogicSigTransaction.args
-        )
+        ).lsig
 
         sender = TestLogicSigTransaction.otherAddr
         expected = "g6Rsc2lngqNhcmeSxAEBxAICA6FsxAUBIAEBIqRzZ25yxCD2di2sdbGZfWwslhgGgFB0kNeVES/+f7dgsnOK+cfxraN0eG6Ko2FtdM0TiKNmZWXOAANPqKJmds4ADtbco2dlbq10ZXN0bmV0LXYzMS4womdoxCAmCyAJoJOohot5WHIvpeVG7eftF+TYXEx4r7BFJpDt0qJsds4ADtrEpG5vdGXECLRReTn8+tJxo3JjdsQgtMYiaKTDNVD1im3UuMojnJ8dELNBqn4aNuPOYfv8+Yqjc25kxCC0xiJopMM1UPWKbdS4yiOcnx0Qs0Gqfho2485h+/z5iqR0eXBlo3BheQ=="
@@ -449,9 +448,9 @@ class TestLogicSigTransaction(unittest.TestCase):
             "olympic cricket tower model share zone grid twist sponsor avoid eight apology patient party success claim famous rapid donor pledge bomb mystery security ability often"
         )
 
-        lsig = transaction.LogicSig(
+        lsig = transaction.LogicSigAccount(
             TestLogicSigTransaction.program, TestLogicSigTransaction.args
-        )
+        ).lsig
         lsig.sign(sk)
 
         sender = account.address_from_private_key(sk)
@@ -463,18 +462,18 @@ class TestLogicSigTransaction(unittest.TestCase):
             "olympic cricket tower model share zone grid twist sponsor avoid eight apology patient party success claim famous rapid donor pledge bomb mystery security ability often"
         )
 
-        lsig = transaction.LogicSig(
+        lsig = transaction.LogicSigAccount(
             TestLogicSigTransaction.program, TestLogicSigTransaction.args
-        )
+        ).lsig
         lsig.sign(sk)
 
         sender = TestLogicSigTransaction.otherAddr
         self._test_sign_txn(lsig, sender, None, False)
 
     def test_LogicSig_msig_delegated(self):
-        lsig = transaction.LogicSig(
+        lsig = transaction.LogicSigAccount(
             TestLogicSigTransaction.program, TestLogicSigTransaction.args
-        )
+        ).lsig
         lsig.sign(sampleAccount1, sampleMsig)
         lsig.append_to_multisig(sampleAccount2)
 
@@ -483,9 +482,9 @@ class TestLogicSigTransaction(unittest.TestCase):
         self._test_sign_txn(lsig, sender, expected)
 
     def test_LogicSig_msig_delegated_different_sender(self):
-        lsig = transaction.LogicSig(
+        lsig = transaction.LogicSigAccount(
             TestLogicSigTransaction.program, TestLogicSigTransaction.args
-        )
+        ).lsig
         lsig.sign(sampleAccount1, sampleMsig)
         lsig.append_to_multisig(sampleAccount2)
 
