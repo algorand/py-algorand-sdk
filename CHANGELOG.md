@@ -12,7 +12,6 @@
 * Remove `cost` field in `DryrunTxnResult` in favor of 2 fields:  `budget-added` and `budget-consumed`.  `cost` can be derived by `budget-consumed - budget-added`.
 * Remove `mnemonic.to_public_key` in favor of `account.address_from_private_key`.
 * Remove logicsig templates, `algosdk/data/langspec.json` and all methods in `logic` depending on it.
-* Mark `LogicSig` class as hidden in favor of internal use, renaming it to `_LogicSig`.
 
 # v1.20.2
 
