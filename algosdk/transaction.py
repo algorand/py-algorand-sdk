@@ -2507,9 +2507,7 @@ class LogicSig:
     """
     Represents a logic signature
 
-    NOTE: LogicSig is still safe for escrow and some other use cases.
-    But it is not fully compatible with delegated logicsig use cases, e.g., rekeying.
-    Under that circumstance, it is recommended to use LogicSigAccount in that case.
+    NOTE: LogicSig is safe for non-rekeying usage.  If using rekeyed accounts, use LogicSigAccount instead.
 
     Arguments:
         logic (bytes): compiled program
