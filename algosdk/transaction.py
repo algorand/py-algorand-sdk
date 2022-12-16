@@ -2507,7 +2507,7 @@ class LogicSig:
     """
     Represents a logic signature
 
-    NOTE: LogicSig is safe for non-rekeying usage.  If using rekeyed accounts, use LogicSigAccount instead.
+    NOTE: LogicSig cannot sign transactions in all cases.  Instead, use LogicSigAccount as a safe, general purpose signing mechanism.  Since LogicSig does not track the provided signature's public key, LogicSig cannot sign transactions when delegated to a non-multisig account _and_ the sender is not the delegating account.
 
     Arguments:
         logic (bytes): compiled program
