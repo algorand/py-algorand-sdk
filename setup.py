@@ -22,8 +22,13 @@ setuptools.setup(
         "pycryptodomex>=3.6.0,<4",
         "msgpack>=1.0.0,<2",
     ],
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(
+        include=(
+            "algosdk",
+            # "algosdk.*",
+        )
+    ),
     python_requires=">=3.8",
-    package_data={"": ["data/langspec.json", "*.pyi", "py.typed"]},
+    package_data={"": ["*.pyi", "py.typed"]},
     include_package_data=True,
 )
