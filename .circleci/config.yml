@@ -26,6 +26,7 @@ jobs:
       - run: pip install -r requirements.txt
       - run: black --check .
       - run: mypy algosdk
+      - run: python setup.py check --strict
       - run: pytest tests/unit_tests
   integration-test:
     parameters:
