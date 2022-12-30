@@ -13,4 +13,23 @@ REMOVE_LOCAL_FEATURES=0
 
 # WARNING: Be careful when turning on the next variable.
 # In that case you'll need to provide all variables expected by `algorand-sdk-testing`'s `.env`
-OVERWRITE_TESTING_ENVIRONMENT=0
+OVERWRITE_TESTING_ENVIRONMENT=1
+
+# What can ease some of the pain above is to overwrite interactively:
+INTERACTIVE_TESTING_ENVIRONMENT=0
+
+ALGOD_CHANNEL=""
+ALGOD_URL="https://github.com/tzaffi/go-algorand"
+ALGOD_BRANCH="improve-some-goal-errors"
+ALGOD_SHA=""
+NETWORK=""
+NETWORK_TEMPLATE="images/algod/DevModeNetwork.json"
+NETWORK_BOOTSTRAP_URL=""
+NETWORK_GENESIS_FILE=""
+NETWORK_NUM_ROUNDS=30000
+NODE_ARCHIVAL="False"
+INDEXER_URL="https://github.com/algorand/indexer"
+INDEXER_BRANCH="develop"
+INDEXER_SHA=""
+INDEXER_DISABLED=""
+INDEXER_ENABLE_ALL_PARAMETERS="false"
