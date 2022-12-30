@@ -84,6 +84,10 @@ if [[ $OVERWRITE_TESTING_ENVIRONMENT == 1 ]]; then
   cp "$ENV_FILE" "$SDK_TESTING_HARNESS"/.env
 fi
 
+echo "$THIS: INTERACTIVE_TESTING_ENVIRONMENT=$INTERACTIVE_TESTING_ENVIRONMENT"
+if [[ $INTERACTIVE_TESTING_ENVIRONMENT == 1 ]]; then
+  python harness_overwrite.py "$SDK_TESTING_HARNESS"/.env
+fi
 
 echo "$THIS: REMOVE_LOCAL_FEATURES=$REMOVE_LOCAL_FEATURES"
 ## Copy feature files into the project resources
