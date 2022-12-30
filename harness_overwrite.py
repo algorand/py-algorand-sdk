@@ -7,7 +7,7 @@ def get_env(line: str) -> Optional[Tuple[str, str, str]]:
         key, others = line.split("=", maxsplit=1)
         key = key.strip()
         if "#" in others:
-            val, extra = others.split("#")
+            val, extra = others.split("#", maxsplit=1)
             val = val.strip()
         else:
             val, extra = others.strip(), ""
