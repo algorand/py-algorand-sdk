@@ -2,7 +2,7 @@ import sys
 from typing import Dict, Optional, Tuple
 
 
-def get_env(line) -> Optional[Tuple[str, str, str]]:
+def get_env(line: str) -> Optional[Tuple[str, str, str]]:
     if line and line[0] not in (" ", "#") and "=" in line:
         key, others = line.split("=", maxsplit=1)
         key = key.strip()
