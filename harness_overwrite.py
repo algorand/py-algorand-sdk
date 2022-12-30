@@ -79,6 +79,7 @@ def go():
         print(f"new_env[{k}]={v} (PREVIOUS: {env[k]=})")
 
     overwrite(env_file, new_env)
+    print("_" * 50)
 
 
 go()
