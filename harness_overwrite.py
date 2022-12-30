@@ -31,9 +31,11 @@ def overwrite(env_file: str, new_env: Dict[str, str]) -> None:
             if e := get_env(line):
                 key, old_val, extra = e
                 if key in new_env and (val := new_env[key]) != old_val:
-                    lines[i] = f"{key}={val} # (previously `{old_val}`)" + (
-                        f" # {extra}" if extra else ""
-                    ) + "\n"
+                    lines[i] = (
+                        f"{key}={val} # (previously `{old_val}`)"
+                        + (f" # {extra}" if extra else "")
+                        + "\n"
+                    )
 
         f.seek(0)
         f.writelines(lines)
@@ -52,8 +54,10 @@ def get_rewrites(
         and w != v
     }
 
+
 def get_keys(env: Dict[str, str]) -> Optional[str]:
-    print(f"""Which of the following env vars do you want to modify?
+    print(
+        f"""Which of the following env vars do you want to modify?
 
 {",".join(env.keys())}
 
@@ -61,8 +65,10 @@ def get_keys(env: Dict[str, str]) -> Optional[str]:
     
     A typical choice is:
 TYPE,ALGOD_URL,ALGOD_BRANCH
-""")
-    return input('CHOICES:\n').strip()
+"""
+    )
+    return input("CHOICES:\n").strip()
+
 
 def go():
     env_file = sys.argv[1]
