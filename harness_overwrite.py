@@ -82,7 +82,7 @@ def go():
     print("_" * 50)
     print("OVERWRITING")
     for k, v in new_env.items():
-        print(f"new_env[{k}]={v} (PREVIOUS: {env[k]=})")
+        print(f"new_env[{k}]={v} (PREVIOUS: env[{k}]={env[k]})")
 
     overwrite(env_file, new_env)
     print("_" * 50)
