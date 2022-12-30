@@ -18,18 +18,39 @@ OVERWRITE_TESTING_ENVIRONMENT=1
 # What can ease some of the pain above is to overwrite interactively:
 INTERACTIVE_TESTING_ENVIRONMENT=0
 
-ALGOD_CHANNEL=""
-ALGOD_URL="https://github.com/tzaffi/go-algorand"
-ALGOD_BRANCH="improve-some-goal-errors"
+
+## --- FOR OVERWRITE PURPOSES
+
+# Used to determine sandbox build type:
+TYPE=source # (previously `"channel"`) #  OR "source"
+
+
+# Used when TYPE==channel:
+ALGOD_CHANNEL="nightly"
+
+# Used when TYPE==source:
+ALGOD_URL=https://github.com/tzaffi/go-algorand # (previously `"https://github.com/algorand/go-algorand"`)
+ALGOD_BRANCH=improve-some-goal-errors # (previously `"master"`)
 ALGOD_SHA=""
-NETWORK=""
-NETWORK_TEMPLATE="images/algod/DevModeNetwork.json"
-NETWORK_BOOTSTRAP_URL=""
-NETWORK_GENESIS_FILE=""
+
+# Used regardless of TYPE:
+NETWORK_TEMPLATE="images/algod/DevModeNetwork.json"  # refers to the ./images directory in the sandbox repo
 NETWORK_NUM_ROUNDS=30000
-NODE_ARCHIVAL="False"
 INDEXER_URL="https://github.com/algorand/indexer"
+NODE_ARCHIVAL="False"
 INDEXER_BRANCH="develop"
 INDEXER_SHA=""
-INDEXER_DISABLED=""
-INDEXER_ENABLE_ALL_PARAMETERS="false"
+
+# Sandbox configuration:
+SANDBOX_URL="https://github.com/algorand/sandbox"
+SANDBOX_BRANCH="master"
+LOCAL_SANDBOX_DIR=".sandbox"
+
+# replacement values for Sandbox's docker-compose:
+ALGOD_CONTAINER=sdk-harness-algod
+KMD_PORT=60001
+ALGOD_PORT=60000
+INDEXER_CONTAINER=sdk-harness-indexer
+INDEXER_PORT=59999
+POSTGRES_CONTAINER=sdk-harness-postgres
+POSTGRES_PORT=65432
