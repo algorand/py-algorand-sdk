@@ -15,6 +15,9 @@ REMOVE_LOCAL_FEATURES=0
 # In that case you'll need to provide all variables expected by `algorand-sdk-testing`'s `.env`
 OVERWRITE_TESTING_ENVIRONMENT=1
 
+# WARNING: THE FOLLOWING IS FOR LOCAL DEVELOPMENT ONLY
+# IF SET TO 1 AND PUSHED TO C.I., THE TEST WILL HANG AND FAIL.
+#
 # What can ease some of the pain above is to overwrite interactively:
 INTERACTIVE_TESTING_ENVIRONMENT=0
 
