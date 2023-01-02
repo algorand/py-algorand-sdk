@@ -22,7 +22,7 @@ OVERWRITE_TESTING_ENVIRONMENT=1
 INTERACTIVE_TESTING_ENVIRONMENT=0
 
 
-## --- FOR OVERWRITE PURPOSES
+## --- FOR OVERWRITE PURPOSES! DELETE ALL THE BELOW!!!!
 
 # Used to determine sandbox build type:
 TYPE=source # (previously `"channel"`) #  OR "source"
