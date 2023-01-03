@@ -1,7 +1,6 @@
 # Example: destroying an asset
 
-from algosdk import account
-from algosdk.future import transaction
+from algosdk import account, transaction
 
 # this transaction must be sent from the creator's account
 creator_private_key, creator_address = account.generate_account()

@@ -2,8 +2,7 @@
 
 import tokens
 
-from algosdk import account, encoding
-from algosdk.future import transaction
+from algosdk import account, encoding, transaction
 from algosdk.v2client import algod
 
 # generate three accounts

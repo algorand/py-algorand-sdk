@@ -1,7 +1,7 @@
 from typing import Any
 
 from algosdk import constants
-from algosdk.future.transaction import Transaction
+from algosdk.transaction import Transaction
 
 
 class ABITransactionType:

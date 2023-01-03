@@ -1,5 +1,5 @@
 import base64
-from typing import List
+from typing import List, Optional, cast
 
 
 class StackPrinterConfig:
@@ -33,13 +33,13 @@ class DryrunTransactionResult:
 
         self.disassembly = dr["disassembly"]
 
+        # cost is separated into 2 fields: `budget-added` and `budget-consumed`
         optionals = [
             "app-call-messages",
             "local-deltas",
             "global-delta",
             "budget-added",
             "budget-consumed",
-            "cost",
             "logic-sig-messages",
             "logic-sig-disassembly",
             "logs",
@@ -63,13 +63,13 @@ class DryrunTransactionResult:
     def app_call_rejected(self) -> bool:
         return (
             False
-            if self.app_call_messages is None
-            else "REJECT" in self.app_call_messages
+            if self.app_call_messages is None  # type: ignore[attr-defined]  # dynamic attribute
+            else "REJECT" in self.app_call_messages  # type: ignore[attr-defined]  # dynamic attribute
         )
 
     def logic_sig_rejected(self) -> bool:
-        if self.logic_sig_messages is not None:
-            return "REJECT" in self.logic_sig_messages
+        if self.logic_sig_messages is not None:  # type: ignore[attr-defined]  # dynamic attribute
+            return "REJECT" in self.logic_sig_messages  # type: ignore[attr-defined]  # dynamic attribute
         return False
 
     @classmethod
@@ -123,16 +123,17 @@ class DryrunTransactionResult:
 
         return "\n".join(trace) + "\n"
 
-    def app_trace(self, spc: StackPrinterConfig = None) -> str:
+    def app_trace(self, spc: Optional[StackPrinterConfig] = None) -> str:
         if not hasattr(self, "app_call_trace"):
             return ""
 
         if spc == None:
             spc = StackPrinterConfig(top_of_stack_first=False)
+        spc = cast(StackPrinterConfig, spc)
 
         return self.trace(self.app_call_trace, self.disassembly, spc=spc)
 
-    def lsig_trace(self, spc: StackPrinterConfig = None) -> str:
+    def lsig_trace(self, spc: Optional[StackPrinterConfig] = None) -> str:
         if not hasattr(self, "logic_sig_trace"):
             return ""
 
@@ -143,16 +144,13 @@ class DryrunTransactionResult:
             spc = StackPrinterConfig(top_of_stack_first=False)
 
         return self.trace(
-            self.logic_sig_trace, self.logic_sig_disassembly, spc=spc
+            self.logic_sig_trace, self.logic_sig_disassembly, spc=spc  # type: ignore[attr-defined]  # dynamic attribute
         )
 
 
 class DryrunTrace:
     def __init__(self, trace: List[dict]):
         self.trace = [DryrunTraceLine(line) for line in trace]
-
-    def get_trace(self) -> List[str]:
-        return [line.trace_line() for line in self.trace]
 
 
 class DryrunTraceLine:
@@ -182,10 +180,13 @@ class DryrunStackValue:
             return "0x" + base64.b64decode(self.bytes).hex()
         return str(self.int)
 
-    def __eq__(self, other: "DryrunStackValue"):
+    def __eq__(self, other: object):
         return (
-            self.type == other.type
+            hasattr(other, "type")
+            and self.type == other.type
+            and hasattr(other, "bytes")
             and self.bytes == other.bytes
+            and hasattr(other, "int")
             and self.int == other.int
         )
 
@@ -202,7 +203,7 @@ def scratch_to_string(
     if not curr_scratch:
         return ""
 
-    new_idx = None
+    new_idx: Optional[int] = None
     for idx in range(len(curr_scratch)):
         if idx >= len(prev_scratch):
             new_idx = idx
@@ -214,6 +215,7 @@ def scratch_to_string(
     if new_idx == None:
         return ""
 
+    new_idx = cast(int, new_idx)  # discharge None type
     return "{} = {}".format(new_idx, curr_scratch[new_idx])
 
 

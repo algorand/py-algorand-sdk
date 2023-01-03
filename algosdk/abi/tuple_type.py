@@ -1,4 +1,4 @@
-from typing import Any, List, Union
+from typing import Any, List, Union, Optional, cast
 
 from algosdk.abi.base_type import ABI_LENGTH_SIZE, ABIType
 from algosdk.abi.bool_type import BoolType
@@ -73,7 +73,7 @@ class TupleType(ABIType):
         return until
 
     @staticmethod
-    def _parse_tuple(s: str) -> list:
+    def _parse_tuple(s: str) -> List[str]:
         """
         Given a tuple string, parses one layer of the tuple and returns tokens as a list.
         i.e. 'x,(y,(z))' -> ['x', '(y,(z))']
@@ -92,7 +92,7 @@ class TupleType(ABIType):
                 "cannot have consecutive commas in {}".format(s)
             )
 
-        tuple_strs = []
+        tuple_strs: List[str] = []
         depth = 0
         word = ""
         for char in s:
@@ -175,8 +175,11 @@ class TupleType(ABIType):
                             "expected before index should have number of bool mod 8 equal 0"
                         )
                     after = min(7, after)
+                    consecutive_bool_list = cast(
+                        List[bool], values[i : i + after + 1]
+                    )
                     compressed_int = TupleType._compress_multiple_bool(
-                        values[i : i + after + 1]
+                        consecutive_bool_list
                     )
                     heads.append(bytes([compressed_int]))
                     i += after
@@ -229,10 +232,10 @@ class TupleType(ABIType):
                 "value string must be in bytes: {}".format(bytestring)
             )
         tuple_elements = self.child_types
-        dynamic_segments = (
-            list()
-        )  # Store the start and end of a dynamic element
-        value_partitions = list()
+        dynamic_segments: List[
+            List[int]
+        ] = list()  # Store the start and end of a dynamic element
+        value_partitions: List[Optional[Union[bytes, bytearray]]] = list()
         i = 0
         array_index = 0
 
@@ -291,9 +294,7 @@ class TupleType(ABIType):
                     array_index += curr_len
             if array_index >= len(bytestring) and i != len(tuple_elements) - 1:
                 raise error.ABIEncodingError(
-                    "input string is not long enough to be decoded: {}".format(
-                        bytestring
-                    )
+                    f"input string is not long enough to be decoded: {bytestring!r}"
                 )
             i += 1
 
@@ -302,7 +303,7 @@ class TupleType(ABIType):
             array_index = len(bytestring)
         if array_index < len(bytestring):
             raise error.ABIEncodingError(
-                "input string was not fully consumed: {}".format(bytestring)
+                f"input string was not fully consumed: {bytestring!r}"
             )
 
         # Check dynamic element partitions

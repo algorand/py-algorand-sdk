@@ -58,9 +58,7 @@ class ArrayDynamicType(ABIType):
             or isinstance(value_array, bytearray)
         ) and not isinstance(self.child_type, ByteType):
             raise error.ABIEncodingError(
-                "cannot pass in bytes when the type of the array is not ByteType: {}".format(
-                    value_array
-                )
+                f"cannot pass in bytes when the type of the array is not ByteType: {value_array!r}"
             )
         converted_tuple = self._to_tuple_type(len(value_array))
         length_to_encode = len(converted_tuple.child_types).to_bytes(

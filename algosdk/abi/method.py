@@ -1,9 +1,19 @@
 import json
-from typing import List, Union
+from typing import List, Union, Optional, TypedDict
 
 from Cryptodome.Hash import SHA512
 
 from algosdk import abi, constants, error
+
+# In Python 3.11+ the following classes should be combined using `NotRequired`
+class MethodDict_Optional(TypedDict, total=False):
+    desc: str
+
+
+class MethodDict(MethodDict_Optional):
+    name: str
+    args: List[dict]
+    returns: dict
 
 
 class Method:
@@ -23,7 +33,7 @@ class Method:
         name: str,
         args: List["Argument"],
         returns: "Returns",
-        desc: str = None,
+        desc: Optional[str] = None,
     ) -> None:
         self.name = name
         self.args = args
@@ -108,11 +118,12 @@ class Method:
         return_type = Returns(tokens[-1])
         return Method(name=tokens[0], args=argument_list, returns=return_type)
 
-    def dictify(self) -> dict:
-        d = {}
-        d["name"] = self.name
-        d["args"] = [arg.dictify() for arg in self.args]
-        d["returns"] = self.returns.dictify()
+    def dictify(self) -> MethodDict:
+        d: MethodDict = {
+            "name": self.name,
+            "args": [arg.dictify() for arg in self.args],
+            "returns": self.returns.dictify(),
+        }
         if self.desc:
             d["desc"] = self.desc
         return d
@@ -156,12 +167,15 @@ class Argument:
     """
 
     def __init__(
-        self, arg_type: str, name: str = None, desc: str = None
+        self,
+        arg_type: str,
+        name: Optional[str] = None,
+        desc: Optional[str] = None,
     ) -> None:
         if abi.is_abi_transaction_type(arg_type) or abi.is_abi_reference_type(
             arg_type
         ):
-            self.type = arg_type
+            self.type: Union[str, abi.ABIType] = arg_type
         else:
             # If the type cannot be parsed into an ABI type, it will error
             self.type = abi.ABIType.from_string(arg_type)
@@ -208,9 +222,9 @@ class Returns:
     # Represents a void return.
     VOID = "void"
 
-    def __init__(self, arg_type: str, desc: str = None) -> None:
+    def __init__(self, arg_type: str, desc: Optional[str] = None) -> None:
         if arg_type == "void":
-            self.type = self.VOID
+            self.type: Union[str, abi.ABIType] = self.VOID
         else:
             # If the type cannot be parsed into an ABI type, it will error.
             self.type = abi.ABIType.from_string(arg_type)
