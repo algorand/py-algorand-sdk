@@ -28,7 +28,7 @@ jobs:
       - run: mypy algosdk
       - run: |
           python setup.py check -s
-          ! python setup.py check -s 2>&1 | tee /dev/tty | grep --quiet --ignore-case "warning"
+          ! python setup.py check -s 2>&1 | grep --quiet --ignore-case "warning"
       - run: pytest tests/unit_tests
   integration-test:
     parameters:
