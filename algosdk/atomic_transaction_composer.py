@@ -239,6 +239,10 @@ class AtomicTransactionComposer:
             raise error.AtomicTransactionComposerError(
                 "AtomicTransactionComposer cannot exceed MAX_GROUP_SIZE transactions"
             )
+
+        if app_id is None:
+            app_id = 0
+
         if app_id == 0:
             if not approval_program or not clear_program:
                 raise error.AtomicTransactionComposerError(
