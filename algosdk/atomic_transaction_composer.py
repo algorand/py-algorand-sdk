@@ -679,7 +679,7 @@ class MultisigTransactionSigner(TransactionSigner):
         sks (str): private keys of multisig
     """
 
-    def __init__(self, msig: transaction.Multisig, sks: str) -> None:
+    def __init__(self, msig: transaction.Multisig, sks: List[str]) -> None:
         super().__init__()
         self.msig = msig
         self.sks = sks
