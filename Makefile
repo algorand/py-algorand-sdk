@@ -11,6 +11,10 @@ lint: check-generate-init
 	black --check .
 	mypy algosdk
 
+check-setup:
+	python setup.py check -s
+	python setup.py check -s 2>&1 | (! grep -qEi 'error|warning')
+
 pytest-unit:
 	pytest tests/unit_tests
 
