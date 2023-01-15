@@ -25,6 +25,7 @@ jobs:
       - checkout
       - run: pip install -r requirements.txt
       - run: make lint
+      - run: make check-setup
       - run: make pytest-unit
   integration-test:
     parameters:
