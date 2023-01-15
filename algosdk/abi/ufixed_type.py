@@ -69,7 +69,7 @@ class UfixedType(ABIType):
         """
         if (
             not isinstance(value, int)
-            or value >= (2**self.bit_size)
+            or value >= (2 ** self.bit_size)
             or value < 0
         ):
             raise error.ABIEncodingError(

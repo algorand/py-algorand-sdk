@@ -282,7 +282,7 @@ class TestABIEncoding(unittest.TestCase):
                 expected = val
                 self.assertEqual(actual, expected)
             # Test for the upper limit of each bit size
-            val = 2**uint_size - 1
+            val = 2 ** uint_size - 1
             uint_type = UintType(uint_size)
             actual = uint_type.encode(val)
             self.assertEqual(len(actual), uint_type.bit_size // 8)
@@ -298,7 +298,7 @@ class TestABIEncoding(unittest.TestCase):
             with self.assertRaises(error.ABIEncodingError) as e:
                 UintType(uint_size).encode(-1)
             with self.assertRaises(error.ABIEncodingError) as e:
-                UintType(uint_size).encode(2**uint_size)
+                UintType(uint_size).encode(2 ** uint_size)
             with self.assertRaises(error.ABIEncodingError) as e:
                 UintType(uint_size).decode("ZZZZ")
             with self.assertRaises(error.ABIEncodingError) as e:
@@ -321,7 +321,7 @@ class TestABIEncoding(unittest.TestCase):
                     expected = val
                     self.assertEqual(actual, expected)
             # Test for the upper limit of each bit size
-            val = 2**ufixed_size - 1
+            val = 2 ** ufixed_size - 1
             ufixed_type = UfixedType(ufixed_size, precision)
             actual = ufixed_type.encode(val)
             self.assertEqual(len(actual), ufixed_type.bit_size // 8)
@@ -337,7 +337,7 @@ class TestABIEncoding(unittest.TestCase):
             with self.assertRaises(error.ABIEncodingError) as e:
                 UfixedType(ufixed_size, 10).encode(-1)
             with self.assertRaises(error.ABIEncodingError) as e:
-                UfixedType(ufixed_size, 10).encode(2**ufixed_size)
+                UfixedType(ufixed_size, 10).encode(2 ** ufixed_size)
             with self.assertRaises(error.ABIEncodingError) as e:
                 UfixedType(ufixed_size, 10).decode("ZZZZ")
             with self.assertRaises(error.ABIEncodingError) as e:
