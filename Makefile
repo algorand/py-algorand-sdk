@@ -1,6 +1,19 @@
 UNIT_TAGS :=  "$(subst :, or ,$(shell awk '{print $2}' tests/unit.tags | paste -s -d: -))"
 INTEGRATION_TAGS := "$(subst :, or ,$(shell awk '{print $2}' tests/integration.tags | paste -s -d: -))"
 
+generate-init:
+	python -m scripts.generate_init
+
+check-generate-init:
+	python -m scripts.generate_init --check
+
+lint: check-generate-init
+	black --check .
+	mypy algosdk
+
+pytest-unit:
+	pytest tests/unit_tests
+
 unit:
 	behave --tags=$(UNIT_TAGS) tests -f progress2
 
