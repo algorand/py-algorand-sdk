@@ -17,7 +17,7 @@ class TupleType(ABIType):
     """
 
     def __init__(self, arg_types: List[Any]) -> None:
-        if len(arg_types) >= 2 ** 16:
+        if len(arg_types) >= 2**16:
             raise error.ABITypeError(
                 "tuple args cannot exceed a uint16: {}".format(len(arg_types))
             )
@@ -143,7 +143,7 @@ class TupleType(ABIType):
         Returns:
             bytes: encoded bytes of the tuple
         """
-        if len(self.child_types) >= (2 ** 16):
+        if len(self.child_types) >= (2**16):
             raise error.ABIEncodingError(
                 "length of tuple array should not exceed a uint16: {}".format(
                     len(self.child_types)
@@ -201,7 +201,7 @@ class TupleType(ABIType):
         for i in range(len(heads)):
             if is_dynamic_index[i]:
                 head_value = head_length + tail_curr_length
-                if head_value >= 2 ** 16:
+                if head_value >= 2**16:
                     raise error.ABIEncodingError(
                         "byte length {} should not exceed a uint16".format(
                             head_value
