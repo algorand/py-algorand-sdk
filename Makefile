@@ -7,13 +7,17 @@ generate-init:
 check-generate-init:
 	python -m scripts.generate_init --check
 
-lint: check-generate-init
+black:
 	black --check .
+
+mypy:
 	mypy algosdk
 
-check-setup:
+sdist-check:
 	python setup.py check -s
 	python setup.py check -s 2>&1 | (! grep -qEi 'error|warning')
+
+lint: check-generate-init black mypy sdist-check
 
 pytest-unit:
 	pytest tests/unit_tests
