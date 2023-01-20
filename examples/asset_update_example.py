@@ -1,7 +1,6 @@
 # Example: updating asset configuration
 
-from algosdk import account
-from algosdk.future import transaction
+from algosdk import account, transaction
 
 # this transaction must be sent from the manager's account
 manager_private_key, manager_address = account.generate_account()

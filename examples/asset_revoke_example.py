@@ -1,7 +1,6 @@
 # Example: revoking assets
 
-from algosdk import account
-from algosdk.future import transaction
+from algosdk import account, transaction
 
 # this transaction must be sent by the asset's clawback manager
 clawback_private_key, clawback_address = account.generate_account()

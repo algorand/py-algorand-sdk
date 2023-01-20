@@ -140,16 +140,6 @@ class EmptyAddressError(Exception):
         )
 
 
-class WrongContractError(Exception):
-    def __init__(self, contract_type):
-        Exception.__init__(
-            self,
-            "Wrong contract provided; a "
-            + contract_type
-            + " contract is needed",
-        )
-
-
 class OverspecifiedRoundError(Exception):
     def __init__(self, contract_type):
         Exception.__init__(
@@ -176,14 +166,6 @@ class ZeroAddressError(Exception):
 class KeyregOnlineTxnInitError(Exception):
     def __init__(self, attr):
         Exception.__init__(self, attr + " should not be None")
-
-
-class TemplateInputError(Exception):
-    pass
-
-
-class TemplateError(Exception):
-    pass
 
 
 class KMDHTTPError(Exception):

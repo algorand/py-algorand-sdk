@@ -177,7 +177,7 @@ class TestMsgpack(unittest.TestCase):
         )
         self.assertEqual(
             paytxn,
-            encoding.msgpack_encode(encoding.future_msgpack_decode(paytxn)),
+            encoding.msgpack_encode(encoding.msgpack_decode(paytxn)),
         )
 
     def test_asset_xfer_txn_future(self):
@@ -189,7 +189,7 @@ class TestMsgpack(unittest.TestCase):
         )
         self.assertEqual(
             axfer,
-            encoding.msgpack_encode(encoding.future_msgpack_decode(axfer)),
+            encoding.msgpack_encode(encoding.msgpack_decode(axfer)),
         )
 
     def test_multisig_txn(self):
@@ -227,11 +227,9 @@ class TestMsgpack(unittest.TestCase):
             "OUJOiKibHbOALuxk6NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tu"
             "H9pHR5cGWma2V5cmVn"
         )
-        # using future_msgpack_decode instead of msgpack_decode
-        # because non-future transactions do not support offline keyreg
         self.assertEqual(
             keyregtxn,
-            encoding.msgpack_encode(encoding.future_msgpack_decode(keyregtxn)),
+            encoding.msgpack_encode(encoding.msgpack_decode(keyregtxn)),
         )
 
     def test_keyreg_txn_nonpart(self):
@@ -240,11 +238,9 @@ class TestMsgpack(unittest.TestCase):
             "OUJOiKibHbOALuxk6dub25wYXJ0w6NzbmTEIAn70nYsCPhsWua/bdenqQHeZnXXUO"
             "B+jFx2mGR9tuH9pHR5cGWma2V5cmVn"
         )
-        # using future_msgpack_decode instead of msgpack_decode
-        # because non-future transactions do not support nonpart keyreg
         self.assertEqual(
             keyregtxn,
-            encoding.msgpack_encode(encoding.future_msgpack_decode(keyregtxn)),
+            encoding.msgpack_encode(encoding.msgpack_decode(keyregtxn)),
         )
 
     def test_stateproof_txn(self):
@@ -406,9 +402,7 @@ class TestMsgpack(unittest.TestCase):
 
         self.assertEqual(
             stateprooftxn,
-            encoding.msgpack_encode(
-                encoding.future_msgpack_decode(stateprooftxn)
-            ),
+            encoding.msgpack_encode(encoding.msgpack_decode(stateprooftxn)),
         )
 
     def test_asset_create(self):
@@ -546,134 +540,6 @@ class TestSignBytes(unittest.TestCase):
 
 
 class TestLogic(unittest.TestCase):
-    def test_parse_uvarint(self):
-        data = b"\x01"
-        value, length = logic.parse_uvarint(data)
-        self.assertEqual(length, 1)
-        self.assertEqual(value, 1)
-
-        data = b"\x7b"
-        value, length = logic.parse_uvarint(data)
-        self.assertEqual(length, 1)
-        self.assertEqual(value, 123)
-
-        data = b"\xc8\x03"
-        value, length = logic.parse_uvarint(data)
-        self.assertEqual(length, 2)
-        self.assertEqual(value, 456)
-
-    def test_parse_intcblock(self):
-        data = b"\x20\x05\x00\x01\xc8\x03\x7b\x02"
-        size = logic.check_int_const_block(data, 0)
-        self.assertEqual(size, len(data))
-
-    def test_parse_bytecblock(self):
-        data = (
-            b"\x26\x02\x0d\x31\x32\x33\x34\x35\x36\x37\x38\x39\x30\x31"
-            b"\x32\x33\x02\x01\x02"
-        )
-        size = logic.check_byte_const_block(data, 0)
-        self.assertEqual(size, len(data))
-
-    def test_parse_pushint(self):
-        data = b"\x81\x80\x80\x04"
-        size = logic.check_push_int_block(data, 0)
-        self.assertEqual(size, len(data))
-
-    def test_parse_pushbytes(self):
-        data = b"\x80\x0b\x68\x65\x6c\x6c\x6f\x20\x77\x6f\x72\x6c\x64"
-        size = logic.check_push_byte_block(data, 0)
-        self.assertEqual(size, len(data))
-
-    def test_check_program(self):
-        program = b"\x01\x20\x01\x01\x22"  # int 1
-        self.assertTrue(logic.check_program(program, None))
-
-        self.assertTrue(logic.check_program(program, ["a" * 10]))
-
-        # too long arg
-        with self.assertRaises(error.InvalidProgram):
-            logic.check_program(program, ["a" * 1000])
-
-        program += b"\x22" * 10
-        self.assertTrue(logic.check_program(program, None))
-
-        # too long program
-        program += b"\x22" * 1000
-        with self.assertRaises(error.InvalidProgram):
-            logic.check_program(program, [])
-
-        # invalid opcode
-        program = b"\x01\x20\x01\x01\x81"
-        with self.assertRaises(error.InvalidProgram):
-            logic.check_program(program, [])
-
-        # check single keccak256 and 10x keccak256 work
-        program = b"\x01\x26\x01\x01\x01\x01\x28\x02"  # byte 0x01 + keccak256
-        self.assertTrue(logic.check_program(program, []))
-
-        program += b"\x02" * 10
-        self.assertTrue(logic.check_program(program, None))
-
-        # check 800x keccak256 fail for v3 and below
-        versions = [b"\x01", b"\x02", b"\x03"]
-        program += b"\x02" * 800
-        for v in versions:
-            programv = v + program
-            with self.assertRaises(error.InvalidProgram):
-                logic.check_program(programv, [])
-
-        versions = [b"\x04"]
-        for v in versions:
-            programv = v + program
-            self.assertTrue(logic.check_program(programv, None))
-
-    def test_check_program_avm_2(self):
-        # check AVM v2 opcodes
-        self.assertIsNotNone(
-            logic.spec, "Must be called after any of logic.check_program"
-        )
-        self.assertTrue(logic.spec["EvalMaxVersion"] >= 2)
-        self.assertTrue(logic.spec["LogicSigVersion"] >= 2)
-
-        # balance
-        program = b"\x02\x20\x01\x00\x22\x60"  # int 0; balance
-        self.assertTrue(logic.check_program(program, None))
-
-        # app_opted_in
-        program = b"\x02\x20\x01\x00\x22\x22\x61"  # int 0; int 0; app_opted_in
-        self.assertTrue(logic.check_program(program, None))
-
-        # asset_holding_get
-        program = b"\x02\x20\x01\x00\x22\x22\x70\x00"  # int 0; int 0; asset_holding_get Balance
-        self.assertTrue(logic.check_program(program, None))
-
-    def test_check_program_avm_3(self):
-        # check AVM v2 opcodes
-        self.assertIsNotNone(
-            logic.spec, "Must be called after any of logic.check_program"
-        )
-        self.assertTrue(logic.spec["EvalMaxVersion"] >= 3)
-        self.assertTrue(logic.spec["LogicSigVersion"] >= 3)
-
-        # min_balance
-        program = b"\x03\x20\x01\x00\x22\x78"  # int 0; min_balance
-        self.assertTrue(logic.check_program(program, None))
-
-        # pushbytes
-        program = b"\x03\x20\x01\x00\x22\x80\x02\x68\x69\x48"  # int 0; pushbytes "hi"; pop
-        self.assertTrue(logic.check_program(program, None))
-
-        # pushint
-        program = b"\x03\x20\x01\x00\x22\x81\x01\x48"  # int 0; pushint 1; pop
-        self.assertTrue(logic.check_program(program, None))
-
-        # swap
-        program = (
-            b"\x03\x20\x02\x00\x01\x22\x23\x4c\x48"  # int 0; int 1; swap; pop
-        )
-        self.assertTrue(logic.check_program(program, None))
-
     def test_teal_sign(self):
         """test tealsign"""
         data = base64.b64decode("Ux8jntyBJQarjKGF8A==")
@@ -695,90 +561,6 @@ class TestLogic(unittest.TestCase):
         )
         res = verify_key.verify(msg, sig1)
         self.assertIsNotNone(res)
-
-    def test_check_program_avm_4(self):
-        # check AVM v4 opcodes
-        self.assertIsNotNone(
-            logic.spec, "Must be called after any of logic.check_program"
-        )
-        self.assertTrue(logic.spec["EvalMaxVersion"] >= 4)
-
-        # divmodw
-        program = b"\x04\x20\x03\x01\x00\x02\x22\x81\xd0\x0f\x23\x24\x1f"  # int 1; pushint 2000; int 0; int 2; divmodw
-        self.assertTrue(logic.check_program(program, None))
-
-        # gloads i
-        program = b"\x04\x20\x01\x00\x22\x3b\x00"  # int 0; gloads 0
-        self.assertTrue(logic.check_program(program, None))
-
-        # callsub
-        program = b"\x04\x20\x02\x01\x02\x22\x88\x00\x02\x23\x12\x49"  # int 1; callsub double; int 2; ==; double: dup;
-        self.assertTrue(logic.check_program(program, None))
-
-        # b>=
-        program = b"\x04\x26\x02\x01\x11\x01\x10\x28\x29\xa7"  # byte 0x11; byte 0x10; b>=
-        self.assertTrue(logic.check_program(program, None))
-
-        # b^
-        program = b"\x04\x26\x03\x01\x11\x01\x10\x01\x01\x28\x29\xad\x2a\x12"  # byte 0x11; byte 0x10; b>=
-        self.assertTrue(logic.check_program(program, None))
-
-        # callsub, retsub
-        program = b"\x04\x20\x02\x01\x02\x22\x88\x00\x03\x23\x12\x43\x49\x08\x89"  # int 1; callsub double; int 2; ==; return; double: dup; +; retsub;
-        self.assertTrue(logic.check_program(program, None))
-
-        # loop
-        program = b"\x04\x20\x04\x01\x02\x0a\x10\x22\x23\x0b\x49\x24\x0c\x40\xff\xf8\x25\x12"  # int 1; loop: int 2; *; dup; int 10; <; bnz loop; int 16; ==
-        self.assertTrue(logic.check_program(program, None))
-
-    def test_check_program_avm_5(self):
-        # check AVM v5 opcodes
-        self.assertIsNotNone(
-            logic.spec, "Must be called after any of logic.check_program"
-        )
-        self.assertTrue(logic.spec["EvalMaxVersion"] >= 5)
-
-        # itxn ops
-        program = b"\x05\x20\x01\xc0\x84\x3d\xb1\x81\x01\xb2\x10\x22\xb2\x08\x31\x00\xb2\x07\xb3\xb4\x08\x22\x12"
-        # itxn_begin; int pay; itxn_field TypeEnum; int 1000000; itxn_field Amount; txn Sender; itxn_field Receiver; itxn_submit; itxn Amount; int 1000000; ==
-        self.assertTrue(logic.check_program(program, None))
-
-        # ECDSA ops
-        program = bytes.fromhex(
-            "058008746573746461746103802079bfa8245aeac0e714b7bd2b3252d03979e5e7a43cb039715a5f8109a7dd9ba180200753d317e54350d1d102289afbde3002add4529f10b9f7d3d223843985de62e0802103abfb5e6e331fb871e423f354e2bd78a384ef7cb07ac8bbf27d2dd1eca00e73c106000500"
-        )
-        # byte "testdata"; sha512_256; byte 0x79bfa8245aeac0e714b7bd2b3252d03979e5e7a43cb039715a5f8109a7dd9ba1; byte 0x0753d317e54350d1d102289afbde3002add4529f10b9f7d3d223843985de62e0; byte 0x03abfb5e6e331fb871e423f354e2bd78a384ef7cb07ac8bbf27d2dd1eca00e73c1; ecdsa_pk_decompress Secp256k1; ecdsa_verify Secp256k1
-        self.assertTrue(logic.check_program(program, None))
-
-        # cover, uncover, log
-        program = b"\x05\x80\x01\x61\x80\x01\x62\x80\x01\x63\x4e\x02\x4f\x02\x50\x50\xb0\x81\x01"
-        # byte "a"; byte "b"; byte "c"; cover 2; uncover 2; concat; concat; log; int 1
-        self.assertTrue(logic.check_program(program, None))
-
-    def test_check_program_avm_6(self):
-        # check AVM v6 opcodes
-
-        self.assertIsNotNone(
-            logic.spec, "Must be called after any of logic.check_program"
-        )
-        self.assertTrue(logic.spec["EvalMaxVersion"] >= 6)
-
-        # bsqrt
-        program = b"\x06\x80\x01\x90\x96\x80\x01\x0c\xa8"
-        # byte 0x90; bsqrt; byte 0x0c; b==
-        self.assertTrue(logic.check_program(program, None))
-
-        # divw
-        program = b"\x06\x81\x09\x81\xec\xff\xff\xff\xff\xff\xff\xff\xff\x01\x81\x0a\x97\x81\xfe\xff\xff\xff\xff\xff\xff\xff\xff\x01\x12"
-        # int 9; int 18446744073709551596; int 10; divw; int 18446744073709551614; ==
-        self.assertTrue(logic.check_program(program, None))
-
-        # txn fields
-        program = (
-            b"\x06\x31\x3f\x15\x81\x40\x12\x33\x00\x3e\x15\x81\x0a\x12\x10"
-        )
-        # txn StateProofPK; len; int 64; ==; gtxn 0 LastLog; len; int 10; ==; &&
-        self.assertTrue(logic.check_program(program, None))
 
 
 class TestEncoding(unittest.TestCase):

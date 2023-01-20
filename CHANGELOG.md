@@ -1,5 +1,28 @@
 # Changelog
 
+# v2.0.0
+
+## What's Changed
+### Breaking Changes
+
+* Remove v1 algod API (`algosdk/algod.py`) due to API end-of-life (2022-12-01).  Instead, use v2 algod API (`algosdk/v2client/algod.py`).
+* Remove `algosdk.future` package.  Move package contents to `algosdk`.
+* Remove `encoding.future_msgpack_decode` method in favor of `encoding.msgpack_decode` method.
+* Remove `cost` field in `DryrunTxnResult` in favor of 2 fields:  `budget-added` and `budget-consumed`.  `cost` can be derived by `budget-consumed - budget-added`.
+* Remove `mnemonic.to_public_key` in favor of `account.address_from_private_key`.
+* Remove logicsig templates, `algosdk/data/langspec.json` and all methods in `logic` depending on it.
+
+### Bugfixes
+* Fix: populate_foreign_array offset logic by @jgomezst in https://github.com/algorand/py-algorand-sdk/pull/406
+
+### Enhancements
+* v2: Breaking changes from v1 to v2.0.0 by @ahangsu in https://github.com/algorand/py-algorand-sdk/pull/415
+* v2: Delete more references to `langspec` by @algochoi in https://github.com/algorand/py-algorand-sdk/pull/426
+* LogicSig: Add LogicSig usage disclaimer by @michaeldiamant in https://github.com/algorand/py-algorand-sdk/pull/424
+* Infrastructure: Only package `algosdk` in `setup.py` by @algochoi in https://github.com/algorand/py-algorand-sdk/pull/428
+* Tests: Introduce type linting with mypy by @jdtzmn in https://github.com/algorand/py-algorand-sdk/pull/397
+
+
 # v1.20.2
 
 ## What's Changed

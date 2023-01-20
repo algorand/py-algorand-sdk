@@ -1,5 +1,5 @@
 import base64
-from typing import List, Optional, cast
+from typing import List, Optional, cast, Dict, Any
 
 
 class StackPrinterConfig:
@@ -26,26 +26,26 @@ class DryrunResponse:
 
 
 class DryrunTransactionResult:
-    def __init__(self, dr):
+    def __init__(self, dr: Dict[str, Any]):
         assert (
             "disassembly" in dr
         ), "expecting dryrun transaction result to have key 'disassembly' but its missing"
 
         self.disassembly = dr["disassembly"]
 
-        optionals = [
+        # cost is separated into 2 fields: `budget-added` and `budget-consumed`
+        optionals: List[str] = [
             "app-call-messages",
             "local-deltas",
             "global-delta",
             "budget-added",
             "budget-consumed",
-            "cost",
             "logic-sig-messages",
             "logic-sig-disassembly",
             "logs",
         ]
 
-        def attrname(field):
+        def attrname(field: str):
             return field.replace("-", "_")
 
         for field in optionals:
@@ -131,7 +131,7 @@ class DryrunTransactionResult:
             spc = StackPrinterConfig(top_of_stack_first=False)
         spc = cast(StackPrinterConfig, spc)
 
-        return self.trace(self.app_call_trace, self.disassembly, spc=spc)
+        return self.trace(self.app_call_trace, self.disassembly, spc=spc)  # type: ignore[attr-defined]  # dynamic attribute
 
     def lsig_trace(self, spc: Optional[StackPrinterConfig] = None) -> str:
         if not hasattr(self, "logic_sig_trace"):
@@ -181,6 +181,7 @@ class DryrunStackValue:
         return str(self.int)
 
     def __eq__(self, other: object):
+        other = cast(DryrunStackValue, other)
         return (
             hasattr(other, "type")
             and self.type == other.type

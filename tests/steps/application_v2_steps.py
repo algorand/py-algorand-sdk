@@ -6,10 +6,16 @@ import time
 import pytest
 from behave import given, step, then, when
 
-from algosdk import abi, atomic_transaction_composer, encoding, mnemonic
+from algosdk import (
+    abi,
+    account,
+    atomic_transaction_composer,
+    encoding,
+    mnemonic,
+    transaction,
+)
 from algosdk.abi.contract import NetworkInfo
 from algosdk.error import ABITypeError, AtomicTransactionComposerError
-from algosdk.future import transaction
 from tests.steps.other_v2_steps import read_program
 
 
@@ -419,14 +425,9 @@ def reset_appid_list(context):
 
 @step("I remember the new application ID.")
 def remember_app_id(context):
-    if hasattr(context, "acl"):
-        app_id = context.acl.pending_transaction_info(context.app_txid)[
-            "txresults"
-        ]["createdapp"]
-    else:
-        app_id = context.app_acl.pending_transaction_info(context.app_txid)[
-            "application-index"
-        ]
+    app_id = context.app_acl.pending_transaction_info(context.app_txid)[
+        "application-index"
+    ]
 
     context.current_application_id = app_id
     if not hasattr(context, "app_ids"):
@@ -637,7 +638,7 @@ def abi_method_adder(
     if account_type == "transient":
         sender = context.transient_pk
     elif account_type == "signing":
-        sender = mnemonic.to_public_key(context.signing_mnemonic)
+        sender = context.signing_address
     else:
         raise NotImplementedError(
             "cannot make transaction signer for " + account_type

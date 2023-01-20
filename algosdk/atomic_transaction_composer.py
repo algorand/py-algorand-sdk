@@ -13,9 +13,8 @@ from typing import (
     cast,
 )
 
-from algosdk import abi, error
+from algosdk import abi, error, transaction
 from algosdk.abi.address_type import AddressType
-from algosdk.future import transaction
 from algosdk.v2client import algod
 
 # The first four bytes of an ABI method call return must have this hash
@@ -680,7 +679,7 @@ class MultisigTransactionSigner(TransactionSigner):
         sks (str): private keys of multisig
     """
 
-    def __init__(self, msig: transaction.Multisig, sks: str) -> None:
+    def __init__(self, msig: transaction.Multisig, sks: List[str]) -> None:
         super().__init__()
         self.msig = msig
         self.sks = sks
