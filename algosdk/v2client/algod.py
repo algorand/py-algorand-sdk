@@ -498,7 +498,7 @@ class AlgodClient:
         serialized = []
         for txn in txns:
             assert not isinstance(
-                txn, future.transaction.Transaction
+                txn, transaction.Transaction
             ), "Attempt to send UNSIGNED transaction {}".format(txn)
             serialized.append(base64.b64decode(encoding.msgpack_encode(txn)))
 

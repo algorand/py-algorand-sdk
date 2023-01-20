@@ -1,4 +1,5 @@
 import base64
+import msgpack
 import copy
 from abc import ABC, abstractmethod
 from enum import IntEnum
@@ -16,6 +17,7 @@ from typing import (
 from algosdk import abi, error, transaction
 from algosdk.abi.address_type import AddressType
 from algosdk.v2client import algod
+from algosdk.simulate_results import SimulationResponse
 
 # The first four bytes of an ABI method call return must have this hash
 ABI_RETURN_HASH = b"\x15\x1f\x7c\x75"
@@ -479,6 +481,32 @@ class AtomicTransactionComposer:
         self.status = AtomicTransactionComposerStatus.SUBMITTED
         return self.tx_ids
 
+    def simulate(self, client: algod.AlgodClient) -> List["ABIResult"]:
+
+        if self.status <= AtomicTransactionComposerStatus.SUBMITTED:
+            self.gather_signatures()
+        else:
+            raise error.AtomicTransactionComposerError(
+                "AtomicTransactionComposerStatus must "
+                "be submitted or lower to dryrun a group"
+            )
+
+        encoded_result = client.simulate_transactions(self.signed_txns)
+        sim_result = SimulationResponse.undictify(
+            msgpack.unpackb(encoded_result, raw=False)
+        )
+        if not sim_result.would_succeed:
+            raise error.AtomicTransactionComposerError(
+                f"Simulation failed: {sim_result.__dict__}"
+            )
+
+        # TODO: assuming single txn_group
+        txn_results = [
+            g.result.dictify() for g in sim_result.txn_groups[0].txn_results
+        ]
+
+        return self.parse_response(txn_results)
+
     def execute(
         self, client: algod.AlgodClient, wait_rounds: int
     ) -> "AtomicTransactionResponse":
@@ -517,25 +545,38 @@ class AtomicTransactionComposer:
         self.status = AtomicTransactionComposerStatus.COMMITTED
 
         confirmed_round = resp["confirmed-round"]
-        method_results = []
 
-        for i, tx_id in enumerate(self.tx_ids):
-            raw_value: Optional[bytes] = None
+        tx_results = [
+            client.pending_transaction_info(tx_id) for tx_id in self.tx_ids
+        ]
+
+        method_results = self.parse_response(tx_results)
+
+        return AtomicTransactionResponse(
+            confirmed_round=confirmed_round,
+            tx_ids=self.tx_ids,
+            results=method_results,
+        )
+
+    def parse_response(self, txns: list[Dict[str, Any]]) -> List["ABIResult"]:
+
+        method_results = []
+        for i, tx_info in enumerate(txns):
+            tx_id = self.tx_ids[i]
+            raw_value = None
             return_value = None
             decode_error = None
-            tx_info: Optional[Any] = None
 
             if i not in self.method_dict:
                 continue
 
             # Parse log for ABI method return value
             try:
-                tx_info = client.pending_transaction_info(tx_id)
                 if self.method_dict[i].returns.type == abi.Returns.VOID:
                     method_results.append(
                         ABIResult(
                             tx_id=tx_id,
-                            raw_value=cast(bytes, raw_value),
+                            raw_value=raw_value,
                             return_value=return_value,
                             decode_error=decode_error,
                             tx_info=tx_info,
@@ -562,28 +603,24 @@ class AtomicTransactionComposer:
                         "app call transaction did not log a return value"
                     )
                 raw_value = result_bytes[4:]
-                method_return_type = cast(
-                    abi.ABIType, self.method_dict[i].returns.type
+                return_value = self.method_dict[i].returns.type.decode(
+                    raw_value
                 )
-                return_value = method_return_type.decode(raw_value)
             except Exception as e:
                 decode_error = e
 
-            abi_result = ABIResult(
-                tx_id=tx_id,
-                raw_value=cast(bytes, raw_value),
-                return_value=return_value,
-                decode_error=decode_error,
-                tx_info=cast(Any, tx_info),
-                method=self.method_dict[i],
+            method_results.append(
+                ABIResult(
+                    tx_id=tx_id,
+                    raw_value=raw_value,
+                    return_value=return_value,
+                    decode_error=decode_error,
+                    tx_info=tx_info,
+                    method=self.method_dict[i],
+                )
             )
-            method_results.append(abi_result)
 
-        return AtomicTransactionResponse(
-            confirmed_round=confirmed_round,
-            tx_ids=self.tx_ids,
-            results=method_results,
-        )
+        return method_results
 
 
 class TransactionSigner(ABC):
