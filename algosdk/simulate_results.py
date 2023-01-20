@@ -72,15 +72,15 @@ class SimulationTransactionResult:
 
 
 class SimulationTransactionGroupResult:
-    txn_results: list[SimulationTransactionResult]
+    txn_results: List[SimulationTransactionResult]
     failure_message: str
 
     # failed_at is "transaction path": e.g. [0, 0, 1] means
     #   the second inner txn of the first inner txn of the first txn.
-    failed_at: list[int]
+    failed_at: List[int]
 
     @staticmethod
-    def undictify(data: dict[str, Any]) -> "SimulationTransactionGroupResult":
+    def undictify(data: Dict[str, Any]) -> "SimulationTransactionGroupResult":
         stgr = SimulationTransactionGroupResult()
         # TODO: expecting these names to change
         stgr.failed_at = data.get("failedat", [])
@@ -94,7 +94,7 @@ class SimulationTransactionGroupResult:
 class SimulationResponse:
     version: int
     would_succeed: bool
-    txn_groups: list[SimulationTransactionGroupResult]
+    txn_groups: List[SimulationTransactionGroupResult]
 
     @staticmethod
     def undictify(data: Dict[str, Any]) -> "SimulationResponse":

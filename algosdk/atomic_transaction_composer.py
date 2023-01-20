@@ -558,12 +558,12 @@ class AtomicTransactionComposer:
             results=method_results,
         )
 
-    def parse_response(self, txns: list[Dict[str, Any]]) -> List["ABIResult"]:
+    def parse_response(self, txns: List[Dict[str, Any]]) -> List["ABIResult"]:
 
         method_results = []
         for i, tx_info in enumerate(txns):
             tx_id = self.tx_ids[i]
-            raw_value = None
+            raw_value: Optional[bytes] = None
             return_value = None
             decode_error = None
 
@@ -576,7 +576,7 @@ class AtomicTransactionComposer:
                     method_results.append(
                         ABIResult(
                             tx_id=tx_id,
-                            raw_value=raw_value,
+                            raw_value=cast(bytes, raw_value),
                             return_value=return_value,
                             decode_error=decode_error,
                             tx_info=tx_info,
@@ -603,16 +603,17 @@ class AtomicTransactionComposer:
                         "app call transaction did not log a return value"
                     )
                 raw_value = result_bytes[4:]
-                return_value = self.method_dict[i].returns.type.decode(
-                    raw_value
+                method_return_type = cast(
+                    abi.ABIType, self.method_dict[i].returns.type
                 )
+                return_value = method_return_type.decode(raw_value)
             except Exception as e:
                 decode_error = e
 
             method_results.append(
                 ABIResult(
                     tx_id=tx_id,
-                    raw_value=raw_value,
+                    raw_value=cast(bytes, raw_value),
                     return_value=return_value,
                     decode_error=decode_error,
                     tx_info=tx_info,
