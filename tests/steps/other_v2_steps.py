@@ -1072,6 +1072,17 @@ def b64decode_compiled_teal_step(context, binary):
     assert base64.b64decode(response_result.encode()) == binary
 
 
+@then('disassembly of "{bytecode_filename}" matches "{source_filename}"')
+def disassembly_matches_source(context, bytecode_filename, source_filename):
+    bytecode = load_resource(bytecode_filename)
+    expected_source = load_resource(source_filename).decode("utf-8")
+
+    context.response = context.app_acl.disassemble(bytecode)
+    actual_source = context.response["result"]
+
+    assert actual_source == expected_source
+
+
 @when('I dryrun a "{kind}" program "{program}"')
 def dryrun_step(context, kind, program):
     data = load_resource(program)
