@@ -83,6 +83,7 @@ class AlgodClient:
                 e = json.loads(e)["message"]
             finally:
                 raise error.AlgodHTTPError(e, code)
+
         if response_format == "json":
             try:
                 return json.load(resp)
@@ -497,12 +498,7 @@ class AlgodClient:
         """
         serialized = []
         for txn in txns:
-            assert not isinstance(
-                txn, transaction.Transaction
-            ), "Attempt to send UNSIGNED transaction {}".format(txn)
             serialized.append(base64.b64decode(encoding.msgpack_encode(txn)))
-
-        kwargs["response_format"] = "msgpack"
 
         return self.simulate_raw_transaction(
             base64.b64encode(b"".join(serialized)), **kwargs
@@ -517,7 +513,12 @@ class AlgodClient:
         )
         kwargs["headers"] = headers
 
-        return self.algod_request("POST", req, data=txn, **kwargs)
+        kwargs["response_format"] = "msgpack"
+        params = {"format": "msgpack"}
+
+        return self.algod_request(
+            "POST", req, params=params, data=txn, **kwargs
+        )
 
 
 def _specify_round_string(block, round_num):

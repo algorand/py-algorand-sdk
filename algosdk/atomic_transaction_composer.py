@@ -1,6 +1,6 @@
 import base64
-import msgpack
 import copy
+import msgpack
 from abc import ABC, abstractmethod
 from enum import IntEnum
 from typing import (
@@ -493,7 +493,7 @@ class AtomicTransactionComposer:
 
         encoded_result = client.simulate_transactions(self.signed_txns)
         sim_result = SimulationResponse.undictify(
-            msgpack.unpackb(encoded_result, raw=False)
+            msgpack.unpackb(encoded_result)
         )
         if not sim_result.would_succeed:
             raise error.AtomicTransactionComposerError(
