@@ -66,8 +66,8 @@ class SimulationTransactionResult:
     @staticmethod
     def undictify(data: Dict[str, Any]) -> "SimulationTransactionResult":
         s = SimulationTransactionResult()
-        # TODO: expecting this string name to change
-        s.result = PendingTransactionResponse.undictify(data["Txn"])
+        s.result = PendingTransactionResponse.undictify(data["txn-result"])
+        s.missing_signature = data.get("missing-signature", False)
         return s
 
 
@@ -82,11 +82,11 @@ class SimulationTransactionGroupResult:
     @staticmethod
     def undictify(data: Dict[str, Any]) -> "SimulationTransactionGroupResult":
         stgr = SimulationTransactionGroupResult()
-        # TODO: expecting these names to change
-        stgr.failed_at = data.get("failedat", [])
-        stgr.failure_message = data.get("failmsg", "")
+        stgr.failed_at = data.get("failed-at", [])
+        stgr.failure_message = data.get("failure-message", "")
         stgr.txn_results = [
-            SimulationTransactionResult.undictify(t) for t in data["Txns"]
+            SimulationTransactionResult.undictify(t)
+            for t in data["txn-results"]
         ]
         return stgr
 
@@ -99,10 +99,10 @@ class SimulationResponse:
     @staticmethod
     def undictify(data: Dict[str, Any]) -> "SimulationResponse":
         sr = SimulationResponse()
-        sr.version = data["v"]
-        sr.would_succeed = data.get("s", False)
+        sr.version = data["version"]
+        sr.would_succeed = data["would-succeed"]
         sr.txn_groups = [
             SimulationTransactionGroupResult.undictify(txn)
-            for txn in data["txns"]
+            for txn in data["txn-groups"]
         ]
         return sr
