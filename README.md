@@ -41,13 +41,25 @@ Set up the Algorand Sandbox based test-harness without running the tests
 
 * `make harness`
 
-Format code:
+Format code
 
 * `black .`
 
-Lint types:
+Update `algosdk/__init__.pyi` which allows downstream developers importing `algosdk` and using VSCode's PyLance to have improved type analysis
 
-* `mypy algosdk`
+* `make generate-init`
+
+Lint types
+
+* `make mypy` (or `mypy algosdk`)
+
+Check all lints required by the C.I. process
+
+* `make lint`
+
+Run non-test-harness related unit tests
+
+* `make pytest-unit`
 
 ## Quick start
 

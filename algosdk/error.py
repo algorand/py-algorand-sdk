@@ -141,7 +141,7 @@ class EmptyAddressError(Exception):
 
 
 class OverspecifiedRoundError(Exception):
-    def __init__(self, contract_type):
+    def __init__(self):
         Exception.__init__(
             self,
             "Two arguments were given for the round "
@@ -150,7 +150,7 @@ class OverspecifiedRoundError(Exception):
 
 
 class UnderspecifiedRoundError(Exception):
-    def __init__(self, contract_type):
+    def __init__(self):
         Exception.__init__(self, "Please specify a round number")
 
 
