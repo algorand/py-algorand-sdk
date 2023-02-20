@@ -12,7 +12,9 @@ DEFAULT_KMD_WALLET_PASSWORD = ""
 
 def get_client() -> KMDClient:
     """creates a new kmd client using the default sandbox parameters"""
-    return KMDClient(kmd_token=DEFAULT_KMD_TOKEN, kmd_address=DEFAULT_KMD_ADDRESS)
+    return KMDClient(
+        kmd_token=DEFAULT_KMD_TOKEN, kmd_address=DEFAULT_KMD_ADDRESS
+    )
 
 
 def get_sandbox_default_wallet() -> Wallet:
@@ -62,11 +64,14 @@ def get_accounts(
     try:
         addresses = kmd.list_keys(wallet_handle)
         private_keys = [
-            kmd.export_key(wallet_handle, wallet_password, addr) for addr in addresses
+            kmd.export_key(wallet_handle, wallet_password, addr)
+            for addr in addresses
         ]
         kmd_accounts = [
             SandboxAccount(
-                addresses[i], private_keys[i], AccountTransactionSigner(private_keys[i])
+                addresses[i],
+                private_keys[i],
+                AccountTransactionSigner(private_keys[i]),
             )
             for i in range(len(private_keys))
         ]
