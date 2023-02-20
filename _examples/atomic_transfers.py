@@ -1,14 +1,15 @@
 from typing import Dict, Any
-from algosdk import account, transaction
+from algosdk import transaction
 from algosdk.v2client import algod
+from sandbox import get_accounts
 
 algod_address = "http://localhost:4001"
 algod_token = "a" * 64
 algod_client = algod.AlgodClient(algod_token, algod_address)
 
-# TODO: gather from sandbox?
-addr1, sk1 = account.generate_account()
-addr2, sk2 = account.generate_account()
+acct1, acct2, _ = get_accounts()
+addr1, sk1 = acct1.address, acct1.private_key
+addr2, sk2 = acct2.address, acct2.private_key 
 
 suggested_params = algod_client.suggested_params()
 
