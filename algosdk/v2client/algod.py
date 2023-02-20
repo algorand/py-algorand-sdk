@@ -64,6 +64,7 @@ class AlgodClient:
 
         if requrl not in constants.unversioned_paths:
             requrl = api_version_path_prefix + requrl
+
         if params:
             requrl = requrl + "?" + parse.urlencode(params)
 
@@ -504,7 +505,7 @@ class AlgodClient:
             base64.b64encode(b"".join(serialized)), **kwargs
         )
 
-    def simulate_raw_transaction(self, txn, **kwargs):
+    def simulate_raw_transaction(self, txn, response_format="msgpack", **kwargs):
         txn = base64.b64decode(txn)
         req = "/transactions/simulate"
         headers = util.build_headers_from(
@@ -513,11 +514,10 @@ class AlgodClient:
         )
         kwargs["headers"] = headers
 
-        kwargs["response_format"] = "msgpack"
-        params = {"format": "msgpack"}
+        params = {"format": response_format}
 
         return self.algod_request(
-            "POST", req, params=params, data=txn, **kwargs
+            "POST", req, params=params, data=txn, response_format=response_format, **kwargs
         )
 
 
