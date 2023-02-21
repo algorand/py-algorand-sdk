@@ -69,7 +69,6 @@ print(f"Sent opt in transaction with txid: {txid}")
 results = transaction.wait_for_confirmation(algod_client, txid, 4)
 print(f"Result confirmed in round: {results['confirmed-round']}")
 
-# TODO: pluck out field to show we've added this asset
 acct_info = algod_client.account_info(acct2.address)
 matching_asset = [
     asset
@@ -124,7 +123,6 @@ print(f"Sent freeze transaction with txid: {txid}")
 results = transaction.wait_for_confirmation(algod_client, txid, 4)
 print(f"Result confirmed in round: {results['confirmed-round']}")
 
-# TODO: pluck out field to show this asset is frozen
 acct_info = algod_client.account_info(acct2.address)
 matching_asset = [
     asset
@@ -164,7 +162,7 @@ assert matching_asset["is-frozen"] is True
 
 # example: ASSET_DELETE
 sp = algod_client.suggested_params()
-# Create asset destroy transaction to destroy the asset 
+# Create asset destroy transaction to destroy the asset
 destroy_txn = transaction.AssetDestroyTxn(
     sender=acct1.address,
     sp=sp,
@@ -178,7 +176,7 @@ results = transaction.wait_for_confirmation(algod_client, txid, 4)
 print(f"Result confirmed in round: {results['confirmed-round']}")
 
 # now, trying to fetch the asset info should result in an error
-try: 
+try:
     info = algod_client.asset_info(created_asset)
 except Exception as e:
     print("Expected Error:", e)
