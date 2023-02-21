@@ -1,0 +1,6 @@
+# Missing KMD_CREATE_CLIENT in PYSDK examples (in ../docs/get-details/accounts/create.md:86)
+# Missing KMD_CREATE_WALLET in PYSDK examples (in ../docs/get-details/accounts/create.md:97)
+# Missing KMD_CREATE_ACCOUNT in PYSDK examples (in ../docs/get-details/accounts/create.md:107)
+# Missing KMD_RECOVER_WALLET in PYSDK examples (in ../docs/get-details/accounts/create.md:275)
+# Missing KMD_EXPORT_ACCOUNT in PYSDK examples (in ../docs/get-details/accounts/create.md:481)
+# Missing KMD_IMPORT_ACCOUNT in PYSDK examples (in ../docs/get-details/accounts/create.md:692)

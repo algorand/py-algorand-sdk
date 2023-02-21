@@ -1,7 +1,7 @@
 from typing import Dict, Any
 from algosdk import transaction
 from algosdk.v2client import algod
-from sandbox import get_accounts
+from utils import get_accounts
 
 algod_address = "http://localhost:4001"
 algod_token = "a" * 64

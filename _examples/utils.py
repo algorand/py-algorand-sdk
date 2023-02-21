@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from algosdk.v2client import algod
 from algosdk.atomic_transaction_composer import AccountTransactionSigner
 from algosdk.kmd import KMDClient
 from algosdk.wallet import Wallet
@@ -9,8 +10,17 @@ DEFAULT_KMD_TOKEN = "a" * 64
 DEFAULT_KMD_WALLET_NAME = "unencrypted-default-wallet"
 DEFAULT_KMD_WALLET_PASSWORD = ""
 
+DEFAULT_ALGOD_ADDRESS = "http://localhost:4001"
+DEFAULT_ALGOD_TOKEN = "a" * 64
 
-def get_client() -> KMDClient:
+
+def get_algod_client(
+    addr: str = DEFAULT_ALGOD_ADDRESS, token: str = DEFAULT_ALGOD_TOKEN
+) -> algod.AlgodClient:
+    return algod.AlgodClient(algod_token=token, algod_address=addr)
+
+
+def get_kmd_client() -> KMDClient:
     """creates a new kmd client using the default sandbox parameters"""
     return KMDClient(
         kmd_token=DEFAULT_KMD_TOKEN, kmd_address=DEFAULT_KMD_ADDRESS
@@ -22,7 +32,7 @@ def get_sandbox_default_wallet() -> Wallet:
     return Wallet(
         wallet_name=DEFAULT_KMD_WALLET_NAME,
         wallet_pswd=DEFAULT_KMD_WALLET_PASSWORD,
-        kmd_client=get_client(),
+        kmd_client=get_kmd_client(),
     )
 
 

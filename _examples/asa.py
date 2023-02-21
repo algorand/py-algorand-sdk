@@ -1,9 +1,185 @@
-# TODO: 
+from typing import Dict, Any
+from algosdk import transaction
+from utils import get_accounts, get_algod_client
 
-# * CREATE_ASSET - Create an Asset from acct1 
-# * OPTIN_ASSET - Opt acct2 in to the newly created asset
-# * XFER_ASSET - Send asset from acct1 to acct2 
-# * FREEZE_ASSET - Freeze the asset in acct2 and then unfreeze the asset in acct2 
-# * CONFIGURE_ASSET - Reconfigure Asset to remove the freeze address 
-# * CLAWBACK_ASSET - Clawback Asset from acct2
-# * DELETE_ASSET - Delete the asset
+# Setup
+algod_client = get_algod_client()
+accounts = get_accounts()
+acct1 = accounts.pop()
+acct2 = accounts.pop()
+acct3 = accounts.pop()
+
+
+# example: ASSET_CREATE
+
+
+# Account 1 creates an asset called `rug` with a total supply
+# of 1000 units and sets itself to the freeze/clawback/manager/reserve roles
+sp = algod_client.suggested_params()
+txn = transaction.AssetConfigTxn(
+    sender=acct1.address,
+    sp=sp,
+    default_frozen=False,
+    unit_name="rug",
+    asset_name="Really Useful Gift",
+    manager=acct1.address,
+    reserve=acct1.address,
+    freeze=acct1.address,
+    clawback=acct1.address,
+    url="https://path/to/my/asset/details",
+    total=1000,
+    decimals=0,
+)
+
+# Sign with secret key of creator
+stxn = txn.sign(acct1.private_key)
+# Send the transaction to the network and retrieve the txid.
+txid = algod_client.send_transaction(stxn)
+print(f"Sent asset create transaction with txid: {txid}")
+# Wait for the transaction to be confirmed
+results = transaction.wait_for_confirmation(algod_client, txid, 4)
+print(f"Result confirmed in round: {results['confirmed-round']}")
+
+# grab the asset id for the asset we just created
+created_asset = results["asset-index"]
+print(f"Asset ID created: {created_asset}")
+# example: ASSET_CREATE
+
+# example: ASSET_INFO
+# Retrieve the asset info of the newly created asset
+asset_info = algod_client.asset_info(created_asset)
+asset_params: Dict[str, Any] = asset_info["params"]
+print(f"Asset Name: {asset_params['name']}")
+print(f"Asset params: {list(asset_params.keys())}")
+# example: ASSET_INFO
+
+
+# example: ASSET_OPTIN
+sp = algod_client.suggested_params()
+# Create opt-in transaction
+# asset transfer from me to me for asset id we want to opt-in to with amt==0
+optin_txn = transaction.AssetOptInTxn(
+    sender=acct2.address, sp=sp, index=created_asset
+)
+signed_optin_txn = optin_txn.sign(acct2.private_key)
+txid = algod_client.send_transaction(signed_optin_txn)
+print(f"Sent opt in transaction with txid: {txid}")
+
+# Wait for the transaction to be confirmed
+results = transaction.wait_for_confirmation(algod_client, txid, 4)
+print(f"Result confirmed in round: {results['confirmed-round']}")
+
+# TODO: pluck out field to show we've added this asset
+acct_info = algod_client.account_info(acct2.address)
+matching_asset = [
+    asset
+    for asset in acct_info["assets"]
+    if asset["asset-id"] == created_asset
+].pop()
+assert matching_asset["amount"] == 0
+assert matching_asset["is-frozen"] is False
+# example: ASSET_OPTIN
+
+
+# example: ASSET_XFER
+sp = algod_client.suggested_params()
+# Create transfer transaction
+xfer_txn = transaction.AssetTransferTxn(
+    sender=acct1.address,
+    sp=sp,
+    receiver=acct2.address,
+    amt=1,
+    index=created_asset,
+)
+signed_xfer_txn = xfer_txn.sign(acct1.private_key)
+txid = algod_client.send_transaction(signed_xfer_txn)
+print(f"Sent transfer transaction with txid: {txid}")
+
+results = transaction.wait_for_confirmation(algod_client, txid, 4)
+print(f"Result confirmed in round: {results['confirmed-round']}")
+
+acct_info = algod_client.account_info(acct2.address)
+matching_asset = [
+    asset
+    for asset in acct_info["assets"]
+    if asset["asset-id"] == created_asset
+].pop()
+assert matching_asset["amount"] == 1
+# example: ASSET_XFER
+
+# example: ASSET_FREEZE
+sp = algod_client.suggested_params()
+# Create freeze transaction to freeze the asset in acct2 balance
+freeze_txn = transaction.AssetFreezeTxn(
+    sender=acct1.address,
+    sp=sp,
+    index=created_asset,
+    target=acct2.address,
+    new_freeze_state=True,
+)
+signed_freeze_txn = freeze_txn.sign(acct1.private_key)
+txid = algod_client.send_transaction(signed_freeze_txn)
+print(f"Sent freeze transaction with txid: {txid}")
+
+results = transaction.wait_for_confirmation(algod_client, txid, 4)
+print(f"Result confirmed in round: {results['confirmed-round']}")
+
+# TODO: pluck out field to show this asset is frozen
+acct_info = algod_client.account_info(acct2.address)
+matching_asset = [
+    asset
+    for asset in acct_info["assets"]
+    if asset["asset-id"] == created_asset
+].pop()
+assert matching_asset["is-frozen"] is True
+# example: ASSET_FREEZE
+
+# example: ASSET_CLAWBACK
+sp = algod_client.suggested_params()
+# Create clawback transaction to freeze the asset in acct2 balance
+clawback_txn = transaction.AssetTransferTxn(
+    sender=acct1.address,
+    sp=sp,
+    receiver=acct1.address,
+    amt=1,
+    index=created_asset,
+    revocation_target=acct2.address,
+)
+signed_clawback_txn = clawback_txn.sign(acct1.private_key)
+txid = algod_client.send_transaction(signed_clawback_txn)
+print(f"Sent clawback transaction with txid: {txid}")
+
+results = transaction.wait_for_confirmation(algod_client, txid, 4)
+print(f"Result confirmed in round: {results['confirmed-round']}")
+
+acct_info = algod_client.account_info(acct2.address)
+matching_asset = [
+    asset
+    for asset in acct_info["assets"]
+    if asset["asset-id"] == created_asset
+].pop()
+assert matching_asset["amount"] == 0
+assert matching_asset["is-frozen"] is True
+# example: ASSET_CLAWBACK
+
+# example: ASSET_DELETE
+sp = algod_client.suggested_params()
+# Create asset destroy transaction to destroy the asset 
+destroy_txn = transaction.AssetDestroyTxn(
+    sender=acct1.address,
+    sp=sp,
+    index=created_asset,
+)
+signed_destroy_txn = destroy_txn.sign(acct1.private_key)
+txid = algod_client.send_transaction(signed_destroy_txn)
+print(f"Sent destroy transaction with txid: {txid}")
+
+results = transaction.wait_for_confirmation(algod_client, txid, 4)
+print(f"Result confirmed in round: {results['confirmed-round']}")
+
+# now, trying to fetch the asset info should result in an error
+try: 
+    info = algod_client.asset_info(created_asset)
+except Exception as e:
+    print("Expected Error:", e)
+# example: ASSET_DELETE
