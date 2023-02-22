@@ -64,3 +64,11 @@ txn_result = transaction.wait_for_confirmation(algod_client, txid, 4)
 print(f"Transaction information: {json.dumps(txn_result, indent=4)}")
 print(f"Decoded note: {b64decode(txn_result['txn']['txn']['note'])}")
 # example: SIMPLE_PAYMENT_TRANSACTION_SUBMIT
+
+# example: TRANSACTION_FEE_OVERRIDE
+suggested_params =  algod_client.suggested_params()
+suggested_params.fee = 2*suggested_params.min_fee
+# Important to set flat_fee = True here or the fee will be 
+# treated as fee-per-byte of the encoded transaction
+suggested_params.flat_fee = True
+# example: TRANSACTION_FEE_OVERRIDE
