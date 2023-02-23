@@ -86,3 +86,18 @@ result = atc.execute(algod_client, 4)
 for res in result.abi_results:
     print(res.return_value)
 # example: ATC_RESULTS
+
+
+my_method = contract.get_method_by_name("add_member()void")
+# example: ATC_BOX_REF
+atc = AtomicTransactionComposer()
+atc.add_method_call(
+    app_id,
+    my_method,
+    addr,
+    sp,
+    signer,
+    method_args=[1, 5],
+    boxes=[[app_id, b"key"]],
+)
+# example: ATC_BOX_REF
