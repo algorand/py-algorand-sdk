@@ -493,7 +493,7 @@ class AlgodClient:
             request_header (dict, optional): additional header for request
 
         Returns:
-            str: first transaction ID
+            Dict[str, Any]: results from simulation of transaction group
         """
         serialized = []
         for txn in txns:
@@ -504,6 +504,16 @@ class AlgodClient:
         )
 
     def simulate_raw_transaction(self, txn, response_format="json", **kwargs):
+        """
+        Simulate a transaction group
+
+        Args:
+            txn (str): transaction to send, encoded in base64
+            request_header (dict, optional): additional header for request
+
+        Returns:
+            Dict[str, Any]: results from simulation of transaction group
+        """
         txn = base64.b64decode(txn)
         req = "/transactions/simulate"
         headers = util.build_headers_from(
