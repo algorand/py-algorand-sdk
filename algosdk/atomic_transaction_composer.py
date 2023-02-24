@@ -1,6 +1,5 @@
 import base64
 import copy
-import msgpack
 from abc import ABC, abstractmethod
 from enum import IntEnum
 from typing import (
@@ -17,7 +16,6 @@ from typing import (
 from algosdk import abi, error, transaction
 from algosdk.abi.address_type import AddressType
 from algosdk.v2client import algod
-from algosdk.simulate_results import SimulationResponse
 
 # The first four bytes of an ABI method call return must have this hash
 ABI_RETURN_HASH = b"\x15\x1f\x7c\x75"
@@ -491,19 +489,9 @@ class AtomicTransactionComposer:
                 "be submitted or lower to dryrun a group"
             )
 
-        encoded_result = client.simulate_transactions(self.signed_txns)
-        sim_result = SimulationResponse.undictify(
-            msgpack.unpackb(encoded_result)
-        )
-        if not sim_result.would_succeed:
-            raise error.AtomicTransactionComposerError(
-                f"Simulation failed: {sim_result.__dict__}"
-            )
+        result = client.simulate_transactions(self.signed_txns)
 
-        # TODO: assuming single txn_group
-        txn_results = [
-            g.result.dictify() for g in sim_result.txn_groups[0].txn_results
-        ]
+        txn_results = [tr for tr in result["txn-groups"][0]["txn-results"]]
 
         return self.parse_response(txn_results)
 
