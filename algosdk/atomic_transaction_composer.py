@@ -491,8 +491,9 @@ class AtomicTransactionComposer:
 
         result = client.simulate_transactions(self.signed_txns)
 
-        txn_results = [tr for tr in result["txn-groups"][0]["txn-results"]]
-
+        txn_results = [
+            t["txn-result"] for t in result["txn-groups"][0]["txn-results"]
+        ]
         return self.parse_response(txn_results)
 
     def execute(
