@@ -19,6 +19,10 @@ from algosdk import (
     source_map,
     transaction,
 )
+
+from algosdk.atomic_transaction_composer import (
+    SimulateAtomicTransactionResponse,
+)
 from algosdk.error import AlgodHTTPError
 from algosdk.testing.dryrun import DryrunTestCaseMixin
 from algosdk.v2client import *
@@ -1414,3 +1418,33 @@ def transaction_proof(context, round, txid, hashtype):
 @when("we make a Lookup Block Hash call against round {round}")
 def get_block_hash(context, round):
     context.response = context.acl.get_block_hash(round)
+
+
+@when("I simulate the transaction")
+def simulate_transaction(context):
+    context.simulate_response = context.app_acl.simulate_transactions(
+        [context.stx]
+    )
+
+
+@then("the simulation should succeed")
+def simulate_transaction_succeed(context):
+    if hasattr(context, "simulate_response"):
+        assert context.simulate_response["would-succeed"] is True
+    else:
+        assert context.simulate_atc_response.would_succeed is True
+
+
+@then("I simulate the current transaction group with the composer")
+def simulate_atc(context):
+    context.simulate_atc_response = (
+        context.atomic_transaction_composer.simulate(context.app_acl)
+    )
+
+
+@then('the simulation should fail at path "{path}" with message "{message}"')
+def simulate_atc_failure(context, path, message):
+    resp: SimulateAtomicTransactionResponse = context.simulate_atc_response
+    assert resp.would_succeed is False
+    assert resp.failed_at[0] == int(path)
+    assert message in resp.failure_message
