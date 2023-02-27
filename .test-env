@@ -14,3 +14,5 @@ REMOVE_LOCAL_FEATURES=0
 # WARNING: Be careful when turning on the next variable.
 # In that case you'll need to provide all variables expected by `algorand-sdk-testing`'s `.env`
 OVERWRITE_TESTING_ENVIRONMENT=0
+
+SANDBOX_BRANCH="experimental-api"
