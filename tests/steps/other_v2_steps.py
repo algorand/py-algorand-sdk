@@ -1423,7 +1423,7 @@ def get_block_hash(context, round):
 @when("I simulate the transaction")
 def simulate_transaction(context):
     context.simulate_response = context.app_acl.simulate_transactions(
-        [context.stx]
+        [context.stx], response_format="json"
     )
 
 

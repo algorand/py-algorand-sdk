@@ -503,7 +503,7 @@ class AlgodClient:
             base64.b64encode(b"".join(serialized)), **kwargs
         )
 
-    def simulate_raw_transaction(self, txn, response_format="json", **kwargs):
+    def simulate_raw_transaction(self, txn, **kwargs):
         """
         Simulate a transaction group
 
@@ -522,16 +522,7 @@ class AlgodClient:
         )
         kwargs["headers"] = headers
 
-        params = {"format": response_format}
-
-        return self.algod_request(
-            "POST",
-            req,
-            params=params,
-            data=txn,
-            response_format=response_format,
-            **kwargs
-        )
+        return self.algod_request("POST", req, data=txn, **kwargs)
 
 
 def _specify_round_string(block, round_num):
