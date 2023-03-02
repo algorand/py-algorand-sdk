@@ -896,8 +896,9 @@ def expect_path(context, path):
         context.response["path"]
     )
     actual_query = urllib.parse.parse_qs(actual_query)
-    assert exp_path == actual_path.replace("%3A", ":")
-    assert exp_query == actual_query
+    actual_path = actual_path.replace("%3A", ":")
+    assert exp_path == actual_path, f"{exp_path} != {actual_path}"
+    assert exp_query == actual_query, f"{exp_query} != {actual_query}"
 
 
 @then('expect error string to contain "{err:MaybeString}"')
