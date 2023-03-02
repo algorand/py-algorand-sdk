@@ -482,6 +482,22 @@ class AtomicTransactionComposer:
     def simulate(
         self, client: algod.AlgodClient
     ) -> "SimulateAtomicTransactionResponse":
+        """
+        Send the transaction group to the `simulate` endpoint and wait for results.
+        An error will be thrown if submission or execution fails.
+        The composer's status must be SUBMITTED or lower before calling this method,
+        since execution is only allowed once.
+
+        Args:
+            client (AlgodClient): Algod V2 client
+
+        Returns:
+            SimulateAtomicTransactionResponse: Object with simulation results for this
+                transaction group, a list of txIDs of the simulated transactions,
+                an array of results for each method call transaction in this group.
+                If a method has no return value (void), then the method results array
+                will contain None for that method's return value.
+        """
 
         if self.status <= AtomicTransactionComposerStatus.SUBMITTED:
             self.gather_signatures()
@@ -492,7 +508,7 @@ class AtomicTransactionComposer:
             )
 
         simulation_result: Dict[str, Any] = client.simulate_transactions(
-            self.signed_txns, response_format="json"
+            self.signed_txns
         )
         # Only take the first group in the simulate response
         txn_group: Dict[str, Any] = simulation_result["txn-groups"][0]

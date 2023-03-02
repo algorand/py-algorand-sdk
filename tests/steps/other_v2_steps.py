@@ -1423,11 +1423,11 @@ def get_block_hash(context, round):
 @when("I simulate the transaction")
 def simulate_transaction(context):
     context.simulate_response = context.app_acl.simulate_transactions(
-        [context.stx], response_format="json"
+        [context.stx]
     )
 
 
-@then("the simulation should succeed")
+@then("the simulation should succeed without any failure message")
 def simulate_transaction_succeed(context):
     if hasattr(context, "simulate_response"):
         assert context.simulate_response["would-succeed"] is True
@@ -1442,9 +1442,12 @@ def simulate_atc(context):
     )
 
 
-@then('the simulation should fail at path "{path}" with message "{message}"')
+@then(
+    'the simulation should report a failure at path "{path}" with message "{message}"'
+)
 def simulate_atc_failure(context, path, message):
     resp: SimulateAtomicTransactionResponse = context.simulate_atc_response
+    fail_path = ",".join([str(pe) for pe in resp.failed_at])
     assert resp.would_succeed is False
-    assert resp.failed_at[0] == int(path)
+    assert fail_path == path
     assert message in resp.failure_message
