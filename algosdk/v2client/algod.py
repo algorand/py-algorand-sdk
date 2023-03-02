@@ -17,7 +17,6 @@ from urllib import parse
 from urllib.request import Request, urlopen
 
 from algosdk import constants, encoding, error, transaction, util
-from algosdk.transaction import GenericSignedTransaction
 
 api_version_path_prefix = "/v2"
 
@@ -302,7 +301,7 @@ class AlgodClient:
         return self.algod_request("GET", req, **kwargs)
 
     def send_transaction(
-        self, txn: transaction.Transaction, **kwargs: Any
+        self, txn: "transaction.Transaction", **kwargs: Any
     ) -> Any:
         """
         Broadcast a signed transaction object to the network.
@@ -396,7 +395,9 @@ class AlgodClient:
         return self.algod_request("GET", req, **kwargs)
 
     def send_transactions(
-        self, txns: Iterable[GenericSignedTransaction], **kwargs: Any
+        self,
+        txns: "Iterable[transaction.GenericSignedTransaction]",
+        **kwargs: Any
     ) -> Any:
         """
         Broadcast list of a signed transaction objects to the network.
@@ -547,7 +548,9 @@ class AlgodClient:
         return self.algod_request("GET", req, **kwargs)
 
     def simulate_transactions(
-        self, txns: Iterable[GenericSignedTransaction], **kwargs: Any
+        self,
+        txns: "Iterable[transaction.GenericSignedTransaction]",
+        **kwargs: Any
     ) -> Any:
         """
         Simulate a list of a signed transaction objects being sent to the network.
