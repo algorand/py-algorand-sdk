@@ -1373,6 +1373,7 @@ def check_source_map(context, pc_to_line):
 
 @then('getting the line associated with a pc "{pc}" equals "{line}"')
 def check_pc_to_line(context, pc, line):
+
     actual_line = context.source_map.get_line_for_pc(int(pc))
     assert actual_line == int(line), f"expected line {line} got {actual_line}"
 
