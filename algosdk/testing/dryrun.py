@@ -294,7 +294,6 @@ class DryrunTestCaseMixin:
                 and txn_res["global-delta"] is not None
                 and len(txn_res["global-delta"]) > 0
             ):
-
                 found = Helper.find_delta_value(
                     txn_res["global-delta"], delta_value
                 )
@@ -363,7 +362,6 @@ class DryrunTestCaseMixin:
                 and txn_res["local-deltas"] is not None
                 and len(txn_res["local-deltas"]) > 0
             ):
-
                 for local_delta in txn_res["local-deltas"]:
                     addr_found = False
                     if local_delta["address"] == addr:

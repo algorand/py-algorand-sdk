@@ -596,7 +596,6 @@ class AtomicTransactionComposer:
         )
 
     def parse_response(self, txns: List[Dict[str, Any]]) -> List["ABIResult"]:
-
         method_results = []
         for i, tx_info in enumerate(txns):
             tx_id = self.tx_ids[i]
