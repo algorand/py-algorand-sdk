@@ -9,6 +9,14 @@ print(f"private key: {private_key}")
 print(f"mnemonic: {mnemonic.from_private_key(private_key)}")
 # example: ACCOUNT_GENERATE
 
+# example: ACCOUNT_RECOVER_MNEMONIC
+mn = "cost piano sample enough south bar diet garden nasty mystery mesh sadness convince bacon best patch surround protect drum actress entire vacuum begin abandon hair"
+pk = mnemonic.to_private_key(mn)
+print(f"Base64 encoded private key: {pk}")
+addr = account.address_from_private_key(pk)
+print(f"Address: {addr}")
+# example: ACCOUNT_RECOVER_MNEMONIC
+
 accts = get_accounts()
 account_1 = accts.pop()
 account_2 = accts.pop()
