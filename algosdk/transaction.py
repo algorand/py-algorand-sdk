@@ -3356,3 +3356,10 @@ def decode_programs(app):
         app["params"]["clear-state-program"]
     )
     return app
+
+
+GenericSignedTransaction = Union[
+    SignedTransaction,
+    LogicSigTransaction,
+    MultisigTransaction,
+]

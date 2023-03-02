@@ -222,7 +222,7 @@ class IndexerClient:
             header_only (bool, optional):
         """
         if block is None and round_num is None:
-            raise error.UnderspecifiedRoundError
+            raise error.UnderspecifiedRoundError()
         req = "/blocks/" + _specify_round_string(block, round_num)
 
         query = dict()
@@ -986,7 +986,7 @@ def _specify_round(query, block, round_num):
     """
 
     if block is not None and round_num is not None:
-        raise error.OverspecifiedRoundError
+        raise error.OverspecifiedRoundError()
     elif block is not None:
         if block:
             query["round"] = block

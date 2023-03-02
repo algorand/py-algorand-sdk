@@ -1,12 +1,33 @@
 import base64
 import json
+from typing import (
+    Any,
+    Dict,
+    Final,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 import urllib.error
 from urllib import parse
 from urllib.request import Request, urlopen
 
 from algosdk import constants, encoding, error, transaction, util
+from algosdk.transaction import GenericSignedTransaction
 
 api_version_path_prefix = "/v2"
+
+
+ParamsType = Union[
+    Mapping[Any, Any],
+    Mapping[Any, Sequence[Any]],
+    Sequence[Tuple[Any, Any]],
+    Sequence[Tuple[Any, Sequence[Any]]],
+]
 
 
 class AlgodClient:
@@ -24,29 +45,35 @@ class AlgodClient:
         headers (dict)
     """
 
-    def __init__(self, algod_token, algod_address, headers=None):
-        self.algod_token = algod_token
-        self.algod_address = algod_address
-        self.headers = headers
+    def __init__(
+        self,
+        algod_token: str,
+        algod_address: str,
+        headers: Optional[Dict[str, str]] = None,
+    ):
+        self.algod_token: Final[str] = algod_token
+        self.algod_address: Final[str] = algod_address
+        self.headers: Final[Optional[Dict[str, str]]] = headers
 
     def algod_request(
         self,
-        method,
-        requrl,
-        params=None,
-        data=None,
-        headers=None,
-        response_format="json",
-    ):
+        method: str,
+        requrl: str,
+        params: Optional[ParamsType] = None,
+        data: Optional[Union[bytes, Iterable[bytes]]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        response_format: Optional[str] = "json",
+    ) -> Any:
         """
         Execute a given request.
 
         Args:
             method (str): request method
             requrl (str): url for the request
-            params (dict, optional): parameters for the request
-            data (dict, optional): data in the body of the request
+            params (ParamsType, optional): parameters for the request
+            data (bytes, optional): data in the body of the request
             headers (dict, optional): additional header for request
+            response_format (str, optional): format of the response
 
         Returns:
             dict: loaded from json response body
@@ -78,9 +105,9 @@ class AlgodClient:
             resp = urlopen(req)
         except urllib.error.HTTPError as e:
             code = e.code
-            e = e.read().decode("utf-8")
+            es = e.read().decode("utf-8")
             try:
-                e = json.loads(e)["message"]
+                e = json.loads(es)["message"]
             finally:
                 raise error.AlgodHTTPError(e, code)
         if response_format == "json":
@@ -93,7 +120,9 @@ class AlgodClient:
         else:
             return resp.read()
 
-    def account_info(self, address, exclude=None, **kwargs):
+    def account_info(
+        self, address: str, exclude: Optional[bool] = None, **kwargs: Any
+    ) -> Any:
         """
         Return account information.
 
@@ -106,7 +135,7 @@ class AlgodClient:
         req = "/accounts/" + address
         return self.algod_request("GET", req, query, **kwargs)
 
-    def asset_info(self, asset_id, **kwargs):
+    def asset_info(self, asset_id: int, **kwargs: Any) -> Any:
         """
         Return information about a specific asset.
 
@@ -116,7 +145,7 @@ class AlgodClient:
         req = "/assets/" + str(asset_id)
         return self.algod_request("GET", req, **kwargs)
 
-    def application_info(self, application_id, **kwargs):
+    def application_info(self, application_id: int, **kwargs: Any) -> Any:
         """
         Return information about a specific application.
 
@@ -127,8 +156,8 @@ class AlgodClient:
         return self.algod_request("GET", req, **kwargs)
 
     def application_box_by_name(
-        self, application_id: int, box_name: bytes, **kwargs
-    ):
+        self, application_id: int, box_name: bytes, **kwargs: Any
+    ) -> Any:
         """
         Return the value of an application's box.
 
@@ -144,7 +173,9 @@ class AlgodClient:
         params = {"name": box_name_encoded}
         return self.algod_request("GET", req, params=params, **kwargs)
 
-    def application_boxes(self, application_id: int, limit: int = 0, **kwargs):
+    def application_boxes(
+        self, application_id: int, limit: int = 0, **kwargs: Any
+    ) -> Any:
         """
         Given an application ID, return all Box names. No particular ordering is guaranteed. Request fails when client or server-side configured limits prevent returning all Box names.
 
@@ -159,7 +190,9 @@ class AlgodClient:
         params = {"max": limit} if limit else {}
         return self.algod_request("GET", req, params=params, **kwargs)
 
-    def account_asset_info(self, address, asset_id, **kwargs):
+    def account_asset_info(
+        self, address: str, asset_id: int, **kwargs: Any
+    ) -> Any:
         """
         Return asset information for a specific account.
 
@@ -167,11 +200,13 @@ class AlgodClient:
             address (str): account public key
             asset_id (int): The ID of the asset to look up.
         """
-        query = {}
+        query: Mapping = {}
         req = "/accounts/" + address + "/assets/" + str(asset_id)
         return self.algod_request("GET", req, query, **kwargs)
 
-    def account_application_info(self, address, application_id, **kwargs):
+    def account_application_info(
+        self, address: str, application_id: int, **kwargs: Any
+    ) -> Any:
         """
         Return application information for a specific account.
 
@@ -179,13 +214,17 @@ class AlgodClient:
             address (str): account public key
             application_id (int): The ID of the application to look up.
         """
-        query = {}
+        query: Mapping = {}
         req = "/accounts/" + address + "/applications/" + str(application_id)
         return self.algod_request("GET", req, query, **kwargs)
 
     def pending_transactions_by_address(
-        self, address, limit=0, response_format="json", **kwargs
-    ):
+        self,
+        address: str,
+        limit: int = 0,
+        response_format: str = "json",
+        **kwargs: Any
+    ) -> Any:
         """
         Get the list of pending transactions by address, sorted by priority,
         in decreasing order, truncated at the end at MAX. If MAX = 0, returns
@@ -197,7 +236,7 @@ class AlgodClient:
             response_format (str): the format in which the response is returned: either
                 "json" or "msgpack"
         """
-        query = {"format": response_format}
+        query: Dict[str, Union[str, int]] = {"format": response_format}
         if limit:
             query["max"] = limit
         req = "/accounts/" + address + "/transactions/pending"
@@ -207,8 +246,12 @@ class AlgodClient:
         return res
 
     def block_info(
-        self, block=None, response_format="json", round_num=None, **kwargs
-    ):
+        self,
+        block: Optional[int] = None,
+        response_format: str = "json",
+        round_num: Optional[int] = None,
+        **kwargs: Any
+    ) -> Any:
         """
         Get the block for the given round.
 
@@ -220,24 +263,29 @@ class AlgodClient:
         """
         query = {"format": response_format}
         if block is None and round_num is None:
-            raise error.UnderspecifiedRoundError
+            raise error.UnderspecifiedRoundError()
         req = "/blocks/" + _specify_round_string(block, round_num)
         res = self.algod_request(
             "GET", req, query, response_format=response_format, **kwargs
         )
         return res
 
-    def ledger_supply(self, **kwargs):
+    def ledger_supply(self, **kwargs: Any) -> Any:
         """Return supply details for node's ledger."""
         req = "/ledger/supply"
         return self.algod_request("GET", req, **kwargs)
 
-    def status(self, **kwargs):
+    def status(self, **kwargs: Any) -> Any:
         """Return node status."""
         req = "/status"
         return self.algod_request("GET", req, **kwargs)
 
-    def status_after_block(self, block_num=None, round_num=None, **kwargs):
+    def status_after_block(
+        self,
+        block_num: Optional[int] = None,
+        round_num: Optional[int] = None,
+        **kwargs: Any
+    ) -> Any:
         """
         Return node status immediately after blockNum.
 
@@ -247,13 +295,15 @@ class AlgodClient:
                 these
         """
         if block_num is None and round_num is None:
-            raise error.UnderspecifiedRoundError
+            raise error.UnderspecifiedRoundError()
         req = "/status/wait-for-block-after/" + _specify_round_string(
             block_num, round_num
         )
         return self.algod_request("GET", req, **kwargs)
 
-    def send_transaction(self, txn, **kwargs):
+    def send_transaction(
+        self, txn: transaction.Transaction, **kwargs: Any
+    ) -> Any:
         """
         Broadcast a signed transaction object to the network.
 
@@ -266,12 +316,14 @@ class AlgodClient:
         """
         assert not isinstance(
             txn, transaction.Transaction
-        ), "Attempt to send UNSIGNED transaction {}".format(txn)
+        ), "Attempt to send UNSUPPORTED type of transaction {}".format(txn)
         return self.send_raw_transaction(
             encoding.msgpack_encode(txn), **kwargs
         )
 
-    def send_raw_transaction(self, txn, **kwargs):
+    def send_raw_transaction(
+        self, txn: Union[bytes, str], **kwargs: Any
+    ) -> Any:
         """
         Broadcast a signed transaction to the network.
 
@@ -282,7 +334,7 @@ class AlgodClient:
         Returns:
             str: transaction ID
         """
-        txn = base64.b64decode(txn)
+        txn_bytes = base64.b64decode(txn)
         req = "/transactions"
         headers = util.build_headers_from(
             kwargs.get("headers", False),
@@ -290,11 +342,13 @@ class AlgodClient:
         )
         kwargs["headers"] = headers
 
-        return self.algod_request("POST", req, data=txn, **kwargs)["txId"]
+        return self.algod_request("POST", req, data=txn_bytes, **kwargs)[
+            "txId"
+        ]
 
     def pending_transactions(
-        self, max_txns=0, response_format="json", **kwargs
-    ):
+        self, max_txns: int = 0, response_format: str = "json", **kwargs: Any
+    ) -> Any:
         """
         Return pending transactions.
 
@@ -304,7 +358,7 @@ class AlgodClient:
             response_format (str): the format in which the response is returned: either
                 "json" or "msgpack"
         """
-        query = {"format": response_format}
+        query: Dict[str, Union[int, str]] = {"format": response_format}
         if max_txns:
             query["max"] = max_txns
         req = "/transactions/pending"
@@ -314,8 +368,8 @@ class AlgodClient:
         return res
 
     def pending_transaction_info(
-        self, transaction_id, response_format="json", **kwargs
-    ):
+        self, transaction_id: str, response_format: str = "json", **kwargs: Any
+    ) -> Any:
         """
         Return transaction information for a pending transaction.
 
@@ -331,17 +385,19 @@ class AlgodClient:
         )
         return res
 
-    def health(self, **kwargs):
+    def health(self, **kwargs: Any) -> Any:
         """Return null if the node is running."""
         req = "/health"
         return self.algod_request("GET", req, **kwargs)
 
-    def versions(self, **kwargs):
+    def versions(self, **kwargs: Any) -> Any:
         """Return algod versions."""
         req = "/versions"
         return self.algod_request("GET", req, **kwargs)
 
-    def send_transactions(self, txns, **kwargs):
+    def send_transactions(
+        self, txns: Iterable[GenericSignedTransaction], **kwargs: Any
+    ) -> Any:
         """
         Broadcast list of a signed transaction objects to the network.
 
@@ -353,7 +409,7 @@ class AlgodClient:
         Returns:
             str: first transaction ID
         """
-        serialized = []
+        serialized: List[bytes] = []
         for txn in txns:
             assert not isinstance(
                 txn, transaction.Transaction
@@ -364,7 +420,7 @@ class AlgodClient:
             base64.b64encode(b"".join(serialized)), **kwargs
         )
 
-    def suggested_params(self, **kwargs):
+    def suggested_params(self, **kwargs: Any) -> Any:
         """Return suggested transaction parameters."""
         req = "/transactions/params"
         res = self.algod_request("GET", req, **kwargs)
@@ -380,7 +436,9 @@ class AlgodClient:
             res["min-fee"],
         )
 
-    def compile(self, source, source_map=False, **kwargs):
+    def compile(
+        self, source: str, source_map: bool = False, **kwargs: Any
+    ) -> Any:
         """
         Compile TEAL source with remote algod.
 
@@ -403,7 +461,7 @@ class AlgodClient:
             "POST", req, params=params, data=source.encode("utf-8"), **kwargs
         )
 
-    def dryrun(self, drr, **kwargs):
+    def dryrun(self, drr: Dict[str, Any], **kwargs: Any) -> Any:
         """
         Dryrun with remote algod.
 
@@ -425,14 +483,19 @@ class AlgodClient:
 
         return self.algod_request("POST", req, data=data, **kwargs)
 
-    def genesis(self, **kwargs):
+    def genesis(self, **kwargs: Any) -> Any:
         """Returns the entire genesis file."""
         req = "/genesis"
         return self.algod_request("GET", req, **kwargs)
 
     def transaction_proof(
-        self, round_num, txid, hashtype="", response_format="json", **kwargs
-    ):
+        self,
+        round_num: int,
+        txid: str,
+        hashtype: str = "",
+        response_format: str = "json",
+        **kwargs: Any
+    ) -> Any:
         """
         Get a proof for a transaction in a block.
 
@@ -453,7 +516,7 @@ class AlgodClient:
             **kwargs
         )
 
-    def lightblockheader_proof(self, round_num, **kwargs):
+    def lightblockheader_proof(self, round_num: int, **kwargs: Any) -> Any:
         """
          Gets a proof for a given light block header inside a state proof commitment.
 
@@ -463,7 +526,7 @@ class AlgodClient:
         req = "/blocks/{}/lightheader/proof".format(round_num)
         return self.algod_request("GET", req, **kwargs)
 
-    def stateproofs(self, round_num, **kwargs):
+    def stateproofs(self, round_num: int, **kwargs: Any) -> Any:
         """
         Get a state proof that covers a given round
 
@@ -473,7 +536,7 @@ class AlgodClient:
         req = "/stateproofs/{}".format(round_num)
         return self.algod_request("GET", req, **kwargs)
 
-    def get_block_hash(self, round_num, **kwargs):
+    def get_block_hash(self, round_num: int, **kwargs: Any) -> Any:
         """
         Get the block hash for the block on the given round.
 
@@ -483,7 +546,9 @@ class AlgodClient:
         req = "/blocks/{}/hash".format(round_num)
         return self.algod_request("GET", req, **kwargs)
 
-    def simulate_transactions(self, txns, **kwargs):
+    def simulate_transactions(
+        self, txns: Iterable[GenericSignedTransaction], **kwargs: Any
+    ) -> Any:
         """
         Simulate a list of a signed transaction objects being sent to the network.
 
@@ -503,7 +568,7 @@ class AlgodClient:
             base64.b64encode(b"".join(serialized)), **kwargs
         )
 
-    def simulate_raw_transaction(self, txn, **kwargs):
+    def simulate_raw_transaction(self, txn: bytes, **kwargs: Any) -> Any:
         """
         Simulate a transaction group
 
@@ -525,7 +590,9 @@ class AlgodClient:
         return self.algod_request("POST", req, data=txn, **kwargs)
 
 
-def _specify_round_string(block, round_num):
+def _specify_round_string(
+    block: Optional[int], round_num: Optional[int]
+) -> str:
     """
     Return the round number specified in either 'block' or 'round_num'.
 
@@ -534,9 +601,10 @@ def _specify_round_string(block, round_num):
         round_num (int): user specified variable
     """
 
-    if block is not None and round_num is not None:
-        raise error.OverspecifiedRoundError
-    elif block is not None:
+    if not (block is None or round_num is None):
+        raise error.OverspecifiedRoundError()
+
+    if round_num:
         return str(block)
-    elif round_num is not None:
-        return str(round_num)
+
+    return str(round_num)

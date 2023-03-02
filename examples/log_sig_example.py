@@ -26,4 +26,6 @@ assert lstx.verify()
 
 # send them over network
 # Logicsig will reject the transaction
-acl.send_transaction(lstx)
+
+# TODO: as of v2.0.0, this will fail.
+# acl.send_transaction(lstx)
