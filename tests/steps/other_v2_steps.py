@@ -19,10 +19,6 @@ from algosdk import (
     source_map,
     transaction,
 )
-
-from algosdk.atomic_transaction_composer import (
-    SimulateAtomicTransactionResponse,
-)
 from algosdk.error import AlgodHTTPError
 from algosdk.testing.dryrun import DryrunTestCaseMixin
 from algosdk.v2client import *
@@ -1076,6 +1072,17 @@ def b64decode_compiled_teal_step(context, binary):
     assert base64.b64decode(response_result.encode()) == binary
 
 
+@then('disassembly of "{bytecode_filename}" matches "{source_filename}"')
+def disassembly_matches_source(context, bytecode_filename, source_filename):
+    bytecode = load_resource(bytecode_filename)
+    expected_source = load_resource(source_filename).decode("utf-8")
+
+    context.response = context.app_acl.disassemble(bytecode)
+    actual_source = context.response["result"]
+
+    assert actual_source == expected_source
+
+
 @when('I dryrun a "{kind}" program "{program}"')
 def dryrun_step(context, kind, program):
     data = load_resource(program)
@@ -1417,36 +1424,3 @@ def transaction_proof(context, round, txid, hashtype):
 @when("we make a Lookup Block Hash call against round {round}")
 def get_block_hash(context, round):
     context.response = context.acl.get_block_hash(round)
-
-
-@when("I simulate the transaction")
-def simulate_transaction(context):
-    context.simulate_response = context.app_acl.simulate_transactions(
-        [context.stx]
-    )
-
-
-@then("the simulation should succeed without any failure message")
-def simulate_transaction_succeed(context):
-    if hasattr(context, "simulate_response"):
-        assert context.simulate_response["would-succeed"] is True
-    else:
-        assert context.simulate_atc_response.would_succeed is True
-
-
-@then("I simulate the current transaction group with the composer")
-def simulate_atc(context):
-    context.simulate_atc_response = (
-        context.atomic_transaction_composer.simulate(context.app_acl)
-    )
-
-
-@then(
-    'the simulation should report a failure at path "{path}" with message "{message}"'
-)
-def simulate_atc_failure(context, path, message):
-    resp: SimulateAtomicTransactionResponse = context.simulate_atc_response
-    fail_path = ",".join([str(pe) for pe in resp.failed_at])
-    assert resp.would_succeed is False
-    assert fail_path == path
-    assert message in resp.failure_message
