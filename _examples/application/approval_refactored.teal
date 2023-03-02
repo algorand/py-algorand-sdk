@@ -38,11 +38,6 @@ err
 
 handle_noop:
 // Handle NoOp
-// Check for creator
-global CreatorAddress
-txn Sender
-==
-bnz handle_approve
 
 // read global state
 byte "counter"
