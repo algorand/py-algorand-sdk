@@ -577,8 +577,7 @@ class AtomicTransactionComposer:
                 tx_info=cast(Any, tx_info),
                 method=self.method_dict[i],
             )
-
-        method_results.append(abi_result)
+            method_results.append(abi_result)
 
         return AtomicTransactionResponse(
             confirmed_round=confirmed_round,
