@@ -222,7 +222,7 @@ class AlgodClient:
         address: str,
         limit: int = 0,
         response_format: str = "json",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Any:
         """
         Get the list of pending transactions by address, sorted by priority,
@@ -249,7 +249,7 @@ class AlgodClient:
         block: Optional[int] = None,
         response_format: str = "json",
         round_num: Optional[int] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Any:
         """
         Get the block for the given round.
@@ -283,7 +283,7 @@ class AlgodClient:
         self,
         block_num: Optional[int] = None,
         round_num: Optional[int] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Any:
         """
         Return node status immediately after blockNum.
@@ -397,7 +397,7 @@ class AlgodClient:
     def send_transactions(
         self,
         txns: "Iterable[transaction.GenericSignedTransaction]",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Any:
         """
         Broadcast list of a signed transaction objects to the network.
@@ -462,6 +462,28 @@ class AlgodClient:
             "POST", req, params=params, data=source.encode("utf-8"), **kwargs
         )
 
+    def disassemble(self, program_bytes: bytes, **kwargs: Any) -> Any:
+        """
+        Disassable TEAL program bytes with remote algod.
+        Args:
+            program (bytes): bytecode to be disassembled
+            request_header (dict, optional): additional header for request
+        Returns:
+            str: disassembled TEAL source code in plain text
+        """
+        if not isinstance(program_bytes, bytes):
+            raise error.InvalidProgram(
+                message=f"disassemble endpoints only accepts bytes but request program_bytes is of type {type(program_bytes)}"
+            )
+
+        req = "/teal/disassemble"
+        headers = util.build_headers_from(
+            kwargs.get("headers", False),
+            {"Content-Type": "application/x-binary"},
+        )
+        kwargs["headers"] = headers
+        return self.algod_request("POST", req, data=program_bytes, **kwargs)
+
     def dryrun(self, drr: Dict[str, Any], **kwargs: Any) -> Any:
         """
         Dryrun with remote algod.
@@ -495,7 +517,7 @@ class AlgodClient:
         txid: str,
         hashtype: str = "",
         response_format: str = "json",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Any:
         """
         Get a proof for a transaction in a block.
@@ -514,7 +536,7 @@ class AlgodClient:
             req,
             params=params,
             response_format=response_format,
-            **kwargs
+            **kwargs,
         )
 
     def lightblockheader_proof(self, round_num: int, **kwargs: Any) -> Any:
