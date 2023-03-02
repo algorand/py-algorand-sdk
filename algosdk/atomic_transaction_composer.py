@@ -529,7 +529,7 @@ class AtomicTransactionComposer:
                     return_value=result.return_value,
                     decode_error=result.decode_error,
                     tx_info=result.tx_info,
-                    method=self.method_dict[idx],
+                    method=result.method,
                     missing_signature=sim_txn.get("missing-signature", False),
                 )
             )
