@@ -1443,11 +1443,19 @@ def simulate_atc(context):
 
 
 @then(
-    'the simulation should report a failure at path "{path}" with message "{message}"'
+    'the simulation should report a failure at group "{group}", path "{path}" with message "{message}"'
 )
-def simulate_atc_failure(context, path, message):
+def simulate_atc_failure(context, group, path, message):
     resp: SimulateAtomicTransactionResponse = context.simulate_atc_response
-    fail_path = ",".join([str(pe) for pe in resp.failed_at])
+    group_idx: int = int(group)
+    fail_path = ",".join(
+        [
+            str(pe)
+            for pe in resp.simulate_response["txn-groups"][group_idx][
+                "failed-at"
+            ]
+        ]
+    )
     assert resp.would_succeed is False
     assert fail_path == path
     assert message in resp.failure_message
