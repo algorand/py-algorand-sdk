@@ -137,4 +137,6 @@ assert optin_result["confirmed-round"] > 0
 # example: APP_DELETE
 
 # example: APP_CLEAR
+clear_txn = transaction.ApplicationClearStateTxn(user.address, sp, app_id)
+# .. sign, send, wait
 # example: APP_CLEAR
