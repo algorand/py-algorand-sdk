@@ -5,3 +5,5 @@ pytest==6.2.5
 mypy==0.990
 msgpack-types==0.2.0
 git+https://github.com/behave/behave
+password_strength==0.0.3.post2
+pycryptodome==3.17
