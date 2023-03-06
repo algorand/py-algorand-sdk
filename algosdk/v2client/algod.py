@@ -298,7 +298,7 @@ class AlgodClient:
 
     def send_transaction(
         self, txn: "transaction.Transaction", **kwargs: Any
-    ) -> Any:
+    ) -> str:
         """
         Broadcast a signed transaction object to the network.
 
