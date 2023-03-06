@@ -113,7 +113,7 @@ def delegate_lsig_example():
     # Get suggested parameters
     params = algod_client.suggested_params()
     amount = 10000
-    # Create a transaction where sender is the account that 
+    # Create a transaction where sender is the account that
     # is the delegating account
     txn = transaction.PaymentTxn(
         signer_acct.address, params, receiver_acct.address, amount

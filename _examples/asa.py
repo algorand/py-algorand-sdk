@@ -11,8 +11,6 @@ acct3 = accounts.pop()
 
 
 # example: ASSET_CREATE
-
-
 # Account 1 creates an asset called `rug` with a total supply
 # of 1000 units and sets itself to the freeze/clawback/manager/reserve roles
 sp = algod_client.suggested_params()
@@ -44,6 +42,30 @@ print(f"Result confirmed in round: {results['confirmed-round']}")
 created_asset = results["asset-index"]
 print(f"Asset ID created: {created_asset}")
 # example: ASSET_CREATE
+
+# example: ASSET_CONFIG
+sp = algod_client.suggested_params()
+# Create a config transaction that wipes the
+# reserve address for the asset
+txn = transaction.AssetConfigTxn(
+    sender=acct1.address,
+    sp=sp,
+    manager=acct1.address,
+    reserve=None,
+    freeze=acct1.address,
+    clawback=acct1.address,
+    strict_empty_address_check=False,
+)
+# Sign with secret key of manager
+stxn = txn.sign(acct1.private_key)
+# Send the transaction to the network and retrieve the txid.
+txid = algod_client.send_transaction(stxn)
+print(f"Sent asset config transaction with txid: {txid}")
+# Wait for the transaction to be confirmed
+results = transaction.wait_for_confirmation(algod_client, txid, 4)
+print(f"Result confirmed in round: {results['confirmed-round']}")
+# example: ASSET_CONFIG
+
 
 # example: ASSET_INFO
 # Retrieve the asset info of the newly created asset
