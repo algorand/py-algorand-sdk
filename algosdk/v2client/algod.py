@@ -581,7 +581,7 @@ def _specify_round_string(
         round_num (int): user specified variable
     """
 
-    if not (block is None or round_num is None):
+    if block is not None and round_num is not None:
         raise error.OverspecifiedRoundError()
 
     if round_num is not None:
