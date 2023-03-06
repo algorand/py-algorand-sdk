@@ -261,8 +261,6 @@ class AlgodClient:
             round_num (int, optional): alias for block; specify one of these
         """
         query = {"format": response_format}
-        if block is None and round_num is None:
-            raise error.UnderspecifiedRoundError()
         req = "/blocks/" + _specify_round_string(block, round_num)
         res = self.algod_request(
             "GET", req, query, response_format=response_format, **kwargs
@@ -293,8 +291,6 @@ class AlgodClient:
             round_num (int, optional): alias for block_num; specify one of
                 these
         """
-        if block_num is None and round_num is None:
-            raise error.UnderspecifiedRoundError()
         req = "/status/wait-for-block-after/" + _specify_round_string(
             block_num, round_num
         )
@@ -580,6 +576,8 @@ def _specify_round_string(
         block (int): user specified variable
         round_num (int): user specified variable
     """
+    if block is None and round_num is None:
+        raise error.UnderspecifiedRoundError()
 
     if block is not None and round_num is not None:
         raise error.OverspecifiedRoundError()

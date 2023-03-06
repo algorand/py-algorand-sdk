@@ -221,8 +221,6 @@ class IndexerClient:
             round_num (int, optional): alias for block; specify one of these
             header_only (bool, optional):
         """
-        if block is None and round_num is None:
-            raise error.UnderspecifiedRoundError()
         req = "/blocks/" + _specify_round_string(block, round_num)
 
         query = dict()
