@@ -11,12 +11,15 @@ from typing import (
     Sequence,
     Tuple,
     Union,
+    cast,
 )
 import urllib.error
 from urllib import parse
 from urllib.request import Request, urlopen
 
 from algosdk import constants, encoding, error, transaction, util
+
+AlgodResponseType = Union[dict, bytes]
 
 api_version_path_prefix = "/v2"
 
@@ -62,7 +65,7 @@ class AlgodClient:
         data: Optional[Union[bytes, Iterable[bytes]]] = None,
         headers: Optional[Dict[str, str]] = None,
         response_format: Optional[str] = "json",
-    ) -> Any:
+    ) -> AlgodResponseType:
         """
         Execute a given request.
 
@@ -75,7 +78,8 @@ class AlgodClient:
             response_format (str, optional): format of the response
 
         Returns:
-            dict: loaded from json response body
+            dict loaded from json response body when response_format == "json" 
+            otherwise returns the response body as bytes
         """
         header = {"User-Agent": "py-algorand-sdk"}
 
@@ -119,9 +123,15 @@ class AlgodClient:
         else:
             return resp.read()
 
+    @classmethod
+    def _assert_json_response(cls, params: Mapping[str, Any], endpoint: str = "") -> None:
+        if "response_format" in params:
+            if params["response_format"] != "json":
+                raise error.AlgodRequestError(f"Only json response is supported{ (' for ' + endpoint) if endpoint else ''}.")
+
     def account_info(
         self, address: str, exclude: Optional[bool] = None, **kwargs: Any
-    ) -> Any:
+    ) -> AlgodResponseType:
         """
         Return account information.
 
@@ -134,7 +144,7 @@ class AlgodClient:
         req = "/accounts/" + address
         return self.algod_request("GET", req, query, **kwargs)
 
-    def asset_info(self, asset_id: int, **kwargs: Any) -> Any:
+    def asset_info(self, asset_id: int, **kwargs: Any) -> AlgodResponseType:
         """
         Return information about a specific asset.
 
@@ -144,7 +154,7 @@ class AlgodClient:
         req = "/assets/" + str(asset_id)
         return self.algod_request("GET", req, **kwargs)
 
-    def application_info(self, application_id: int, **kwargs: Any) -> Any:
+    def application_info(self, application_id: int, **kwargs: Any) -> AlgodResponseType:
         """
         Return information about a specific application.
 
@@ -156,7 +166,7 @@ class AlgodClient:
 
     def application_box_by_name(
         self, application_id: int, box_name: bytes, **kwargs: Any
-    ) -> Any:
+    ) -> AlgodResponseType:
         """
         Return the value of an application's box.
 
@@ -174,7 +184,7 @@ class AlgodClient:
 
     def application_boxes(
         self, application_id: int, limit: int = 0, **kwargs: Any
-    ) -> Any:
+    ) -> AlgodResponseType:
         """
         Given an application ID, return all Box names. No particular ordering is guaranteed. Request fails when client or server-side configured limits prevent returning all Box names.
 
@@ -191,7 +201,7 @@ class AlgodClient:
 
     def account_asset_info(
         self, address: str, asset_id: int, **kwargs: Any
-    ) -> Any:
+    ) -> AlgodResponseType:
         """
         Return asset information for a specific account.
 
@@ -205,7 +215,7 @@ class AlgodClient:
 
     def account_application_info(
         self, address: str, application_id: int, **kwargs: Any
-    ) -> Any:
+    ) -> AlgodResponseType:
         """
         Return application information for a specific account.
 
@@ -223,7 +233,7 @@ class AlgodClient:
         limit: int = 0,
         response_format: str = "json",
         **kwargs: Any,
-    ) -> Any:
+    ) -> AlgodResponseType:
         """
         Get the list of pending transactions by address, sorted by priority,
         in decreasing order, truncated at the end at MAX. If MAX = 0, returns
@@ -250,7 +260,7 @@ class AlgodClient:
         response_format: str = "json",
         round_num: Optional[int] = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> AlgodResponseType:
         """
         Get the block for the given round.
 
@@ -267,12 +277,12 @@ class AlgodClient:
         )
         return res
 
-    def ledger_supply(self, **kwargs: Any) -> Any:
+    def ledger_supply(self, **kwargs: Any) -> AlgodResponseType:
         """Return supply details for node's ledger."""
         req = "/ledger/supply"
         return self.algod_request("GET", req, **kwargs)
 
-    def status(self, **kwargs: Any) -> Any:
+    def status(self, **kwargs: Any) -> AlgodResponseType:
         """Return node status."""
         req = "/status"
         return self.algod_request("GET", req, **kwargs)
@@ -282,7 +292,7 @@ class AlgodClient:
         block_num: Optional[int] = None,
         round_num: Optional[int] = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> AlgodResponseType:
         """
         Return node status immediately after blockNum.
 
@@ -318,7 +328,7 @@ class AlgodClient:
 
     def send_raw_transaction(
         self, txn: Union[bytes, str], **kwargs: Any
-    ) -> Any:
+    ) -> str:
         """
         Broadcast a signed transaction to the network.
 
@@ -329,6 +339,8 @@ class AlgodClient:
         Returns:
             str: transaction ID
         """
+        self._assert_json_response(kwargs, "send_raw_transaction")
+
         txn_bytes = base64.b64decode(txn)
         req = "/transactions"
         headers = util.build_headers_from(
@@ -337,13 +349,11 @@ class AlgodClient:
         )
         kwargs["headers"] = headers
 
-        return self.algod_request("POST", req, data=txn_bytes, **kwargs)[
-            "txId"
-        ]
+        return cast(str, cast(dict, self.algod_request("POST", req, data=txn_bytes, **kwargs))["txId"])
 
     def pending_transactions(
         self, max_txns: int = 0, response_format: str = "json", **kwargs: Any
-    ) -> Any:
+    ) -> AlgodResponseType:
         """
         Return pending transactions.
 
@@ -364,7 +374,7 @@ class AlgodClient:
 
     def pending_transaction_info(
         self, transaction_id: str, response_format: str = "json", **kwargs: Any
-    ) -> Any:
+    ) -> AlgodResponseType:
         """
         Return transaction information for a pending transaction.
 
@@ -380,12 +390,12 @@ class AlgodClient:
         )
         return res
 
-    def health(self, **kwargs: Any) -> Any:
+    def health(self, **kwargs: Any) -> AlgodResponseType:
         """Return null if the node is running."""
         req = "/health"
         return self.algod_request("GET", req, **kwargs)
 
-    def versions(self, **kwargs: Any) -> Any:
+    def versions(self, **kwargs: Any) -> AlgodResponseType:
         """Return algod versions."""
         req = "/versions"
         return self.algod_request("GET", req, **kwargs)
@@ -394,7 +404,7 @@ class AlgodClient:
         self,
         txns: "Iterable[transaction.GenericSignedTransaction]",
         **kwargs: Any,
-    ) -> Any:
+    ) -> str:
         """
         Broadcast list of a signed transaction objects to the network.
 
@@ -417,10 +427,12 @@ class AlgodClient:
             base64.b64encode(b"".join(serialized)), **kwargs
         )
 
-    def suggested_params(self, **kwargs: Any) -> Any:
+    def suggested_params(self, **kwargs: Any) -> "transaction.SuggestedParams":
         """Return suggested transaction parameters."""
+        self._assert_json_response(kwargs, "suggested_params")
+
         req = "/transactions/params"
-        res = self.algod_request("GET", req, **kwargs)
+        res = cast(dict, self.algod_request("GET", req, **kwargs))
 
         return transaction.SuggestedParams(
             res["fee"],
@@ -435,7 +447,7 @@ class AlgodClient:
 
     def compile(
         self, source: str, source_map: bool = False, **kwargs: Any
-    ) -> Any:
+    ) -> dict:
         """
         Compile TEAL source with remote algod.
 
@@ -445,8 +457,9 @@ class AlgodClient:
 
         Returns:
             dict: loaded from json response body. "result" property contains compiled bytes, "hash" - program hash (escrow address)
-
         """
+        self._assert_json_response(kwargs, "compile")
+
         req = "/teal/compile"
         headers = util.build_headers_from(
             kwargs.get("headers", False),
@@ -454,23 +467,25 @@ class AlgodClient:
         )
         kwargs["headers"] = headers
         params = {"sourcemap": source_map}
-        return self.algod_request(
+        return cast(dict, self.algod_request(
             "POST", req, params=params, data=source.encode("utf-8"), **kwargs
-        )
+        ))
 
-    def disassemble(self, program_bytes: bytes, **kwargs: Any) -> Any:
+    def disassemble(self, program_bytes: bytes, **kwargs: Any) -> Mapping[str, str]:
         """
         Disassable TEAL program bytes with remote algod.
         Args:
             program (bytes): bytecode to be disassembled
             request_header (dict, optional): additional header for request
         Returns:
-            str: disassembled TEAL source code in plain text
+            dict: response dictionary containing disassembled TEAL source code 
+            in plain text as the value of the unique "result" key.
         """
         if not isinstance(program_bytes, bytes):
             raise error.InvalidProgram(
                 message=f"disassemble endpoints only accepts bytes but request program_bytes is of type {type(program_bytes)}"
             )
+        self._assert_json_response(kwargs, "disassemble")
 
         req = "/teal/disassemble"
         headers = util.build_headers_from(
@@ -478,9 +493,9 @@ class AlgodClient:
             {"Content-Type": "application/x-binary"},
         )
         kwargs["headers"] = headers
-        return self.algod_request("POST", req, data=program_bytes, **kwargs)
+        return cast(Mapping[str, str], self.algod_request("POST", req, data=program_bytes, **kwargs))
 
-    def dryrun(self, drr: Dict[str, Any], **kwargs: Any) -> Any:
+    def dryrun(self, drr: Dict[str, Any], **kwargs: Any) -> dict:
         """
         Dryrun with remote algod.
 
@@ -491,6 +506,8 @@ class AlgodClient:
         Returns:
             dict: loaded from json response body
         """
+        self._assert_json_response(kwargs, "dryrun")
+
         req = "/teal/dryrun"
         headers = util.build_headers_from(
             kwargs.get("headers", False),
@@ -500,9 +517,9 @@ class AlgodClient:
         data = encoding.msgpack_encode(drr)
         data = base64.b64decode(data)
 
-        return self.algod_request("POST", req, data=data, **kwargs)
+        return cast(dict, self.algod_request("POST", req, data=data, **kwargs))
 
-    def genesis(self, **kwargs: Any) -> Any:
+    def genesis(self, **kwargs: Any) -> AlgodResponseType:
         """Returns the entire genesis file."""
         req = "/genesis"
         return self.algod_request("GET", req, **kwargs)
@@ -514,7 +531,7 @@ class AlgodClient:
         hashtype: str = "",
         response_format: str = "json",
         **kwargs: Any,
-    ) -> Any:
+    ) -> AlgodResponseType:
         """
         Get a proof for a transaction in a block.
 
@@ -535,7 +552,7 @@ class AlgodClient:
             **kwargs,
         )
 
-    def lightblockheader_proof(self, round_num: int, **kwargs: Any) -> Any:
+    def lightblockheader_proof(self, round_num: int, **kwargs: Any) -> AlgodResponseType:
         """
          Gets a proof for a given light block header inside a state proof commitment.
 
@@ -545,7 +562,7 @@ class AlgodClient:
         req = "/blocks/{}/lightheader/proof".format(round_num)
         return self.algod_request("GET", req, **kwargs)
 
-    def stateproofs(self, round_num: int, **kwargs: Any) -> Any:
+    def stateproofs(self, round_num: int, **kwargs: Any) -> AlgodResponseType:
         """
         Get a state proof that covers a given round
 
@@ -555,7 +572,7 @@ class AlgodClient:
         req = "/stateproofs/{}".format(round_num)
         return self.algod_request("GET", req, **kwargs)
 
-    def get_block_hash(self, round_num: int, **kwargs: Any) -> Any:
+    def get_block_hash(self, round_num: int, **kwargs: Any) -> AlgodResponseType:
         """
         Get the block hash for the block on the given round.
 
@@ -567,7 +584,7 @@ class AlgodClient:
 
 
 def _specify_round_string(
-    block: Optional[int], round_num: Optional[int]
+    block: Union[int, None], round_num: Union[int, None]
 ) -> str:
     """
     Return the round number specified in either 'block' or 'round_num'.

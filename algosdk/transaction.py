@@ -3183,7 +3183,9 @@ def wait_for_confirmation(
         wait_rounds (int, optional): The number of rounds to block for before
             exiting with an Exception. If not supplied, this will be 1000.
     """
-    last_round = algod_client.status()["last-round"]
+    algod.AlgodClient._assert_json_response(kwargs, "wait_for_confirmation")
+
+    last_round = cast(int, cast(dict, algod_client.status())["last-round"])
     current_round = last_round + 1
 
     if wait_rounds == 0:
@@ -3197,7 +3199,7 @@ def wait_for_confirmation(
             )
 
         try:
-            tx_info = algod_client.pending_transaction_info(txid, **kwargs)
+            tx_info = cast(dict, algod_client.pending_transaction_info(txid, **kwargs))
 
             # The transaction has been rejected
             if "pool-error" in tx_info and len(tx_info["pool-error"]) != 0:
@@ -3246,7 +3248,8 @@ def create_dryrun(
     """
 
     # The list of info objects passed to the DryrunRequest object
-    app_infos, acct_infos = [], []
+    app_infos: List[Union[dict, models.Application]] = []
+    acct_infos = []
 
     # The running list of things we need to fetch
     apps, assets, accts = [], [], []
@@ -3309,7 +3312,7 @@ def create_dryrun(
     # Dedupe and filter none, reset programs to bytecode instead of b64
     apps = [i for i in set(apps) if i]
     for app in apps:
-        app_info = client.application_info(app)
+        app_info = cast(dict, client.application_info(app))
         # Need to pass bytes, not b64 string
         app_info = decode_programs(app_info)
         app_infos.append(app_info)
@@ -3323,7 +3326,7 @@ def create_dryrun(
     # Dedupe and filter None, add asset creator to accounts to include in dryrun
     assets = [i for i in set(assets) if i]
     for asset in assets:
-        asset_info = client.asset_info(asset)
+        asset_info = cast(dict, client.asset_info(asset))
 
         # Make sure the asset creator address is in the accounts array
         accts.append(asset_info["params"]["creator"])
@@ -3331,7 +3334,7 @@ def create_dryrun(
     # Dedupe and filter None, fetch and add account info
     accts = [i for i in set(accts) if i]
     for acct in accts:
-        acct_info = client.account_info(acct)
+        acct_info = cast(dict, client.account_info(acct))
         if "created-apps" in acct_info:
             acct_info["created-apps"] = [
                 decode_programs(ca) for ca in acct_info["created-apps"]

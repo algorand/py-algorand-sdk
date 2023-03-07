@@ -678,7 +678,7 @@ class AtomicTransactionComposer:
 
             # Parse log for ABI method return value
             try:
-                tx_info = client.pending_transaction_info(tx_id)
+                tx_info = cast(dict, client.pending_transaction_info(tx_id))
                 if self.method_dict[i].returns.type == abi.Returns.VOID:
                     method_results.append(
                         ABIResult(
