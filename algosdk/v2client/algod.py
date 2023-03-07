@@ -127,11 +127,10 @@ class AlgodClient:
     def _assert_json_response(
         cls, params: Mapping[str, Any], endpoint: str = ""
     ) -> None:
-        if "response_format" in params:
-            if params["response_format"] != "json":
-                raise error.AlgodRequestError(
-                    f"Only json response is supported{ (' for ' + endpoint) if endpoint else ''}."
-                )
+        if "response_format" in params and params["response_format"] != "json":
+            raise error.AlgodRequestError(
+                f"Only json response is supported{ (' for ' + endpoint) if endpoint else ''}."
+            )
 
     def account_info(
         self, address: str, exclude: Optional[bool] = None, **kwargs: Any
