@@ -761,6 +761,7 @@ class TestMultisig(unittest.TestCase):
         self.assertEqual(msig2.address(), golden)
 
     def test_errors(self):
+
         # get random private key
         private_key_1, account_1 = account.generate_account()
         _, account_2 = account.generate_account()
