@@ -3199,7 +3199,9 @@ def wait_for_confirmation(
             )
 
         try:
-            tx_info = cast(dict, algod_client.pending_transaction_info(txid, **kwargs))
+            tx_info = cast(
+                dict, algod_client.pending_transaction_info(txid, **kwargs)
+            )
 
             # The transaction has been rejected
             if "pool-error" in tx_info and len(tx_info["pool-error"]) != 0:

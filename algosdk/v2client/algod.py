@@ -78,7 +78,7 @@ class AlgodClient:
             response_format (str, optional): format of the response
 
         Returns:
-            dict loaded from json response body when response_format == "json" 
+            dict loaded from json response body when response_format == "json"
             otherwise returns the response body as bytes
         """
         header = {"User-Agent": "py-algorand-sdk"}
@@ -124,10 +124,14 @@ class AlgodClient:
             return resp.read()
 
     @classmethod
-    def _assert_json_response(cls, params: Mapping[str, Any], endpoint: str = "") -> None:
+    def _assert_json_response(
+        cls, params: Mapping[str, Any], endpoint: str = ""
+    ) -> None:
         if "response_format" in params:
             if params["response_format"] != "json":
-                raise error.AlgodRequestError(f"Only json response is supported{ (' for ' + endpoint) if endpoint else ''}.")
+                raise error.AlgodRequestError(
+                    f"Only json response is supported{ (' for ' + endpoint) if endpoint else ''}."
+                )
 
     def account_info(
         self, address: str, exclude: Optional[bool] = None, **kwargs: Any
@@ -154,7 +158,9 @@ class AlgodClient:
         req = "/assets/" + str(asset_id)
         return self.algod_request("GET", req, **kwargs)
 
-    def application_info(self, application_id: int, **kwargs: Any) -> AlgodResponseType:
+    def application_info(
+        self, application_id: int, **kwargs: Any
+    ) -> AlgodResponseType:
         """
         Return information about a specific application.
 
@@ -349,7 +355,8 @@ class AlgodClient:
         )
         kwargs["headers"] = headers
 
-        return cast(str, cast(dict, self.algod_request("POST", req, data=txn_bytes, **kwargs))["txId"])
+        resp = self.algod_request("POST", req, data=txn_bytes, **kwargs)
+        return cast(str, cast(dict, resp)["txId"])
 
     def pending_transactions(
         self, max_txns: int = 0, response_format: str = "json", **kwargs: Any
@@ -467,18 +474,21 @@ class AlgodClient:
         )
         kwargs["headers"] = headers
         params = {"sourcemap": source_map}
-        return cast(dict, self.algod_request(
+        resp = self.algod_request(
             "POST", req, params=params, data=source.encode("utf-8"), **kwargs
-        ))
+        )
+        return cast(dict, resp)
 
-    def disassemble(self, program_bytes: bytes, **kwargs: Any) -> Mapping[str, str]:
+    def disassemble(
+        self, program_bytes: bytes, **kwargs: Any
+    ) -> Mapping[str, str]:
         """
         Disassable TEAL program bytes with remote algod.
         Args:
             program (bytes): bytecode to be disassembled
             request_header (dict, optional): additional header for request
         Returns:
-            dict: response dictionary containing disassembled TEAL source code 
+            dict: response dictionary containing disassembled TEAL source code
             in plain text as the value of the unique "result" key.
         """
         if not isinstance(program_bytes, bytes):
@@ -493,7 +503,10 @@ class AlgodClient:
             {"Content-Type": "application/x-binary"},
         )
         kwargs["headers"] = headers
-        return cast(Mapping[str, str], self.algod_request("POST", req, data=program_bytes, **kwargs))
+        return cast(
+            Mapping[str, str],
+            self.algod_request("POST", req, data=program_bytes, **kwargs),
+        )
 
     def dryrun(self, drr: Dict[str, Any], **kwargs: Any) -> dict:
         """
@@ -552,7 +565,9 @@ class AlgodClient:
             **kwargs,
         )
 
-    def lightblockheader_proof(self, round_num: int, **kwargs: Any) -> AlgodResponseType:
+    def lightblockheader_proof(
+        self, round_num: int, **kwargs: Any
+    ) -> AlgodResponseType:
         """
          Gets a proof for a given light block header inside a state proof commitment.
 
@@ -572,7 +587,9 @@ class AlgodClient:
         req = "/stateproofs/{}".format(round_num)
         return self.algod_request("GET", req, **kwargs)
 
-    def get_block_hash(self, round_num: int, **kwargs: Any) -> AlgodResponseType:
+    def get_block_hash(
+        self, round_num: int, **kwargs: Any
+    ) -> AlgodResponseType:
         """
         Get the block hash for the block on the given round.
 
