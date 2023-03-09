@@ -1459,3 +1459,29 @@ def simulate_atc_failure(context, group, path, message):
     assert resp.would_succeed is False
     assert fail_path == path
     assert message in resp.failure_message
+
+
+@when("I prepare the transaction without signatures for simulation")
+def step_impl(context):
+    context.stx = transaction.SignedTransaction(context.txn, None)
+
+
+@then(
+    'the simulation should report missing signatures at group "{group}", transactions "{path}"'
+)
+def check_missing_signatures(context, group, path):
+    if hasattr(context, "simulate_response"):
+        resp = context.simulate_response
+    else:
+        resp = context.simulate_atc_response.simulate_response
+
+    group_idx: int = int(group)
+    tx_idxs: list[int] = [int(pe) for pe in path.split(",")]
+
+    assert resp["would-succeed"] is False
+
+    for tx_idx in tx_idxs:
+        missing_sig = resp["txn-groups"][group_idx]["txn-results"][tx_idx][
+            "missing-signature"
+        ]
+        assert missing_sig is True

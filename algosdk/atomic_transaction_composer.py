@@ -676,6 +676,19 @@ class TransactionSigner(ABC):
         pass
 
 
+class EmptySinger(TransactionSigner):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def sign_transactions(
+        self, txn_group: List[transaction.Transaction], indexes: List[int]
+    ) -> List[GenericSignedTransaction]:
+        stxns = []
+        for i in indexes:
+            stxns.append(transaction.SignedTransaction(txn_group[i], ""))
+        return stxns
+
+
 class AccountTransactionSigner(TransactionSigner):
     """
     Represents a Transaction Signer for an account that can sign transactions from an
