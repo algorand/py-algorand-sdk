@@ -1446,7 +1446,9 @@ def simulate_atc(context):
     'the simulation should report a failure at group "{group}", path "{path}" with message "{message}"'
 )
 def simulate_atc_failure(context, group, path, message):
-    resp: SimulateAtomicTransactionResponse = context.atomic_transaction_composer_return
+    resp: SimulateAtomicTransactionResponse = (
+        context.atomic_transaction_composer_return
+    )
     group_idx: int = int(group)
     fail_path = ",".join(
         [

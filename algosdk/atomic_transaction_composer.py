@@ -676,7 +676,7 @@ class TransactionSigner(ABC):
         pass
 
 
-class EmptySinger(TransactionSigner):
+class EmptySigner(TransactionSigner):
     def __init__(self) -> None:
         super().__init__()
 

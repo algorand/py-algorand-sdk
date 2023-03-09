@@ -561,7 +561,7 @@ def create_transaction_with_signer(context):
 def create_transaction_no_signer(context):
     context.transaction_with_signer = (
         atomic_transaction_composer.TransactionWithSigner(
-            context.transaction, atomic_transaction_composer.EmptySinger()
+            context.transaction, atomic_transaction_composer.EmptySigner()
         )
     )
 
