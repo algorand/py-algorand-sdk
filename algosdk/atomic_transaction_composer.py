@@ -683,7 +683,7 @@ class EmptySigner(TransactionSigner):
     def sign_transactions(
         self, txn_group: List[transaction.Transaction], indexes: List[int]
     ) -> List[GenericSignedTransaction]:
-        stxns = []
+        stxns: List[GenericSignedTransaction] = []
         for i in indexes:
             stxns.append(transaction.SignedTransaction(txn_group[i], ""))
         return stxns
