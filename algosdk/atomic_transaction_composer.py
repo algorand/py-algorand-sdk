@@ -479,6 +479,71 @@ class AtomicTransactionComposer:
         self.status = AtomicTransactionComposerStatus.SUBMITTED
         return self.tx_ids
 
+    def simulate(
+        self, client: algod.AlgodClient
+    ) -> "SimulateAtomicTransactionResponse":
+        """
+        Send the transaction group to the `simulate` endpoint and wait for results.
+        An error will be thrown if submission or execution fails.
+        The composer's status must be SUBMITTED or lower before calling this method,
+        since execution is only allowed once.
+
+        Args:
+            client (AlgodClient): Algod V2 client
+
+        Returns:
+            SimulateAtomicTransactionResponse: Object with simulation results for this
+                transaction group, a list of txIDs of the simulated transactions,
+                an array of results for each method call transaction in this group.
+                If a method has no return value (void), then the method results array
+                will contain None for that method's return value.
+        """
+
+        if self.status <= AtomicTransactionComposerStatus.SUBMITTED:
+            self.gather_signatures()
+        else:
+            raise error.AtomicTransactionComposerError(
+                "AtomicTransactionComposerStatus must be submitted or "
+                "lower to simulate a group"
+            )
+
+        simulation_result: Dict[str, Any] = client.simulate_transactions(
+            self.signed_txns
+        )
+        # Only take the first group in the simulate response
+        txn_group: Dict[str, Any] = simulation_result["txn-groups"][0]
+
+        # Parse out abi results
+        txn_results = [t["txn-result"] for t in txn_group["txn-results"]]
+        method_results = self.parse_response(txn_results)
+
+        # build up data structure with fields we'd want
+        sim_results = []
+        for idx, result in enumerate(method_results):
+            sim_txn: Dict[str, Any] = txn_group["txn-results"][idx]
+
+            sim_results.append(
+                SimulateABIResult(
+                    tx_id=result.tx_id,
+                    raw_value=result.raw_value,
+                    return_value=result.return_value,
+                    decode_error=result.decode_error,
+                    tx_info=result.tx_info,
+                    method=result.method,
+                    missing_signature=sim_txn.get("missing-signature", False),
+                )
+            )
+
+        return SimulateAtomicTransactionResponse(
+            version=simulation_result.get("version", 0),
+            would_succeed=simulation_result.get("would-succeed", False),
+            failure_message=txn_group.get("failure-message", ""),
+            failed_at=txn_group.get("failed-at"),
+            simulate_response=simulation_result,
+            tx_ids=self.tx_ids,
+            results=sim_results,
+        )
+
     def execute(
         self, client: algod.AlgodClient, wait_rounds: int
     ) -> "AtomicTransactionResponse":
@@ -517,20 +582,33 @@ class AtomicTransactionComposer:
         self.status = AtomicTransactionComposerStatus.COMMITTED
 
         confirmed_round = resp["confirmed-round"]
-        method_results = []
 
-        for i, tx_id in enumerate(self.tx_ids):
+        tx_results = [
+            client.pending_transaction_info(tx_id) for tx_id in self.tx_ids
+        ]
+
+        method_results = self.parse_response(tx_results)
+
+        return AtomicTransactionResponse(
+            confirmed_round=confirmed_round,
+            tx_ids=self.tx_ids,
+            results=method_results,
+        )
+
+    def parse_response(self, txns: List[Dict[str, Any]]) -> List["ABIResult"]:
+
+        method_results = []
+        for i, tx_info in enumerate(txns):
+            tx_id = self.tx_ids[i]
             raw_value: Optional[bytes] = None
             return_value = None
             decode_error = None
-            tx_info: Optional[Any] = None
 
             if i not in self.method_dict:
                 continue
 
             # Parse log for ABI method return value
             try:
-                tx_info = client.pending_transaction_info(tx_id)
                 if self.method_dict[i].returns.type == abi.Returns.VOID:
                     method_results.append(
                         ABIResult(
@@ -569,21 +647,18 @@ class AtomicTransactionComposer:
             except Exception as e:
                 decode_error = e
 
-            abi_result = ABIResult(
-                tx_id=tx_id,
-                raw_value=cast(bytes, raw_value),
-                return_value=return_value,
-                decode_error=decode_error,
-                tx_info=cast(Any, tx_info),
-                method=self.method_dict[i],
+            method_results.append(
+                ABIResult(
+                    tx_id=tx_id,
+                    raw_value=cast(bytes, raw_value),
+                    return_value=return_value,
+                    decode_error=decode_error,
+                    tx_info=tx_info,
+                    method=self.method_dict[i],
+                )
             )
-            method_results.append(abi_result)
 
-        return AtomicTransactionResponse(
-            confirmed_round=confirmed_round,
-            tx_ids=self.tx_ids,
-            results=method_results,
-        )
+        return method_results
 
 
 class TransactionSigner(ABC):
@@ -599,6 +674,19 @@ class TransactionSigner(ABC):
         self, txn_group: List[transaction.Transaction], indexes: List[int]
     ) -> List[GenericSignedTransaction]:
         pass
+
+
+class EmptySigner(TransactionSigner):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def sign_transactions(
+        self, txn_group: List[transaction.Transaction], indexes: List[int]
+    ) -> List[GenericSignedTransaction]:
+        stxns: List[GenericSignedTransaction] = []
+        for i in indexes:
+            stxns.append(transaction.SignedTransaction(txn_group[i], ""))
+        return stxns
 
 
 class AccountTransactionSigner(TransactionSigner):
@@ -738,5 +826,45 @@ class AtomicTransactionResponse:
         self, confirmed_round: int, tx_ids: List[str], results: List[ABIResult]
     ) -> None:
         self.confirmed_round = confirmed_round
+        self.tx_ids = tx_ids
+        self.abi_results = results
+
+
+class SimulateABIResult(ABIResult):
+    def __init__(
+        self,
+        tx_id: str,
+        raw_value: bytes,
+        return_value: Any,
+        decode_error: Optional[Exception],
+        tx_info: dict,
+        method: abi.Method,
+        missing_signature: bool,
+    ) -> None:
+        self.tx_id = tx_id
+        self.raw_value = raw_value
+        self.return_value = return_value
+        self.decode_error = decode_error
+        self.tx_info = tx_info
+        self.method = method
+        self.missing_signature = missing_signature
+
+
+class SimulateAtomicTransactionResponse:
+    def __init__(
+        self,
+        version: int,
+        would_succeed: bool,
+        failure_message: str,
+        failed_at: Optional[List[int]],
+        simulate_response: Dict[str, Any],
+        tx_ids: List[str],
+        results: List[SimulateABIResult],
+    ) -> None:
+        self.version = version
+        self.would_succeed = would_succeed
+        self.failure_message = failure_message
+        self.failed_at = failed_at
+        self.simulate_response = simulate_response
         self.tx_ids = tx_ids
         self.abi_results = results

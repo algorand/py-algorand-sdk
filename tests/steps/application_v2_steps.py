@@ -555,6 +555,17 @@ def create_transaction_with_signer(context):
     )
 
 
+@when(
+    "I create a transaction with an empty signer with the current transaction."
+)
+def create_transaction_no_signer(context):
+    context.transaction_with_signer = (
+        atomic_transaction_composer.TransactionWithSigner(
+            context.transaction, atomic_transaction_composer.EmptySigner()
+        )
+    )
+
+
 @when("I add the current transaction with signer to the composer.")
 def add_transaction_to_composer(context):
     context.atomic_transaction_composer.add_transaction(
