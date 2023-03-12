@@ -19,7 +19,7 @@ from urllib.request import Request, urlopen
 
 from algosdk import constants, encoding, error, transaction, util
 
-AlgodResponseType = Union[dict, bytes]
+AlgodResponseType = Union[Dict[str, Any], bytes]
 
 api_version_path_prefix = "/v2"
 

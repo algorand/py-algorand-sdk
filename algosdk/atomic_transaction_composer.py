@@ -198,6 +198,19 @@ class MultisigTransactionSigner(TransactionSigner):
         return stxns
 
 
+class EmptySigner(TransactionSigner):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def sign_transactions(
+        self, txn_group: List[transaction.Transaction], indexes: List[int]
+    ) -> List[GenericSignedTransaction]:
+        stxns: List[GenericSignedTransaction] = []
+        for i in indexes:
+            stxns.append(transaction.SignedTransaction(txn_group[i], ""))
+        return stxns
+
+
 class TransactionWithSigner:
     def __init__(
         self, txn: transaction.Transaction, signer: TransactionSigner
@@ -732,7 +745,8 @@ class AtomicTransactionComposer:
         confirmed_round = resp["confirmed-round"]
 
         tx_results = [
-            client.pending_transaction_info(tx_id) for tx_id in self.tx_ids
+            cast(Dict[str, Any], client.pending_transaction_info(tx_id))
+            for tx_id in self.tx_ids
         ]
 
         method_results = self.parse_response(tx_results)
@@ -743,8 +757,7 @@ class AtomicTransactionComposer:
             results=method_results,
         )
 
-    def parse_response(self, txns: List[Dict[str, Any]]) -> List["ABIResult"]:
-
+    def parse_response(self, txns: List[Dict[str, Any]]) -> List[ABIResult]:
         method_results = []
         for i, tx_info in enumerate(txns):
             tx_id = self.tx_ids[i]
@@ -807,175 +820,6 @@ class AtomicTransactionComposer:
             )
 
         return method_results
-
-
-class TransactionSigner(ABC):
-    """
-    Represents an object which can sign transactions from an atomic transaction group.
-    """
-
-    def __init__(self) -> None:
-        pass
-
-    @abstractmethod
-    def sign_transactions(
-        self, txn_group: List[transaction.Transaction], indexes: List[int]
-    ) -> List[GenericSignedTransaction]:
-        pass
-
-
-class EmptySigner(TransactionSigner):
-    def __init__(self) -> None:
-        super().__init__()
-
-    def sign_transactions(
-        self, txn_group: List[transaction.Transaction], indexes: List[int]
-    ) -> List[GenericSignedTransaction]:
-        stxns: List[GenericSignedTransaction] = []
-        for i in indexes:
-            stxns.append(transaction.SignedTransaction(txn_group[i], ""))
-        return stxns
-
-
-class AccountTransactionSigner(TransactionSigner):
-    """
-    Represents a Transaction Signer for an account that can sign transactions from an
-    atomic transaction group.
-
-    Args:
-        private_key (str): private key of signing account
-    """
-
-    def __init__(self, private_key: str) -> None:
-        super().__init__()
-        self.private_key = private_key
-
-    def sign_transactions(
-        self, txn_group: List[transaction.Transaction], indexes: List[int]
-    ) -> List[GenericSignedTransaction]:
-        """
-        Sign transactions in a transaction group given the indexes.
-
-        Returns an array of encoded signed transactions. The length of the
-        array will be the same as the length of indexesToSign, and each index i in the array
-        corresponds to the signed transaction from txnGroup[indexesToSign[i]].
-
-        Args:
-            txn_group (list[Transaction]): atomic group of transactions
-            indexes (list[int]): array of indexes in the atomic transaction group that should be signed
-        """
-        stxns = []
-        for i in indexes:
-            stxn = txn_group[i].sign(self.private_key)
-            stxns.append(stxn)
-        return stxns
-
-
-class LogicSigTransactionSigner(TransactionSigner):
-    """
-    Represents a Transaction Signer for a LogicSig that can sign transactions from an
-    atomic transaction group.
-
-    Args:
-        lsig (LogicSigAccount): LogicSig account
-    """
-
-    def __init__(self, lsig: transaction.LogicSigAccount) -> None:
-        super().__init__()
-        self.lsig = lsig
-
-    def sign_transactions(
-        self, txn_group: List[transaction.Transaction], indexes: List[int]
-    ) -> List[GenericSignedTransaction]:
-        """
-        Sign transactions in a transaction group given the indexes.
-
-        Returns an array of encoded signed transactions. The length of the
-        array will be the same as the length of indexesToSign, and each index i in the array
-        corresponds to the signed transaction from txnGroup[indexesToSign[i]].
-
-        Args:
-            txn_group (list[Transaction]): atomic group of transactions
-            indexes (list[int]): array of indexes in the atomic transaction group that should be signed
-        """
-        stxns: List[GenericSignedTransaction] = []
-        for i in indexes:
-            stxn = transaction.LogicSigTransaction(txn_group[i], self.lsig)
-            stxns.append(stxn)
-        return stxns
-
-
-class MultisigTransactionSigner(TransactionSigner):
-    """
-    Represents a Transaction Signer for a Multisig that can sign transactions from an
-    atomic transaction group.
-
-    Args:
-        msig (Multisig): Multisig account
-        sks (str): private keys of multisig
-    """
-
-    def __init__(self, msig: transaction.Multisig, sks: List[str]) -> None:
-        super().__init__()
-        self.msig = msig
-        self.sks = sks
-
-    def sign_transactions(
-        self, txn_group: List[transaction.Transaction], indexes: List[int]
-    ) -> List[GenericSignedTransaction]:
-        """
-        Sign transactions in a transaction group given the indexes.
-
-        Returns an array of encoded signed transactions. The length of the
-        array will be the same as the length of indexesToSign, and each index i in the array
-        corresponds to the signed transaction from txnGroup[indexesToSign[i]].
-
-        Args:
-            txn_group (list[Transaction]): atomic group of transactions
-            indexes (list[int]): array of indexes in the atomic transaction group that should be signed
-        """
-        stxns: List[GenericSignedTransaction] = []
-        for i in indexes:
-            mtxn = transaction.MultisigTransaction(txn_group[i], self.msig)
-            for sk in self.sks:
-                mtxn.sign(sk)
-            stxns.append(mtxn)
-        return stxns
-
-
-class TransactionWithSigner:
-    def __init__(
-        self, txn: transaction.Transaction, signer: TransactionSigner
-    ) -> None:
-        self.txn = txn
-        self.signer = signer
-
-
-class ABIResult:
-    def __init__(
-        self,
-        tx_id: str,
-        raw_value: bytes,
-        return_value: Any,
-        decode_error: Optional[Exception],
-        tx_info: dict,
-        method: abi.Method,
-    ) -> None:
-        self.tx_id = tx_id
-        self.raw_value = raw_value
-        self.return_value = return_value
-        self.decode_error = decode_error
-        self.tx_info = tx_info
-        self.method = method
-
-
-class AtomicTransactionResponse:
-    def __init__(
-        self, confirmed_round: int, tx_ids: List[str], results: List[ABIResult]
-    ) -> None:
-        self.confirmed_round = confirmed_round
-        self.tx_ids = tx_ids
-        self.abi_results = results
 
 
 class SimulateABIResult(ABIResult):
