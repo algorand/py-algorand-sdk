@@ -900,8 +900,9 @@ def expect_path(context, path):
         context.response["path"]
     )
     actual_query = urllib.parse.parse_qs(actual_query)
-    assert exp_path == actual_path.replace("%3A", ":")
-    assert exp_query == actual_query
+    actual_path = actual_path.replace("%3A", ":")
+    assert exp_path == actual_path, f"{exp_path} != {actual_path}"
+    assert exp_query == actual_query, f"{exp_query} != {actual_query}"
 
 
 @then('expect error string to contain "{err:MaybeString}"')
@@ -1377,7 +1378,6 @@ def check_source_map(context, pc_to_line):
 
 @then('getting the line associated with a pc "{pc}" equals "{line}"')
 def check_pc_to_line(context, pc, line):
-
     actual_line = context.source_map.get_line_for_pc(int(pc))
     assert actual_line == int(line), f"expected line {line} got {actual_line}"
 

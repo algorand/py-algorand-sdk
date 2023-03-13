@@ -79,11 +79,9 @@ class DryrunTransactionResult:
         disassembly: List[str],
         spc: StackPrinterConfig,
     ) -> str:
-
         # 16 for length of the header up to spaces
         lines = [["pc#", "ln#", "source", "scratch", "stack"]]
         for idx in range(len(dr_trace.trace)):
-
             trace_line = dr_trace.trace[idx]
 
             src = disassembly[trace_line.line]
