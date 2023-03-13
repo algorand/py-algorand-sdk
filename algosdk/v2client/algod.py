@@ -368,10 +368,9 @@ class AlgodClient:
         if max_txns:
             query["max"] = max_txns
         req = "/transactions/pending"
-        res = self.algod_request(
+        return self.algod_request(
             "GET", req, params=query, response_format=response_format, **kwargs
         )
-        return res
 
     def pending_transaction_info(
         self, transaction_id: str, response_format: str = "json", **kwargs: Any
@@ -386,10 +385,9 @@ class AlgodClient:
         """
         req = "/transactions/pending/" + transaction_id
         query = {"format": response_format}
-        res = self.algod_request(
+        return self.algod_request(
             "GET", req, params=query, response_format=response_format, **kwargs
         )
-        return res
 
     def health(self, **kwargs: Any) -> AlgodResponseType:
         """Return null if the node is running."""
@@ -423,7 +421,6 @@ class AlgodClient:
                 txn, transaction.Transaction
             ), "Attempt to send UNSIGNED transaction {}".format(txn)
             serialized.append(base64.b64decode(encoding.msgpack_encode(txn)))
-
         return self.send_raw_transaction(
             base64.b64encode(b"".join(serialized)), **kwargs
         )
