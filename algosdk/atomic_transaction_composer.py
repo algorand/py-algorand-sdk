@@ -246,6 +246,46 @@ class AtomicTransactionResponse:
         self.abi_results = results
 
 
+class SimulateABIResult(ABIResult):
+    def __init__(
+        self,
+        tx_id: str,
+        raw_value: bytes,
+        return_value: Any,
+        decode_error: Optional[Exception],
+        tx_info: dict,
+        method: abi.Method,
+        missing_signature: bool,
+    ) -> None:
+        self.tx_id = tx_id
+        self.raw_value = raw_value
+        self.return_value = return_value
+        self.decode_error = decode_error
+        self.tx_info = tx_info
+        self.method = method
+        self.missing_signature = missing_signature
+
+
+class SimulateAtomicTransactionResponse:
+    def __init__(
+        self,
+        version: int,
+        would_succeed: bool,
+        failure_message: str,
+        failed_at: Optional[List[int]],
+        simulate_response: Dict[str, Any],
+        tx_ids: List[str],
+        results: List[SimulateABIResult],
+    ) -> None:
+        self.version = version
+        self.would_succeed = would_succeed
+        self.failure_message = failure_message
+        self.failed_at = failed_at
+        self.simulate_response = simulate_response
+        self.tx_ids = tx_ids
+        self.abi_results = results
+
+
 class AtomicTransactionComposer:
     """
     Constructs an atomic transaction group which may contain a combination of
@@ -265,7 +305,9 @@ class AtomicTransactionComposer:
     MAX_APP_ARG_LIMIT = 16
 
     def __init__(self) -> None:
-        self.status = AtomicTransactionComposerStatus.BUILDING
+        self.status: AtomicTransactionComposerStatus = (
+            AtomicTransactionComposerStatus.BUILDING
+        )
         self.method_dict: Dict[int, abi.Method] = {}
         self.txn_list: List[TransactionWithSigner] = []
         self.signed_txns: List[GenericSignedTransaction] = []
@@ -344,7 +386,7 @@ class AtomicTransactionComposer:
         global_schema: Optional[transaction.StateSchema] = None,
         approval_program: Optional[bytes] = None,
         clear_program: Optional[bytes] = None,
-        extra_pages: Optional[int] = None,
+        extra_pages: int = 0,
         accounts: Optional[List[str]] = None,
         foreign_apps: Optional[List[int]] = None,
         foreign_assets: Optional[List[int]] = None,
@@ -542,7 +584,7 @@ class AtomicTransactionComposer:
         self.method_dict[len(self.txn_list) - 1] = method
         return self
 
-    def build_group(self) -> list:
+    def build_group(self) -> List[TransactionWithSigner]:
         """
         Finalize the transaction group and returns the finalized transactions with signers.
         The composer's status will be at least BUILT after executing this method.
@@ -570,7 +612,7 @@ class AtomicTransactionComposer:
         self.status = AtomicTransactionComposerStatus.BUILT
         return self.txn_list
 
-    def gather_signatures(self) -> list:
+    def gather_signatures(self) -> List[GenericSignedTransaction]:
         """
         Obtain signatures for each transaction in this group. If signatures have already been obtained,
         this method will return cached versions of the signatures.
@@ -642,7 +684,7 @@ class AtomicTransactionComposer:
 
     def simulate(
         self, client: algod.AlgodClient
-    ) -> "SimulateAtomicTransactionResponse":
+    ) -> SimulateAtomicTransactionResponse:
         """
         Send the transaction group to the `simulate` endpoint and wait for results.
         An error will be thrown if submission or execution fails.
@@ -668,8 +710,8 @@ class AtomicTransactionComposer:
                 "lower to simulate a group"
             )
 
-        simulation_result: Dict[str, Any] = client.simulate_transactions(
-            self.signed_txns
+        simulation_result = cast(
+            Dict[str, Any], client.simulate_transactions(self.signed_txns)
         )
         # Only take the first group in the simulate response
         txn_group: Dict[str, Any] = simulation_result["txn-groups"][0]
@@ -820,43 +862,3 @@ class AtomicTransactionComposer:
             )
 
         return method_results
-
-
-class SimulateABIResult(ABIResult):
-    def __init__(
-        self,
-        tx_id: str,
-        raw_value: bytes,
-        return_value: Any,
-        decode_error: Optional[Exception],
-        tx_info: dict,
-        method: abi.Method,
-        missing_signature: bool,
-    ) -> None:
-        self.tx_id = tx_id
-        self.raw_value = raw_value
-        self.return_value = return_value
-        self.decode_error = decode_error
-        self.tx_info = tx_info
-        self.method = method
-        self.missing_signature = missing_signature
-
-
-class SimulateAtomicTransactionResponse:
-    def __init__(
-        self,
-        version: int,
-        would_succeed: bool,
-        failure_message: str,
-        failed_at: Optional[List[int]],
-        simulate_response: Dict[str, Any],
-        tx_ids: List[str],
-        results: List[SimulateABIResult],
-    ) -> None:
-        self.version = version
-        self.would_succeed = would_succeed
-        self.failure_message = failure_message
-        self.failed_at = failed_at
-        self.simulate_response = simulate_response
-        self.tx_ids = tx_ids
-        self.abi_results = results

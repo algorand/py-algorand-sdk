@@ -598,7 +598,11 @@ class AlgodClient:
         req = "/blocks/{}/hash".format(round_num)
         return self.algod_request("GET", req, **kwargs)
 
-    def simulate_transactions(self, txns, **kwargs):
+    def simulate_transactions(
+        self,
+        txns: "Iterable[transaction.GenericSignedTransaction]",
+        **kwargs: Any,
+    ) -> AlgodResponseType:
         """
         Simulate a list of a signed transaction objects being sent to the network.
 
