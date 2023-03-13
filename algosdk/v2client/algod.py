@@ -57,7 +57,7 @@ class AlgodClient:
         method: str,
         requrl: str,
         params: Optional[ParamsType] = None,
-        data: Optional[Union[bytes, Iterable[bytes]]] = None,
+        data: Optional[bytes] = None,
         headers: Optional[Dict[str, str]] = None,
         response_format: Optional[str] = "json",
     ) -> AlgodResponseType:
@@ -448,7 +448,7 @@ class AlgodClient:
 
     def compile(
         self, source: str, source_map: bool = False, **kwargs: Any
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """
         Compile TEAL source with remote algod.
 
@@ -468,14 +468,20 @@ class AlgodClient:
         )
         kwargs["headers"] = headers
         params = {"sourcemap": source_map}
-        resp = self.algod_request(
-            "POST", req, params=params, data=source.encode("utf-8"), **kwargs
+        return cast(
+            Dict[str, Any],
+            self.algod_request(
+                "POST",
+                req,
+                params=params,
+                data=source.encode("utf-8"),
+                **kwargs,
+            ),
         )
-        return cast(dict, resp)
 
     def disassemble(
         self, program_bytes: bytes, **kwargs: Any
-    ) -> Mapping[str, str]:
+    ) -> Dict[str, str]:
         """
         Disassable TEAL program bytes with remote algod.
         Args:
@@ -498,11 +504,11 @@ class AlgodClient:
         )
         kwargs["headers"] = headers
         return cast(
-            Mapping[str, str],
+            Dict[str, str],
             self.algod_request("POST", req, data=program_bytes, **kwargs),
         )
 
-    def dryrun(self, drr: Dict[str, Any], **kwargs: Any) -> dict:
+    def dryrun(self, drr: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
         """
         Dryrun with remote algod.
 
@@ -563,7 +569,7 @@ class AlgodClient:
         self, round_num: int, **kwargs: Any
     ) -> AlgodResponseType:
         """
-         Gets a proof for a given light block header inside a state proof commitment.
+        Gets a proof for a given light block header inside a state proof commitment.
 
         Args:
             round_num (int): The round to which the light block header belongs.
