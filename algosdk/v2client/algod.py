@@ -21,15 +21,10 @@ from algosdk import constants, encoding, error, transaction, util
 
 AlgodResponseType = Union[Dict[str, Any], bytes]
 
+# for compatibility with urllib.parse.urlencode
+ParamsType = Union[Mapping[str, Any], Sequence[Tuple[str, Any]]]
+
 api_version_path_prefix = "/v2"
-
-
-ParamsType = Union[
-    Mapping[Any, Any],
-    Mapping[Any, Sequence[Any]],
-    Sequence[Tuple[Any, Any]],
-    Sequence[Tuple[Any, Sequence[Any]]],
-]
 
 
 class AlgodClient:
