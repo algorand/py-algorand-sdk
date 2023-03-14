@@ -1,5 +1,26 @@
 # Changelog
 
+# v2.1.0
+
+## What's Changed
+### Bugfixes
+* bugfix: fix msig sks type + a couple other mypy complaints by @barnjamin in https://github.com/algorand/py-algorand-sdk/pull/434
+* fix: remove unused positional argument "contract_type" from OverspecifiedRoundError and UnderspecifiedRoundError by @ori-shem-tov in https://github.com/algorand/py-algorand-sdk/pull/438
+* Fix: Revert .test-env in develop by @bbroder-algo in https://github.com/algorand/py-algorand-sdk/pull/445
+### New Features
+* New Feature: Adding methods to use the simulate endpoint by @barnjamin in https://github.com/algorand/py-algorand-sdk/pull/420
+### Enhancements
+* Infrastructure: Add setup.py check to circle ci by @algochoi in https://github.com/algorand/py-algorand-sdk/pull/427
+* Enhancement: Type Friendly Exports by @tzaffi in https://github.com/algorand/py-algorand-sdk/pull/435
+* Algod: Add disassembly endpoint and implement cucumber test by @algochoi in https://github.com/algorand/py-algorand-sdk/pull/440
+* Enhancement: Upgrade black, mypy, and add type annotations to algod.py by @tzaffi in https://github.com/algorand/py-algorand-sdk/pull/442
+
+## New Contributors
+* @ori-shem-tov made their first contribution in https://github.com/algorand/py-algorand-sdk/pull/438
+* @bbroder-algo made their first contribution in https://github.com/algorand/py-algorand-sdk/pull/445
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v2.0.0...v2.0.1
+
 # v2.0.0
 
 ## What's Changed
