@@ -1,5 +1,5 @@
 import base64
-from typing import List, Optional, cast
+from typing import List, Optional, cast, Dict, Any
 
 
 class StackPrinterConfig:
@@ -26,7 +26,7 @@ class DryrunResponse:
 
 
 class DryrunTransactionResult:
-    def __init__(self, dr):
+    def __init__(self, dr: Dict[str, Any]):
         assert (
             "disassembly" in dr
         ), "expecting dryrun transaction result to have key 'disassembly' but its missing"
@@ -34,7 +34,7 @@ class DryrunTransactionResult:
         self.disassembly = dr["disassembly"]
 
         # cost is separated into 2 fields: `budget-added` and `budget-consumed`
-        optionals = [
+        optionals: List[str] = [
             "app-call-messages",
             "local-deltas",
             "global-delta",
@@ -45,7 +45,7 @@ class DryrunTransactionResult:
             "logs",
         ]
 
-        def attrname(field):
+        def attrname(field: str):
             return field.replace("-", "_")
 
         for field in optionals:
@@ -79,11 +79,9 @@ class DryrunTransactionResult:
         disassembly: List[str],
         spc: StackPrinterConfig,
     ) -> str:
-
         # 16 for length of the header up to spaces
         lines = [["pc#", "ln#", "source", "scratch", "stack"]]
         for idx in range(len(dr_trace.trace)):
-
             trace_line = dr_trace.trace[idx]
 
             src = disassembly[trace_line.line]
@@ -131,7 +129,7 @@ class DryrunTransactionResult:
             spc = StackPrinterConfig(top_of_stack_first=False)
         spc = cast(StackPrinterConfig, spc)
 
-        return self.trace(self.app_call_trace, self.disassembly, spc=spc)
+        return self.trace(self.app_call_trace, self.disassembly, spc=spc)  # type: ignore[attr-defined]  # dynamic attribute
 
     def lsig_trace(self, spc: Optional[StackPrinterConfig] = None) -> str:
         if not hasattr(self, "logic_sig_trace"):
@@ -181,6 +179,7 @@ class DryrunStackValue:
         return str(self.int)
 
     def __eq__(self, other: object):
+        other = cast(DryrunStackValue, other)
         return (
             hasattr(other, "type")
             and self.type == other.type

@@ -19,6 +19,10 @@ from algosdk import (
     source_map,
     transaction,
 )
+
+from algosdk.atomic_transaction_composer import (
+    SimulateAtomicTransactionResponse,
+)
 from algosdk.error import AlgodHTTPError
 from algosdk.testing.dryrun import DryrunTestCaseMixin
 from algosdk.v2client import *
@@ -896,8 +900,9 @@ def expect_path(context, path):
         context.response["path"]
     )
     actual_query = urllib.parse.parse_qs(actual_query)
-    assert exp_path == actual_path.replace("%3A", ":")
-    assert exp_query == actual_query
+    actual_path = actual_path.replace("%3A", ":")
+    assert exp_path == actual_path, f"{exp_path} != {actual_path}"
+    assert exp_query == actual_query, f"{exp_query} != {actual_query}"
 
 
 @then('expect error string to contain "{err:MaybeString}"')
@@ -1070,6 +1075,17 @@ def b64decode_compiled_teal_step(context, binary):
     binary = load_resource(binary)
     response_result = context.response["result"]
     assert base64.b64decode(response_result.encode()) == binary
+
+
+@then('disassembly of "{bytecode_filename}" matches "{source_filename}"')
+def disassembly_matches_source(context, bytecode_filename, source_filename):
+    bytecode = load_resource(bytecode_filename)
+    expected_source = load_resource(source_filename).decode("utf-8")
+
+    context.response = context.app_acl.disassemble(bytecode)
+    actual_source = context.response["result"]
+
+    assert actual_source == expected_source
 
 
 @when('I dryrun a "{kind}" program "{program}"')
@@ -1362,7 +1378,6 @@ def check_source_map(context, pc_to_line):
 
 @then('getting the line associated with a pc "{pc}" equals "{line}"')
 def check_pc_to_line(context, pc, line):
-
     actual_line = context.source_map.get_line_for_pc(int(pc))
     assert actual_line == int(line), f"expected line {line} got {actual_line}"
 
@@ -1414,3 +1429,72 @@ def transaction_proof(context, round, txid, hashtype):
 @when("we make a Lookup Block Hash call against round {round}")
 def get_block_hash(context, round):
     context.response = context.acl.get_block_hash(round)
+
+
+@when("I simulate the transaction")
+def simulate_transaction(context):
+    context.simulate_response = context.app_acl.simulate_transactions(
+        [context.stx]
+    )
+
+
+@then("the simulation should succeed without any failure message")
+def simulate_transaction_succeed(context):
+    if hasattr(context, "simulate_response"):
+        assert context.simulate_response["would-succeed"] is True
+    else:
+        assert context.atomic_transaction_composer_return.would_succeed is True
+
+
+@then("I simulate the current transaction group with the composer")
+def simulate_atc(context):
+    context.atomic_transaction_composer_return = (
+        context.atomic_transaction_composer.simulate(context.app_acl)
+    )
+
+
+@then(
+    'the simulation should report a failure at group "{group}", path "{path}" with message "{message}"'
+)
+def simulate_atc_failure(context, group, path, message):
+    resp: SimulateAtomicTransactionResponse = (
+        context.atomic_transaction_composer_return
+    )
+    group_idx: int = int(group)
+    fail_path = ",".join(
+        [
+            str(pe)
+            for pe in resp.simulate_response["txn-groups"][group_idx][
+                "failed-at"
+            ]
+        ]
+    )
+    assert resp.would_succeed is False
+    assert fail_path == path
+    assert message in resp.failure_message
+
+
+@when("I prepare the transaction without signatures for simulation")
+def step_impl(context):
+    context.stx = transaction.SignedTransaction(context.txn, None)
+
+
+@then(
+    'the simulation should report missing signatures at group "{group}", transactions "{path}"'
+)
+def check_missing_signatures(context, group, path):
+    if hasattr(context, "simulate_response"):
+        resp = context.simulate_response
+    else:
+        resp = context.atomic_transaction_composer_return.simulate_response
+
+    group_idx: int = int(group)
+    tx_idxs: list[int] = [int(pe) for pe in path.split(",")]
+
+    assert resp["would-succeed"] is False
+
+    for tx_idx in tx_idxs:
+        missing_sig = resp["txn-groups"][group_idx]["txn-results"][tx_idx][
+            "missing-signature"
+        ]
+        assert missing_sig is True

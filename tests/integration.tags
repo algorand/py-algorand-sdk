@@ -6,6 +6,7 @@
 @auction
 @c2c
 @compile
+@compile.disassemble
 @compile.sourcemap
 @dryrun
 @dryrun.testing
@@ -13,3 +14,4 @@
 @rekey_v1
 @send
 @send.keyregtxn
+@simulate

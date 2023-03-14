@@ -13,7 +13,6 @@ class SourceMap:
     """
 
     def __init__(self, source_map: Dict[str, Any]):
-
         self.version: int = source_map["version"]
 
         if self.version != 3:
