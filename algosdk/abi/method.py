@@ -5,6 +5,7 @@ from Cryptodome.Hash import SHA512
 
 from algosdk import abi, constants, error
 
+
 # In Python 3.11+ the following classes should be combined using `NotRequired`
 class MethodDict_Optional(TypedDict, total=False):
     desc: str

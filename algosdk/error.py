@@ -172,6 +172,11 @@ class KMDHTTPError(Exception):
     pass
 
 
+class AlgodRequestError(Exception):
+    def __init__(self, msg):
+        super().__init__(msg)
+
+
 class AlgodHTTPError(Exception):
     def __init__(self, msg, code=None):
         super().__init__(msg)

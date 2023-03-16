@@ -3,6 +3,7 @@ from typing import List, Union, Optional, TypedDict
 
 from algosdk.abi.method import Method, MethodDict, get_method_by_name
 
+
 # In Python 3.11+ the following classes should be combined using `NotRequired`
 class InterfaceDict_Optional(TypedDict, total=False):
     desc: str
