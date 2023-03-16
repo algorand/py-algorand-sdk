@@ -55,7 +55,8 @@ def get_accounts(
     wallet_password: str = DEFAULT_KMD_WALLET_PASSWORD,
 ) -> list[SandboxAccount]:
     """gets all the accounts in the sandbox kmd, defaults
-    to the `unencrypted-default-wallet` created on private networks automatically"""
+    to the `unencrypted-default-wallet` created on private networks automatically
+    """
 
     kmd = KMDClient(kmd_token, kmd_address)
     wallets = kmd.list_wallets()
