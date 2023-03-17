@@ -128,7 +128,7 @@ class AlgodClient:
             )
 
     def account_info(
-        self, address: str, exclude: Optional[bool] = None, **kwargs: Any
+        self, address: str, exclude: Optional[str] = None, **kwargs: Any
     ) -> AlgodResponseType:
         """
         Return account information.
