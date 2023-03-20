@@ -8,7 +8,6 @@
 ### Enhancements
 * Documentation: Adding examples to be pulled in to docs by @barnjamin in https://github.com/algorand/py-algorand-sdk/pull/441
 
-
 **Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v2.1.0...v2.1.1
 
 # v2.1.0
