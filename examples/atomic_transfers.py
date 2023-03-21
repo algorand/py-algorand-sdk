@@ -23,7 +23,6 @@ txn_2 = transaction.PaymentTxn(addr2, suggested_params, addr1, 200000)
 # example: ATOMIC_CREATE_TXNS
 
 # example: ATOMIC_GROUP_TXNS
-
 # Assign group id to the transactions (order matters!)
 txn_1, txn_2 = transaction.assign_group_id([txn_1, txn_2])
 
@@ -33,22 +32,17 @@ txn_1, txn_2 = transaction.assign_group_id([txn_1, txn_2])
 gid = transaction.calculate_group_id([txn_1, txn_2])
 txn_1.group = gid
 txn_2.group = gid
-
 # example: ATOMIC_GROUP_TXNS
 
 # example: ATOMIC_GROUP_SIGN
-
 # sign transactions
 stxn_1 = txn_1.sign(sk1)
 stxn_2 = txn_2.sign(sk2)
-
 # example: ATOMIC_GROUP_SIGN
 
 # example: ATOMIC_GROUP_ASSEMBLE
-
 # combine the signed transactions into a single list
 signed_group = [stxn_1, stxn_2]
-
 # example: ATOMIC_GROUP_ASSEMBLE
 
 # example: ATOMIC_GROUP_SEND
@@ -61,5 +55,4 @@ result: Dict[str, Any] = transaction.wait_for_confirmation(
     algod_client, tx_id, 4
 )
 print(f"txID: {tx_id} confirmed in round: {result.get('confirmed-round', 0)}")
-
 # example: ATOMIC_GROUP_SEND

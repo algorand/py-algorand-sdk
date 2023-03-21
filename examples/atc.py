@@ -2,13 +2,13 @@ from algosdk.v2client import algod
 from algosdk import transaction, abi
 from utils import get_accounts
 
-# example: ATC_CREATE
 from algosdk.atomic_transaction_composer import (
     AtomicTransactionComposer,
     AccountTransactionSigner,
     TransactionWithSigner,
 )
 
+# example: ATC_CREATE
 atc = AtomicTransactionComposer()
 # example: ATC_CREATE
 
@@ -88,7 +88,7 @@ for res in result.abi_results:
 # example: ATC_RESULTS
 
 
-my_method = contract.get_method_by_name("add_member()void")
+my_method = contract.get_method_by_name("add_member")
 # example: ATC_BOX_REF
 atc = AtomicTransactionComposer()
 atc.add_method_call(

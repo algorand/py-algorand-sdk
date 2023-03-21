@@ -90,6 +90,7 @@ print(f"Sent opt in transaction with txid: {txid}")
 # Wait for the transaction to be confirmed
 results = transaction.wait_for_confirmation(algod_client, txid, 4)
 print(f"Result confirmed in round: {results['confirmed-round']}")
+# example: ASSET_OPTIN
 
 acct_info = algod_client.account_info(acct2.address)
 matching_asset = [
@@ -99,7 +100,6 @@ matching_asset = [
 ].pop()
 assert matching_asset["amount"] == 0
 assert matching_asset["is-frozen"] is False
-# example: ASSET_OPTIN
 
 
 # example: ASSET_XFER
@@ -118,6 +118,7 @@ print(f"Sent transfer transaction with txid: {txid}")
 
 results = transaction.wait_for_confirmation(algod_client, txid, 4)
 print(f"Result confirmed in round: {results['confirmed-round']}")
+# example: ASSET_XFER
 
 acct_info = algod_client.account_info(acct2.address)
 matching_asset = [
@@ -126,7 +127,6 @@ matching_asset = [
     if asset["asset-id"] == created_asset
 ].pop()
 assert matching_asset["amount"] == 1
-# example: ASSET_XFER
 
 # example: ASSET_FREEZE
 sp = algod_client.suggested_params()
@@ -144,6 +144,7 @@ print(f"Sent freeze transaction with txid: {txid}")
 
 results = transaction.wait_for_confirmation(algod_client, txid, 4)
 print(f"Result confirmed in round: {results['confirmed-round']}")
+# example: ASSET_FREEZE
 
 acct_info = algod_client.account_info(acct2.address)
 matching_asset = [
@@ -152,7 +153,6 @@ matching_asset = [
     if asset["asset-id"] == created_asset
 ].pop()
 assert matching_asset["is-frozen"] is True
-# example: ASSET_FREEZE
 
 # example: ASSET_CLAWBACK
 sp = algod_client.suggested_params()
@@ -171,6 +171,7 @@ print(f"Sent clawback transaction with txid: {txid}")
 
 results = transaction.wait_for_confirmation(algod_client, txid, 4)
 print(f"Result confirmed in round: {results['confirmed-round']}")
+# example: ASSET_CLAWBACK
 
 acct_info = algod_client.account_info(acct2.address)
 matching_asset = [
@@ -180,7 +181,6 @@ matching_asset = [
 ].pop()
 assert matching_asset["amount"] == 0
 assert matching_asset["is-frozen"] is True
-# example: ASSET_CLAWBACK
 
 # example: ASSET_DELETE
 sp = algod_client.suggested_params()
