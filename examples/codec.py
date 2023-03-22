@@ -62,5 +62,28 @@ print(recovered_signed_txn.dictify())
 
 os.remove("signed_pay.txn")
 
-# example: CODEC_BLOCK
-# example: CODEC_BLOCK
+# example: CODEC_ABI
+from algosdk import abi
+
+# generate a codec from the string representation of the ABI type
+# in this case, a tuple of two strings
+codec = abi.ABIType.from_string("(string,string)")
+
+# encode the value to its ABI encoding with the codec
+to_encode = ["hello", "world"]
+encoded = codec.encode(to_encode)
+print(encoded.hex())
+
+# decode the value from its ABI encoding with the codec
+decoded = codec.decode(encoded)
+print(decoded)  # prints ["hello", "world"]
+
+# generate a codec for a uint64 array
+uint_array_codec = abi.ABIType.from_string("uint64[]")
+uint_array = [1, 2, 3, 4, 5]
+encoded_array = uint_array_codec.encode(uint_array)
+print(encoded_array.hex())
+
+decoded_array = uint_array_codec.decode(encoded_array)
+print(decoded_array)  # prints [1, 2, 3, 4, 5]
+# example: CODEC_ABI
