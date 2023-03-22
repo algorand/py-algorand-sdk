@@ -182,6 +182,27 @@ matching_asset = [
 assert matching_asset["amount"] == 0
 assert matching_asset["is-frozen"] is True
 
+# example: ASSET_OPT_OUT
+sp = algod_client.suggested_params()
+opt_out_txn = transaction.AssetTransferTxn(
+    sender=acct2.address,
+    sp=sp,
+    index=created_asset,
+    receiver=acct1.address,
+    # an opt out transaction sets its close_asset_to parameter
+    # it is always possible to close an asset to the creator
+    close_assets_to=acct1.address,
+    amt=0,
+)
+signed_opt_out = opt_out_txn.sign(acct2.private_key)
+txid = algod_client.send_transaction(signed_opt_out)
+print(f"Sent opt out transaction with txid: {txid}")
+
+results = transaction.wait_for_confirmation(algod_client, txid, 4)
+print(f"Result confirmed in round: {results['confirmed-round']}")
+# example: ASSET_OPT_OUT
+
+
 # example: ASSET_DELETE
 sp = algod_client.suggested_params()
 # Create asset destroy transaction to destroy the asset
