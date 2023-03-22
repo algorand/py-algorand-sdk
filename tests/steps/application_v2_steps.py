@@ -909,7 +909,7 @@ def check_atomic_transaction_composer_return_type(context, abiTypes):
         assert result.decode_error is None
 
         if expected == "void":
-            assert result.raw_value is None
+            assert result.raw_value is bytes()
             with pytest.raises(ABITypeError):
                 abi.ABIType.from_string(expected)
             continue
