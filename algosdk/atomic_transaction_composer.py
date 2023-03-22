@@ -721,16 +721,16 @@ class AtomicTransactionComposer:
         method_results: List[ABIResult] = []
         for method_index, method in self.method_dict.items():
             tx_id = self.tx_ids[method_index]
+            tx_info = txn_results[method_index]
             result: ABIResult = ABIResult(
                 tx_id=tx_id,
-                raw_value=b"",
+                raw_value=bytes(),
                 return_value=None,
                 decode_error=None,
-                tx_info={},
+                tx_info=tx_info,
                 method=method,
             )
             try:
-                tx_info = txn_results[method_index]
                 result = self.parse_result(
                     method, self.tx_ids[method_index], tx_info
                 )
@@ -809,7 +809,7 @@ class AtomicTransactionComposer:
             tx_id = self.tx_ids[method_index]
             result: ABIResult = ABIResult(
                 tx_id=tx_id,
-                raw_value=b"",
+                raw_value=bytes(),
                 return_value=None,
                 decode_error=None,
                 tx_info={},
@@ -836,7 +836,7 @@ class AtomicTransactionComposer:
         self, method: abi.Method, txid: str, txn: Dict[str, Any]
     ) -> ABIResult:
         tx_id = txid
-        raw_value = b""
+        raw_value = bytes()
         return_value = None
         decode_error = None
         try:
@@ -872,7 +872,7 @@ class AtomicTransactionComposer:
 
         return ABIResult(
             tx_id=tx_id,
-            raw_value=cast(bytes, raw_value),
+            raw_value=raw_value,
             return_value=return_value,
             decode_error=decode_error,
             tx_info=txn,
