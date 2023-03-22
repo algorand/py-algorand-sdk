@@ -1,4 +1,7 @@
+import base64
 from dataclasses import dataclass
+
+from algosdk import transaction
 
 from algosdk.v2client import algod
 from algosdk.atomic_transaction_composer import AccountTransactionSigner
@@ -90,3 +93,37 @@ def get_accounts(
         kmd.release_wallet_handle(wallet_handle)
 
     return kmd_accounts
+
+
+def deploy_calculator_app(
+    algod_client: algod.AlgodClient, acct: SandboxAccount
+) -> int:
+    with open("calculator/approval.teal", "r") as f:
+        approval_program = f.read()
+
+    with open("calculator/clear.teal", "r") as f:
+        clear_program = f.read()
+
+    approval_result = algod_client.compile(approval_program)
+    approval_binary = base64.b64decode(approval_result["result"])
+
+    clear_result = algod_client.compile(clear_program)
+    clear_binary = base64.b64decode(clear_result["result"])
+
+    sp = algod_client.suggested_params()
+    # create the app create transaction, passing compiled programs and schema
+    app_create_txn = transaction.ApplicationCreateTxn(
+        acct.address,
+        sp,
+        transaction.OnComplete.NoOpOC,
+        approval_program=approval_binary,
+        clear_program=clear_binary,
+        local_schema=transaction.StateSchema(num_uints=1, num_byte_slices=1),
+        global_schema=transaction.StateSchema(num_uints=1, num_byte_slices=1),
+    )
+    # sign transaction
+    signed_create_txn = app_create_txn.sign(acct.private_key)
+    txid = algod_client.send_transaction(signed_create_txn)
+    result = transaction.wait_for_confirmation(algod_client, txid, 4)
+    app_id = result["application-index"]
+    return app_id

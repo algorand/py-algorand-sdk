@@ -1,5 +1,7 @@
 import json
+from algosdk import transaction
 from algosdk.v2client import indexer
+from utils import get_accounts, get_algod_client
 
 
 # example: CREATE_INDEXER_CLIENT
@@ -11,9 +13,41 @@ myindexer = indexer.IndexerClient(
 )
 # example: CREATE_INDEXER_CLIENT
 
+
+algod_client = get_algod_client()
+acct = get_accounts().pop()
+
+# create an asset we can lookup
+actxn = transaction.AssetCreateTxn(
+    acct.address,
+    algod_client.suggested_params(),
+    100,
+    0,
+    False,
+    manager=acct.address,
+    unit_name="example",
+    asset_name="example asset",
+)
+
+txid = algod_client.send_transaction(actxn.sign(acct.private_key))
+res = transaction.wait_for_confirmation(algod_client, txid, 4)
+asset_id = res["asset-index"]
+
+ptxn = transaction.PaymentTxn(
+    acct.address, algod_client.suggested_params(), acct.address, 1000
+)
+transaction.wait_for_confirmation(
+    algod_client, algod_client.send_transaction(ptxn.sign(acct.private_key)), 4
+)
+
+# sleep for a couple seconds to allow indexer to catch up
+import time
+
+time.sleep(2)
+
+
 # example: INDEXER_LOOKUP_ASSET
 # lookup a single asset
-asset_id = 2044572
 # by passing include_all, we specify that we want to see deleted assets as well
 response = myindexer.asset_info(asset_id, include_all=True)
 print(f"Asset Info: {json.dumps(response, indent=2,)}")
@@ -36,7 +70,7 @@ page = 0
 # no more transactions in the response
 while has_results:
     response = myindexer.search_transactions(
-        min_amount=10, min_round=1000, max_round=1500
+        min_amount=10, min_round=1000, max_round=1500, next_page=nexttoken
     )
 
     has_results = len(response["transactions"]) > 0

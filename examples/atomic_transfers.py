@@ -14,24 +14,21 @@ addr2, sk2 = acct2.address, acct2.private_key
 suggested_params = algod_client.suggested_params()
 
 # example: ATOMIC_CREATE_TXNS
-
 # payment from account 1 to account 2
 txn_1 = transaction.PaymentTxn(addr1, suggested_params, addr2, 100000)
 # payment from account 2 to account 1
 txn_2 = transaction.PaymentTxn(addr2, suggested_params, addr1, 200000)
-
 # example: ATOMIC_CREATE_TXNS
+
 
 # example: ATOMIC_GROUP_TXNS
 # Assign group id to the transactions (order matters!)
-txn_1, txn_2 = transaction.assign_group_id([txn_1, txn_2])
-
+transaction.assign_group_id([txn_1, txn_2])
 # Or, equivalently
-
 # get group id and assign it to transactions
-gid = transaction.calculate_group_id([txn_1, txn_2])
-txn_1.group = gid
-txn_2.group = gid
+# gid = transaction.calculate_group_id([txn_1, txn_2])
+# txn_1.group = gid
+# txn_2.group = gid
 # example: ATOMIC_GROUP_TXNS
 
 # example: ATOMIC_GROUP_SIGN
