@@ -46,7 +46,7 @@ docker-pysdk-run:
 	docker run -it --network host py-sdk-testing:latest
 
 smoke-test-examples:
-	cd examples && bash smoke_test.sh && cd -
+	export ALGOD_PORT=60000 && export KMD_PORT=60001 && cd examples && bash smoke_test.sh && cd -
 
 
 docker-test: harness docker-pysdk-build docker-pysdk-run
