@@ -1,5 +1,7 @@
 # Changelog
 
+# v2.1.2
+
 ## What's Changed
 
 This release adds a fix to allow disambiguation of transaction finality in the case of a decoding error.
