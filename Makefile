@@ -49,4 +49,4 @@ smoke-test-examples:
 	cd examples && bash smoke_test.sh && cd -
 
 
-docker-test: harness docker-pysdk-build docker-pysdk-run smoke-test-examples
+docker-test: harness docker-pysdk-build docker-pysdk-run
