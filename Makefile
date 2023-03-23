@@ -45,4 +45,8 @@ docker-pysdk-run:
 	docker ps -a
 	docker run -it --network host py-sdk-testing:latest
 
-docker-test: harness docker-pysdk-build docker-pysdk-run
+smoke-test-examples:
+	cd examples && bash smoke_test.sh && cd -
+
+
+docker-test: harness docker-pysdk-build docker-pysdk-run smoke-test-examples
