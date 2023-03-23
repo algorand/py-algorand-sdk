@@ -1,7 +1,7 @@
 from typing import Dict, Any
 import json
 from base64 import b64decode
-from utils import get_accounts
+from utils import get_accounts, get_algod_client
 
 from algosdk import transaction
 from algosdk.v2client import algod
@@ -21,6 +21,7 @@ special_algod_client = algod.AlgodClient(
 )
 # example: ALGOD_CREATE_CLIENT
 
+algod_client = get_algod_client()
 accts = get_accounts()
 
 acct1 = accts.pop()

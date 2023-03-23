@@ -1,3 +1,4 @@
+import os
 import base64
 from dataclasses import dataclass
 
@@ -8,26 +9,33 @@ from algosdk.atomic_transaction_composer import AccountTransactionSigner
 from algosdk.kmd import KMDClient
 from algosdk.wallet import Wallet
 
-DEFAULT_KMD_ADDRESS = "http://localhost:4002"
-DEFAULT_KMD_TOKEN = "a" * 64
+KMD_ADDRESS = "http://localhost"
+KMD_TOKEN = "a" * 64
+KMD_PORT = os.getenv("KMD_PORT", default="4002")
+KMD_URL = f"{KMD_ADDRESS}:{KMD_PORT}"
+
 DEFAULT_KMD_WALLET_NAME = "unencrypted-default-wallet"
 DEFAULT_KMD_WALLET_PASSWORD = ""
 
-DEFAULT_ALGOD_ADDRESS = "http://localhost:4001"
-DEFAULT_ALGOD_TOKEN = "a" * 64
+ALGOD_ADDRESS = "http://localhost"
+ALGOD_TOKEN = "a" * 64
+ALGOD_PORT = os.getenv("ALGOD_PORT", default="4001")
+ALGOD_URL = f"{ALGOD_ADDRESS}:{ALGOD_PORT}"
+
+
+print(ALGOD_URL)
+print(KMD_URL)
 
 
 def get_algod_client(
-    addr: str = DEFAULT_ALGOD_ADDRESS, token: str = DEFAULT_ALGOD_TOKEN
+    addr: str = ALGOD_URL, token: str = ALGOD_TOKEN
 ) -> algod.AlgodClient:
     return algod.AlgodClient(algod_token=token, algod_address=addr)
 
 
-def get_kmd_client() -> KMDClient:
+def get_kmd_client(addr: str = KMD_URL, token: str = KMD_TOKEN) -> KMDClient:
     """creates a new kmd client using the default sandbox parameters"""
-    return KMDClient(
-        kmd_token=DEFAULT_KMD_TOKEN, kmd_address=DEFAULT_KMD_ADDRESS
-    )
+    return KMDClient(kmd_token=token, kmd_address=addr)
 
 
 def get_sandbox_default_wallet() -> Wallet:
@@ -52,8 +60,8 @@ class SandboxAccount:
 
 
 def get_accounts(
-    kmd_address: str = DEFAULT_KMD_ADDRESS,
-    kmd_token: str = DEFAULT_KMD_TOKEN,
+    kmd_address: str = KMD_URL,
+    kmd_token: str = KMD_TOKEN,
     wallet_name: str = DEFAULT_KMD_WALLET_NAME,
     wallet_password: str = DEFAULT_KMD_WALLET_PASSWORD,
 ) -> list[SandboxAccount]:

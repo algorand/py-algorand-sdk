@@ -1,11 +1,10 @@
 from typing import Dict, Any
 from algosdk import transaction
 from algosdk.v2client import algod
-from utils import get_accounts
+from utils import get_accounts, get_algod_client
 
-algod_address = "http://localhost:4001"
-algod_token = "a" * 64
-algod_client = algod.AlgodClient(algod_token, algod_address)
+algod_client = get_algod_client()
+
 
 acct1, acct2, _ = get_accounts()
 addr1, sk1 = acct1.address, acct1.private_key
