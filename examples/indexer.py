@@ -4,14 +4,14 @@ from algosdk.v2client import indexer
 from utils import get_accounts, get_algod_client
 
 
-# example: CREATE_INDEXER_CLIENT
+# example: INDEXER_CREATE_CLIENT
 # instantiate indexer client
 indexer_host = "http://localhost:8980"
 indexer_token = "a" * 64
 myindexer = indexer.IndexerClient(
     indexer_token=indexer_token, indexer_address=indexer_host
 )
-# example: CREATE_INDEXER_CLIENT
+# example: INDEXER_CREATE_CLIENT
 
 
 algod_client = get_algod_client()
