@@ -45,8 +45,11 @@ docker-pysdk-run:
 	docker ps -a
 	docker run -it --network host py-sdk-testing:latest
 
+# todo replace with ports from harness .env file
 smoke-test-examples:
-	export ALGOD_PORT=60000 && export KMD_PORT=60001 && cd examples && bash smoke_test.sh && cd -
+	$(eval ALGOD_PORT := "60000")
+	$(eval KMD_PORT := "60001")
+	cd examples && bash smoke_test.sh && cd -
 
 
 docker-test: harness docker-pysdk-build docker-pysdk-run
