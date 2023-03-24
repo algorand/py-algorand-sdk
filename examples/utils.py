@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from algosdk import transaction
 
-from algosdk.v2client import algod
+from algosdk.v2client import algod, indexer
 from algosdk.atomic_transaction_composer import AccountTransactionSigner
 from algosdk.kmd import KMDClient
 from algosdk.wallet import Wallet
@@ -22,8 +22,13 @@ ALGOD_TOKEN = "a" * 64
 ALGOD_PORT = os.getenv("ALGOD_PORT", default="4001")
 ALGOD_URL = f"{ALGOD_ADDRESS}:{ALGOD_PORT}"
 
+INDEXER_ADDRESS = "http://localhost"
+INDEXER_TOKEN = "a" * 64
+INDEXER_PORT = os.getenv("INDEXER_PORT", default="8980")
+INDEXER_URL = f"{INDEXER_ADDRESS}:{INDEXER_PORT}"
 
 print(ALGOD_URL)
+print(INDEXER_URL)
 print(KMD_URL)
 
 
@@ -36,6 +41,13 @@ def get_algod_client(
 def get_kmd_client(addr: str = KMD_URL, token: str = KMD_TOKEN) -> KMDClient:
     """creates a new kmd client using the default sandbox parameters"""
     return KMDClient(kmd_token=token, kmd_address=addr)
+
+
+def get_indexer_client(
+    addr: str = INDEXER_URL, token: str = INDEXER_TOKEN
+) -> indexer.IndexerClient:
+    """creates a new indexer client using the default sandbox parameters"""
+    return indexer.IndexerClient(indexer_token=token, indexer_address=addr)
 
 
 def get_sandbox_default_wallet() -> Wallet:

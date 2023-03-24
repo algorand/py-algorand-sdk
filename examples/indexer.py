@@ -1,18 +1,19 @@
 import json
 from algosdk import transaction
 from algosdk.v2client import indexer
-from utils import get_accounts, get_algod_client
+from utils import get_accounts, get_algod_client, get_indexer_client
 
 
 # example: INDEXER_CREATE_CLIENT
 # instantiate indexer client
 indexer_host = "http://localhost:8980"
 indexer_token = "a" * 64
-myindexer = indexer.IndexerClient(
+indexer_client = indexer.IndexerClient(
     indexer_token=indexer_token, indexer_address=indexer_host
 )
 # example: INDEXER_CREATE_CLIENT
 
+indexer_client = get_indexer_client()
 
 algod_client = get_algod_client()
 acct = get_accounts().pop()

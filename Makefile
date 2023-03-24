@@ -47,8 +47,6 @@ docker-pysdk-run:
 
 # todo replace with ports from harness .env file
 smoke-test-examples:
-	$(eval ALGOD_PORT := "60000")
-	$(eval KMD_PORT := "60001")
 	cd examples && bash smoke_test.sh && cd -
 
 
