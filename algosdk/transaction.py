@@ -3233,7 +3233,9 @@ defaultAppId = 1380011588
 
 def create_dryrun(
     client: algod.AlgodClient,
-    txns: List[Union[SignedTransaction, LogicSigTransaction]],
+    txns: List[
+        Union[SignedTransaction, LogicSigTransaction, MultisigTransaction]
+    ],
     protocol_version=None,
     latest_timestamp=None,
     round=None,
