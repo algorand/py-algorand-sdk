@@ -50,12 +50,12 @@ time.sleep(2)
 # example: INDEXER_LOOKUP_ASSET
 # lookup a single asset
 # by passing include_all, we specify that we want to see deleted assets as well
-response = myindexer.asset_info(asset_id, include_all=True)
+response = indexer_client.asset_info(asset_id, include_all=True)
 print(f"Asset Info: {json.dumps(response, indent=2,)}")
 # example: INDEXER_LOOKUP_ASSET
 
 # example: INDEXER_SEARCH_MIN_AMOUNT
-response = myindexer.search_transactions(
+response = indexer_client.search_transactions(
     min_amount=10, min_round=1000, max_round=1500
 )
 print(f"Transaction results: {json.dumps(response, indent=2)}")
@@ -70,7 +70,7 @@ page = 0
 # loop using next_page to paginate until there are
 # no more transactions in the response
 while has_results:
-    response = myindexer.search_transactions(
+    response = indexer_client.search_transactions(
         min_amount=10, min_round=1000, max_round=1500, next_page=nexttoken
     )
 
@@ -85,6 +85,6 @@ while has_results:
 
 # example: INDEXER_PREFIX_SEARCH
 note_prefix = "showing prefix".encode()
-response = myindexer.search_transactions(note_prefix=note_prefix)
+response = indexer_client.search_transactions(note_prefix=note_prefix)
 print(f"result: {json.dumps(response, indent=2)}")
 # example: INDEXER_PREFIX_SEARCH

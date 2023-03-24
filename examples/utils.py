@@ -1,9 +1,9 @@
 import os
 import base64
 from dataclasses import dataclass
+from typing import List
 
 from algosdk import transaction
-
 from algosdk.v2client import algod, indexer
 from algosdk.atomic_transaction_composer import AccountTransactionSigner
 from algosdk.kmd import KMDClient
@@ -76,7 +76,7 @@ def get_accounts(
     kmd_token: str = KMD_TOKEN,
     wallet_name: str = DEFAULT_KMD_WALLET_NAME,
     wallet_password: str = DEFAULT_KMD_WALLET_PASSWORD,
-) -> list[SandboxAccount]:
+) -> List[SandboxAccount]:
     """gets all the accounts in the sandbox kmd, defaults
     to the `unencrypted-default-wallet` created on private networks automatically
     """
