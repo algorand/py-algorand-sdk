@@ -27,10 +27,6 @@ INDEXER_TOKEN = "a" * 64
 INDEXER_PORT = os.getenv("INDEXER_PORT", default="8980")
 INDEXER_URL = f"{INDEXER_ADDRESS}:{INDEXER_PORT}"
 
-print(ALGOD_URL)
-print(INDEXER_URL)
-print(KMD_URL)
-
 
 def get_algod_client(
     addr: str = ALGOD_URL, token: str = ALGOD_TOKEN
