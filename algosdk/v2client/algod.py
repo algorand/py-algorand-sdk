@@ -307,13 +307,13 @@ class AlgodClient:
         return self.algod_request("GET", req, **kwargs)
 
     def send_transaction(
-        self, txn: "transaction.Transaction", **kwargs: Any
+        self, txn: "transaction.GenericSignedTransaction", **kwargs: Any
     ) -> str:
         """
         Broadcast a signed transaction object to the network.
 
         Args:
-            txn (SignedTransaction or MultisigTransaction): transaction to send
+            txn (SignedTransaction, LogicSigTransaction, or MultisigTransaction): transaction to send
             request_header (dict, optional): additional header for request
 
         Returns:
