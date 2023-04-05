@@ -13,6 +13,11 @@ for file in *; do
         if [[ $file != "utils.py" ]]; then
             # Call the file using Python
             python3 "$file"
+            # Check if the test failed
+            if [ $? -ne 0 ]; then
+                echo "Test failed, stopping script"
+                exit 1
+            fi
         fi
     fi
 done
