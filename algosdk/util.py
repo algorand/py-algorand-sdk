@@ -39,7 +39,8 @@ def sign_bytes(to_sign, private_key):
 
     Args:
         to_sign (bytes): bytes to sign
-
+        private_key (str): base64 encoded private key
+        
     Returns:
         str: base64 signature
     """
