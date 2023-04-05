@@ -1,13 +1,14 @@
 from typing import Dict, Any
 from algosdk import transaction
-from algosdk.v2client import algod
 from utils import get_accounts, get_algod_client
 
 algod_client = get_algod_client()
 
 
-acct1, acct2, _ = get_accounts()
+accts = get_accounts()
+acct1 = accts.pop()
 addr1, sk1 = acct1.address, acct1.private_key
+acct2 = accts.pop()
 addr2, sk2 = acct2.address, acct2.private_key
 
 suggested_params = algod_client.suggested_params()
