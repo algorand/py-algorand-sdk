@@ -45,7 +45,11 @@ transaction.wait_for_confirmation(algod_client, txid, 4)
 
 # example: MULTISIG_SIGN
 msig_pay = transaction.PaymentTxn(
-    msig.address(), sp, account_1.address, 0, close_remainder_to=account_1.address 
+    msig.address(),
+    sp,
+    account_1.address,
+    0,
+    close_remainder_to=account_1.address,
 )
 msig_txn = transaction.MultisigTransaction(msig_pay, msig)
 msig_txn.sign(account_2.private_key)

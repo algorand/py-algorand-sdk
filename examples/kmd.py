@@ -1,4 +1,5 @@
 from algosdk import kmd, wallet, mnemonic, account
+from utils import get_kmd_client
 
 
 # example: KMD_CREATE_CLIENT
@@ -7,6 +8,8 @@ kmd_token = "a" * 64
 
 kmd_client = kmd.KMDClient(kmd_token=kmd_token, kmd_address=kmd_address)
 # example: KMD_CREATE_CLIENT
+
+kmd_client = get_kmd_client()
 
 
 def get_wallet_id_from_name(name: str):
