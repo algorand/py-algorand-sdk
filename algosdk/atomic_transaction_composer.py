@@ -495,15 +495,18 @@ class AtomicTransactionComposer:
         # or encode a ABI value.
         for i, arg in enumerate(method.args):
             if abi.is_abi_transaction_type(arg.type):
-                if not isinstance(
-                    method_args[i], TransactionWithSigner
-                ) or not abi.check_abi_transaction_type(
+                if not isinstance(method_args[i], TransactionWithSigner):
+                    raise error.AtomicTransactionComposerError(
+                        "expected TransactionWithSigner as method argument, "
+                        f"but received: {method_args[i]}"
+                    )
+
+                if not abi.check_abi_transaction_type(
                     arg.type, method_args[i].txn
                 ):
                     raise error.AtomicTransactionComposerError(
-                        "expected TransactionWithSigner as method argument, but received: {}".format(
-                            method_args[i]
-                        )
+                        f"expected Transaction type {arg.type} as method argument, "
+                        f"but received: {method_args[i].txn.type}"
                     )
                 txn_list.append(method_args[i])
             else:
