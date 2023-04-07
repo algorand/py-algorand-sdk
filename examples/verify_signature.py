@@ -5,7 +5,10 @@ from nacl.exceptions import BadSignatureError
 import base64
 
 
-def verify_signed_transaction(stxn: transaction.SignedTransaction):
+def verify_signed_transaction(raw_stxn: list[bytes]):
+    # example: OFFLINE_VERIFY_SIG
+    # decode the signed transaction
+    stxn = encoding.msgpack_decode(raw_stxn)
     if stxn.signature is None or len(stxn.signature) == 0:
         return False
 
@@ -27,6 +30,7 @@ def verify_signed_transaction(stxn: transaction.SignedTransaction):
         return True
     except BadSignatureError:
         return False
+    # example: OFFLINE_VERIFY_SIG
 
 
 def main():
@@ -36,7 +40,8 @@ def main():
     )
     txn = transaction.PaymentTxn(addr, sp, addr, 0)
     stxn = txn.sign(sk)
-    print("Valid? ", verify_signed_transaction(stxn))
+    stxn_blob = encoding.msgpack_encode(stxn)
+    print("Valid? ", verify_signed_transaction(stxn_blob))
 
 
 if __name__ == "__main__":
