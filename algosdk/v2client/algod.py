@@ -18,6 +18,7 @@ from urllib import parse
 from urllib.request import Request, urlopen
 
 from algosdk import constants, encoding, error, transaction, util
+from algosdk.v2client import models
 
 AlgodResponseType = Union[Dict[str, Any], bytes]
 
@@ -598,48 +599,47 @@ class AlgodClient:
 
     def simulate_transactions(
         self,
-        txns: "Iterable[transaction.GenericSignedTransaction]",
+        request: models.SimulateRequest,
         **kwargs: Any,
     ) -> AlgodResponseType:
         """
-        Simulate a list of a signed transaction objects being sent to the network.
+        Simulate transactions being sent to the network.
 
         Args:
-            txns (SignedTransaction[] or MultisigTransaction[]):
-                transactions to send
-            request_header (dict, optional): additional header for request
+            request (models.SimulateRequest): Simulation request object
+            headers (dict, optional): additional header for request
 
         Returns:
-            Dict[str, Any]: results from simulation of transaction group
+            Dict[str, Any]: results from simulation of transactions
         """
-        serialized = []
-        for txn in txns:
-            serialized.append(base64.b64decode(encoding.msgpack_encode(txn)))
-
-        return self.simulate_raw_transaction(
-            base64.b64encode(b"".join(serialized)), **kwargs
-        )
-
-    def simulate_raw_transaction(self, txn, **kwargs):
-        """
-        Simulate a transaction group
-
-        Args:
-            txn (str): transaction to send, encoded in base64
-            request_header (dict, optional): additional header for request
-
-        Returns:
-            Dict[str, Any]: results from simulation of transaction group
-        """
-        txn = base64.b64decode(txn)
+        body = base64.b64decode(encoding.msgpack_encode(request))
         req = "/transactions/simulate"
         headers = util.build_headers_from(
             kwargs.get("headers", False),
-            {"Content-Type": "application/x-binary"},
+            {"Content-Type": "application/msgpack"},
         )
         kwargs["headers"] = headers
+        return self.algod_request("POST", req, data=body, **kwargs)
 
-        return self.algod_request("POST", req, data=txn, **kwargs)
+    def simulate_raw_transactions(
+        self, txns: "Sequence[transaction.GenericSignedTransaction]", **kwargs
+    ):
+        """
+        Simulate a transaction group being sent to the network.
+
+        Args:
+            txns (Sequence[transaction.GenericSignedTransaction]): transaction group to simulate
+            headers (dict, optional): additional header for request
+
+        Returns:
+            Dict[str, Any]: results from simulation of transactions
+        """
+        request = models.SimulateRequest(
+            txn_groups=[
+                models.SimulateRequestTransactionGroup(txns=list(txns))
+            ]
+        )
+        return self.simulate_transactions(request, **kwargs)
 
 
 def _specify_round_string(
