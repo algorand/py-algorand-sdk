@@ -5,7 +5,6 @@ if TYPE_CHECKING:
 
 
 class SimulateRequestTransactionGroup(object):
-
     txns: "list[transaction.GenericSignedTransaction]"
 
     def __init__(
@@ -18,7 +17,6 @@ class SimulateRequestTransactionGroup(object):
 
 
 class SimulateRequest(object):
-
     txn_groups: list[SimulateRequestTransactionGroup]
 
     def __init__(
