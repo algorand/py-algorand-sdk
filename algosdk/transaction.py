@@ -2224,12 +2224,13 @@ class MultisigTransaction:
         else:
             self.auth_addr = None
 
-    def sign(self, private_key):
+    def sign(self, private_key, index=-1):
         """
         Sign the multisig transaction.
 
         Args:
             private_key (str): private key of signing account
+            index (int, optional): index of signing account in multisig
 
         Note:
             A new signature will replace the old if there is already a
@@ -2239,7 +2240,6 @@ class MultisigTransaction:
             object with the same addresses.
         """
         self.multisig.validate()
-        index = -1
         public_key = base64.b64decode(bytes(private_key, "utf-8"))
         public_key = public_key[constants.key_len_bytes :]
         for s in range(len(self.multisig.subsigs)):
