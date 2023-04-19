@@ -714,7 +714,7 @@ class AtomicTransactionComposer:
             )
 
         simulation_result = cast(
-            Dict[str, Any], client.simulate_transactions(self.signed_txns)
+            Dict[str, Any], client.simulate_raw_transactions(self.signed_txns)
         )
         # Only take the first group in the simulate response
         txn_group: Dict[str, Any] = simulation_result["txn-groups"][0]
