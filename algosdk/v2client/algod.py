@@ -113,6 +113,8 @@ class AlgodClient:
             try:
                 return json.load(resp)
             except Exception as e:
+                if resp.status == 200:
+                    return {}
                 raise error.AlgodResponseError(
                     "Failed to parse JSON response from algod"
                 ) from e
@@ -640,6 +642,38 @@ class AlgodClient:
             ]
         )
         return self.simulate_transactions(request, **kwargs)
+
+    def get_timestamp_offset(
+        self,
+        **kwargs: Any,
+    ) -> AlgodResponseType:
+        """
+        Get the timestamp offset in block headers.
+        This feature is only available in dev mode networks.
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        req = f"/devmode/blocks/offset"
+        return self.algod_request("GET", req, **kwargs)
+
+    def set_timestamp_offset(
+        self,
+        offset: int,
+        **kwargs: Any,
+    ) -> AlgodResponseType:
+        """
+        Set the timestamp offset in block headers.
+        This feature is only available in dev mode networks.
+
+        Args:
+            offset (int): Block timestamp offset
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        req = f"/devmode/blocks/offset/{offset}"
+        return self.algod_request("POST", req, **kwargs)
 
 
 def _specify_round_string(
