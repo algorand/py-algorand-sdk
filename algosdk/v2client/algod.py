@@ -113,6 +113,9 @@ class AlgodClient:
             try:
                 return json.load(resp)
             except Exception as e:
+                # Some algod responses currently return a 200 OK
+                # but have an empty response.
+                # Do not return an error, and just return an empty response.
                 if resp.status == 200:
                     return {}
                 raise error.AlgodResponseError(

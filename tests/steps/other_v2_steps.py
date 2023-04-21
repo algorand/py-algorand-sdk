@@ -1498,3 +1498,19 @@ def check_missing_signatures(context, group, path):
             "missing-signature"
         ]
         assert missing_sig is True
+
+
+@when("I set the timestamp offset to be {offset}")
+def set_timestamp_offset(context, offset):
+    context.app_acl.set_timestamp_offset(offset)
+
+
+@when("I get the timestamp offset")
+def get_timestamp_offset(context):
+    context.timestamp_offset = context.app_acl.get_timestamp_offset()
+
+
+@then("the timestamp offset should be {expected_offset}")
+def check_timestamp_offset(context, expected_offset):
+    actual_offset = context.timestamp_offset["offset"]
+    assert int(expected_offset) == actual_offset
