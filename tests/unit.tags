@@ -20,9 +20,11 @@
 @unit.responses.231
 @unit.responses.blocksummary
 @unit.responses.participationupdates
+@unit.responses.timestamp
 @unit.responses.unlimited_assets
 @unit.sourcemap
 @unit.tealsign
+@unit.timestamp
 @unit.transactions
 @unit.transactions.keyreg
 @unit.transactions.payment

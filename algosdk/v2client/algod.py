@@ -667,8 +667,8 @@ class AlgodClient:
             Dict[str, Any]: Response from algod
         """
         req = f"/ledger/sync/{round}"
-        return self.algod_request("GET", req, **kwargs)
-    
+        return self.algod_request("POST", req, **kwargs)
+
     def unset_sync_round(self, **kwargs: Any) -> AlgodResponseType:
         """
         Unset the minimum sync round for the ledger.
