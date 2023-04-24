@@ -646,10 +646,50 @@ class AlgodClient:
         )
         return self.simulate_transactions(request, **kwargs)
 
-    def get_timestamp_offset(
-        self,
-        **kwargs: Any,
-    ) -> AlgodResponseType:
+    def get_sync_round(self, **kwargs: Any) -> AlgodResponseType:
+        """
+        Get the minimum sync round for the ledger.
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        req = "/ledger/sync"
+        return self.algod_request("GET", req, **kwargs)
+
+    def set_sync_round(self, round: int, **kwargs: Any) -> AlgodResponseType:
+        """
+        Set the minimum sync round for the ledger.
+
+        Args:
+            round (int): Sync round
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        req = f"/ledger/sync/{round}"
+        return self.algod_request("GET", req, **kwargs)
+    
+    def unset_sync_round(self, **kwargs: Any) -> AlgodResponseType:
+        """
+        Unset the minimum sync round for the ledger.
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        req = "/ledger/sync"
+        return self.algod_request("DELETE", req, **kwargs)
+
+    def ready(self, **kwargs: Any) -> AlgodResponseType:
+        """
+        Returns OK if the node is healthy and fully caught up.
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        req = "/ready"
+        return self.algod_request("GET", req, **kwargs)
+
+    def get_timestamp_offset(self, **kwargs: Any) -> AlgodResponseType:
         """
         Get the timestamp offset in block headers.
         This feature is only available in dev mode networks.
@@ -657,7 +697,7 @@ class AlgodClient:
         Returns:
             Dict[str, Any]: Response from algod
         """
-        req = f"/devmode/blocks/offset"
+        req = "/devmode/blocks/offset"
         return self.algod_request("GET", req, **kwargs)
 
     def set_timestamp_offset(
