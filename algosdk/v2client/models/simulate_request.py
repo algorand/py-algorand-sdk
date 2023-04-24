@@ -18,7 +18,7 @@ class SimulateRequestTransactionGroup(object):
 
 class SimulateRequest(object):
     txn_groups: List[SimulateRequestTransactionGroup]
-    lift_lot_limits: bool
+    lift_log_limits: bool
 
     def __init__(
         self,
@@ -27,12 +27,12 @@ class SimulateRequest(object):
         lift_log_limits: bool = False,
     ) -> None:
         self.txn_groups = txn_groups
-        self.lift_lot_limits = lift_log_limits
+        self.lift_log_limits = lift_log_limits
 
     def dictify(self) -> Dict[str, Any]:
         return {
             "txn-groups": [
                 txn_group.dictify() for txn_group in self.txn_groups
             ],
-            "lift-log-limits": self.lift_lot_limits,
+            "lift-log-limits": self.lift_log_limits,
         }
