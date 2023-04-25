@@ -1520,6 +1520,11 @@ def unset_sync_round_call(context):
     context.response = context.acl.unset_sync_round()
 
 
+@when("we make a Ready call")
+def ready_call(context):
+    context.response = context.acl.ready()
+
+
 @when("we make a SetBlockTimeStampOffset call against offset {offset}")
 def set_block_timestamp_offset(context, offset):
     context.response = context.acl.set_timestamp_offset(offset)
