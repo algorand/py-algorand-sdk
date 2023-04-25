@@ -17,7 +17,7 @@ from algosdk import abi, error, transaction
 from algosdk.transaction import GenericSignedTransaction
 from algosdk.abi.address_type import AddressType
 from algosdk.v2client import algod
-from algosdk.v2client.models import models
+from algosdk.v2client import models
 
 # The first four bytes of an ABI method call return must have this hash
 ABI_RETURN_HASH = b"\x15\x1f\x7c\x75"
@@ -267,6 +267,34 @@ class SimulateABIResult(ABIResult):
         self.missing_signature = missing_signature
 
 
+class SimulateEvalOverrides:
+    def __init__(
+        self,
+        *,
+        max_log_calls: Optional[int] = None,
+        max_log_size: Optional[int] = None,
+    ) -> None:
+        self.max_log_calls = max_log_calls
+        self.max_log_size = max_log_size
+
+    @staticmethod
+    def from_simulation_result(
+        simulation_result: Dict[str, Any]
+    ) -> Optional["SimulateEvalOverrides"]:
+        if "eval-overrides" not in simulation_result:
+            return None
+
+        eval_override_dict = simulation_result.get("eval-overrides", dict())
+        eval_override = SimulateEvalOverrides()
+
+        if "max-log-calls" in eval_override_dict:
+            eval_override.max_log_calls = eval_override_dict["max-log-calls"]
+        if "max-log-size" in eval_override_dict:
+            eval_override.max_log_size = eval_override_dict["max-log-size"]
+
+        return eval_override
+
+
 class SimulateAtomicTransactionResponse:
     def __init__(
         self,
@@ -277,6 +305,7 @@ class SimulateAtomicTransactionResponse:
         simulate_response: Dict[str, Any],
         tx_ids: List[str],
         results: List[SimulateABIResult],
+        eval_overrides: Optional[SimulateEvalOverrides],
     ) -> None:
         self.version = version
         self.would_succeed = would_succeed
@@ -285,6 +314,7 @@ class SimulateAtomicTransactionResponse:
         self.simulate_response = simulate_response
         self.tx_ids = tx_ids
         self.abi_results = results
+        self.eval_overrides = eval_overrides
 
 
 class AtomicTransactionComposer:
@@ -770,12 +800,17 @@ class AtomicTransactionComposer:
             simulate_response=simulation_result,
             tx_ids=self.tx_ids,
             results=sim_results,
+            eval_overrides=SimulateEvalOverrides.from_simulation_result(
+                simulation_result
+            ),
         )
 
     def simulate_with_request(
         self,
         client: algod.AlgodClient,
-        request: models.SimulateRequest = models.SimulateRequest(),
+        request: models.SimulateRequest = models.SimulateRequest(
+            txn_groups=list()
+        ),
     ):
         current_simulation_request = request
 
