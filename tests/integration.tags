@@ -8,7 +8,6 @@
 @compile
 @compile.disassemble
 @compile.sourcemap
-@devmode.offset
 @dryrun
 @dryrun.testing
 @kmd
