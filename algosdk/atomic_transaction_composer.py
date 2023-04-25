@@ -17,6 +17,7 @@ from algosdk import abi, error, transaction
 from algosdk.transaction import GenericSignedTransaction
 from algosdk.abi.address_type import AddressType
 from algosdk.v2client import algod
+from algosdk.v2client.models import models
 
 # The first four bytes of an ABI method call return must have this hash
 ABI_RETURN_HASH = b"\x15\x1f\x7c\x75"
@@ -716,6 +717,9 @@ class AtomicTransactionComposer:
         simulation_result = cast(
             Dict[str, Any], client.simulate_raw_transactions(self.signed_txns)
         )
+        return self.__report_simulation_response(simulation_result)
+
+    def __report_simulation_response(self, simulation_result: Dict[str, Any]):
         # Only take the first group in the simulate response
         txn_group: Dict[str, Any] = simulation_result["txn-groups"][0]
 
@@ -767,6 +771,40 @@ class AtomicTransactionComposer:
             tx_ids=self.tx_ids,
             results=sim_results,
         )
+
+    def simulate_with_request(
+        self,
+        client: algod.AlgodClient,
+        request: models.SimulateRequest = models.SimulateRequest(),
+    ):
+        current_simulation_request = request
+
+        if (
+            self.status < AtomicTransactionComposerStatus.BUILT
+            or self.status > AtomicTransactionComposerStatus.SUBMITTED
+        ):
+            raise error.AtomicTransactionComposerError(
+                "AtomicTransactionComposerStatus must be in range [BUILT, SUBMITTED] "
+                "to simulate a group"
+            )
+        elif self.status == AtomicTransactionComposerStatus.BUILT:
+            unsigned_txn: List[transaction.GenericSignedTransaction] = [
+                transaction.SignedTransaction(txn_with_signer.txn, "")
+                for txn_with_signer in self.txn_list
+            ]
+            current_simulation_request.txn_groups = [
+                models.SimulateRequestTransactionGroup(txns=unsigned_txn)
+            ]
+        else:
+            current_simulation_request.txn_groups = [
+                models.SimulateRequestTransactionGroup(txns=self.signed_txns)
+            ]
+
+        simulation_result = cast(
+            Dict[str, Any],
+            client.simulate_transactions(current_simulation_request),
+        )
+        return self.__report_simulation_response(simulation_result)
 
     def execute(
         self, client: algod.AlgodClient, wait_rounds: int
