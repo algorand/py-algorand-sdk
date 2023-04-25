@@ -24,6 +24,7 @@
 @unit.responses.timestamp
 @unit.responses.unlimited_assets
 @unit.sourcemap
+@unit.statedelta
 @unit.tealsign
 @unit.timestamp
 @unit.transactions

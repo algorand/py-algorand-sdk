@@ -1505,6 +1505,11 @@ def check_missing_signatures(context, group, path):
         assert missing_sig is True
 
 
+@when("we make a GetLedgerStateDelta call against round {round}")
+def get_ledger_state_delta_call(context, round):
+    context.response = context.acl.get_ledger_state_delta(round)
+
+
 @when("we make a SetSyncRound call against round {round}")
 def set_sync_round_call(context, round):
     context.response = context.acl.set_sync_round(round)

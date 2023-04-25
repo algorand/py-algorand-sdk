@@ -646,6 +646,21 @@ class AlgodClient:
         )
         return self.simulate_transactions(request, **kwargs)
 
+    def get_ledger_state_delta(
+        self, round: int, **kwargs: Any
+    ) -> AlgodResponseType:
+        """
+        Get the state delta from the ledger.
+
+        Args:
+            round (int): State delta round
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        req = f"/deltas/{round}"
+        return self.algod_request("GET", req, **kwargs)
+
     def get_sync_round(self, **kwargs: Any) -> AlgodResponseType:
         """
         Get the minimum sync round for the ledger.
