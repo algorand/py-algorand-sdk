@@ -256,7 +256,6 @@ class SimulateABIResult(ABIResult):
         decode_error: Optional[Exception],
         tx_info: dict,
         method: abi.Method,
-        missing_signature: bool,
     ) -> None:
         self.tx_id = tx_id
         self.raw_value = raw_value
@@ -264,7 +263,6 @@ class SimulateABIResult(ABIResult):
         self.decode_error = decode_error
         self.tx_info = tx_info
         self.method = method
-        self.missing_signature = missing_signature
 
 
 class SimulateEvalOverrides:
@@ -299,7 +297,6 @@ class SimulateAtomicTransactionResponse:
     def __init__(
         self,
         version: int,
-        would_succeed: bool,
         failure_message: str,
         failed_at: Optional[List[int]],
         simulate_response: Dict[str, Any],
@@ -308,7 +305,6 @@ class SimulateAtomicTransactionResponse:
         eval_overrides: Optional[SimulateEvalOverrides] = None,
     ) -> None:
         self.version = version
-        self.would_succeed = would_succeed
         self.failure_message = failure_message
         self.failed_at = failed_at
         self.simulate_response = simulate_response
@@ -788,13 +784,11 @@ class AtomicTransactionComposer:
                     decode_error=result.decode_error,
                     tx_info=result.tx_info,
                     method=result.method,
-                    missing_signature=sim_txn.get("missing-signature", False),
                 )
             )
 
         return SimulateAtomicTransactionResponse(
             version=simulation_result.get("version", 0),
-            would_succeed=simulation_result.get("would-succeed", False),
             failure_message=txn_group.get("failure-message", ""),
             failed_at=txn_group.get("failed-at"),
             simulate_response=simulation_result,

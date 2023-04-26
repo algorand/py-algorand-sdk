@@ -1442,9 +1442,12 @@ def simulate_transaction(context):
 @then("the simulation should succeed without any failure message")
 def simulate_transaction_succeed(context):
     if hasattr(context, "simulate_response"):
-        assert context.simulate_response["would-succeed"] is True
+        assert len(context.simulate_response["failure-message"]) == 0
     else:
-        assert context.atomic_transaction_composer_return.would_succeed is True
+        assert (
+            len(context.atomic_transaction_composer_return.failure_message)
+            == 0
+        )
 
 
 @then("I simulate the current transaction group with the composer")
@@ -1470,7 +1473,6 @@ def simulate_atc_failure(context, group, path, message):
             ]
         ]
     )
-    assert resp.would_succeed is False
     assert fail_path == path
     assert message in resp.failure_message
 
@@ -1524,10 +1526,8 @@ def check_missing_signatures(context, group, path):
     group_idx: int = int(group)
     tx_idxs: list[int] = [int(pe) for pe in path.split(",")]
 
-    assert resp["would-succeed"] is False
-
     for tx_idx in tx_idxs:
         missing_sig = resp["txn-groups"][group_idx]["txn-results"][tx_idx][
-            "missing-signature"
+            "failure-message"
         ]
         assert missing_sig is True

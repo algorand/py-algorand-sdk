@@ -34,5 +34,5 @@ class SimulateRequest(object):
             "txn-groups": [
                 txn_group.dictify() for txn_group in self.txn_groups
             ],
-            "lift-log-limits": self.lift_log_limits,
+            "allow-more-logging": self.lift_log_limits,
         }
