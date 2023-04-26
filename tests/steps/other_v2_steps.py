@@ -1494,6 +1494,19 @@ def attach_sim_request_to_txn_group_simulation(context):
     )
 
 
+@then('the simulation with "{power}" should not have failure message.')
+def power_pack_simulation_should_pass(context, power: str):
+    packs = power.split(",")
+    if len(packs) > 0:
+        assert context.simulate_response.eval_overrides
+
+    if "allow-more-logging" in packs:
+        assert context.simulate_response.eval_overrides.max_log_calls
+        assert context.simulate_response.eval_overrides.max_log_size
+
+    assert len(context.simulate_response.failure_message) == 0
+
+
 @when("I prepare the transaction without signatures for simulation")
 def step_impl(context):
     context.stx = transaction.SignedTransaction(context.txn, None)
