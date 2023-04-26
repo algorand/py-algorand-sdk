@@ -1485,11 +1485,13 @@ def lift_log_limits_in_request(context):
     context.simulate_request.lift_log_limits = True
 
 
-@then(
-    "I attach the simulate request to the transaction group to be simulated."
-)
+@then("I attach the simulate request to simulate the transaction group.")
 def attach_sim_request_to_txn_group_simulation(context):
-    pass
+    context.simulate_response = (
+        context.atomic_transaction_composer.simulate_with_request(
+            context.app_acl, context.simulate_request
+        )
+    )
 
 
 @when("I prepare the transaction without signatures for simulation")
