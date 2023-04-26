@@ -305,7 +305,7 @@ class SimulateAtomicTransactionResponse:
         simulate_response: Dict[str, Any],
         tx_ids: List[str],
         results: List[SimulateABIResult],
-        eval_overrides: Optional[SimulateEvalOverrides],
+        eval_overrides: Optional[SimulateEvalOverrides] = None,
     ) -> None:
         self.version = version
         self.would_succeed = would_succeed

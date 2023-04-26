@@ -15,3 +15,4 @@
 @send
 @send.keyregtxn
 @simulate
+@simulate.lift_log_limits

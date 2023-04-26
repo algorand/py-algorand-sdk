@@ -31,6 +31,7 @@ from algosdk.v2client.models import (
     ApplicationLocalState,
     DryrunRequest,
     DryrunSource,
+    SimulateRequest,
 )
 from tests.steps.steps import algod_port, indexer_port
 from tests.steps.steps import token as daemon_token
@@ -1472,6 +1473,11 @@ def simulate_atc_failure(context, group, path, message):
     assert resp.would_succeed is False
     assert fail_path == path
     assert message in resp.failure_message
+
+
+@when("I make a new simulate request")
+def make_simulate_request(context):
+    context.simulate_request = SimulateRequest(txn_groups=[])
 
 
 @when("I prepare the transaction without signatures for simulation")
