@@ -270,7 +270,6 @@ class SimulateAtomicTransactionResponse:
     def __init__(
         self,
         version: int,
-        would_succeed: bool,
         failure_message: str,
         failed_at: Optional[List[int]],
         simulate_response: Dict[str, Any],
@@ -278,7 +277,6 @@ class SimulateAtomicTransactionResponse:
         results: List[SimulateABIResult],
     ) -> None:
         self.version = version
-        self.would_succeed = would_succeed
         self.failure_message = failure_message
         self.failed_at = failed_at
         self.simulate_response = simulate_response
@@ -760,7 +758,6 @@ class AtomicTransactionComposer:
 
         return SimulateAtomicTransactionResponse(
             version=simulation_result.get("version", 0),
-            would_succeed=simulation_result.get("would-succeed", False),
             failure_message=txn_group.get("failure-message", ""),
             failed_at=txn_group.get("failed-at"),
             simulate_response=simulation_result,
