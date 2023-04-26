@@ -116,7 +116,7 @@ class AlgodClient:
                 # Some algod responses currently return a 200 OK
                 # but have an empty response.
                 # Do not return an error, and just return an empty response.
-                if resp.status == 200:
+                if resp.status == 200 and resp.length == 0:
                     return {}
                 raise error.AlgodResponseError(
                     "Failed to parse JSON response from algod"
@@ -645,21 +645,6 @@ class AlgodClient:
             ]
         )
         return self.simulate_transactions(request, **kwargs)
-
-    def get_ledger_state_delta(
-        self, round: int, **kwargs: Any
-    ) -> AlgodResponseType:
-        """
-        Get the state delta from the ledger.
-
-        Args:
-            round (int): State delta round
-
-        Returns:
-            Dict[str, Any]: Response from algod
-        """
-        req = f"/deltas/{round}"
-        return self.algod_request("GET", req, **kwargs)
 
     def get_sync_round(self, **kwargs: Any) -> AlgodResponseType:
         """

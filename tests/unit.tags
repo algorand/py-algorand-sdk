@@ -21,10 +21,11 @@
 @unit.responses.231
 @unit.responses.blocksummary
 @unit.responses.participationupdates
+@unit.responses.sync
 @unit.responses.timestamp
 @unit.responses.unlimited_assets
 @unit.sourcemap
-@unit.statedelta
+@unit.sync
 @unit.tealsign
 @unit.timestamp
 @unit.transactions
