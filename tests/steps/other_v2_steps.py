@@ -1475,9 +1475,21 @@ def simulate_atc_failure(context, group, path, message):
     assert message in resp.failure_message
 
 
-@when("I make a new simulate request")
+@when("I make a new simulate request.")
 def make_simulate_request(context):
     context.simulate_request = SimulateRequest(txn_groups=[])
+
+
+@then("I lift log limits on that simulate request.")
+def lift_log_limits_in_request(context):
+    context.simulate_request.lift_log_limits = True
+
+
+@then(
+    "I attach the simulate request to the transaction group to be simulated."
+)
+def attach_sim_request_to_txn_group_simulation(context):
+    pass
 
 
 @when("I prepare the transaction without signatures for simulation")
