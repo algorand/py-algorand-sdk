@@ -1446,13 +1446,14 @@ def simulate_transaction(context):
 
 @then("the simulation should succeed without any failure message")
 def simulate_transaction_succeed(context):
-    if hasattr(context, "simulate_response"):
-        assert "failure-message" not in context.simulate_response["txn-groups"]
-    else:
-        assert (
-            len(context.atomic_transaction_composer_return.failure_message)
-            == 0
-        )
+    resp = (
+        context.simulate_response
+        if hasattr(context, "simulate_response")
+        else context.atomic_transaction_composer_return.simulate_response
+    )
+
+    for group in resp["txn-groups"]:
+        assert "failure-message" not in group
 
 
 @then("I simulate the current transaction group with the composer")

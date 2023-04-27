@@ -271,9 +271,11 @@ class SimulateEvalOverrides:
         *,
         max_log_calls: Optional[int] = None,
         max_log_size: Optional[int] = None,
+        allow_empty_signatures: Optional[int] = None,
     ) -> None:
         self.max_log_calls = max_log_calls
         self.max_log_size = max_log_size
+        self.allow_empty_signatures = allow_empty_signatures
 
     @staticmethod
     def from_simulation_result(
@@ -289,6 +291,10 @@ class SimulateEvalOverrides:
             eval_override.max_log_calls = eval_override_dict["max-log-calls"]
         if "max-log-size" in eval_override_dict:
             eval_override.max_log_size = eval_override_dict["max-log-size"]
+        if "allow-empty-signatures" in eval_override_dict:
+            eval_override.allow_empty_signatures = eval_override_dict[
+                "allow-empty-signatures"
+            ]
 
         return eval_override
 
@@ -725,7 +731,8 @@ class AtomicTransactionComposer:
 
         Args:
             client (AlgodClient): Algod V2 client
-            request (models.SimulateReuqest): SimulateRequest with options in simulation.
+            request (models.SimulateRequest): SimulateRequest with options in simulation.
+                The request's transaction group will be overrwritten by the composer's group, only simulation related options will be used.
 
         Returns:
             SimulateAtomicTransactionResponse: Object with simulation results for this
