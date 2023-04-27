@@ -113,6 +113,11 @@ class AlgodClient:
             try:
                 return json.load(resp)
             except Exception as e:
+                # Some algod responses currently return a 200 OK
+                # but have an empty response.
+                # Do not return an error, and just return an empty response.
+                if resp.status == 200 and resp.length == 0:
+                    return {}
                 raise error.AlgodResponseError(
                     "Failed to parse JSON response from algod"
                 ) from e
@@ -640,6 +645,78 @@ class AlgodClient:
             ]
         )
         return self.simulate_transactions(request, **kwargs)
+
+    def get_sync_round(self, **kwargs: Any) -> AlgodResponseType:
+        """
+        Get the minimum sync round for the ledger.
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        req = "/ledger/sync"
+        return self.algod_request("GET", req, **kwargs)
+
+    def set_sync_round(self, round: int, **kwargs: Any) -> AlgodResponseType:
+        """
+        Set the minimum sync round for the ledger.
+
+        Args:
+            round (int): Sync round
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        req = f"/ledger/sync/{round}"
+        return self.algod_request("POST", req, **kwargs)
+
+    def unset_sync_round(self, **kwargs: Any) -> AlgodResponseType:
+        """
+        Unset the minimum sync round for the ledger.
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        req = "/ledger/sync"
+        return self.algod_request("DELETE", req, **kwargs)
+
+    def ready(self, **kwargs: Any) -> AlgodResponseType:
+        """
+        Returns OK if the node is healthy and fully caught up.
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        req = "/ready"
+        return self.algod_request("GET", req, **kwargs)
+
+    def get_timestamp_offset(self, **kwargs: Any) -> AlgodResponseType:
+        """
+        Get the timestamp offset in block headers.
+        This feature is only available in dev mode networks.
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        req = "/devmode/blocks/offset"
+        return self.algod_request("GET", req, **kwargs)
+
+    def set_timestamp_offset(
+        self,
+        offset: int,
+        **kwargs: Any,
+    ) -> AlgodResponseType:
+        """
+        Set the timestamp offset in block headers.
+        This feature is only available in dev mode networks.
+
+        Args:
+            offset (int): Block timestamp offset
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        req = f"/devmode/blocks/offset/{offset}"
+        return self.algod_request("POST", req, **kwargs)
 
 
 def _specify_round_string(
