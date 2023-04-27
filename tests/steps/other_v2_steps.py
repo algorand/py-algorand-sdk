@@ -1466,20 +1466,16 @@ def simulate_atc(context):
     'the simulation should report a failure at group "{group}", path "{path}" with message "{message}"'
 )
 def simulate_atc_failure(context, group, path, message):
-    resp: SimulateAtomicTransactionResponse = (
-        context.atomic_transaction_composer_return
-    )
+    if hasattr(context, "simulate_response"):
+        resp = context.simulate_response
+    else:
+        resp = context.atomic_transaction_composer_return.simulate_response
     group_idx: int = int(group)
     fail_path = ",".join(
-        [
-            str(pe)
-            for pe in resp.simulate_response["txn-groups"][group_idx][
-                "failed-at"
-            ]
-        ]
+        [str(pe) for pe in resp["txn-groups"][group_idx]["failed-at"]]
     )
     assert fail_path == path
-    assert message in resp.failure_message
+    assert message in resp["txn-groups"][group_idx]["failure-message"]
 
 
 @when("I make a new simulate request.")
@@ -1514,25 +1510,6 @@ def power_pack_simulation_should_pass(context):
 @when("I prepare the transaction without signatures for simulation")
 def step_impl(context):
     context.stx = transaction.SignedTransaction(context.txn, None)
-
-
-@then(
-    'the simulation should report missing signatures at group "{group}", transactions "{path}"'
-)
-def check_missing_signatures(context, group, path):
-    if hasattr(context, "simulate_response"):
-        resp = context.simulate_response
-    else:
-        resp = context.atomic_transaction_composer_return.simulate_response
-
-    group_idx: int = int(group)
-    tx_idxs: list[int] = [int(pe) for pe in path.split(",")]
-
-    for tx_idx in tx_idxs:
-        missing_sig = resp["txn-groups"][group_idx]["txn-results"][tx_idx][
-            "failure-message"
-        ]
-        assert missing_sig is True
 
 
 @when("we make a GetLedgerStateDelta call against round {round}")
