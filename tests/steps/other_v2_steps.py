@@ -1488,8 +1488,8 @@ def allow_more_logs_in_request(context):
     context.simulate_request.allow_more_logs = True
 
 
-@then("I attach the simulate request to simulate the transaction group.")
-def attach_sim_request_to_txn_group_simulation(context):
+@then("I simulate the transaction group with the simulate request.")
+def simulate_group_with_request(context):
     context.atomic_transaction_composer_return = (
         context.atomic_transaction_composer.simulate(
             context.app_acl, context.simulate_request
