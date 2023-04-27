@@ -16,8 +16,8 @@ from typing import (
 from algosdk import abi, error, transaction
 from algosdk.transaction import GenericSignedTransaction
 from algosdk.abi.address_type import AddressType
-from algosdk.v2client import algod
-from algosdk.v2client import models
+from algosdk.v2client import algod, models
+
 
 # The first four bytes of an ABI method call return must have this hash
 ABI_RETURN_HASH = b"\x15\x1f\x7c\x75"
@@ -802,9 +802,7 @@ class AtomicTransactionComposer:
     def simulate_with_request(
         self,
         client: algod.AlgodClient,
-        request: models.SimulateRequest = models.SimulateRequest(
-            txn_groups=list()
-        ),
+        request: models.SimulateRequest,
     ):
         current_simulation_request = request
 
