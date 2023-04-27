@@ -754,9 +754,7 @@ class AtomicTransactionComposer:
             Dict[str, Any],
             client.simulate_transactions(current_simulation_request),
         )
-        return self.__report_simulation_response(simulation_result)
 
-    def __report_simulation_response(self, simulation_result: Dict[str, Any]):
         # Only take the first group in the simulate response
         txn_group: Dict[str, Any] = simulation_result["txn-groups"][0]
 
@@ -809,40 +807,6 @@ class AtomicTransactionComposer:
                 simulation_result
             ),
         )
-
-    def simulate_with_request(
-        self,
-        client: algod.AlgodClient,
-        request: models.SimulateRequest,
-    ):
-        current_simulation_request = request
-
-        if (
-            self.status < AtomicTransactionComposerStatus.BUILT
-            or self.status > AtomicTransactionComposerStatus.SUBMITTED
-        ):
-            raise error.AtomicTransactionComposerError(
-                "AtomicTransactionComposerStatus must be in range [BUILT, SUBMITTED] "
-                "to simulate a group"
-            )
-        elif self.status == AtomicTransactionComposerStatus.BUILT:
-            unsigned_txn: List[transaction.GenericSignedTransaction] = [
-                transaction.SignedTransaction(txn_with_signer.txn, "")
-                for txn_with_signer in self.txn_list
-            ]
-            current_simulation_request.txn_groups = [
-                models.SimulateRequestTransactionGroup(txns=unsigned_txn)
-            ]
-        else:
-            current_simulation_request.txn_groups = [
-                models.SimulateRequestTransactionGroup(txns=self.signed_txns)
-            ]
-
-        simulation_result = cast(
-            Dict[str, Any],
-            client.simulate_transactions(current_simulation_request),
-        )
-        return self.__report_simulation_response(simulation_result)
 
     def execute(
         self, client: algod.AlgodClient, wait_rounds: int

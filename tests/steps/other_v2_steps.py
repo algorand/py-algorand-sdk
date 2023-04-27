@@ -1489,12 +1489,14 @@ def allow_more_logs_in_request(context):
 
 @then("I attach the simulate request to simulate the transaction group.")
 def attach_sim_request_to_txn_group_simulation(context):
-    context.simulate_response = context.atomic_transaction_composer.simulate(
-        context.app_acl, context.simulate_request
+    context.atomic_transaction_composer_return = (
+        context.atomic_transaction_composer.simulate(
+            context.app_acl, context.simulate_request
+        )
     )
 
 
-@then('I check the simulation result has power packs allow-more-logging.')
+@then("I check the simulation result has power packs allow-more-logging.")
 def power_pack_simulation_should_pass(context):
     assert context.simulate_response.eval_overrides.max_log_calls
     assert context.simulate_response.eval_overrides.max_log_size
