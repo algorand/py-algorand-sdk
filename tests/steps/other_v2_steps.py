@@ -1442,7 +1442,7 @@ def simulate_transaction(context):
 @then("the simulation should succeed without any failure message")
 def simulate_transaction_succeed(context):
     if hasattr(context, "simulate_response"):
-        assert len(context.simulate_response["failure-message"]) == 0
+        assert len(context.simulate_response.failure_message) == 0
     else:
         assert (
             len(context.atomic_transaction_composer_return.failure_message)
@@ -1482,9 +1482,9 @@ def make_simulate_request(context):
     context.simulate_request = SimulateRequest(txn_groups=[])
 
 
-@then("I lift log limits on that simulate request.")
-def lift_log_limits_in_request(context):
-    context.simulate_request.lift_log_limits = True
+@then("I allow more logs on that simulate request.")
+def allow_more_logs_in_request(context):
+    context.simulate_request.allow_more_logs = True
 
 
 @then("I attach the simulate request to simulate the transaction group.")
@@ -1496,17 +1496,17 @@ def attach_sim_request_to_txn_group_simulation(context):
     )
 
 
-@then('the simulation with "{power}" should not have failure message.')
+@then('I check the simulation result has power packs "{power}".')
 def power_pack_simulation_should_pass(context, power: str):
     packs = power.split(",")
-    if len(packs) > 0:
+    if len(packs) == 0:
+        assert not context.simulate_response.eval_overrides
+    else:
         assert context.simulate_response.eval_overrides
 
     if "allow-more-logging" in packs:
         assert context.simulate_response.eval_overrides.max_log_calls
         assert context.simulate_response.eval_overrides.max_log_size
-
-    assert len(context.simulate_response.failure_message) == 0
 
 
 @when("I prepare the transaction without signatures for simulation")

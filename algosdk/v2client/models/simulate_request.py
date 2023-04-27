@@ -18,21 +18,21 @@ class SimulateRequestTransactionGroup(object):
 
 class SimulateRequest(object):
     txn_groups: List[SimulateRequestTransactionGroup]
-    lift_log_limits: bool
+    allow_more_logs: bool
 
     def __init__(
         self,
         *,
         txn_groups: List[SimulateRequestTransactionGroup],
-        lift_log_limits: bool = False,
+        allow_more_logs: bool = False,
     ) -> None:
         self.txn_groups = txn_groups
-        self.lift_log_limits = lift_log_limits
+        self.allow_more_logs = allow_more_logs
 
     def dictify(self) -> Dict[str, Any]:
         return {
             "txn-groups": [
                 txn_group.dictify() for txn_group in self.txn_groups
             ],
-            "allow-more-logging": self.lift_log_limits,
+            "allow-more-logging": self.allow_more_logs,
         }
