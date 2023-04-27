@@ -906,6 +906,11 @@ def expect_path(context, path):
     assert exp_query == actual_query, f"{exp_query} != {actual_query}"
 
 
+@then('expect the request to be "{method}" "{path}"')
+def expect_request(context, method, path):
+    return expect_path(context, path)
+
+
 @then('expect error string to contain "{err:MaybeString}"')
 def expect_error(context, err):
     # TODO: this should actually do the claimed action
@@ -1484,7 +1489,7 @@ def make_simulate_request(context):
 
 @then("I allow more logs on that simulate request.")
 def allow_more_logs_in_request(context):
-    context.simulate_request.allow_more_logs = True
+    context.atomic_transaction_composer_return.allow_more_logs = True
 
 
 @then("I attach the simulate request to simulate the transaction group.")
@@ -1498,8 +1503,12 @@ def attach_sim_request_to_txn_group_simulation(context):
 
 @then("I check the simulation result has power packs allow-more-logging.")
 def power_pack_simulation_should_pass(context):
-    assert context.simulate_response.eval_overrides.max_log_calls
-    assert context.simulate_response.eval_overrides.max_log_size
+    assert (
+        context.atomic_transaction_composer_return.eval_overrides.max_log_calls
+    )
+    assert (
+        context.atomic_transaction_composer_return.eval_overrides.max_log_size
+    )
 
 
 @when("I prepare the transaction without signatures for simulation")
@@ -1524,3 +1533,38 @@ def check_missing_signatures(context, group, path):
             "failure-message"
         ]
         assert missing_sig is True
+
+
+@when("we make a GetLedgerStateDelta call against round {round}")
+def get_ledger_state_delta_call(context, round):
+    context.response = context.acl.get_ledger_state_delta(round)
+
+
+@when("we make a SetSyncRound call against round {round}")
+def set_sync_round_call(context, round):
+    context.response = context.acl.set_sync_round(round)
+
+
+@when("we make a GetSyncRound call")
+def get_sync_round_call(context):
+    context.response = context.acl.get_sync_round()
+
+
+@when("we make a UnsetSyncRound call")
+def unset_sync_round_call(context):
+    context.response = context.acl.unset_sync_round()
+
+
+@when("we make a Ready call")
+def ready_call(context):
+    context.response = context.acl.ready()
+
+
+@when("we make a SetBlockTimeStampOffset call against offset {offset}")
+def set_block_timestamp_offset(context, offset):
+    context.response = context.acl.set_timestamp_offset(offset)
+
+
+@when("we make a GetBlockTimeStampOffset call")
+def get_block_timestamp_offset(context):
+    context.response = context.acl.get_timestamp_offset()
