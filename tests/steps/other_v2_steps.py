@@ -1494,17 +1494,10 @@ def attach_sim_request_to_txn_group_simulation(context):
     )
 
 
-@then('I check the simulation result has power packs "{power}".')
-def power_pack_simulation_should_pass(context, power: str):
-    packs = power.split(",")
-    if len(packs) == 0:
-        assert not context.simulate_response.eval_overrides
-    else:
-        assert context.simulate_response.eval_overrides
-
-    if "allow-more-logging" in packs:
-        assert context.simulate_response.eval_overrides.max_log_calls
-        assert context.simulate_response.eval_overrides.max_log_size
+@then('I check the simulation result has power packs allow-more-logging.')
+def power_pack_simulation_should_pass(context):
+    assert context.simulate_response.eval_overrides.max_log_calls
+    assert context.simulate_response.eval_overrides.max_log_size
 
 
 @when("I prepare the transaction without signatures for simulation")
