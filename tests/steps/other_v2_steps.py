@@ -1489,10 +1489,8 @@ def allow_more_logs_in_request(context):
 
 @then("I attach the simulate request to simulate the transaction group.")
 def attach_sim_request_to_txn_group_simulation(context):
-    context.simulate_response = (
-        context.atomic_transaction_composer.simulate_with_request(
-            context.app_acl, context.simulate_request
-        )
+    context.simulate_response = context.atomic_transaction_composer.simulate(
+        context.app_acl, context.simulate_request
     )
 
 

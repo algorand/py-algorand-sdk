@@ -713,7 +713,9 @@ class AtomicTransactionComposer:
         return self.tx_ids
 
     def simulate(
-        self, client: algod.AlgodClient
+        self,
+        client: algod.AlgodClient,
+        request: Optional[models.SimulateRequest] = None,
     ) -> SimulateAtomicTransactionResponse:
         """
         Send the transaction group to the `simulate` endpoint and wait for results.
@@ -723,6 +725,7 @@ class AtomicTransactionComposer:
 
         Args:
             client (AlgodClient): Algod V2 client
+            request (models.SimulateReuqest): SimulateRequest with options in simulation.
 
         Returns:
             SimulateAtomicTransactionResponse: Object with simulation results for this
@@ -740,8 +743,16 @@ class AtomicTransactionComposer:
                 "lower to simulate a group"
             )
 
+        current_simulation_request = (
+            request if request else models.SimulateRequest(txn_groups=list())
+        )
+        current_simulation_request.txn_groups = [
+            models.SimulateRequestTransactionGroup(txns=self.signed_txns)
+        ]
+
         simulation_result = cast(
-            Dict[str, Any], client.simulate_raw_transactions(self.signed_txns)
+            Dict[str, Any],
+            client.simulate_transactions(current_simulation_request),
         )
         return self.__report_simulation_response(simulation_result)
 
