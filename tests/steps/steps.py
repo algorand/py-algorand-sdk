@@ -32,7 +32,7 @@ indexer_port = 59999
 algod_port = 60000
 kmd_port = 60001
 
-DEV_ACCOUNT_INITIAL_MICROALGOS: int = 10_000_000
+DEV_ACCOUNT_INITIAL_MICROALGOS: int = 100_000_000
 
 
 def wait_for_algod_transaction_processing_to_complete():
