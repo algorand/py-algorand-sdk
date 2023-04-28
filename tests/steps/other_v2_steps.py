@@ -1500,6 +1500,7 @@ def simulate_group_with_request(context):
 
 @then("I check the simulation result has power packs allow-more-logging.")
 def power_pack_simulation_should_pass(context):
+    assert context.atomic_transaction_composer_return.eval_overrides
     assert (
         context.atomic_transaction_composer_return.eval_overrides.max_log_calls
     )
