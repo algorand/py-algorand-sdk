@@ -271,7 +271,7 @@ class SimulateEvalOverrides:
         *,
         max_log_calls: Optional[int] = None,
         max_log_size: Optional[int] = None,
-        allow_empty_signatures: Optional[int] = None,
+        allow_empty_signatures: Optional[bool] = None,
     ) -> None:
         self.max_log_calls = max_log_calls
         self.max_log_size = max_log_size
