@@ -31,6 +31,7 @@ from algosdk.v2client.models import (
     ApplicationLocalState,
     DryrunRequest,
     DryrunSource,
+    SimulateRequest,
 )
 from tests.steps.steps import algod_port, indexer_port
 from tests.steps.steps import token as daemon_token
@@ -1445,10 +1446,14 @@ def simulate_transaction(context):
 
 @then("the simulation should succeed without any failure message")
 def simulate_transaction_succeed(context):
-    if hasattr(context, "simulate_response"):
-        assert context.simulate_response["would-succeed"] is True
-    else:
-        assert context.atomic_transaction_composer_return.would_succeed is True
+    resp = (
+        context.simulate_response
+        if hasattr(context, "simulate_response")
+        else context.atomic_transaction_composer_return.simulate_response
+    )
+
+    for group in resp["txn-groups"]:
+        assert "failure-message" not in group
 
 
 @then("I simulate the current transaction group with the composer")
@@ -1462,47 +1467,51 @@ def simulate_atc(context):
     'the simulation should report a failure at group "{group}", path "{path}" with message "{message}"'
 )
 def simulate_atc_failure(context, group, path, message):
-    resp: SimulateAtomicTransactionResponse = (
-        context.atomic_transaction_composer_return
-    )
+    if hasattr(context, "simulate_response"):
+        resp = context.simulate_response
+    else:
+        resp = context.atomic_transaction_composer_return.simulate_response
     group_idx: int = int(group)
     fail_path = ",".join(
-        [
-            str(pe)
-            for pe in resp.simulate_response["txn-groups"][group_idx][
-                "failed-at"
-            ]
-        ]
+        [str(pe) for pe in resp["txn-groups"][group_idx]["failed-at"]]
     )
-    assert resp.would_succeed is False
     assert fail_path == path
-    assert message in resp.failure_message
+    assert message in resp["txn-groups"][group_idx]["failure-message"]
+
+
+@when("I make a new simulate request.")
+def make_simulate_request(context):
+    context.simulate_request = SimulateRequest(txn_groups=[])
+
+
+@then("I allow more logs on that simulate request.")
+def allow_more_logs_in_request(context):
+    context.simulate_request.allow_more_logs = True
+
+
+@then("I simulate the transaction group with the simulate request.")
+def simulate_group_with_request(context):
+    context.atomic_transaction_composer_return = (
+        context.atomic_transaction_composer.simulate(
+            context.app_acl, context.simulate_request
+        )
+    )
+
+
+@then("I check the simulation result has power packs allow-more-logging.")
+def power_pack_simulation_should_pass(context):
+    assert context.atomic_transaction_composer_return.eval_overrides
+    assert (
+        context.atomic_transaction_composer_return.eval_overrides.max_log_calls
+    )
+    assert (
+        context.atomic_transaction_composer_return.eval_overrides.max_log_size
+    )
 
 
 @when("I prepare the transaction without signatures for simulation")
 def step_impl(context):
     context.stx = transaction.SignedTransaction(context.txn, None)
-
-
-@then(
-    'the simulation should report missing signatures at group "{group}", transactions "{path}"'
-)
-def check_missing_signatures(context, group, path):
-    if hasattr(context, "simulate_response"):
-        resp = context.simulate_response
-    else:
-        resp = context.atomic_transaction_composer_return.simulate_response
-
-    group_idx: int = int(group)
-    tx_idxs: list[int] = [int(pe) for pe in path.split(",")]
-
-    assert resp["would-succeed"] is False
-
-    for tx_idx in tx_idxs:
-        missing_sig = resp["txn-groups"][group_idx]["txn-results"][tx_idx][
-            "missing-signature"
-        ]
-        assert missing_sig is True
 
 
 @when("we make a GetLedgerStateDelta call against round {round}")

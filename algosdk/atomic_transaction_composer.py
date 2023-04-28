@@ -16,7 +16,8 @@ from typing import (
 from algosdk import abi, error, transaction
 from algosdk.transaction import GenericSignedTransaction
 from algosdk.abi.address_type import AddressType
-from algosdk.v2client import algod
+from algosdk.v2client import algod, models
+
 
 # The first four bytes of an ABI method call return must have this hash
 ABI_RETURN_HASH = b"\x15\x1f\x7c\x75"
@@ -255,7 +256,6 @@ class SimulateABIResult(ABIResult):
         decode_error: Optional[Exception],
         tx_info: dict,
         method: abi.Method,
-        missing_signature: bool,
     ) -> None:
         self.tx_id = tx_id
         self.raw_value = raw_value
@@ -263,7 +263,40 @@ class SimulateABIResult(ABIResult):
         self.decode_error = decode_error
         self.tx_info = tx_info
         self.method = method
-        self.missing_signature = missing_signature
+
+
+class SimulateEvalOverrides:
+    def __init__(
+        self,
+        *,
+        max_log_calls: Optional[int] = None,
+        max_log_size: Optional[int] = None,
+        allow_empty_signatures: Optional[bool] = None,
+    ) -> None:
+        self.max_log_calls = max_log_calls
+        self.max_log_size = max_log_size
+        self.allow_empty_signatures = allow_empty_signatures
+
+    @staticmethod
+    def from_simulation_result(
+        simulation_result: Dict[str, Any]
+    ) -> Optional["SimulateEvalOverrides"]:
+        if "eval-overrides" not in simulation_result:
+            return None
+
+        eval_override_dict = simulation_result.get("eval-overrides", dict())
+        eval_override = SimulateEvalOverrides()
+
+        if "max-log-calls" in eval_override_dict:
+            eval_override.max_log_calls = eval_override_dict["max-log-calls"]
+        if "max-log-size" in eval_override_dict:
+            eval_override.max_log_size = eval_override_dict["max-log-size"]
+        if "allow-empty-signatures" in eval_override_dict:
+            eval_override.allow_empty_signatures = eval_override_dict[
+                "allow-empty-signatures"
+            ]
+
+        return eval_override
 
 
 class SimulateAtomicTransactionResponse:
@@ -275,6 +308,7 @@ class SimulateAtomicTransactionResponse:
         simulate_response: Dict[str, Any],
         tx_ids: List[str],
         results: List[SimulateABIResult],
+        eval_overrides: Optional[SimulateEvalOverrides] = None,
     ) -> None:
         self.version = version
         self.failure_message = failure_message
@@ -282,6 +316,7 @@ class SimulateAtomicTransactionResponse:
         self.simulate_response = simulate_response
         self.tx_ids = tx_ids
         self.abi_results = results
+        self.eval_overrides = eval_overrides
 
 
 class AtomicTransactionComposer:
@@ -684,7 +719,9 @@ class AtomicTransactionComposer:
         return self.tx_ids
 
     def simulate(
-        self, client: algod.AlgodClient
+        self,
+        client: algod.AlgodClient,
+        request: Optional[models.SimulateRequest] = None,
     ) -> SimulateAtomicTransactionResponse:
         """
         Send the transaction group to the `simulate` endpoint and wait for results.
@@ -694,6 +731,8 @@ class AtomicTransactionComposer:
 
         Args:
             client (AlgodClient): Algod V2 client
+            request (models.SimulateRequest): SimulateRequest with options in simulation.
+                The request's transaction group will be overrwritten by the composer's group, only simulation related options will be used.
 
         Returns:
             SimulateAtomicTransactionResponse: Object with simulation results for this
@@ -711,9 +750,18 @@ class AtomicTransactionComposer:
                 "lower to simulate a group"
             )
 
-        simulation_result = cast(
-            Dict[str, Any], client.simulate_raw_transactions(self.signed_txns)
+        current_simulation_request = (
+            request if request else models.SimulateRequest(txn_groups=list())
         )
+        current_simulation_request.txn_groups = [
+            models.SimulateRequestTransactionGroup(txns=self.signed_txns)
+        ]
+
+        simulation_result = cast(
+            Dict[str, Any],
+            client.simulate_transactions(current_simulation_request),
+        )
+
         # Only take the first group in the simulate response
         txn_group: Dict[str, Any] = simulation_result["txn-groups"][0]
 
@@ -752,7 +800,6 @@ class AtomicTransactionComposer:
                     decode_error=result.decode_error,
                     tx_info=result.tx_info,
                     method=result.method,
-                    missing_signature=sim_txn.get("missing-signature", False),
                 )
             )
 
@@ -763,6 +810,9 @@ class AtomicTransactionComposer:
             simulate_response=simulation_result,
             tx_ids=self.tx_ids,
             results=sim_results,
+            eval_overrides=SimulateEvalOverrides.from_simulation_result(
+                simulation_result
+            ),
         )
 
     def execute(
