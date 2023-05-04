@@ -433,6 +433,11 @@ class KMDClient:
             "public_key": public_key,
             "partial_multisig": partial,
         }
+
+        if hasattr(mtx, "auth_addr") and mtx.auth_addr is not None:
+            signer = base64.b64encode(encoding.decode_address(mtx.auth_addr))
+            query["signer"] = signer.decode()
+
         result = self.kmd_request("POST", req, data=query)["multisig"]
         msig = encoding.msgpack_decode(result)
         mtx.multisig = msig
