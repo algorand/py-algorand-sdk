@@ -1,5 +1,23 @@
 # Changelog
 
+# v2.2.0
+## What's Changed
+Supports new devmode block timestamp offset endpoints.
+### Bugfixes
+* Fix: improve SignedTransaction type signature for dryrun and send_transaction by @barnjamin in https://github.com/algorand/py-algorand-sdk/pull/457
+* Fix: add auth addr for multisig sign when the msig has been rekeyed by @barnjamin in https://github.com/algorand/py-algorand-sdk/pull/460
+### New Features
+* Simulation: Lift log limits option in SimulateRequest by @ahangsu in https://github.com/algorand/py-algorand-sdk/pull/469
+### Enhancements
+* Docs: Examples by @barnjamin in https://github.com/algorand/py-algorand-sdk/pull/454
+* BugFix: ATC error message improvement by @barnjamin in https://github.com/algorand/py-algorand-sdk/pull/463
+* API: Support updated simulate endpoint by @jasonpaulos in https://github.com/algorand/py-algorand-sdk/pull/466
+* algod: Add endpoints for devmode timestamps, sync, and ready by @algochoi in https://github.com/algorand/py-algorand-sdk/pull/468
+* DevOps: Add CODEOWNERS to restrict workflow editing by @onetechnical in https://github.com/algorand/py-algorand-sdk/pull/473
+
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v2.1.2...v2.2.0
+
 # v2.1.2
 
 ## What's Changed
