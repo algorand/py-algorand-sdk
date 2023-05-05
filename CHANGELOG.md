@@ -1,6 +1,7 @@
 # Changelog
 
 # v2.2.0
+
 ## What's Changed
 Supports new devmode block timestamp offset endpoints.
 ### Bugfixes
