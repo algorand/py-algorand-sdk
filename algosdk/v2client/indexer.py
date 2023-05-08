@@ -108,7 +108,7 @@ class IndexerClient:
         **kwargs
     ):
         """
-        Return accounts that hold the asset; microalgos are the default
+        Return accounts that match the search; microalgos are the default
         currency unless asset_id is specified, in which case the asset will
         be used.
 
