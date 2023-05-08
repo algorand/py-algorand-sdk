@@ -37,7 +37,7 @@ print("Multisig Address: ", msig.address())
 algod_client = get_algod_client()
 sp = algod_client.suggested_params()
 ptxn = transaction.PaymentTxn(
-    account_1.address, sp, msig.address(), int(1e7)
+    account_1.address, sp, msig.address(), int(1e5)
 ).sign(account_1.private_key)
 txid = algod_client.send_transaction(ptxn)
 transaction.wait_for_confirmation(algod_client, txid, 4)
@@ -45,7 +45,11 @@ transaction.wait_for_confirmation(algod_client, txid, 4)
 
 # example: MULTISIG_SIGN
 msig_pay = transaction.PaymentTxn(
-    msig.address(), sp, account_1.address, int(1e5)
+    msig.address(),
+    sp,
+    account_1.address,
+    0,
+    close_remainder_to=account_1.address,
 )
 msig_txn = transaction.MultisigTransaction(msig_pay, msig)
 msig_txn.sign(account_2.private_key)

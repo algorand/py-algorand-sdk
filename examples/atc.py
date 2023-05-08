@@ -1,23 +1,22 @@
-from algosdk.v2client import algod
+import base64
 from algosdk import transaction, abi
-from utils import get_accounts
+from utils import get_accounts, get_algod_client, deploy_calculator_app
 
-# example: ATC_CREATE
 from algosdk.atomic_transaction_composer import (
     AtomicTransactionComposer,
     AccountTransactionSigner,
     TransactionWithSigner,
 )
 
+
+# example: ATC_CREATE
 atc = AtomicTransactionComposer()
 # example: ATC_CREATE
 
 accts = get_accounts()
 acct = accts.pop()
 
-algod_address = "http://localhost:4001"
-algod_token = "a" * 64
-algod_client = algod.AlgodClient(algod_token, algod_address)
+algod_client = get_algod_client()
 
 # example: ATC_ADD_TRANSACTION
 addr, sk = acct.address, acct.private_key
@@ -38,15 +37,14 @@ tws = TransactionWithSigner(ptxn, signer)
 atc.add_transaction(tws)
 # example: ATC_ADD_TRANSACTION
 
+
+app_id = deploy_calculator_app(algod_client, acct)
+
 # example: ATC_CONTRACT_INIT
-with open("path/to/contract.json") as f:
+with open("calculator/contract.json") as f:
     js = f.read()
 contract = abi.Contract.from_json(js)
 # example: ATC_CONTRACT_INIT
-
-
-# TODO: take it from contract object?
-app_id = 123
 
 # example: ATC_ADD_METHOD_CALL
 
@@ -59,21 +57,6 @@ atc.add_method_call(
     sp,
     signer,
     method_args=[1, 1],
-)
-
-# This method requires a `transaction` as its second argument.
-# Construct the transaction and pass it in as an argument.
-# The ATC will handle adding it to the group transaction and
-# setting the reference in the application arguments.
-ptxn = transaction.PaymentTxn(addr, sp, addr, 10000)
-txn = TransactionWithSigner(ptxn, signer)
-atc.add_method_call(
-    app_id,
-    contract.get_method_by_name("txntest"),
-    addr,
-    sp,
-    signer,
-    method_args=[10000, txn, 1000],
 )
 # example: ATC_ADD_METHOD_CALL
 
@@ -88,7 +71,9 @@ for res in result.abi_results:
 # example: ATC_RESULTS
 
 
-my_method = contract.get_method_by_name("add_member()void")
+my_method = abi.Method(
+    name="box_ref_demo", args=[], returns=abi.Returns("void")
+)
 # example: ATC_BOX_REF
 atc = AtomicTransactionComposer()
 atc.add_method_call(
@@ -97,7 +82,6 @@ atc.add_method_call(
     addr,
     sp,
     signer,
-    method_args=[1, 5],
     boxes=[[app_id, b"key"]],
 )
 # example: ATC_BOX_REF
