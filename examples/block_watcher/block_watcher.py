@@ -6,8 +6,8 @@ import msgpack
 import base64
 
 # Mainnet Example
-#token = ""
-#host = "https://mainnet-api.algonode.cloud" # Mainnet
+# token = ""
+# host = "https://mainnet-api.algonode.cloud" # Mainnet
 
 # Sandbox Example
 token = "a" * 64
@@ -112,7 +112,8 @@ class EvalDelta:
             ed.logs = delta[b"lg"]
         if b"itx" in delta:
             ed.inner_txns = [
-                SignedTxnWithAD.from_msgp(itxn, b"", "") for itxn in delta[b"itx"]
+                SignedTxnWithAD.from_msgp(itxn, b"", "")
+                for itxn in delta[b"itx"]
             ]
         return ed
 
@@ -148,7 +149,9 @@ def parse_signed_transaction_msgp(
         stxn["sig"] = txn[b"sig"]
     if b"msig" in txn:
         stxn["msig"] = _stringify_keys(txn[b"msig"])
-        stxn["msig"]["subsig"] = [_stringify_keys(ss) for ss in stxn["msig"]["subsig"]]
+        stxn["msig"]["subsig"] = [
+            _stringify_keys(ss) for ss in stxn["msig"]["subsig"]
+        ]
     if b"lsig" in txn:
         stxn["lsig"] = _stringify_keys(txn[b"lsig"])
     if b"sgnr" in txn:
@@ -186,25 +189,29 @@ def print_ids_recursive(swad: SignedTxnWithAD, level: int):
         # These are Transactions not SignedTransactions
         print(
             "{} {}: {}".format(
-                "\t" * (level + 1), itxn.txn.type, get_itxn_id(itxn.txn, swad.txn, idx)
+                "\t" * (level + 1),
+                itxn.txn.type,
+                get_itxn_id(itxn.txn, swad.txn, idx),
             )
         )
-        if itxn.ad.eval_delta is not None and len(itxn.ad.eval_delta.inner_txns) > 0:
+        if (
+            itxn.ad.eval_delta is not None
+            and len(itxn.ad.eval_delta.inner_txns) > 0
+        ):
             print_ids_recursive(itxn, level + 1)
 
 
 if __name__ == "__main__":
-
     # Get current round
-    round = client.status()['last-round']
+    round = client.status()["last-round"]
 
-    while (True):
+    while True:
         block = client.block_info(round, response_format="msgp")
         dblock = msgpack.unpackb(block, raw=True, strict_map_key=False)
 
         raw_block = dblock[b"block"]
         if b"txns" not in raw_block:
-            round = client.status_after_block(round)['last-round']
+            round = client.status_after_block(round)["last-round"]
             continue
 
         gh = raw_block[b"gh"]
@@ -217,7 +224,6 @@ if __name__ == "__main__":
         for stxn in raw_block[b"txns"]:
             swad = SignedTxnWithAD.from_msgp(stxn, gh, gen)
             print(swad.txn.get_txid())
-        
-        # Wait for next round
-        round = client.status_after_block(round)['last-round']
 
+        # Wait for next round
+        round = client.status_after_block(round)["last-round"]
