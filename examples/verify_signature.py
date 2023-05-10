@@ -2,10 +2,11 @@ from algosdk.account import generate_account
 from algosdk import encoding, transaction
 from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
+from typing import List
 import base64
 
 
-def verify_signed_transaction(raw_stxn: list[bytes]):
+def verify_signed_transaction(raw_stxn: List[bytes]):
     # example: OFFLINE_VERIFY_SIG
     # decode the signed transaction
     stxn = encoding.msgpack_decode(raw_stxn)
