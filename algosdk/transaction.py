@@ -3036,6 +3036,13 @@ class StateProofTxn(Transaction):
         return False
 
 
+GenericSignedTransaction = Union[
+    SignedTransaction,
+    LogicSigTransaction,
+    MultisigTransaction,
+]
+
+
 def write_to_file(txns, path, overwrite=True):
     """
     Write signed or unsigned transactions to a file.
@@ -3233,7 +3240,7 @@ defaultAppId = 1380011588
 
 def create_dryrun(
     client: algod.AlgodClient,
-    txns: List["GenericSignedTransaction"],
+    txns: List[GenericSignedTransaction],
     protocol_version=None,
     latest_timestamp=None,
     round=None,
@@ -3361,10 +3368,3 @@ def decode_programs(app):
         app["params"]["clear-state-program"]
     )
     return app
-
-
-GenericSignedTransaction = Union[
-    SignedTransaction,
-    LogicSigTransaction,
-    MultisigTransaction,
-]
