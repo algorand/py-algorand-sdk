@@ -10,7 +10,6 @@ algosdk
    constants
    encoding
    error
-   future/index
    kmd
    logic
    mnemonic

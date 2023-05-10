@@ -18,6 +18,7 @@ from urllib import parse
 from urllib.request import Request, urlopen
 
 from algosdk import constants, encoding, error, transaction, util
+from algosdk.v2client import models
 
 AlgodResponseType = Union[Dict[str, Any], bytes]
 
@@ -112,6 +113,11 @@ class AlgodClient:
             try:
                 return json.load(resp)
             except Exception as e:
+                # Some algod responses currently return a 200 OK
+                # but have an empty response.
+                # Do not return an error, and just return an empty response.
+                if resp.status == 200 and resp.length == 0:
+                    return {}
                 raise error.AlgodResponseError(
                     "Failed to parse JSON response from algod"
                 ) from e
@@ -307,13 +313,13 @@ class AlgodClient:
         return self.algod_request("GET", req, **kwargs)
 
     def send_transaction(
-        self, txn: "transaction.Transaction", **kwargs: Any
+        self, txn: "transaction.GenericSignedTransaction", **kwargs: Any
     ) -> str:
         """
         Broadcast a signed transaction object to the network.
 
         Args:
-            txn (SignedTransaction or MultisigTransaction): transaction to send
+            txn (SignedTransaction, LogicSigTransaction, or MultisigTransaction): transaction to send
             request_header (dict, optional): additional header for request
 
         Returns:
@@ -598,48 +604,119 @@ class AlgodClient:
 
     def simulate_transactions(
         self,
-        txns: "Iterable[transaction.GenericSignedTransaction]",
+        request: models.SimulateRequest,
         **kwargs: Any,
     ) -> AlgodResponseType:
         """
-        Simulate a list of a signed transaction objects being sent to the network.
+        Simulate transactions being sent to the network.
 
         Args:
-            txns (SignedTransaction[] or MultisigTransaction[]):
-                transactions to send
-            request_header (dict, optional): additional header for request
+            request (models.SimulateRequest): Simulation request object
+            headers (dict, optional): additional header for request
 
         Returns:
-            Dict[str, Any]: results from simulation of transaction group
+            Dict[str, Any]: results from simulation of transactions
         """
-        serialized = []
-        for txn in txns:
-            serialized.append(base64.b64decode(encoding.msgpack_encode(txn)))
-
-        return self.simulate_raw_transaction(
-            base64.b64encode(b"".join(serialized)), **kwargs
-        )
-
-    def simulate_raw_transaction(self, txn, **kwargs):
-        """
-        Simulate a transaction group
-
-        Args:
-            txn (str): transaction to send, encoded in base64
-            request_header (dict, optional): additional header for request
-
-        Returns:
-            Dict[str, Any]: results from simulation of transaction group
-        """
-        txn = base64.b64decode(txn)
+        body = base64.b64decode(encoding.msgpack_encode(request))
         req = "/transactions/simulate"
         headers = util.build_headers_from(
             kwargs.get("headers", False),
-            {"Content-Type": "application/x-binary"},
+            {"Content-Type": "application/msgpack"},
         )
         kwargs["headers"] = headers
+        return self.algod_request("POST", req, data=body, **kwargs)
 
-        return self.algod_request("POST", req, data=txn, **kwargs)
+    def simulate_raw_transactions(
+        self, txns: "Sequence[transaction.GenericSignedTransaction]", **kwargs
+    ):
+        """
+        Simulate a transaction group being sent to the network.
+
+        Args:
+            txns (Sequence[transaction.GenericSignedTransaction]): transaction group to simulate
+            headers (dict, optional): additional header for request
+
+        Returns:
+            Dict[str, Any]: results from simulation of transactions
+        """
+        request = models.SimulateRequest(
+            txn_groups=[
+                models.SimulateRequestTransactionGroup(txns=list(txns))
+            ]
+        )
+        return self.simulate_transactions(request, **kwargs)
+
+    def get_sync_round(self, **kwargs: Any) -> AlgodResponseType:
+        """
+        Get the minimum sync round for the ledger.
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        req = "/ledger/sync"
+        return self.algod_request("GET", req, **kwargs)
+
+    def set_sync_round(self, round: int, **kwargs: Any) -> AlgodResponseType:
+        """
+        Set the minimum sync round for the ledger.
+
+        Args:
+            round (int): Sync round
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        req = f"/ledger/sync/{round}"
+        return self.algod_request("POST", req, **kwargs)
+
+    def unset_sync_round(self, **kwargs: Any) -> AlgodResponseType:
+        """
+        Unset the minimum sync round for the ledger.
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        req = "/ledger/sync"
+        return self.algod_request("DELETE", req, **kwargs)
+
+    def ready(self, **kwargs: Any) -> AlgodResponseType:
+        """
+        Returns OK if the node is healthy and fully caught up.
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        req = "/ready"
+        return self.algod_request("GET", req, **kwargs)
+
+    def get_timestamp_offset(self, **kwargs: Any) -> AlgodResponseType:
+        """
+        Get the timestamp offset in block headers.
+        This feature is only available in dev mode networks.
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        req = "/devmode/blocks/offset"
+        return self.algod_request("GET", req, **kwargs)
+
+    def set_timestamp_offset(
+        self,
+        offset: int,
+        **kwargs: Any,
+    ) -> AlgodResponseType:
+        """
+        Set the timestamp offset in block headers.
+        This feature is only available in dev mode networks.
+
+        Args:
+            offset (int): Block timestamp offset
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        req = f"/devmode/blocks/offset/{offset}"
+        return self.algod_request("POST", req, **kwargs)
 
 
 def _specify_round_string(
