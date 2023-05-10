@@ -53,6 +53,14 @@ class PathsHandler(http.server.SimpleHTTPRequestHandler):
         m = bytes(m, "ascii")
         self.wfile.write(m)
 
+    def do_DELETE(self):
+        self.send_response(200)
+        self.send_header("Content-type", "application/json")
+        self.end_headers()
+        m = json.dumps({"path": self.path})
+        m = bytes(m, "ascii")
+        self.wfile.write(m)
+
 
 def get_status_to_use():
     f = open("tests/features/resources/mock_response_status", "r")
