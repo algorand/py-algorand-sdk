@@ -319,8 +319,17 @@ class KMDClient:
             "wallet_password": password,
             "transaction": txn,
         }
+        # from pdb import set_trace
+
+        # set_trace()
         if signing_address:
-            query["public_key"] = signing_address
+            query["public_key"] = base64.b64encode(
+                base64.b32decode(signing_address.encode("utf-8") + b"=" * 6)
+            ).decode()
+            print(f"{query['public_key']=}")
+            # query["public_key"] = encoding.decode_address(
+            #     signing_address
+            # ).decode()
         result = self.kmd_request("POST", req, data=query)
         result = result["signed_transaction"]
         return encoding.msgpack_decode(result)

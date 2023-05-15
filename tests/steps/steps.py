@@ -445,15 +445,41 @@ def txn_fail(context):
     assert context.error
 
 
+@when("sign the transaction")
+def sign_transaction_with_signing_account(context):
+    private_key = mnemonic.to_private_key(context.signing_mnemonic)
+    context.signed_transaction = context.transaction.sign(private_key)
+
+
 @when("I sign the transaction with kmd")
 def sign_kmd(context):
+    """
+    Note: the wallet calls directly to kmd
+    """
     context.stx_kmd = context.wallet.sign_transaction(context.txn)
 
 
+@when("I sign the transaction providing the signing address to kmd")
+def sign_kmd_w_address(context):
+    handle = context.wallet.id
+    context.stx_kmd_w_address = context.kcl.sign_transaction(
+        handle, "", context.txn, signing_address=context.pk
+    )
+
+
 @then("the signed transaction should equal the kmd signed transaction")
-def sign_both_equal(context):
+def sign_both_equal_1(context):
     assert encoding.msgpack_encode(context.stx) == encoding.msgpack_encode(
         context.stx_kmd
+    )
+
+
+@then(
+    "the signed transaction should equal the signing address kmd signed transaction"
+)
+def sign_both_equal_2(context):
+    assert encoding.msgpack_encode(context.stx) == encoding.msgpack_encode(
+        context.stx_kmd_w_address
     )
 
 
