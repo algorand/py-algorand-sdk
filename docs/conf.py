@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath(".."))
 # -- Project information -----------------------------------------------------
 
 project = "algosdk"
-copyright = "2022 Algorand"
+copyright = "2023 Algorand"
 author = "Algorand"
 
 
