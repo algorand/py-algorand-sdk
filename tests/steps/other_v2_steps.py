@@ -1554,7 +1554,7 @@ def get_ledger_state_delta_call(context, round):
     "we make a TransactionGroupLedgerStateDeltaForRoundResponse call for round {round}"
 )
 def get_transaction_group_ledger_state_deltas_for_round(context, round):
-    round = int(round[1:-1]) # Remove quotes and convert to int
+    round = int(round[1:-1])  # Remove quotes and convert to int
     context.response = (
         context.acl.get_transaction_group_ledger_state_deltas_for_round(round)
     )
