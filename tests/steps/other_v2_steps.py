@@ -1546,7 +1546,6 @@ def get_block_timestamp_offset(context):
 
 @when("we make a GetLedgerStateDelta call against round {round}")
 def get_ledger_state_delta_call(context, round):
-    print(f"AHH1: {round}")
     context.response = context.acl.get_ledger_state_delta(round)
 
 
