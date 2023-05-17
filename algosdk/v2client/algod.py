@@ -723,7 +723,6 @@ class AlgodClient:
     ) -> AlgodResponseType:
         """
         Get the ledger state delta for a round.
-        This feature is only available in follower mode.
 
         Returns:
             Dict[str, Any]: Response from algod
@@ -736,7 +735,6 @@ class AlgodClient:
     ) -> AlgodResponseType:
         """
         Get the ledger state deltas for a transaction group in a given round.
-        This feature is only available in follower mode.
 
         Returns:
             Dict[str, Any]: Response from algod
@@ -750,7 +748,6 @@ class AlgodClient:
         """
         Get the ledger state delta for a transaction group given the
         transaction or group ID.
-        This feature is only available in follower mode.
 
         Returns:
             Dict[str, Any]: Response from algod
