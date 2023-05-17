@@ -1515,18 +1515,18 @@ def prepare_txn_without_signatures(context):
 
 
 @then("I allow {budget} more budget on that simulate request.")
-def allow_more_budget_simulation(context, budget: int):
-    context.simulate_request.extra_opcode_budget = budget
+def allow_more_budget_simulation(context, budget):
+    context.simulate_request.extra_opcode_budget = int(budget)
 
 
 @then(
     "I check the simulation result has power packs extra-opcode-budget with extra budget {budget}."
 )
-def power_pack_simulation_should_have_extra_budget(context, budget: int):
+def power_pack_simulation_should_have_extra_budget(context, budget):
     assert context.atomic_transaction_composer_return.eval_overrides
     assert (
         context.atomic_transaction_composer_return.eval_overrides.extra_opcode_budget
-        == budget
+        == int(budget)
     )
 
 
