@@ -724,6 +724,9 @@ class AlgodClient:
         """
         Get the ledger state delta for a round.
 
+        Args:
+            round (int): The round for the desired state delta
+
         Returns:
             Dict[str, Any]: Response from algod
         """
@@ -734,7 +737,10 @@ class AlgodClient:
         self, round: int, **kwargs: Any
     ) -> AlgodResponseType:
         """
-        Get the ledger state deltas for a transaction group in a given round.
+        Get the ledger state deltas for all transaction groups in a given round.
+
+        Args:
+            round (int): The round for the desired state delta
 
         Returns:
             Dict[str, Any]: Response from algod
@@ -748,6 +754,9 @@ class AlgodClient:
         """
         Get the ledger state delta for a transaction group given the
         transaction or group ID.
+
+        Args:
+            id (str): A transaction ID or transaction group ID
 
         Returns:
             Dict[str, Any]: Response from algod

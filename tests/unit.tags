@@ -26,6 +26,8 @@
 @unit.responses.unlimited_assets
 @unit.sourcemap
 @unit.statedelta
+@unit.stateproof.paths
+@unit.stateproof.responses
 @unit.sync
 @unit.tealsign
 @unit.timestamp
@@ -33,5 +35,3 @@
 @unit.transactions.keyreg
 @unit.transactions.payment
 @unit.txngroupdeltas
-@unit.stateproof.paths
-@unit.stateproof.responses
