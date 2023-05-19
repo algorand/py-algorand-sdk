@@ -1499,7 +1499,7 @@ def simulate_group_with_request(context):
 
 
 @then("I check the simulation result has power packs allow-more-logging.")
-def power_pack_simulation_should_pass(context):
+def power_pack_simulation_should_have_more_logging(context):
     assert context.atomic_transaction_composer_return.eval_overrides
     assert (
         context.atomic_transaction_composer_return.eval_overrides.max_log_calls
@@ -1510,8 +1510,24 @@ def power_pack_simulation_should_pass(context):
 
 
 @when("I prepare the transaction without signatures for simulation")
-def step_impl(context):
+def prepare_txn_without_signatures(context):
     context.stx = transaction.SignedTransaction(context.txn, None)
+
+
+@then("I allow {budget} more budget on that simulate request.")
+def allow_more_budget_simulation(context, budget):
+    context.simulate_request.extra_opcode_budget = int(budget)
+
+
+@then(
+    "I check the simulation result has power packs extra-opcode-budget with extra budget {budget}."
+)
+def power_pack_simulation_should_have_extra_budget(context, budget):
+    assert context.atomic_transaction_composer_return.eval_overrides
+    assert (
+        context.atomic_transaction_composer_return.eval_overrides.extra_opcode_budget
+        == int(budget)
+    )
 
 
 @when("we make a SetSyncRound call against round {round}")
