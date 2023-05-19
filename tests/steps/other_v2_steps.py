@@ -1530,11 +1530,6 @@ def power_pack_simulation_should_have_extra_budget(context, budget):
     )
 
 
-@when("we make a GetLedgerStateDelta call against round {round}")
-def get_ledger_state_delta_call(context, round):
-    context.response = context.acl.get_ledger_state_delta(round)
-
-
 @when("we make a SetSyncRound call against round {round}")
 def set_sync_round_call(context, round):
     context.response = context.acl.set_sync_round(round)
@@ -1563,3 +1558,26 @@ def set_block_timestamp_offset(context, offset):
 @when("we make a GetBlockTimeStampOffset call")
 def get_block_timestamp_offset(context):
     context.response = context.acl.get_timestamp_offset()
+
+
+@when("we make a GetLedgerStateDelta call against round {round}")
+def get_ledger_state_delta_call(context, round):
+    context.response = context.acl.get_ledger_state_delta(round)
+
+
+@when(
+    "we make a TransactionGroupLedgerStateDeltaForRoundResponse call for round {round}"
+)
+def get_transaction_group_ledger_state_deltas_for_round(context, round):
+    context.response = (
+        context.acl.get_transaction_group_ledger_state_deltas_for_round(round)
+    )
+
+
+@when(
+    'we make a LedgerStateDeltaForTransactionGroupResponse call for ID "{id}"'
+)
+def get_ledger_state_delta_for_transaction_group(context, id):
+    context.response = (
+        context.acl.get_ledger_state_delta_for_transaction_group(id)
+    )
