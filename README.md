@@ -61,7 +61,7 @@ Run non-test-harness related unit tests
 
 * `make pytest-unit`
 
-We use cucumber testing for all of our SDKs, including this one. Please refer to [algorand-sdk-testing](https://github.com/algorand/algorand-sdk-testing#readme) for guidance and existing tests that you may need to update. Depending on the type of update you with to contribute, you may also need to have corresponding updates in the other SDKs (Go, JS, and Java). Feel welcome to ask for collaboration on that front. 
+We use cucumber testing for all of our SDKs, including this one. Please refer to [algorand-sdk-testing](https://github.com/algorand/algorand-sdk-testing#readme) for guidance and existing tests that you may need to update. Depending on the type of update you wish to contribute, you may also need to have corresponding updates in the other SDKs (Go, JS, and Java). Feel welcome to ask for collaboration on that front. 
 
 ## Quick start
 
