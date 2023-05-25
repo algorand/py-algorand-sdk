@@ -12,7 +12,7 @@ on:
         default: 'vx.x.x'
         required: true
         type: string
-    push:
+  push:
 
 jobs:
   checkout:
