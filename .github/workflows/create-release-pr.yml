@@ -29,10 +29,21 @@ jobs:
           git checkout -b release/${{ inputs.release_version }}
           git push --set-upstream origin release/${{ inputs.release_version }}
 
-      - name: Run Changelog CI
-        uses: saadmk11/changelog-ci@v1.1.1
-        with:
-          release_version: ${{ inputs.release_version }}
+      - name: Get Changelog
+        uses: mikepenz/release-changelog-builder-action@v3.7.2
+        id: build_changelog
+        # with:
+        #   release_version: ${{ inputs.release_version }}
+
+      - name: Build Changelog
+        env:
+          RELEASE_VERSION: ${{ inputs.release_version }}
+        run: |
+          echo -e ${{steps.build_changelog.outputs.changelog}} > CHANGELOG.md
+          echo -e "${RELEASE_VERSION}\n" > CHANGELOG.md
+          cat CHANGELOG.md
+          git commit -m "update CHANGELOG.md"
+          git push
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5.0.1
@@ -40,7 +51,7 @@ jobs:
           branch: release/${{ inputs.release_version }}
           base: master
           title: "FOR REVIEW ONLY: py-algorand-sdk ${{ inputs.release_version }}"
-          body: ${{ steps.changelog-ci.outputs.changelog }}
+          body: ${{steps.build_changelog.outputs.changelog}}
           assignees: algobarb
           team-reviewers: algorand/devops
           draft: true
