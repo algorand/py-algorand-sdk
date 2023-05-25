@@ -12,10 +12,7 @@ on:
         default: 'vx.x.x'
         required: true
         type: string
-    pull_request:
-      types: [opened, reopened]
-      branches:
-        - develop
+    push:
 
 jobs:
   checkout:
