@@ -35,8 +35,8 @@ jobs:
             echo "Version input doesn't match the regex pattern ^v[0-9]+\.[0-9]+\.[0-9]+$"
             exit 1
           fi
-          echo "::set-output name=release-version::$RELEASE_VERSION"
-          echo "::set-output name=release-branch::release/$RELEASE_VERSION"
+          echo "release-version=$RELEASE_VERSION" >> $GITHUB_OUTPUT
+          echo "release-branch=release/$RELEASE_VERSION" >> $GITHUB_OUTPUT
 
       - name: Get Latest Release
         id: get-release
@@ -45,13 +45,13 @@ jobs:
                       --header "Accept: application/vnd.github.v3+json" \
                       "https://api.github.com/repos/${{ github.repository }}/releases")
           tag=$(echo "$releases" | jq -r '.[0].tag_name')
-          echo "::set-output name=latest-tag::$tag"
+          echo "latest-tag=$tag" >> $GITHUB_OUTPUT
 
       - name: Get Changelog
         uses: mikepenz/release-changelog-builder-action@v3.7.2
         id: get_changelog
         with:
-          configuration: "changelog_config.json"
+          configuration: ".github/workflows/changelog_config.json"
           fromTag: ${{ steps.get-release.outputs.latest-tag }}
           toTag: ${{ steps.create-release-branch.outputs.release-branch }}
           ignorePreReleases: true
@@ -63,7 +63,7 @@ jobs:
           CHANGELOG_CONTENT: ${{ steps.get_changelog.outputs.changelog }}
         run: |
           echo -e "${CHANGELOG_CONTENT}\n\n$(cat CHANGELOG.md)" > CHANGELOG.md
-          echo -e "${RELEASE_VERSION} \n\n$(cat CHANGELOG.md)" > CHANGELOG.md
+          echo -e "${RELEASE_VERSION} \n\n$(cat CHANGELOG.md)\n" > CHANGELOG.md
 
       - name: Commit Changes
         uses: EndBug/add-and-commit@v9.1.3
