@@ -39,14 +39,16 @@ jobs:
           echo "release-version=$RELEASE_VERSION" >> $GITHUB_OUTPUT
           echo "release-branch=release/$RELEASE_VERSION" >> $GITHUB_OUTPUT
 
-      # - name: Get Latest Release
-      #   id: get-release
-      #   run: |
-      #     releases=$(curl --header "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-      #                 --header "Accept: application/vnd.github.v3+json" \
-      #                 "https://api.github.com/repos/${{ github.repository }}/releases")
-      #     tag=$(echo "$releases" | jq -r '.[0].tag_name')
-      #     echo "latest-tag=$tag" >> $GITHUB_OUTPUT
+      - name: Get Latest Release
+        id: get-release
+        run: |
+          releases=$(curl --header "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                      --header "Accept: application/vnd.github.v3+json" \
+                      "https://api.github.com/repos/${{ github.repository }}/releases")
+          tag=$(echo "$releases" | jq -r '.[0].tag_name')
+          echo "latest-tag=$tag" >> $GITHUB_OUTPUT
+          echo "GITHUB_OUTPUT: $GITHUB_OUTPUT"
+          echo "tag; $tag"
 
       # - name: Get Changelog
       #   uses: mikepenz/release-changelog-builder-action@v3.7.2
