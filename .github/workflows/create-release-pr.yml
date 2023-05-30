@@ -118,18 +118,6 @@ jobs:
           PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh pr create --base master --title "FOR REVIEW ONLY: py-algorand-sdk $RELEASE_VERSION" --body "# ${RELEASE_VERSION}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${PREVIOUS_VERSION}...${RELEASE_VERSION}" --draft --label "Skip-Release-Notes"
-
-      # - name: Create Pull Request
-      #   uses: peter-evans/create-pull-request@v5.0.1
-      #   env:
-      #     CHANGELOG_CONTENT: ${{ steps.build-changelog.outputs.changelog }}
-      #     PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
-      #   with:
-      #     base: master
-      #     title: "FOR REVIEW ONLY: py-algorand-sdk $RELEASE_VERSION"
-      #     body: "# ${RELEASE_VERSION}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${PREVIOUS_VERSION}...${RELEASE_VERSION}"
-      #     assignees: algobarb
-      #     team-reviewers: algorand/devops
-      #     draft: true
-      #     labels: "Skip-Release-Notes"
+          echo -e "# ${RELEASE_VERSION}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${PREVIOUS_VERSION}...${RELEASE_VERSION}" > msg_body.txt
+          export msg_body=$(cat msg_body.txt)
+          gh pr create --base master --title "FOR REVIEW ONLY: py-algorand-sdk $RELEASE_VERSION" --draft --label "Skip-Release-Notes" --body "$msg_body"
