@@ -23,22 +23,47 @@ jobs:
         with:
           ref: ${{ inputs.source_ref }}
 
-      - name: Create branch
+      - name: Create Release Branch
+        id: create-release-branch
+        env:
+          RELEASE_VERSION: ${{ inputs.release_version }}
         run: |
-          git checkout -b release/${{ inputs.release_version }}
-          git push --set-upstream origin release/${{ inputs.release_version }}
+          if [[ $RELEASE_VERSION =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            git checkout -b release/$RELEASE_VERSION
+            git push --set-upstream origin release/$RELEASE_VERSION
+          else
+            echo "Version input doesn't match the regex pattern ^v[0-9]+\.[0-9]+\.[0-9]+$"
+            exit 1
+          fi
+          echo "::set-output name=release-version::$RELEASE_VERSION"
+          echo "::set-output name=release-branch::release/$RELEASE_VERSION"
+
+      - name: Get Latest Release
+        id: get-release
+        run: |
+          releases=$(curl --header "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                      --header "Accept: application/vnd.github.v3+json" \
+                      "https://api.github.com/repos/${{ github.repository }}/releases")
+          tag=$(echo "$releases" | jq -r '.[0].tag_name')
+          echo "::set-output name=latest-tag::$tag"
 
       - name: Get Changelog
         uses: mikepenz/release-changelog-builder-action@v3.7.2
         id: get_changelog
+        with:
+          configuration: "changelog_config.json"
+          fromTag: ${{ steps.get-release.outputs.latest-tag }}
+          toTag: ${{ steps.create-release-branch.outputs.release-branch }}
+          ignorePreReleases: true
+          failOnError: true
 
       - name: Build Changelog
         env:
-          RELEASE_VERSION: ${{ inputs.release_version }}
-          CHANGELOG_CONTENT: ${{steps.get_changelog.outputs.changelog}}
+          RELEASE_VERSION: ${{ steps.create-release-branch.outputs.release-version }}
+          CHANGELOG_CONTENT: ${{ steps.get_changelog.outputs.changelog }}
         run: |
           echo -e "${CHANGELOG_CONTENT}\n\n$(cat CHANGELOG.md)" > CHANGELOG.md
-          echo -e "${RELEASE_VERSION}\n\n$(cat CHANGELOG.md)" > CHANGELOG.md
+          echo -e "${RELEASE_VERSION} \n\n$(cat CHANGELOG.md)" > CHANGELOG.md
 
       - name: Commit Changes
         uses: EndBug/add-and-commit@v9.1.3
