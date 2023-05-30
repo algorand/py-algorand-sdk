@@ -51,11 +51,55 @@ jobs:
         uses: mikepenz/release-changelog-builder-action@v3.7.2
         id: get_changelog
         with:
-          configuration: ".github/workflows/changelog_config.json"
           fromTag: ${{ steps.get-release.outputs.latest-tag }}
           toTag: ${{ steps.create-release-branch.outputs.release-branch }}
           ignorePreReleases: true
           failOnError: true
+          # configuration: ".github/workflows/changelog_config.json"
+          configurationJson: |
+            {
+                "categories": [
+                    {
+                        "title": "## New Features",
+                        "labels": [
+                            "New Feature"
+                        ]
+                    },
+                    {
+                        "title": "## Enhancement",
+                        "labels": [
+                            "Enhancement"
+                        ]
+                    },
+                    {
+                        "title": "## Bug Fixes",
+                        "labels": [
+                            "Bug-Fix"
+                        ]
+                    },
+                    {
+                        "title": "## Not Yet Enabled",
+                        "labels": [
+                            "Not-Yet-Enabled"
+                        ]
+                    }
+                ],
+                "ignore_labels": [
+                    "Skip-Release-Notes"
+                ],
+                "sort": {
+                    "order": "ASC",
+                    "on_property": "mergedAt"
+                },
+                "template": "${{CHANGELOG}}\n\n<details>\n<summary>Other</summary>\n\n${{UNCATEGORIZED}}\n</details>",
+                "pr_template": "- ${{TITLE}} by ${{AUTHOR}} in #${{NUMBER}}",
+                "empty_template": "- no changes",
+                "duplicate_filter": {
+                    "pattern": "\\[ABC-....\\]",
+                    "on_property": "title",
+                    "method": "match"
+                }
+            }
 
       - name: Build Changelog
         env:
