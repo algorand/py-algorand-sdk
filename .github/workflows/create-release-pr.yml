@@ -94,17 +94,18 @@ jobs:
                     "order": "ASC",
                     "on_property": "mergedAt"
                 },
-                "template": "#{{CHANGELOG}}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/$PREVIOUS_VERSION...$RELEASE_VERSION",
+                "template": "#{{CHANGELOG}}",
                 "pr_template": "- #{{TITLE}} by #{{AUTHOR}} in ##{{NUMBER}}"
             }
 
       - name: Update Changelog
         env:
           CHANGELOG_CONTENT: ${{ steps.build_changelog.outputs.changelog }}
+          PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
         run: |
           git branch --show-current
           echo "$(tail -n +2 CHANGELOG.md)" > CHANGELOG.md
-          echo -e "# Changelog\n\n# ${RELEASE_VERSION}\n\n$CHANGELOG_CONTENT" | cat - CHANGELOG.md > temp && mv temp CHANGELOG.md
+          echo -e "# Changelog\n\n# ${RELEASE_VERSION}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${PREVIOUS_VERSION}...${RELEASE_VERSION}" | cat - CHANGELOG.md > temp && mv temp CHANGELOG.md
           cat CHANGELOG.md
 
       - name: Commit Changes
