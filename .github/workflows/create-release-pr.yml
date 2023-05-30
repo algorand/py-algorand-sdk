@@ -113,6 +113,10 @@ jobs:
           message: 'update CHANGELOG.md'
 
       - name: Create Pull Request
+        env:
+          CHANGELOG_CONTENT: ${{ steps.build-changelog.outputs.changelog }}
+          PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           gh pr create --assignee "@algobarb" --base master --title "FOR REVIEW ONLY: py-algorand-sdk $RELEASE_VERSION" --body "# ${RELEASE_VERSION}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${PREVIOUS_VERSION}...${RELEASE_VERSION}" --draft --reviewer "@algobarb" --label "Skip-Release-Notes"
 
