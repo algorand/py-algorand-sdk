@@ -30,7 +30,7 @@ jobs:
           SOURCE_REF: ${{ inputs.source_ref }}
         run: |
           if [[ $RELEASE_VERSION =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            git checkout -b release/$RELEASE_VERSION $SOURCE_REF
+            git checkout -b release/$RELEASE_VERSION
             git push --set-upstream origin release/$RELEASE_VERSION
           else
             echo "Version input doesn't match the regex pattern ^v[0-9]+\.[0-9]+\.[0-9]+$"
