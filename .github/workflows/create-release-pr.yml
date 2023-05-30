@@ -13,6 +13,10 @@ on:
         required: true
         type: string
 
+env:
+  RELEASE_VERSION: ${{ inputs.release_version }}
+  SOURCE_REF: ${{ inputs.source_ref }}
+
 jobs:
   create-release-pr:
     runs-on: ubuntu-latest
@@ -25,9 +29,6 @@ jobs:
 
       - name: Create Release Branch
         id: create-release-branch
-        env:
-          RELEASE_VERSION: ${{ inputs.release_version }}
-          SOURCE_REF: ${{ inputs.source_ref }}
         run: |
           if [[ $RELEASE_VERSION =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             git checkout -b release/$RELEASE_VERSION
@@ -51,8 +52,10 @@ jobs:
       - name: Build Changelog
         uses: mikepenz/release-changelog-builder-action@v3.7.2
         id: build_changelog
+        env:
+          PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
         with:
-          fromTag: ${{ steps.get-release.outputs.latest-tag }}
+          fromTag: ${{ env.PREVIOUS_VERSION }}
           toTag: ${{ steps.create-release-branch.outputs.release-branch }}
           ignorePreReleases: true
           failOnError: true
@@ -91,18 +94,17 @@ jobs:
                     "order": "ASC",
                     "on_property": "mergedAt"
                 },
-                "template": "#{{CHANGELOG}}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${{ steps.get-release.outputs.latest-tag }}...${{ steps.create-release-branch.outputs.release-version }}",
+                "template": "#{{CHANGELOG}}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/$PREVIOUS_VERSION...$RELEASE_VERSION",
                 "pr_template": "- #{{TITLE}} by #{{AUTHOR}} in ##{{NUMBER}}"
             }
 
       - name: Update Changelog
         env:
-          RELEASE_VERSION: ${{ steps.create-release-branch.outputs.release-version }}
           CHANGELOG_CONTENT: ${{ steps.build_changelog.outputs.changelog }}
         run: |
           git branch --show-current
           echo "$(tail -n +2 CHANGELOG.md)" > CHANGELOG.md
-          echo -e "# Changelog\n# ${RELEASE_VERSION}\n${{ steps.build_changelog.outputs.changelog }}" | cat - CHANGELOG.md > temp && mv temp CHANGELOG.md
+          echo -e "# Changelog\n\n# ${RELEASE_VERSION}\n\n$CHANGELOG_CONTENT" | cat - CHANGELOG.md > temp && mv temp CHANGELOG.md
           cat CHANGELOG.md
 
       - name: Commit Changes
@@ -113,10 +115,11 @@ jobs:
       # - name: Create Pull Request
       #   uses: peter-evans/create-pull-request@v5.0.1
       #   with:
-      #     branch: release/${{ inputs.release_version }}
+      #     branch: release/$RELEASE_VERSION
       #     base: master
-      #     title: "FOR REVIEW ONLY: py-algorand-sdk ${{ inputs.release_version }}"
-      #     body: ${{steps.get_changelog.outputs.changelog}}
+      #     title: "FOR REVIEW ONLY: py-algorand-sdk $RELEASE_VERSION"
+      #     body: ${{ steps.build_changelog.outputs.changelog }}
       #     assignees: algobarb
       #     team-reviewers: algorand/devops
       #     draft: true
+      #     labels: "Skip-Release-Notes"
