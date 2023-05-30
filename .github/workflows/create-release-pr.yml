@@ -27,9 +27,10 @@ jobs:
         id: create-release-branch
         env:
           RELEASE_VERSION: ${{ inputs.release_version }}
+          SOURCE_REF: ${{ inputs.source_ref }}
         run: |
           if [[ $RELEASE_VERSION =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            git checkout -b release/$RELEASE_VERSION
+            git checkout -b release/$RELEASE_VERSION $SOURCE_REF
             git push --set-upstream origin release/$RELEASE_VERSION
           else
             echo "Version input doesn't match the regex pattern ^v[0-9]+\.[0-9]+\.[0-9]+$"
@@ -38,89 +39,89 @@ jobs:
           echo "release-version=$RELEASE_VERSION" >> $GITHUB_OUTPUT
           echo "release-branch=release/$RELEASE_VERSION" >> $GITHUB_OUTPUT
 
-      - name: Get Latest Release
-        id: get-release
-        run: |
-          releases=$(curl --header "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-                      --header "Accept: application/vnd.github.v3+json" \
-                      "https://api.github.com/repos/${{ github.repository }}/releases")
-          tag=$(echo "$releases" | jq -r '.[0].tag_name')
-          echo "latest-tag=$tag" >> $GITHUB_OUTPUT
+      # - name: Get Latest Release
+      #   id: get-release
+      #   run: |
+      #     releases=$(curl --header "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+      #                 --header "Accept: application/vnd.github.v3+json" \
+      #                 "https://api.github.com/repos/${{ github.repository }}/releases")
+      #     tag=$(echo "$releases" | jq -r '.[0].tag_name')
+      #     echo "latest-tag=$tag" >> $GITHUB_OUTPUT
 
-      - name: Get Changelog
-        uses: mikepenz/release-changelog-builder-action@v3.7.2
-        id: get_changelog
-        with:
-          fromTag: ${{ steps.get-release.outputs.latest-tag }}
-          toTag: ${{ steps.create-release-branch.outputs.release-branch }}
-          ignorePreReleases: true
-          failOnError: true
-          # configuration: ".github/workflows/changelog_config.json"
-          configurationJson: |
-            {
-                "categories": [
-                    {
-                        "title": "## New Features",
-                        "labels": [
-                            "New Feature"
-                        ]
-                    },
-                    {
-                        "title": "## Enhancement",
-                        "labels": [
-                            "Enhancement"
-                        ]
-                    },
-                    {
-                        "title": "## Bug Fixes",
-                        "labels": [
-                            "Bug-Fix"
-                        ]
-                    },
-                    {
-                        "title": "## Not Yet Enabled",
-                        "labels": [
-                            "Not-Yet-Enabled"
-                        ]
-                    }
-                ],
-                "ignore_labels": [
-                    "Skip-Release-Notes"
-                ],
-                "sort": {
-                    "order": "ASC",
-                    "on_property": "mergedAt"
-                },
-                "template": "#{{CHANGELOG}}\n\n<details>\n<summary>Other</summary>\n\n#{{UNCATEGORIZED}}\n</details>",
-                "pr_template": "- #{{TITLE}} by #{{AUTHOR}} in #{{NUMBER}}",
-                "empty_template": "- no changes",
-                "duplicate_filter": {
-                    "pattern": "\\[ABC-....\\]",
-                    "on_property": "title",
-                    "method": "match"
-                }
-            }
+      # - name: Get Changelog
+      #   uses: mikepenz/release-changelog-builder-action@v3.7.2
+      #   id: get_changelog
+      #   with:
+      #     fromTag: ${{ steps.get-release.outputs.latest-tag }}
+      #     toTag: ${{ steps.create-release-branch.outputs.release-branch }}
+      #     ignorePreReleases: true
+      #     failOnError: true
+      #     # configuration: ".github/workflows/changelog_config.json"
+      #     configurationJson: |
+      #       {
+      #           "categories": [
+      #               {
+      #                   "title": "## New Features",
+      #                   "labels": [
+      #                       "New Feature"
+      #                   ]
+      #               },
+      #               {
+      #                   "title": "## Enhancement",
+      #                   "labels": [
+      #                       "Enhancement"
+      #                   ]
+      #               },
+      #               {
+      #                   "title": "## Bug Fixes",
+      #                   "labels": [
+      #                       "Bug-Fix"
+      #                   ]
+      #               },
+      #               {
+      #                   "title": "## Not Yet Enabled",
+      #                   "labels": [
+      #                       "Not-Yet-Enabled"
+      #                   ]
+      #               }
+      #           ],
+      #           "ignore_labels": [
+      #               "Skip-Release-Notes"
+      #           ],
+      #           "sort": {
+      #               "order": "ASC",
+      #               "on_property": "mergedAt"
+      #           },
+      #           "template": "#{{CHANGELOG}}\n\n<details>\n<summary>Other</summary>\n\n#{{UNCATEGORIZED}}\n</details>",
+      #           "pr_template": "- #{{TITLE}} by #{{AUTHOR}} in #{{NUMBER}}",
+      #           "empty_template": "- no changes",
+      #           "duplicate_filter": {
+      #               "pattern": "\\[ABC-....\\]",
+      #               "on_property": "title",
+      #               "method": "match"
+      #           }
+      #       }
 
-      - name: Build Changelog
-        env:
-          RELEASE_VERSION: ${{ steps.create-release-branch.outputs.release-version }}
-          CHANGELOG_CONTENT: ${{ steps.get_changelog.outputs.changelog }}
-        run: |
-          echo -e "${CHANGELOG_CONTENT}\n\n$(cat CHANGELOG.md)" > CHANGELOG.md
-          echo -e "${RELEASE_VERSION} \n\n$(cat CHANGELOG.md)\n" > CHANGELOG.md
+      # - name: Build Changelog
+      #   env:
+      #     RELEASE_VERSION: ${{ steps.create-release-branch.outputs.release-version }}
+      #     CHANGELOG_CONTENT: ${{ steps.get_changelog.outputs.changelog }}
+      #   run: |
+      #     echo -e "${CHANGELOG_CONTENT}\n\n$(cat CHANGELOG.md)" > CHANGELOG.md
+      #     echo -e "${RELEASE_VERSION} \n\n$(cat CHANGELOG.md)\n" > CHANGELOG.md
 
-      - name: Commit Changes
-        uses: EndBug/add-and-commit@v9.1.3
-        with:
-          message: 'update CHANGELOG.md'
+      # - name: Commit Changes
+      #   uses: EndBug/add-and-commit@v9.1.3
+      #   with:
+      #     message: 'update CHANGELOG.md'
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5.0.1
-        with:
-          branch: release/${{ inputs.release_version }}
-          base: master
-          title: "FOR REVIEW ONLY: py-algorand-sdk ${{ inputs.release_version }}"
-          body: ${{steps.get_changelog.outputs.changelog}}
-          assignees: algobarb
-          team-reviewers: algorand/devops
-          draft: true
+      # - name: Create Pull Request
+      #   uses: peter-evans/create-pull-request@v5.0.1
+      #   with:
+      #     branch: release/${{ inputs.release_version }}
+      #     base: master
+      #     title: "FOR REVIEW ONLY: py-algorand-sdk ${{ inputs.release_version }}"
+      #     body: ${{steps.get_changelog.outputs.changelog}}
+      #     assignees: algobarb
+      #     team-reviewers: algorand/devops
+      #     draft: true
