@@ -111,7 +111,7 @@ jobs:
           touch temp
           echo "$(tail -n +2 CHANGELOG.md)" > CHANGELOG.md
           cat CHANGELOG.md
-          echo '# Changelog\n${RELEASE_VERSION}\n${CHANGELOG_CONTENT}' | cat - CHANGELOG.md > temp && mv temp CHANGELOG.md
+          echo "# Changelog\n${RELEASE_VERSION}\n${CHANGELOG_CONTENT}" | cat - CHANGELOG.md > temp && mv temp CHANGELOG.md
           cat CHANGELOG.md
 
       - name: Commit Changes
