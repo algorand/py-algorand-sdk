@@ -107,6 +107,10 @@ jobs:
           echo "$(tail -n +2 CHANGELOG.md)" > CHANGELOG.md
           echo -e "# Changelog\n\n# ${RELEASE_VERSION}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${PREVIOUS_VERSION}...${RELEASE_VERSION}" | cat - CHANGELOG.md > temp && mv temp CHANGELOG.md
 
+      - name: Update version in setup.py
+        run: |
+          sed -i "s/version='[^']*'/version='${RELEASE_VERSION}'/" "setup.py"
+
       - name: Commit Changes
         uses: EndBug/add-and-commit@v9.1.3
         with:
