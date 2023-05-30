@@ -92,7 +92,7 @@ jobs:
                     "order": "ASC",
                     "on_property": "mergedAt"
                 },
-                "template": "#{{CHANGELOG}}\n\n<details>\n<summary>Other</summary>\n\n#{{UNCATEGORIZED}}\n</details>",
+                "template": "#{{CHANGELOG}}\n\n",
                 "pr_template": "- #{{TITLE}} by #{{AUTHOR}} in #{{NUMBER}}",
                 "empty_template": "- no changes",
                 "duplicate_filter": {
@@ -108,8 +108,18 @@ jobs:
           CHANGELOG_CONTENT: ${{ steps.build_changelog.outputs.changelog }}
         run: |
           echo "${CHANGELOG_CONTENT}"
-          echo -e "${CHANGELOG_CONTENT}\n\n$(cat CHANGELOG.md)" > CHANGELOG.md
-          echo -e "${RELEASE_VERSION} \n\n$(cat CHANGELOG.md)\n" > CHANGELOG.md
+          echo "ls -al"
+          ls -al
+          echo "ls -al py-algorand-sdk"
+          ls -al py-algorand-sdk
+          echo "ls -al $GITHUB_WORKSPACE"
+          ls -al $GITHUB_WORKSPACE
+          echo "$GITHUB_WORKSPACE"
+          echo "$(pwd)"
+          OLD_CHANGELOG=$(tail -n +2 py-algorand-sdk/CHANGELOG.md)
+          echo "OLD_CHANGELOG: ${OLD_CHANGELOG}"
+          echo -e "${CHANGELOG_CONTENT}\n\n$(cat CHANGELOG.md)" > $GITHUB_WORKSPACE/py-algorand-sdk/CHANGELOG.md
+          echo -e "${RELEASE_VERSION} \n\n$(cat CHANGELOG.md)\n" > $GITHUB_WORKSPACE/py-algorand-sdk/CHANGELOG.md
 
       # - name: Commit Changes
       #   uses: EndBug/add-and-commit@v9.1.3
