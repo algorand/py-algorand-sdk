@@ -118,8 +118,8 @@ jobs:
           CHANGELOG_CONTENT: ${{ steps.build-changelog.outputs.changelog }}
           PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
         with:
-          branch: release/$RELEASE_VERSION
-          base: master
+          branch: master
+          base: release/$RELEASE_VERSION
           title: "FOR REVIEW ONLY: py-algorand-sdk $RELEASE_VERSION"
           body: "# ${RELEASE_VERSION}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${PREVIOUS_VERSION}...${RELEASE_VERSION}"
           assignees: algobarb
