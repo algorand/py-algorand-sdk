@@ -56,7 +56,6 @@ jobs:
           toTag: ${{ steps.create-release-branch.outputs.release-branch }}
           ignorePreReleases: true
           failOnError: true
-          # configuration: ".github/workflows/changelog_config.json"
           configurationJson: |
             {
                 "categories": [
@@ -92,14 +91,8 @@ jobs:
                     "order": "ASC",
                     "on_property": "mergedAt"
                 },
-                "template": "#{{CHANGELOG}}",
-                "pr_template": "- #{{TITLE}} by #{{AUTHOR}} in #{{NUMBER}}",
-                "empty_template": "- no changes",
-                "duplicate_filter": {
-                    "pattern": "\\[ABC-....\\]",
-                    "on_property": "title",
-                    "method": "match"
-                }
+                "template": "#{{CHANGELOG}}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${{ steps.get-release.outputs.latest-tag }}...${{ steps.create-release-branch.outputs.release-version }}",
+                "pr_template": "- #{{TITLE}} by #{{AUTHOR}} in ##{{NUMBER}}"
             }
 
       - name: Update Changelog
@@ -108,10 +101,8 @@ jobs:
           CHANGELOG_CONTENT: ${{ steps.build_changelog.outputs.changelog }}
         run: |
           git branch --show-current
-          touch temp
           echo "$(tail -n +2 CHANGELOG.md)" > CHANGELOG.md
-          cat CHANGELOG.md
-          echo -e "# Changelog\n${RELEASE_VERSION}\n${CHANGELOG_CONTENT}" | cat - CHANGELOG.md > temp && mv temp CHANGELOG.md
+          echo -e "# Changelog\n# ${RELEASE_VERSION}\n${{ steps.build_changelog.outputs.changelog }}" | cat - CHANGELOG.md > temp && mv temp CHANGELOG.md
           cat CHANGELOG.md
 
       - name: Commit Changes
