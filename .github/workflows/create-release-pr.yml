@@ -92,7 +92,7 @@ jobs:
                     "order": "ASC",
                     "on_property": "mergedAt"
                 },
-                "template": "#{{CHANGELOG}}\n\n",
+                "template": "#{{CHANGELOG}}",
                 "pr_template": "- #{{TITLE}} by #{{AUTHOR}} in #{{NUMBER}}",
                 "empty_template": "- no changes",
                 "duplicate_filter": {
@@ -107,24 +107,17 @@ jobs:
           RELEASE_VERSION: ${{ steps.create-release-branch.outputs.release-version }}
           CHANGELOG_CONTENT: ${{ steps.build_changelog.outputs.changelog }}
         run: |
-          echo "${CHANGELOG_CONTENT}"
-          echo "ls -al"
-          ls -al
-          echo "ls -al py-algorand-sdk"
-          ls -al py-algorand-sdk
-          echo "ls -al $GITHUB_WORKSPACE"
-          ls -al $GITHUB_WORKSPACE
-          echo "$GITHUB_WORKSPACE"
-          echo "$(pwd)"
-          OLD_CHANGELOG=$(tail -n +2 py-algorand-sdk/CHANGELOG.md)
-          echo "OLD_CHANGELOG: ${OLD_CHANGELOG}"
-          echo -e "${CHANGELOG_CONTENT}\n\n$(cat CHANGELOG.md)" > $GITHUB_WORKSPACE/py-algorand-sdk/CHANGELOG.md
-          echo -e "${RELEASE_VERSION} \n\n$(cat CHANGELOG.md)\n" > $GITHUB_WORKSPACE/py-algorand-sdk/CHANGELOG.md
+          git branch --show-current
+          head -n -1 CHANGELOG.md >: temp && mv temp CHANGELOG.md
+          cat CHANGELOG.md
+          echo '# Changelog\n${RELEASE_VERSION}\n${CHANGELOG_CONTENT}' | cat - CHANGELOG.md > temp && mv temp CHANGELOG.md
+          cat CHANGELOG.md
+          git branch --show-current
 
-      # - name: Commit Changes
-      #   uses: EndBug/add-and-commit@v9.1.3
-      #   with:
-      #     message: 'update CHANGELOG.md'
+      - name: Commit Changes
+        uses: EndBug/add-and-commit@v9.1.3
+        with:
+          message: 'update CHANGELOG.md'
 
       # - name: Create Pull Request
       #   uses: peter-evans/create-pull-request@v5.0.1
