@@ -47,70 +47,69 @@ jobs:
                       "https://api.github.com/repos/${{ github.repository }}/releases")
           tag=$(echo "$releases" | jq -r '.[0].tag_name')
           echo "latest-tag=$tag" >> $GITHUB_OUTPUT
-          echo "GITHUB_OUTPUT: $GITHUB_OUTPUT"
-          echo "tag; $tag"
 
-      # - name: Get Changelog
-      #   uses: mikepenz/release-changelog-builder-action@v3.7.2
-      #   id: get_changelog
-      #   with:
-      #     fromTag: ${{ steps.get-release.outputs.latest-tag }}
-      #     toTag: ${{ steps.create-release-branch.outputs.release-branch }}
-      #     ignorePreReleases: true
-      #     failOnError: true
-      #     # configuration: ".github/workflows/changelog_config.json"
-      #     configurationJson: |
-      #       {
-      #           "categories": [
-      #               {
-      #                   "title": "## New Features",
-      #                   "labels": [
-      #                       "New Feature"
-      #                   ]
-      #               },
-      #               {
-      #                   "title": "## Enhancement",
-      #                   "labels": [
-      #                       "Enhancement"
-      #                   ]
-      #               },
-      #               {
-      #                   "title": "## Bug Fixes",
-      #                   "labels": [
-      #                       "Bug-Fix"
-      #                   ]
-      #               },
-      #               {
-      #                   "title": "## Not Yet Enabled",
-      #                   "labels": [
-      #                       "Not-Yet-Enabled"
-      #                   ]
-      #               }
-      #           ],
-      #           "ignore_labels": [
-      #               "Skip-Release-Notes"
-      #           ],
-      #           "sort": {
-      #               "order": "ASC",
-      #               "on_property": "mergedAt"
-      #           },
-      #           "template": "#{{CHANGELOG}}\n\n<details>\n<summary>Other</summary>\n\n#{{UNCATEGORIZED}}\n</details>",
-      #           "pr_template": "- #{{TITLE}} by #{{AUTHOR}} in #{{NUMBER}}",
-      #           "empty_template": "- no changes",
-      #           "duplicate_filter": {
-      #               "pattern": "\\[ABC-....\\]",
-      #               "on_property": "title",
-      #               "method": "match"
-      #           }
-      #       }
+      - name: Build Changelog
+        uses: mikepenz/release-changelog-builder-action@v3.7.2
+        id: build_changelog
+        with:
+          fromTag: ${{ steps.get-release.outputs.latest-tag }}
+          toTag: ${{ steps.create-release-branch.outputs.release-branch }}
+          ignorePreReleases: true
+          failOnError: true
+          # configuration: ".github/workflows/changelog_config.json"
+          configurationJson: |
+            {
+                "categories": [
+                    {
+                        "title": "## New Features",
+                        "labels": [
+                            "New Feature"
+                        ]
+                    },
+                    {
+                        "title": "## Enhancement",
+                        "labels": [
+                            "Enhancement"
+                        ]
+                    },
+                    {
+                        "title": "## Bug Fixes",
+                        "labels": [
+                            "Bug-Fix"
+                        ]
+                    },
+                    {
+                        "title": "## Not Yet Enabled",
+                        "labels": [
+                            "Not-Yet-Enabled"
+                        ]
+                    }
+                ],
+                "ignore_labels": [
+                    "Skip-Release-Notes"
+                ],
+                "sort": {
+                    "order": "ASC",
+                    "on_property": "mergedAt"
+                },
+                "template": "#{{CHANGELOG}}\n\n<details>\n<summary>Other</summary>\n\n#{{UNCATEGORIZED}}\n</details>",
+                "pr_template": "- #{{TITLE}} by #{{AUTHOR}} in #{{NUMBER}}",
+                "empty_template": "- no changes",
+                "duplicate_filter": {
+                    "pattern": "\\[ABC-....\\]",
+                    "on_property": "title",
+                    "method": "match"
+                }
+            }
 
-      # - name: Build Changelog
-      #   env:
-      #     RELEASE_VERSION: ${{ steps.create-release-branch.outputs.release-version }}
-      #     CHANGELOG_CONTENT: ${{ steps.get_changelog.outputs.changelog }}
-      #   run: |
-      #     echo -e "${CHANGELOG_CONTENT}\n\n$(cat CHANGELOG.md)" > CHANGELOG.md
-      #     echo -e "${RELEASE_VERSION} \n\n$(cat CHANGELOG.md)\n" > CHANGELOG.md
+      - name: Update Changelog
+        env:
+          RELEASE_VERSION: ${{ steps.create-release-branch.outputs.release-version }}
+          CHANGELOG_CONTENT: ${{ steps.build_changelog.outputs.changelog }}
+        run: |
+          echo "${CHANGELOG_CONTENT}"
+          echo -e "${CHANGELOG_CONTENT}\n\n$(cat CHANGELOG.md)" > CHANGELOG.md
+          echo -e "${RELEASE_VERSION} \n\n$(cat CHANGELOG.md)\n" > CHANGELOG.md
 
       # - name: Commit Changes
       #   uses: EndBug/add-and-commit@v9.1.3
