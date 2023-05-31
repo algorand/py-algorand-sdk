@@ -109,37 +109,19 @@ jobs:
 
       - name: Update version in setup.py
         run: |
-          python3 bump_version.py --new_version $RELEASE_VERSION
-
-      # - name: Update version in setup.py
-      #   uses: jacobtomlinson/gha-find-replace@v3
-      #   env:
-      #     PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
-      #   with:
-      #     find: "version=\"${{ env.PREVIOUS_VERSION }}\""
-      #     replace: "version=\"${{ env.RELEASE_VERSION }}\""
-      #     include: "setup.py"
-
-        # run: |
-        #   export PREVIOUS_VERSION_ESCAPED="${PREVIOUS_VERSION//./\.}"
-        #   export RELEASE_VERSION_ESCAPED="${RELEASE_VERSION//./\.}"
-        #   RELEASE_VERSION_ESCAPED="${RELEASE_VERSION_ESCAPED:1}"
-        #   sed -i "s/version=\"$PREVIOUS_VERSION_ESCAPED\"/version=\"$RELEASE_VERSION_ESCAPED\"/g" setup.py
-        #   chmod +w setup.py
-        #   sed -i "s/version=\"2\.2\.0\"/version=\"0\.0\.0\"/g" setup.py
-        #   cat setup.py
+          python3 scripts/bump_version.py --new_version ${RELEASE_VERSION:1}
 
       - name: Commit Changes
         uses: EndBug/add-and-commit@v9.1.3
         with:
           message: 'update CHANGELOG.md and setup.py version'
 
-      # - name: Create Pull Request
-      #   env:
-      #     CHANGELOG_CONTENT: ${{ steps.build-changelog.outputs.changelog }}
-      #     PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
-      #     GH_TOKEN: ${{ github.token }}
-      #   run: |
-      #     echo -e "# ${RELEASE_VERSION}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${PREVIOUS_VERSION}...${RELEASE_VERSION}" > msg_body.txt
-      #     export msg_body=$(cat msg_body.txt)
-      #     gh pr create --base master --title "FOR REVIEW ONLY: py-algorand-sdk $RELEASE_VERSION" --draft --label "Skip-Release-Notes" --body "$msg_body"
+      - name: Create Pull Request
+        env:
+          CHANGELOG_CONTENT: ${{ steps.build-changelog.outputs.changelog }}
+          PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo -e "# ${RELEASE_VERSION}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${PREVIOUS_VERSION}...${RELEASE_VERSION}" > msg_body.txt
+          export msg_body=$(cat msg_body.txt)
+          gh pr create --base master --title "FOR REVIEW ONLY: py-algorand-sdk $RELEASE_VERSION" --draft --label "Skip-Release-Notes" --body "$msg_body"
