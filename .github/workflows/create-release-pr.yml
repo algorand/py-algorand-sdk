@@ -108,13 +108,17 @@ jobs:
           echo -e "# Changelog\n\n# ${RELEASE_VERSION}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${PREVIOUS_VERSION}...${RELEASE_VERSION}" | cat - CHANGELOG.md > temp && mv temp CHANGELOG.md
 
       - name: Update version in setup.py
-        uses: jacobtomlinson/gha-find-replace@v3
-        env:
-          PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
-        with:
-          find: "version=\"${{ env.PREVIOUS_VERSION }}\""
-          replace: "version=\"${{ env.RELEASE_VERSION }}\""
-          include: "setup.py"
+        run: |
+          python3 bump_version.py --new_version $RELEASE_VERSION
+
+      # - name: Update version in setup.py
+      #   uses: jacobtomlinson/gha-find-replace@v3
+      #   env:
+      #     PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
+      #   with:
+      #     find: "version=\"${{ env.PREVIOUS_VERSION }}\""
+      #     replace: "version=\"${{ env.RELEASE_VERSION }}\""
+      #     include: "setup.py"
 
         # run: |
         #   export PREVIOUS_VERSION_ESCAPED="${PREVIOUS_VERSION//./\.}"
