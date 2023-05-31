@@ -109,7 +109,7 @@ jobs:
 
       - name: Update version in setup.py
         run: |
-          python3 scripts/bump_version.py --new_version ${RELEASE_VERSION:1}
+          python3 scripts/bump_version.py ${RELEASE_VERSION:1}
 
       - name: Commit Changes
         uses: EndBug/add-and-commit@v9.1.3
