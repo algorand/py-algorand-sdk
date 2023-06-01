@@ -1,3 +1,6 @@
+# This script bumps up the version in setup.py for new releases.
+# Usage: python bump_version.py {new_version} (--setup_py_path <path-to setup.py>)
+
 import argparse
 import re
 
