@@ -116,12 +116,12 @@ jobs:
         with:
           message: 'update CHANGELOG.md and setup.py version'
 
-      - name: Create Pull Request
-        env:
-          CHANGELOG_CONTENT: ${{ steps.build-changelog.outputs.changelog }}
-          PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          echo -e "# ${RELEASE_VERSION}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${PREVIOUS_VERSION}...${RELEASE_VERSION}" > msg_body.txt
-          export msg_body=$(cat msg_body.txt)
-          gh pr create --base develop --title "FOR REVIEW ONLY: py-algorand-sdk $RELEASE_VERSION" --label "Skip-Release-Notes" --body "$msg_body" --reviewer algorand/scytale --reviewer algorand/devops
+      # - name: Create Pull Request
+      #   env:
+      #     CHANGELOG_CONTENT: ${{ steps.build-changelog.outputs.changelog }}
+      #     PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
+      #     GH_TOKEN: ${{ github.token }}
+      #   run: |
+      #     echo -e "# ${RELEASE_VERSION}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${PREVIOUS_VERSION}...${RELEASE_VERSION}" > msg_body.txt
+      #     export msg_body=$(cat msg_body.txt)
+      #     gh pr create --base develop --title "FOR REVIEW ONLY: py-algorand-sdk $RELEASE_VERSION" --label "Skip-Release-Notes" --body "$msg_body" --reviewer algorand/scytale --reviewer algorand/devops
