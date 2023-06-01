@@ -30,6 +30,7 @@ workflows:
                 - /release\/.*/
           post-steps:
             - slack/notify:
+                channel: C02T11FQ2D9
                 custom: |
                   {
                     "blocks": [
