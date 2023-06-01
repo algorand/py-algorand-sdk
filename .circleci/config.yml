@@ -29,18 +29,22 @@ workflows:
                 - /release\/.*/
           post-steps:
             - slack/notify:
-                channel: C02T11FQ2D9
                 custom: |
                   {
                     "blocks": [
                       {
+                        "type": "header",
+                        "text": {
+                          "type": "plain_text",
+                          "text": "CircleCI tests completed for py-algorand-sdk in ${CIRCLE_BRANCH}."
+                        }
+                      },
+                      {
                         "type": "section",
-                        "fields": [
-                          {
-                            "type": "plain_text",
-                            "text": "CircleCI tests completed for py-algorand-sdk in ${CIRCLE_BRANCH}.\n${CIRCLE_PULL_REQUEST}\n If there are enough approvals on this PR, start this job: ${SDK_DEPLOYMENT_URL}"
-                          }
-                        ]
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "If there are enough approvals on the PR ${CIRCLE_PULL_REQUEST}\n - start this job: ${SDK_DEPLOYMENT_URL}"
+                        }
                       }
                     ]
                   }
@@ -89,7 +93,7 @@ jobs:
           destination: py-algo-sdk.docset.tar.gz
   tests-completion:
     docker:
-      - image: cimg/base:stable
+      - image: cimg/base:current
     steps:
       - run:
           name: Success
