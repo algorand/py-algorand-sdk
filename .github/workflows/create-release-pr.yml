@@ -143,7 +143,7 @@ jobs:
           PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [[ "${BASE_BRANCH}" = "master" ]] || [[ "${BASE_BRANCH}" ~= ^release/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          if [ "${BASE_BRANCH}" = "master" ] || [[ "${BASE_BRANCH}" =~ ^release/v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
             echo "pull request created"
           else
             echo "Base Branch doesn't match master or release/^v[0-9]+\.[0-9]+\.[0-9]+$"
