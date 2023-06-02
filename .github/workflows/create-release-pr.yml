@@ -137,7 +137,7 @@ jobs:
         with:
           message: "bump up version to ${{ env.RELEASE_VERSION }}"
 
-      - name: Create Pull Request Test
+      - name: Create Pull Request
         env:
           CHANGELOG_CONTENT: ${{ steps.build-changelog.outputs.changelog }}
           PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
@@ -145,28 +145,16 @@ jobs:
         run: |
           if [ "${BASE_BRANCH}" = "master" ] || [[ "${BASE_BRANCH}" =~ ^release/v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
             echo "pull request created"
+            echo -e "# ${RELEASE_VERSION}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${PREVIOUS_VERSION}...${RELEASE_VERSION}" > msg_body.txt
+            export msg_body=$(cat msg_body.txt)
+            gh pr create --base master \
+            --title "FOR REVIEW ONLY: py-algorand-sdk $RELEASE_VERSION" \
+            --label "Skip-Release-Notes" \
+            --body "$msg_body" \
+            --reviewer algorand/scytale \
+            --reviewer algorand/devops
           else
             echo "Base Branch doesn't match master or release/^v[0-9]+\.[0-9]+\.[0-9]+$"
             exit 1
           fi
-      # - name: Create Pull Request
-      #   env:
-      #     CHANGELOG_CONTENT: ${{ steps.build-changelog.outputs.changelog }}
-      #     PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
-      #     GH_TOKEN: ${{ github.token }}
-      #   run: |
-      #     if [[ "${BASE_BRANCH}" = "master" ]] || [[ "${BASE_BRANCH}" ~= ^release/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-      #       echo "pull request created"
-      #       echo -e "# ${RELEASE_VERSION}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${PREVIOUS_VERSION}...${RELEASE_VERSION}" > msg_body.txt
-      #       export msg_body=$(cat msg_body.txt)
-      #       gh pr create --base master \
-      #       --title "FOR REVIEW ONLY: py-algorand-sdk $RELEASE_VERSION" \
-      #       --label "Skip-Release-Notes" \
-      #       --body "$msg_body" \
-      #       --reviewer algorand/scytale \
-      #       --reviewer algorand/devops
-      #     else
-      #       echo "Base Branch doesn't match master or release/^v[0-9]+\.[0-9]+\.[0-9]+$"
-      #       exit 1
-      #     fi
 
