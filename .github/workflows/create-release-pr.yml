@@ -12,6 +12,11 @@ on:
         default: 'vx.x.x'
         required: true
         type: string
+      is_pre_release:
+        description: "Is this a Pre-Release? Pre-Release will not update CHANGELOG.md"
+        default: false
+        type: boolean
+
 
 env:
   RELEASE_VERSION: ${{ inputs.release_version }}
@@ -43,11 +48,21 @@ jobs:
       - name: Get Latest Release
         id: get-release
         run: |
-          releases=$(curl -L \
-                      --header "Accept: application/vnd.github.v3+json" \
-                      "https://api.github.com/repos/${{ github.repository }}/releases/latest")
-          tag=$(echo "$releases" | jq -r '.tag_name')
-          echo "latest-tag=$tag" >> $GITHUB_OUTPUT
+          if [[ ${{ inputs.is_pre_release }} == "true" ]]; then
+            echo "Get the latest release"
+            releases=$(curl -L \
+                        --header "Accept: application/vnd.github.v3+json" \
+                        "https://api.github.com/repos/${{ github.repository }}/releases")
+            tag=$(echo "$releases" | jq -r '.[0].tag_name')
+            echo "latest-tag=$tag" >> $GITHUB_OUTPUT
+          else
+            echo "Get the latest stable release"
+            releases=$(curl -L \
+                        --header "Accept: application/vnd.github.v3+json" \
+                        "https://api.github.com/repos/${{ github.repository }}/releases/latest")
+            tag=$(echo "$releases" | jq -r '.tag_name')
+            echo "latest-tag=$tag" >> $GITHUB_OUTPUT
+          fi
 
       - name: Build Changelog
         uses: mikepenz/release-changelog-builder-action@v3.7.2
@@ -99,6 +114,7 @@ jobs:
             }
 
       - name: Update Changelog
+        if: ${{ ! inputs.is_pre_release }}
         env:
           CHANGELOG_CONTENT: ${{ steps.build-changelog.outputs.changelog }}
           PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
@@ -114,14 +130,14 @@ jobs:
       - name: Commit Changes
         uses: EndBug/add-and-commit@v9.1.3
         with:
-          message: 'update CHANGELOG.md and setup.py version'
+          message: "bump up version to ${RELEASE_VERSION}"
 
-      - name: Create Pull Request
-        env:
-          CHANGELOG_CONTENT: ${{ steps.build-changelog.outputs.changelog }}
-          PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          echo -e "# ${RELEASE_VERSION}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${PREVIOUS_VERSION}...${RELEASE_VERSION}" > msg_body.txt
-          export msg_body=$(cat msg_body.txt)
-          gh pr create --base develop --title "FOR REVIEW ONLY: py-algorand-sdk $RELEASE_VERSION" --label "Skip-Release-Notes" --body "$msg_body" --reviewer algorand/scytale --reviewer algorand/devops
+      # - name: Create Pull Request
+      #   env:
+      #     CHANGELOG_CONTENT: ${{ steps.build-changelog.outputs.changelog }}
+      #     PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
+      #     GH_TOKEN: ${{ github.token }}
+      #   run: |
+      #     echo -e "# ${RELEASE_VERSION}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${PREVIOUS_VERSION}...${RELEASE_VERSION}" > msg_body.txt
+      #     export msg_body=$(cat msg_body.txt)
+      #     gh pr create --base develop --title "FOR REVIEW ONLY: py-algorand-sdk $RELEASE_VERSION" --label "Skip-Release-Notes" --body "$msg_body" --reviewer algorand/scytale --reviewer algorand/devops
