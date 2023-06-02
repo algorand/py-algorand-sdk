@@ -148,11 +148,11 @@ jobs:
             echo -e "# ${RELEASE_VERSION}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${PREVIOUS_VERSION}...${RELEASE_VERSION}" > msg_body.txt
             export msg_body=$(cat msg_body.txt)
             gh pr create --base master \
-            --title "FOR REVIEW ONLY: py-algorand-sdk $RELEASE_VERSION" \
-            --label "Skip-Release-Notes" \
-            --body "$msg_body" \
-            --reviewer algorand/scytale \
-            --reviewer algorand/devops
+              --title "FOR REVIEW ONLY: py-algorand-sdk $RELEASE_VERSION" \
+              --label "Skip-Release-Notes" \
+              --body "$msg_body" \
+              --reviewer algorand/scytale \
+              --reviewer algorand/devops
           else
             echo "Base Branch doesn't match master or release/^v[0-9]+\.[0-9]+\.[0-9]+$"
             exit 1
