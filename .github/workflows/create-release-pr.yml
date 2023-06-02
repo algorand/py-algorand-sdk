@@ -130,7 +130,7 @@ jobs:
       - name: Commit Changes
         uses: EndBug/add-and-commit@v9.1.3
         with:
-          message: "bump up version to ${RELEASE_VERSION}"
+          message: "bump up version to ${{ env.RELEASE_VERSION }}"
 
       # - name: Create Pull Request
       #   env:
