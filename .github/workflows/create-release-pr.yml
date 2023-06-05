@@ -128,7 +128,7 @@ jobs:
             }
 
       - name: Update Changelog
-        if: ${{ env.PRE_RELEASE_VERSION != '' }}
+        if: ${{ env.PRE_RELEASE_VERSION == '' }}
         env:
           CHANGELOG_CONTENT: ${{ steps.build-changelog.outputs.changelog }}
           PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
