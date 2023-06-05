@@ -62,6 +62,11 @@ jobs:
           git checkout -b $RELEASE_BRANCH
           git push --set-upstream origin $RELEASE_BRANCH
 
+      - name: Checkout Release Branch
+        if: ${{ inputs.release_branch_exists }}
+        run: |
+          git checkout $RELEASE_BRANCH
+
       - name: Get Latest Release
         id: get-release
         run: |
@@ -133,7 +138,7 @@ jobs:
           CHANGELOG_CONTENT: ${{ steps.build-changelog.outputs.changelog }}
           PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
         run: |
-          git branch --show-current
+
           echo "$(tail -n +2 CHANGELOG.md)" > CHANGELOG.md
           echo -e "# Changelog\n\n# ${RELEASE_VERSION}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${PREVIOUS_VERSION}...${RELEASE_VERSION}" | cat - CHANGELOG.md > temp && mv temp CHANGELOG.md
 
