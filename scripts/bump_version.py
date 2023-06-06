@@ -10,7 +10,7 @@ def bump_version(new_version, setup_py_path):
         setup_py = file.read()
 
     new_setup_py = re.sub(
-        'version="[0-9]+\.[0-9]+\.[a-z.0-9]+"',
+        'version="[0-9]+\.[0-9]+\.[a-0-9]+"',
         f'version="{new_version}"',
         setup_py,
     )
