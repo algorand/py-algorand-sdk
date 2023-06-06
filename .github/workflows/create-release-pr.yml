@@ -56,6 +56,8 @@ jobs:
             echo "Current Branch: $(git rev-parse --abbrev-ref HEAD)"
             echo "Release branch exists, make sure you're using the workflow from the release branch or delete the existing release branch."
             exit 1
+          else
+            echo "Release branch exists and used as workflow ref."
           fi
 
       - name: Get Latest Release
@@ -146,33 +148,33 @@ jobs:
         with:
           message: "bump up version to ${{ env.RELEASE_TAG }}"
 
-      # - name: Create Pull Request to Master
-      #   env:
-      #     CHANGELOG_CONTENT: ${{ steps.build-changelog.outputs.changelog }}
-      #     PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
-      #     GH_TOKEN: ${{ github.token }}
-      #     RELEASE_TAG: ${{ steps.set-release.outputs.release-tag }}
-      #   run: |
-      #     echo -e "# ${RELEASE_TAG}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${PREVIOUS_VERSION}...${RELEASE_TAG}" > msg_body.txt
-      #     export msg_body=$(cat msg_body.txt)
-      #     gh pr create --base "master" \
-      #       --title "FOR REVIEW ONLY: py-algorand-sdk $RELEASE_TAG" \
-      #       --label "Skip-Release-Notes" \
-      #       --body "$msg_body" \
-      #       --reviewer algorand/scytale \
-      #       --reviewer algorand/devops
-      #     echo "Pull request to Master created"
+      - name: Create Pull Request to Master
+        env:
+          CHANGELOG_CONTENT: ${{ steps.build-changelog.outputs.changelog }}
+          PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.set-release.outputs.release-tag }}
+        run: |
+          echo -e "# ${RELEASE_TAG}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${PREVIOUS_VERSION}...${RELEASE_TAG}" > msg_body.txt
+          export msg_body=$(cat msg_body.txt)
+          gh pr create --base "master" \
+            --title "FOR REVIEW ONLY: py-algorand-sdk $RELEASE_TAG" \
+            --label "Skip-Release-Notes" \
+            --body "$msg_body" \
+            --reviewer algorand/scytale \
+            --reviewer algorand/devops
+          echo "Pull request to Master created"
 
-      # - name: Create Pull Request to Develop
-      #   if: ${{ env.PRE_RELEASE_VERSION == '' }}
-      #   env:
-      #     GH_TOKEN: ${{ github.token }}
-      #     RELEASE_TAG: ${{ steps.set-release.outputs.release-tag }}
-      #   run: |
-      #     gh pr create --base "develop" \
-      #       --title "FOR REVIEW ONLY: Merge back py-algorand-sdk $RELEASE_TAG to develop" \
-      #       --label "Skip-Release-Notes" \
-      #       --body "Merge back version changes to develop." \
-      #       --reviewer algorand/scytale \
-      #       --reviewer algorand/devops
-      #     echo "Pull request to Develop created"
+      - name: Create Pull Request to Develop
+        if: ${{ env.PRE_RELEASE_VERSION == '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.set-release.outputs.release-tag }}
+        run: |
+          gh pr create --base "develop" \
+            --title "FOR REVIEW ONLY: Merge back py-algorand-sdk $RELEASE_TAG to develop" \
+            --label "Skip-Release-Notes" \
+            --body "Merge back version changes to develop." \
+            --reviewer algorand/scytale \
+            --reviewer algorand/devops
+          echo "Pull request to Develop created"
