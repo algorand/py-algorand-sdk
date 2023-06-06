@@ -1562,7 +1562,7 @@ def get_block_timestamp_offset(context):
 
 @when("we make a GetLedgerStateDelta call against round {round}")
 def get_ledger_state_delta_call(context, round):
-    context.response = context.acl.get_ledger_state_delta(round)
+    context.response = context.acl.get_ledger_state_delta(round, response_format="msgpack")
 
 
 @when(
@@ -1570,7 +1570,7 @@ def get_ledger_state_delta_call(context, round):
 )
 def get_transaction_group_ledger_state_deltas_for_round(context, round):
     context.response = (
-        context.acl.get_transaction_group_ledger_state_deltas_for_round(round)
+        context.acl.get_transaction_group_ledger_state_deltas_for_round(round, response_format="msgpack")
     )
 
 
@@ -1579,5 +1579,5 @@ def get_transaction_group_ledger_state_deltas_for_round(context, round):
 )
 def get_ledger_state_delta_for_transaction_group(context, id):
     context.response = (
-        context.acl.get_ledger_state_delta_for_transaction_group(id)
+        context.acl.get_ledger_state_delta_for_transaction_group(id, response_format="msgpack")
     )

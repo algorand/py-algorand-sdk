@@ -719,7 +719,7 @@ class AlgodClient:
         return self.algod_request("POST", req, **kwargs)
 
     def get_ledger_state_delta(
-        self, round: int, response_format: str = "msgpack", **kwargs: Any
+        self, round: int, response_format: str = "json", **kwargs: Any
     ) -> AlgodResponseType:
         """
         Get the ledger state delta for a round.
@@ -737,7 +737,7 @@ class AlgodClient:
         )
 
     def get_transaction_group_ledger_state_deltas_for_round(
-        self, round: int, response_format: str = "msgpack", **kwargs: Any
+        self, round: int, response_format: str = "json", **kwargs: Any
     ) -> AlgodResponseType:
         """
         Get the ledger state deltas for all transaction groups in a given round.
@@ -755,7 +755,7 @@ class AlgodClient:
         )
 
     def get_ledger_state_delta_for_transaction_group(
-        self, id: str, response_format: str = "msgpack", **kwargs: Any
+        self, id: str, response_format: str = "json", **kwargs: Any
     ) -> AlgodResponseType:
         """
         Get the ledger state delta for a transaction group given the
