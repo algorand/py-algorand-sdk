@@ -32,14 +32,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set Release Version and Branch Check Out
+      - name: Set Release Version and Branch to Check Out
         id: set-release
         run: |
           if [[ $RELEASE_VERSION =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             if [[ $PRE_RELEASE_VERSION =~ ^[a-z.0-9]+$ ]]; then
               echo "release-tag: $RELEASE_VERSION$PRE_RELEASE_VERSION"
               echo "release-tag=$RELEASE_VERSION$PRE_RELEASE_VERSION" >> $GITHUB_OUTPUT
-              echo "SOURCE_REF=$RELEASE_BRANCH" >> $GITHUB_ENV
             elif [[ -n $PRE_RELEASE_VERSION ]]; then
               echo "Input pre_release_version is not empty, but does not match the regex pattern ^[a-z.0-9]+$"
               exit 1
@@ -52,10 +51,17 @@ jobs:
             exit 1
           fi
 
-      - name: Checkout Code
+      - name: Checkout Source Ref
+        if: ${{ ! release_branch_exists }}
         uses: actions/checkout@v3
         with:
-          ref: ${{ env.source_ref }}
+          ref: ${{ env.SOURCE_REF }}
+
+      - name: Checkout Release Branch
+        if: ${{ release_branch_exists }}
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ env.RELEASE_BRANCH }}
 
       - name: Create Release Branch
         if: ${{ ! inputs.release_branch_exists }}
