@@ -39,6 +39,7 @@ jobs:
             if [[ $PRE_RELEASE_VERSION =~ ^[a-z.0-9]+$ ]]; then
               echo "release-tag: $RELEASE_VERSION$PRE_RELEASE_VERSION"
               echo "release-tag=$RELEASE_VERSION$PRE_RELEASE_VERSION" >> $GITHUB_OUTPUT
+              echo "SOURCE_REF=$RELEASE_BRANCH" >> $GITHUB_ENV
             elif [[ -n $PRE_RELEASE_VERSION ]]; then
               echo "Input pre_release_version is not empty, but does not match the regex pattern ^[a-z.0-9]+$"
               exit 1
@@ -54,20 +55,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
         with:
-          ref: ${{ inputs.source_ref }}
+          ref: ${{ env.source_ref }}
 
       - name: Create Release Branch
         if: ${{ ! inputs.release_branch_exists }}
         run: |
           git checkout -b $RELEASE_BRANCH
           git push --set-upstream origin $RELEASE_BRANCH
-
-      - name: Checkout Release Branch
-        if: ${{ inputs.release_branch_exists }}
-        run: |
-          if [[ $(git symbolic-ref --short -q HEAD) != "$RELEASE_BRANCH" ]]; then
-            git checkout origin/$RELEASE_BRANCH
-          fi
 
       - name: Get Latest Release
         id: get-release
