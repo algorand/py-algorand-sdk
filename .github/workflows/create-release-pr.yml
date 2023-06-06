@@ -52,13 +52,13 @@ jobs:
           fi
 
       - name: Checkout Source Ref
-        if: ${{ ! release_branch_exists }}
+        if: ${{ ! inputs.release_branch_exists }}
         uses: actions/checkout@v3
         with:
           ref: ${{ env.SOURCE_REF }}
 
       - name: Checkout Release Branch
-        if: ${{ release_branch_exists }}
+        if: ${{ inputs.release_branch_exists }}
         uses: actions/checkout@v3
         with:
           ref: ${{ env.RELEASE_BRANCH }}
