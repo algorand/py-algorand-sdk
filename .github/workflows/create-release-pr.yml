@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set Release Version
+      - name: Set Release Version and Branch Check Out
         id: set-release
         run: |
           if [[ $RELEASE_VERSION =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -65,7 +65,9 @@ jobs:
       - name: Checkout Release Branch
         if: ${{ inputs.release_branch_exists }}
         run: |
-          git checkout $RELEASE_BRANCH
+          if [[ $(git symbolic-ref --short -q HEAD) != "$RELEASE_BRANCH" ]]; then
+            git checkout origin/$RELEASE_BRANCH
+          fi
 
       - name: Get Latest Release
         id: get-release
@@ -155,7 +157,7 @@ jobs:
         with:
           message: "bump up version to ${{ env.RELEASE_TAG }}"
 
-      # - name: Create Pull Request
+      # - name: Create Pull Request to Master
       #   env:
       #     CHANGELOG_CONTENT: ${{ steps.build-changelog.outputs.changelog }}
       #     PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
@@ -170,4 +172,18 @@ jobs:
       #       --body "$msg_body" \
       #       --reviewer algorand/scytale \
       #       --reviewer algorand/devops
-      #     echo "Pull request created"
+      #     echo "Pull request to Master created"
+
+
+      # - name: Create Pull Request to Develop
+      #   if: ${{ env.PRE_RELEASE_VERSION == '' }}
+      #   env:
+      #     GH_TOKEN: ${{ github.token }}
+      #   run: |
+      #     gh pr create --base "develop" \
+      #       --title "FOR REVIEW ONLY: Merge back py-algorand-sdk $RELEASE_TAG to develop" \
+      #       --label "Skip-Release-Notes" \
+      #       --body "Merge back version changes to develop." \
+      #       --reviewer algorand/scytale \
+      #       --reviewer algorand/devops
+      #     echo "Pull request to Develop created"
