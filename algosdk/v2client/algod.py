@@ -726,6 +726,8 @@ class AlgodClient:
 
         Args:
             round (int): The round for the desired state delta
+            response_format (str): The format in which the response is returned: either
+                "json" or "msgpack"
 
         Returns:
             Dict[str, Any]: Response from algod
@@ -744,6 +746,8 @@ class AlgodClient:
 
         Args:
             round (int): The round for the desired state delta
+            response_format (str): The format in which the response is returned: either
+                "json" or "msgpack"
 
         Returns:
             Dict[str, Any]: Response from algod
@@ -763,6 +767,8 @@ class AlgodClient:
 
         Args:
             id (str): A transaction ID or transaction group ID
+            response_format (str): The format in which the response is returned: either
+                "json" or "msgpack"
 
         Returns:
             Dict[str, Any]: Response from algod
