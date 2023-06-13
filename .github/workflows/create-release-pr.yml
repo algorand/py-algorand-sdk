@@ -159,8 +159,6 @@ jobs:
           PULL_REQUEST_URL=$(gh pr create --base "master" \
             --title "FOR REVIEW ONLY: py-algorand-sdk $RELEASE_TAG" \
             --label "Skip-Release-Notes" \
-            --reviewer algorand/scytale \
-            --reviewer algorand/devops \
             --body "$msg_body" | tail -n 1)
           PULL_REQUEST_NUM=$(echo $PULL_REQUEST_URL | sed 's:.*/::')
           echo "pull-request-master=$PULL_REQUEST_URL" >> $GITHUB_ENV
@@ -176,8 +174,6 @@ jobs:
           PULL_REQUEST_URL=$(gh pr create --base "develop" \
             --title "FOR REVIEW ONLY: Merge back py-algorand-sdk $RELEASE_TAG to develop" \
             --label "Skip-Release-Notes" \
-            --reviewer algorand/Scytale \
-            --reviewer algorand/devops \
             --body "Merge back version changes to develop." | tail -n 1)
           echo "Pull request to Develop created: $PULL_REQUEST_URL"
           DEVELOP_PR_MESSAGE="\nPull Request to develop: $PULL_REQUEST_URL"
