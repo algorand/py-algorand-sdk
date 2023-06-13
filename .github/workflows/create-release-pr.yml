@@ -131,9 +131,8 @@ jobs:
           CHANGELOG_CONTENT: ${{ steps.build-changelog.outputs.changelog }}
           PREVIOUS_VERSION: ${{ steps.get-release.outputs.latest-tag }}
         run: |
-
           echo "$(tail -n +2 CHANGELOG.md)" > CHANGELOG.md
-          echo -e "# Changelog\n\n# ${RELEASE_VERSION}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${PREVIOUS_VERSION}...${RELEASE_VERSION}" | cat - CHANGELOG.md > temp && mv temp CHANGELOG.md
+          echo -e "# Changelog\n\n# ${RELEASE_VERSION}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREVIOUS_VERSION}...${RELEASE_VERSION}" | cat - CHANGELOG.md > temp && mv temp CHANGELOG.md
 
       - name: Update version in setup.py
         env:
@@ -155,15 +154,18 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.set-release.outputs.release-tag }}
         run: |
-          echo -e "# ${RELEASE_TAG}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/${PREVIOUS_VERSION}...${RELEASE_TAG}" > msg_body.txt
+          echo -e "# ${RELEASE_TAG}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREVIOUS_VERSION}...${RELEASE_TAG}" > msg_body.txt
           export msg_body=$(cat msg_body.txt)
-          gh pr create --base "master" \
+          PULL_REQUEST_URL=$(gh pr create --base "master" \
             --title "FOR REVIEW ONLY: py-algorand-sdk $RELEASE_TAG" \
             --label "Skip-Release-Notes" \
-            --body "$msg_body" \
             --reviewer algorand/scytale \
-            --reviewer algorand/devops
-          echo "Pull request to Master created"
+            --reviewer algorand/devops \
+            --body "$msg_body" | tail -n 1)
+          PULL_REQUEST_NUM=$(echo $PULL_REQUEST_URL | sed 's:.*/::')
+          echo "pull-request-master=$PULL_REQUEST_URL" >> $GITHUB_ENV
+          echo "pull-request-master-num=$PULL_REQUEST_NUM" >> $GITHUB_ENV
+          echo "Pull request to Master created: $PULL_REQUEST_URL"
 
       - name: Create Pull Request to Develop
         if: ${{ env.PRE_RELEASE_VERSION == '' }}
@@ -171,10 +173,48 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.set-release.outputs.release-tag }}
         run: |
-          gh pr create --base "develop" \
+          PULL_REQUEST_URL=$(gh pr create --base "develop" \
             --title "FOR REVIEW ONLY: Merge back py-algorand-sdk $RELEASE_TAG to develop" \
             --label "Skip-Release-Notes" \
-            --body "Merge back version changes to develop." \
             --reviewer algorand/scytale \
-            --reviewer algorand/devops
-          echo "Pull request to Develop created"
+            --reviewer algorand/devops \
+            --body "Merge back version changes to develop." | tail -n 1)
+          echo "Pull request to Develop created: $PULL_REQUEST_URL"
+          DEVELOP_PR_MESSAGE="\nPull Request to develop: $PULL_REQUEST_URL"
+          echo "pull-request-develop-message=$DEVELOP_PR_MESSAGE" >> $GITHUB_ENV
+
+      - name: Send Slack Message
+        id: slack
+        uses: slackapi/slack-github-action@v1.24.0
+        env:
+          RELEASE_TAG: ${{ steps.set-release.outputs.release-tag }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+          SDK_DEPLOYMENT_URL: ${{ secrets.SDK_DEPLOYMENT_URL }}
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "${{ github.event.repository.name }} Release PR for ${{ env.RELEASE_TAG }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Approvals needed for*:\nPull Request to master: ${{ env.pull-request-master}}${{ env.pull-request-develop-message }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*After approvals*\nDeploy SDK using the <${{ env.SDK_DEPLOYMENT_URL }}|Deployment Pipeline> with the following parameters:\n*SDK*: ${{ github.event.repository.name }}\n*RELEASE_PR_NUM*: ${{ env.pull-request-master-num }}\n*RELEASE_VERSION*: ${{ env.RELEASE_VERSION }}\n*PRE_RELEASE_VERSION*: ${{ env.PRE_RELEASE_VERSION }}"
+                  }
+                }
+              ]
+            }

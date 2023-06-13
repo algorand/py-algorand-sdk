@@ -15,40 +15,6 @@ workflows:
             parameters:
               python-version: ["3.8", "3.9", "3.10", "3.11"]
       - docset
-      - tests-completion:
-          context:
-            - slack-secrets
-            - jenkins-urls
-          requires:
-            - unit-test
-            - integration-test
-            - docset
-          filters:
-            branches:
-              only:
-                - /release\/.*/
-          post-steps:
-            - slack/notify:
-                custom: |
-                  {
-                    "blocks": [
-                      {
-                        "type": "header",
-                        "text": {
-                          "type": "plain_text",
-                          "text": "CircleCI tests completed for py-algorand-sdk in ${CIRCLE_BRANCH}."
-                        }
-                      },
-                      {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "If there are enough approvals on the PR ${CIRCLE_PULL_REQUEST}\n - start this job: ${SDK_DEPLOYMENT_URL}"
-                        }
-                      }
-                    ]
-                  }
-                event: pass
 
 jobs:
   unit-test:
@@ -91,11 +57,3 @@ jobs:
       - store_artifacts:
           path: /tmp/py-algo-sdk.docset.tar.gz
           destination: py-algo-sdk.docset.tar.gz
-  tests-completion:
-    docker:
-      - image: cimg/base:current
-    steps:
-      - run:
-          name: Success
-          command: |
-            exit 0
