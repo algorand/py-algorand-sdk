@@ -176,7 +176,7 @@ jobs:
           PULL_REQUEST_URL=$(gh pr create --base "develop" \
             --title "FOR REVIEW ONLY: Merge back py-algorand-sdk $RELEASE_TAG to develop" \
             --label "Skip-Release-Notes" \
-            --reviewer algorand/scytale \
+            --reviewer algorand/Scytale \
             --reviewer algorand/devops \
             --body "Merge back version changes to develop." | tail -n 1)
           echo "Pull request to Develop created: $PULL_REQUEST_URL"
