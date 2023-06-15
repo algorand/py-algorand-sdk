@@ -34,7 +34,6 @@ jobs:
         type: string
     machine:
      image: "ubuntu-2004:202104-01"
-    resource_class: large
     steps:
       - checkout
       - run: PYTHON_VERSION=<< parameters.python-version >> make docker-test
