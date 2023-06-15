@@ -96,7 +96,7 @@ jobs:
                         ]
                     },
                     {
-                        "title": "## Enhancement",
+                        "title": "## Enhancements",
                         "labels": [
                             "Enhancement"
                         ]
@@ -122,7 +122,7 @@ jobs:
                     "on_property": "mergedAt"
                 },
                 "template": "#{{CHANGELOG}}",
-                "pr_template": "- #{{TITLE}} by #{{AUTHOR}} in ##{{NUMBER}}"
+                "pr_template": "- #{{TITLE}} by @#{{AUTHOR}} in ##{{NUMBER}}"
             }
 
       - name: Update Changelog
@@ -154,13 +154,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.set-release.outputs.release-tag }}
         run: |
-          echo -e "# ${RELEASE_TAG}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREVIOUS_VERSION}...${RELEASE_TAG}" > tmp_msg_body.txt
+          echo -e "# What's Changed\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREVIOUS_VERSION}...${RELEASE_TAG}" > tmp_msg_body.txt
           export msg_body=$(cat tmp_msg_body.txt)
           rm tmp_msg_body.txt
           # Note: There's an issue adding teams as reviewers, see https://github.com/cli/cli/issues/6395
           PULL_REQUEST_URL=$(gh pr create --base "master" \
             --title "FOR REVIEW ONLY: py-algorand-sdk $RELEASE_TAG" \
             --label "Skip-Release-Notes" \
+            --label "Team Hyper Flow" \
             --body "$msg_body" | tail -n 1)
           if [[ $PULL_REQUEST_URL =~ ^https://github.com/${{ github.repository }}/pull/[0-9]+$ ]]; then
             PULL_REQUEST_NUM=$(echo $PULL_REQUEST_URL | sed 's:.*/::')
@@ -182,6 +183,7 @@ jobs:
           PULL_REQUEST_URL=$(gh pr create --base "develop" \
             --title "FOR REVIEW ONLY: Merge back py-algorand-sdk $RELEASE_TAG to develop" \
             --label "Skip-Release-Notes" \
+            --label "Team Hyper Flow" \
             --body "Merge back version changes to develop." | tail -n 1)
           if [[ $PULL_REQUEST_URL =~ ^https://github.com/${{ github.repository }}/pull/[0-9]+$ ]]; then
             echo "Pull request to Develop created: $PULL_REQUEST_URL"
