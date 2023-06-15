@@ -134,7 +134,7 @@ jobs:
           echo "$(tail -n +2 CHANGELOG.md)" > CHANGELOG.md
           echo -e "# Changelog\n\n# ${RELEASE_VERSION}\n\n${CHANGELOG_CONTENT}**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREVIOUS_VERSION}...${RELEASE_VERSION}" | cat - CHANGELOG.md > temp && mv temp CHANGELOG.md
 
-      - name: Update version in setup.py
+      - name: Update Version in setup.py
         env:
           RELEASE_TAG: ${{ steps.set-release.outputs.release-tag }}
         run: |
