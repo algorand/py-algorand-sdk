@@ -159,7 +159,7 @@ jobs:
           rm tmp_msg_body.txt
           # Note: There's an issue adding teams as reviewers, see https://github.com/cli/cli/issues/6395
           PULL_REQUEST_URL=$(gh pr create --base "master" \
-            --title "FOR REVIEW ONLY: py-algorand-sdk $RELEASE_TAG" \
+            --title "FOR REVIEW ONLY: ${{ github.event.repository.name }} $RELEASE_TAG" \
             --label "Skip-Release-Notes" \
             --label "Team Hyper Flow" \
             --body "$msg_body" | tail -n 1)
@@ -181,7 +181,7 @@ jobs:
         run: |
           # Note: There's an issue adding teams as reviewers, see https://github.com/cli/cli/issues/6395
           PULL_REQUEST_URL=$(gh pr create --base "develop" \
-            --title "FOR REVIEW ONLY: Merge back py-algorand-sdk $RELEASE_TAG to develop" \
+            --title "FOR REVIEW ONLY: Merge back ${{ github.event.repository.name }} $RELEASE_TAG to develop" \
             --label "Skip-Release-Notes" \
             --label "Team Hyper Flow" \
             --body "Merge back version changes to develop." | tail -n 1)
