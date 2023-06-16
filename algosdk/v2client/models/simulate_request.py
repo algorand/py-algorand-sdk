@@ -20,6 +20,7 @@ class SimulateRequest(object):
     txn_groups: List[SimulateRequestTransactionGroup]
     allow_more_logs: bool
     allow_empty_signatures: bool
+    extra_opcode_budget: int
 
     def __init__(
         self,
@@ -27,10 +28,12 @@ class SimulateRequest(object):
         txn_groups: List[SimulateRequestTransactionGroup],
         allow_more_logs: bool = False,
         allow_empty_signatures: bool = False,
+        extra_opcode_budget: int = 0,
     ) -> None:
         self.txn_groups = txn_groups
         self.allow_more_logs = allow_more_logs
         self.allow_empty_signatures = allow_empty_signatures
+        self.extra_opcode_budget = extra_opcode_budget
 
     def dictify(self) -> Dict[str, Any]:
         return {
@@ -39,4 +42,5 @@ class SimulateRequest(object):
             ],
             "allow-more-logging": self.allow_more_logs,
             "allow-empty-signatures": self.allow_empty_signatures,
+            "extra-opcode-budget": self.extra_opcode_budget,
         }

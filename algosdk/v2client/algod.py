@@ -718,6 +718,67 @@ class AlgodClient:
         req = f"/devmode/blocks/offset/{offset}"
         return self.algod_request("POST", req, **kwargs)
 
+    def get_ledger_state_delta(
+        self, round: int, response_format: str = "json", **kwargs: Any
+    ) -> AlgodResponseType:
+        """
+        Get the ledger state delta for a round.
+
+        Args:
+            round (int): The round for the desired state delta
+            response_format (str): The format in which the response is returned: either
+                "json" or "msgpack"
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        query = {"format": response_format}
+        req = f"/deltas/{round}"
+        return self.algod_request(
+            "GET", req, params=query, response_format=response_format, **kwargs
+        )
+
+    def get_transaction_group_ledger_state_deltas_for_round(
+        self, round: int, response_format: str = "json", **kwargs: Any
+    ) -> AlgodResponseType:
+        """
+        Get the ledger state deltas for all transaction groups in a given round.
+
+        Args:
+            round (int): The round for the desired state delta
+            response_format (str): The format in which the response is returned: either
+                "json" or "msgpack"
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        query = {"format": response_format}
+        req = f"/deltas/{round}/txn/group"
+        return self.algod_request(
+            "GET", req, params=query, response_format=response_format, **kwargs
+        )
+
+    def get_ledger_state_delta_for_transaction_group(
+        self, id: str, response_format: str = "json", **kwargs: Any
+    ) -> AlgodResponseType:
+        """
+        Get the ledger state delta for a transaction group given the
+        transaction or group ID.
+
+        Args:
+            id (str): A transaction ID or transaction group ID
+            response_format (str): The format in which the response is returned: either
+                "json" or "msgpack"
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        query = {"format": response_format}
+        req = f"/deltas/txn/group/{id}"
+        return self.algod_request(
+            "GET", req, params=query, response_format=response_format, **kwargs
+        )
+
 
 def _specify_round_string(
     block: Union[int, None], round_num: Union[int, None]
