@@ -7,9 +7,9 @@ import sys
 
 
 def check_version(new_version):
-    if not re.fullmatch(r"[0-9]+\.[0-9]+\.[-a-z.0-9]+", new_version):
+    if not re.fullmatch(r"[0-9]+\.[0-9]+\.[a-z.0-9]+", new_version):
         sys.exit(
-            "The version does not match the regex(major.minor.patch): [0-9]+\.[0-9]+\.[-a-z.0-9]+"
+            "The version does not match the regex(major.minor.patch): [0-9]+\.[0-9]+\.[a-z.0-9]+"
         )
 
 
