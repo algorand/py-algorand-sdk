@@ -3,6 +3,14 @@
 
 import argparse
 import re
+import sys
+
+
+def check_version(new_version):
+    if not re.fullmatch(r"[0-9]+\.[0-9]+\.[a-z.0-9]+", new_version):
+        sys.exit(
+            "The version does not match the regex(major.minor.patch): [0-9]+\.[0-9]+\.[a-z.0-9]+"
+        )
 
 
 def bump_version(new_version, setup_py_path):
@@ -31,4 +39,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    check_version(args.new_version)
     bump_version(args.new_version, args.setup_py_path)
