@@ -4,7 +4,7 @@ if TYPE_CHECKING:
     from algosdk import transaction
 
 
-class SimulateRequestTransactionGroup(object):
+class SimulateRequestTransactionGroup:
     txns: "List[transaction.GenericSignedTransaction]"
 
     def __init__(
@@ -16,7 +16,7 @@ class SimulateRequestTransactionGroup(object):
         return {"txns": [txn.dictify() for txn in self.txns]}
 
 
-class SimulateTraceConfig(object):
+class SimulateTraceConfig:
     enable: bool
     stack_change: bool
     scratch_change: bool
@@ -40,7 +40,7 @@ class SimulateTraceConfig(object):
         }
 
 
-class SimulateRequest(object):
+class SimulateRequest:
     txn_groups: List[SimulateRequestTransactionGroup]
     allow_more_logs: bool
     allow_empty_signatures: bool
