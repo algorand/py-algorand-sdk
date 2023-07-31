@@ -1,0 +1,8 @@
+# .git-blame-ignore-revs
+# Exclude formatting commits made by black
+# more black formatting Aug 17, 2021
+a9facdf30ca467b6e16d13ce88d8889bba7f2e1c
+# formatting Aug 16, 2021 
+ea81ba259216b8be7fb86ef5d3e9c151a94edf87
+# apply black Aug 11, 2021
+81fe44f0dd9785b1665bbbea047aed591912534b

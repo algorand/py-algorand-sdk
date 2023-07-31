@@ -1,5 +1,26 @@
 # Changelog
 
+# v2.3.0
+
+## New Features
+
+- Algod: Simulation run with extra budget per transaction group by ahangsu in #484
+
+## Enhancement
+
+- tweak: reorder GenericSignedTransaction type alias by tzaffi in #478
+- Enhancement: Adding `box_reference.py` to Read The Docs by tzaffi in #481
+- DevOps: Update CODEOWNERS to only refer to the devops group by onetechnical in #482
+- algod: State delta endpoints by algochoi in #483
+- CICD: Release PR Creation Workflow and Slack Messaging by algobarb in #497
+- algod: Add msgpack query param to deltas endpoints by Eric-Warehime in #499
+
+## Bug Fixes
+
+- bugfix: incorrect indexer docs by tzaffi in #476
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v2.2.0...v2.3.0
+
 # v2.2.0
 
 ## What's Changed

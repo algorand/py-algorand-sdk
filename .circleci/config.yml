@@ -1,4 +1,6 @@
 version: 2.1
+orbs:
+  slack: circleci/slack@4.12.5
 
 workflows:
   version: 2
@@ -31,7 +33,7 @@ jobs:
       python-version:
         type: string
     machine:
-     image: "ubuntu-2004:202104-01"
+     image: "ubuntu-2204:2022.04.2"
     steps:
       - checkout
       - run: PYTHON_VERSION=<< parameters.python-version >> make docker-test
