@@ -18,6 +18,8 @@ class SimulateRequestTransactionGroup(object):
 
 class SimulateTraceConfig(object):
     enable: bool
+    stack_change: bool
+    scratch_change: bool
 
     def __init__(
         self,
@@ -43,6 +45,7 @@ class SimulateRequest(object):
     allow_more_logs: bool
     allow_empty_signatures: bool
     extra_opcode_budget: int
+    exec_trace_config: SimulateTraceConfig
 
     def __init__(
         self,
@@ -51,14 +54,15 @@ class SimulateRequest(object):
         allow_more_logs: bool = False,
         allow_empty_signatures: bool = False,
         extra_opcode_budget: int = 0,
-        trace_config: Optional[SimulateTraceConfig] = None,
+        exec_trace_config: Optional[SimulateTraceConfig] = None,
     ) -> None:
         self.txn_groups = txn_groups
         self.allow_more_logs = allow_more_logs
         self.allow_empty_signatures = allow_empty_signatures
         self.extra_opcode_budget = extra_opcode_budget
-        if trace_config:
-            self.trace_config = trace_config
+        self.exec_trace_config = (
+            exec_trace_config if exec_trace_config else SimulateTraceConfig()
+        )
 
     def dictify(self) -> Dict[str, Any]:
         return {
@@ -68,5 +72,5 @@ class SimulateRequest(object):
             "allow-more-logging": self.allow_more_logs,
             "allow-empty-signatures": self.allow_empty_signatures,
             "extra-opcode-budget": self.extra_opcode_budget,
-            "exec-trace-config": self.trace_config,
+            "exec-trace-config": self.exec_trace_config,
         }
