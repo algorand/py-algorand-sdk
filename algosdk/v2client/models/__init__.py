@@ -34,6 +34,7 @@ from algosdk.v2client.models.teal_value import TealValue
 from algosdk.v2client.models.simulate_request import (
     SimulateRequest,
     SimulateRequestTransactionGroup,
+    SimulateTraceConfig,
 )
 
 __all__ = [
@@ -52,4 +53,5 @@ __all__ = [
     "TealValue",
     "SimulateRequest",
     "SimulateRequestTransactionGroup",
+    "SimulateTraceConfig",
 ]

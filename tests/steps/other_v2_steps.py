@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+import string
 import unittest
 import urllib
 from pathlib import Path
@@ -22,6 +23,7 @@ from algosdk import (
 
 from algosdk.atomic_transaction_composer import (
     SimulateAtomicTransactionResponse,
+    SimulateEvalOverrides,
 )
 from algosdk.error import AlgodHTTPError
 from algosdk.testing.dryrun import DryrunTestCaseMixin
@@ -32,6 +34,7 @@ from algosdk.v2client.models import (
     DryrunRequest,
     DryrunSource,
     SimulateRequest,
+    SimulateTraceConfig,
 )
 from tests.steps.steps import algod_port, indexer_port
 from tests.steps.steps import token as daemon_token
@@ -1527,6 +1530,18 @@ def power_pack_simulation_should_have_extra_budget(context, budget):
     assert (
         context.atomic_transaction_composer_return.eval_overrides.extra_opcode_budget
         == int(budget)
+    )
+
+
+@then(
+    'I allow exec trace options "{options:MaybeString}" on that simulate request.'
+)
+def exec_trace_config_in_simulation(context, options: str):
+    option_list = options.split(",")
+    context.simulate_request.exec_trace_config = SimulateTraceConfig(
+        enable=True,
+        stack_change="stack" in option_list,
+        scratch_change="scratch" in option_list,
     )
 
 
