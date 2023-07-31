@@ -16,6 +16,18 @@ class SimulateRequestTransactionGroup(object):
         return {"txns": [txn.dictify() for txn in self.txns]}
 
 
+class SimulateTraceConfig(object):
+    enable: bool
+
+    def __init__(self, *, enable: bool = False) -> None:
+        self.enable = enable
+
+    def dictify(self) -> Dict[str, Any]:
+        return {
+            "enable": self.enable,
+        }
+
+
 class SimulateRequest(object):
     txn_groups: List[SimulateRequestTransactionGroup]
     allow_more_logs: bool
