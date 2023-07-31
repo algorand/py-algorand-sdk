@@ -36,6 +36,8 @@ from algosdk.v2client.models.simulate_request import (
     SimulateRequestTransactionGroup,
     SimulateTraceConfig,
 )
+from algosdk.v2client.models.avm_value import AVMValue
+from algosdk.v2client.models.simulate_exec_trace import SimulateExecTrace
 
 __all__ = [
     "Account",
@@ -54,4 +56,6 @@ __all__ = [
     "SimulateRequest",
     "SimulateRequestTransactionGroup",
     "SimulateTraceConfig",
+    "AVMValue",
+    "SimulateExecTrace",
 ]
