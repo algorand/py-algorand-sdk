@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, TYPE_CHECKING, Optional
+from typing import List, Dict, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from algosdk import transaction
@@ -25,18 +25,18 @@ class SimulateTraceConfig(object):
         self,
         *,
         enable: bool = False,
-        stack: bool = False,
-        scratch: bool = False,
+        stack_change: bool = False,
+        scratch_change: bool = False,
     ) -> None:
         self.enable = enable
-        self.stack = stack
-        self.scratch = scratch
+        self.stack_change = stack_change
+        self.scratch_change = scratch_change
 
     def dictify(self) -> Dict[str, Any]:
         return {
             "enable": self.enable,
-            "stack-change": self.stack,
-            "scratch-change": self.scratch,
+            "stack-change": self.stack_change,
+            "scratch-change": self.scratch_change,
         }
 
 
@@ -54,15 +54,13 @@ class SimulateRequest(object):
         allow_more_logs: bool = False,
         allow_empty_signatures: bool = False,
         extra_opcode_budget: int = 0,
-        exec_trace_config: Optional[SimulateTraceConfig] = None,
+        exec_trace_config: SimulateTraceConfig = SimulateTraceConfig(),
     ) -> None:
         self.txn_groups = txn_groups
         self.allow_more_logs = allow_more_logs
         self.allow_empty_signatures = allow_empty_signatures
         self.extra_opcode_budget = extra_opcode_budget
-        self.exec_trace_config = (
-            exec_trace_config if exec_trace_config else SimulateTraceConfig()
-        )
+        self.exec_trace_config = exec_trace_config
 
     def dictify(self) -> Dict[str, Any]:
         return {
@@ -72,5 +70,5 @@ class SimulateRequest(object):
             "allow-more-logging": self.allow_more_logs,
             "allow-empty-signatures": self.allow_empty_signatures,
             "extra-opcode-budget": self.extra_opcode_budget,
-            "exec-trace-config": self.exec_trace_config,
+            "exec-trace-config": self.exec_trace_config.dictify(),
         }
