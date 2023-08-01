@@ -1548,7 +1548,7 @@ def exec_trace_config_in_simulation(context, options: str):
 )
 def step_impl(
     context,
-    unit_index,
+    unit_index: int,
     trace_type,
     group_path,
     stack_addition: str,
@@ -1556,9 +1556,39 @@ def step_impl(
     scratch_index,
     scratch_var,
 ):
-    raise NotImplementedError(
-        'STEP: Then 4th unit in the "approval" trace at txn-groups path "0" should add to stack "uint64:2", pop from stack by 2, write to "none" scratch slot by "none".'
+    assert context.atomic_transaction_composer_return
+    assert context.atomic_transaction_composer_return.simulate_response
+
+    simulation_response = (
+        context.atomic_transaction_composer_return.simulate_response
     )
+    assert "txn-groups" in simulation_response
+
+    assert simulation_response["txn-groups"]
+
+    group_path = list(map(int, group_path.split(",")))
+    traces = simulation_response["txn-groups"][0]["txn-results"][
+        group_path[0]
+    ]["exec-trace"]
+    assert traces
+
+    for i in range(1, len(group_path)):
+        traces = traces["inner-trace"][group_path[i]]
+        assert traces
+
+    trace = []
+    if trace_type == "approval":
+        trace = traces["approval-program-trace"]
+    elif trace_type == "clearState":
+        trace = traces["clear-state-program-trace"]
+    elif trace_type == "logic":
+        trace = traces["logic-sig-trace"]
+
+    assert trace
+
+    unit_index = int(unit_index)
+    unit = trace[unit_index]
+    print(unit)
 
 
 @when("we make a SetSyncRound call against round {round}")
