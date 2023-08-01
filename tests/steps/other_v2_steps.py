@@ -1543,10 +1543,22 @@ def exec_trace_config_in_simulation(context, options: str):
     )
 
 
-@then(u'{unit_index}th unit in the "{trace_type}" trace at txn-groups path "{group_path}" should add to stack "{stack_addition:MaybeString}", pop from stack by {pop_count}, write to "{scratch_index}" scratch slot by "{scratch_var}".')
-def step_impl(context, unit_index, trace_type, group_path, stack_addition: str, pop_count, scratch_index, scratch_var):
-    raise NotImplementedError(u'STEP: Then 4th unit in the "approval" trace at txn-groups path "0" should add to stack "uint64:2", pop from stack by 2, write to "none" scratch slot by "none".')
-
+@then(
+    '{unit_index}th unit in the "{trace_type}" trace at txn-groups path "{group_path}" should add to stack "{stack_addition:MaybeString}", pop from stack by {pop_count}, write to "{scratch_index}" scratch slot by "{scratch_var}".'
+)
+def step_impl(
+    context,
+    unit_index,
+    trace_type,
+    group_path,
+    stack_addition: str,
+    pop_count,
+    scratch_index,
+    scratch_var,
+):
+    raise NotImplementedError(
+        'STEP: Then 4th unit in the "approval" trace at txn-groups path "0" should add to stack "uint64:2", pop from stack by 2, write to "none" scratch slot by "none".'
+    )
 
 
 @when("we make a SetSyncRound call against round {round}")

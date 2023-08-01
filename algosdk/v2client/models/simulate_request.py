@@ -39,6 +39,14 @@ class SimulateTraceConfig:
             "scratch-change": self.scratch_change,
         }
 
+    @staticmethod
+    def undictify(d: Dict[str, Any]) -> "SimulateTraceConfig":
+        return SimulateTraceConfig(
+            enable="enable" in d and d["enable"],
+            stack_change="stack-change" in d and d["stack-change"],
+            scratch_change="scratch-change" in d and d["scratch-change"],
+        )
+
 
 class SimulateRequest:
     txn_groups: List[SimulateRequestTransactionGroup]
