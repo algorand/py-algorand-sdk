@@ -1548,7 +1548,7 @@ def exec_trace_config_in_simulation(context, options: str):
 )
 def step_impl(
     context,
-    unit_index: int,
+    unit_index,
     trace_type,
     group_path,
     stack_addition: str,
@@ -1588,7 +1588,52 @@ def step_impl(
 
     unit_index = int(unit_index)
     unit = trace[unit_index]
-    print(unit)
+
+    def compare_avm_value_with_string_literal(string_literal, avm_value):
+        [avm_type, value] = string_literal.split(":")
+        assert avm_type in ["uint64", "bytes"]
+        assert "type" in avm_value
+        if avm_type == "uint64":
+            assert avm_value["type"] == 2
+            if int(value) > 0:
+                assert avm_value["uint"] == int(value)
+            else:
+                assert "uint" not in avm_value
+        elif avm_value == "bytes":
+            assert avm_value["type"] == 1
+            if len(value) > 0:
+                assert avm_value["bytes"] == value
+            else:
+                assert "bytes" not in avm_value
+
+    pop_count = int(pop_count)
+    if pop_count > 0:
+        assert unit["stack-pop-count"]
+        assert unit["stack-pop-count"] == pop_count
+    else:
+        assert not unit["stack-pop-count"]
+
+    stack_additions = list(
+        filter(lambda x: len(x) > 0, stack_addition.split(","))
+    )
+    if len(stack_additions) > 0:
+        for i in range(0, len(stack_additions)):
+            compare_avm_value_with_string_literal(
+                stack_additions[i], unit["stack-additions"][i]
+            )
+    else:
+        assert "stack-additions" not in unit
+
+    if scratch_index != "none":
+        scratch_index = int(scratch_index)
+        assert unit["scratch-changes"]
+        assert len(unit["scratch-changes"]) == 1
+        assert unit["scratch-changes"][0]["slot"] == scratch_index
+        compare_avm_value_with_string_literal(
+            scratch_var, unit["scratch-changes"][0]["new-value"]
+        )
+    else:
+        assert scratch_var == "none"
 
 
 @when("we make a SetSyncRound call against round {round}")
