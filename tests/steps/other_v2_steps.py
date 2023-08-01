@@ -1004,12 +1004,6 @@ def build_payment_transaction(
     )
 
 
-@when("sign the transaction")
-def sign_transaction_with_signing_account(context):
-    private_key = mnemonic.to_private_key(context.signing_mnemonic)
-    context.signed_transaction = context.transaction.sign(private_key)
-
-
 @then('the base64 encoded signed transactions should equal "{goldens}"')
 def compare_stxns_array_to_base64_golden(context, goldens):
     golden_strings = goldens.split(",")
