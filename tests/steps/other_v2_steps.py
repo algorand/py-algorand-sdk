@@ -1544,7 +1544,7 @@ def exec_trace_config_in_simulation(context, options: str):
 
 
 @then(
-    '{unit_index}th unit in the "{trace_type}" trace at txn-groups path "{group_path}" should add to stack "{stack_addition:MaybeString}", pop from stack by {pop_count}, write to "{scratch_index}" scratch slot by "{scratch_var}".'
+    '{unit_index}th unit in the "{trace_type}" trace at txn-groups path "{group_path}" should add value "{stack_addition:MaybeString}" to stack, pop {pop_count} values from stack, write value "{scratch_var:MaybeString}" to scratch slot "{scratch_index:MaybeString}".'
 )
 def step_impl(
     context,
@@ -1553,8 +1553,8 @@ def step_impl(
     group_path,
     stack_addition: str,
     pop_count,
-    scratch_index,
     scratch_var,
+    scratch_index,
 ):
     assert context.atomic_transaction_composer_return
     assert context.atomic_transaction_composer_return.simulate_response
@@ -1602,7 +1602,7 @@ def step_impl(
         elif avm_value == "bytes":
             assert avm_value["type"] == 1
             if len(value) > 0:
-                assert avm_value["bytes"] == value
+                assert avm_value["bytes"] == base64.b32decode(bytearray(value))
             else:
                 assert "bytes" not in avm_value
 
@@ -1611,7 +1611,7 @@ def step_impl(
         assert unit["stack-pop-count"]
         assert unit["stack-pop-count"] == pop_count
     else:
-        assert not unit["stack-pop-count"]
+        assert "stack-pop-count" not in unit
 
     stack_additions = list(
         filter(lambda x: len(x) > 0, stack_addition.split(","))
@@ -1624,7 +1624,7 @@ def step_impl(
     else:
         assert "stack-additions" not in unit
 
-    if scratch_index != "none":
+    if len(scratch_index) > 0:
         scratch_index = int(scratch_index)
         assert unit["scratch-changes"]
         assert len(unit["scratch-changes"]) == 1
@@ -1633,7 +1633,7 @@ def step_impl(
             scratch_var, unit["scratch-changes"][0]["new-value"]
         )
     else:
-        assert scratch_var == "none"
+        assert len(scratch_var) == 0
 
 
 @when("we make a SetSyncRound call against round {round}")
