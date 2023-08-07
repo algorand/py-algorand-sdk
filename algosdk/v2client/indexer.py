@@ -152,9 +152,9 @@ class IndexerClient:
             query["limit"] = limit
         if next_page:
             query["next"] = next_page
-        if min_balance is not None and min_balance >= 0:
+        if min_balance is not None:
             query["currency-greater-than"] = min_balance
-        if max_balance is not None and max_balance > 0:
+        if max_balance:
             query["currency-less-than"] = max_balance
         _specify_round(query, block, round_num)
         if auth_addr:
@@ -204,9 +204,9 @@ class IndexerClient:
             query["limit"] = limit
         if next_page:
             query["next"] = next_page
-        if min_balance is not None and min_balance >= 0:
+        if min_balance is not None:
             query["currency-greater-than"] = min_balance
-        if max_balance is not None and max_balance > 0:
+        if max_balance:
             query["currency-less-than"] = max_balance
         if include_all:
             query["include-all"] = include_all
@@ -548,9 +548,9 @@ class IndexerClient:
             query["before-time"] = end_time
         if start_time:
             query["after-time"] = start_time
-        if min_amount is not None and min_amount >= 0:
+        if min_amount is not None:
             query["currency-greater-than"] = min_amount
-        if max_amount is not None and max_amount > 0:
+        if max_amount:
             query["currency-less-than"] = max_amount
         if address:
             query["address"] = address
@@ -650,9 +650,9 @@ class IndexerClient:
             query["before-time"] = end_time
         if start_time:
             query["after-time"] = start_time
-        if min_amount is not None and min_amount >= 0:
+        if min_amount is not None:
             query["currency-greater-than"] = min_amount
-        if max_amount is not None and max_amount > 0:
+        if max_amount:
             query["currency-less-than"] = max_amount
         if rekey_to:
             query["rekey-to"] = "true"
@@ -752,9 +752,9 @@ class IndexerClient:
             query["before-time"] = end_time
         if start_time:
             query["after-time"] = start_time
-        if min_amount is not None and min_amount >= 0:
+        if min_amount is not None:
             query["currency-greater-than"] = min_amount
-        if max_amount is not None and max_amount > 0:
+        if max_amount:
             query["currency-less-than"] = max_amount
         if address:
             query["address"] = address
