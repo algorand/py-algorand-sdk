@@ -152,7 +152,7 @@ class IndexerClient:
             query["limit"] = limit
         if next_page:
             query["next"] = next_page
-        if min_balance:
+        if min_balance is not None:
             query["currency-greater-than"] = min_balance
         if max_balance:
             query["currency-less-than"] = max_balance
@@ -204,7 +204,7 @@ class IndexerClient:
             query["limit"] = limit
         if next_page:
             query["next"] = next_page
-        if min_balance:
+        if min_balance is not None:
             query["currency-greater-than"] = min_balance
         if max_balance:
             query["currency-less-than"] = max_balance
@@ -548,7 +548,7 @@ class IndexerClient:
             query["before-time"] = end_time
         if start_time:
             query["after-time"] = start_time
-        if min_amount:
+        if min_amount is not None:
             query["currency-greater-than"] = min_amount
         if max_amount:
             query["currency-less-than"] = max_amount
@@ -650,7 +650,7 @@ class IndexerClient:
             query["before-time"] = end_time
         if start_time:
             query["after-time"] = start_time
-        if min_amount:
+        if min_amount is not None:
             query["currency-greater-than"] = min_amount
         if max_amount:
             query["currency-less-than"] = max_amount
@@ -752,7 +752,7 @@ class IndexerClient:
             query["before-time"] = end_time
         if start_time:
             query["after-time"] = start_time
-        if min_amount:
+        if min_amount is not None:
             query["currency-greater-than"] = min_amount
         if max_amount:
             query["currency-less-than"] = max_amount
