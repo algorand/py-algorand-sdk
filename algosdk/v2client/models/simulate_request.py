@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, TYPE_CHECKING
+from typing import List, Dict, Any, TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from algosdk import transaction
@@ -62,13 +62,15 @@ class SimulateRequest:
         allow_more_logs: bool = False,
         allow_empty_signatures: bool = False,
         extra_opcode_budget: int = 0,
-        exec_trace_config: SimulateTraceConfig = SimulateTraceConfig(),
+        exec_trace_config: Optional[SimulateTraceConfig] = None,
     ) -> None:
         self.txn_groups = txn_groups
         self.allow_more_logs = allow_more_logs
         self.allow_empty_signatures = allow_empty_signatures
         self.extra_opcode_budget = extra_opcode_budget
-        self.exec_trace_config = exec_trace_config
+        self.exec_trace_config = (
+            exec_trace_config if exec_trace_config else SimulateTraceConfig()
+        )
 
     def dictify(self) -> Dict[str, Any]:
         return {

@@ -1546,7 +1546,7 @@ def exec_trace_config_in_simulation(context, options: str):
 @then(
     '{unit_index}th unit in the "{trace_type}" trace at txn-groups path "{group_path}" should add value "{stack_addition:MaybeString}" to stack, pop {pop_count} values from stack, write value "{scratch_var:MaybeString}" to scratch slot "{scratch_index:MaybeString}".'
 )
-def step_impl(
+def exec_trace_unit_in_simulation_check_stack_scratch(
     context,
     unit_index,
     trace_type,
@@ -1602,7 +1602,7 @@ def step_impl(
         elif avm_value == "bytes":
             assert avm_value["type"] == 1
             if len(value) > 0:
-                assert avm_value["bytes"] == base64.b32decode(bytearray(value))
+                assert avm_value["bytes"] == base64.b64decode(bytearray(value))
             else:
                 assert "bytes" not in avm_value
 
