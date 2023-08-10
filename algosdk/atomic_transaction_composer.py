@@ -315,6 +315,7 @@ class SimulateAtomicTransactionResponse:
         tx_ids: List[str],
         results: List[SimulateABIResult],
         eval_overrides: Optional[SimulateEvalOverrides] = None,
+        exec_trace_config: Optional[models.SimulateTraceConfig] = None,
     ) -> None:
         self.version = version
         self.failure_message = failure_message
@@ -323,6 +324,7 @@ class SimulateAtomicTransactionResponse:
         self.tx_ids = tx_ids
         self.abi_results = results
         self.eval_overrides = eval_overrides
+        self.exec_trace_config = exec_trace_config
 
 
 class AtomicTransactionComposer:
@@ -796,8 +798,6 @@ class AtomicTransactionComposer:
         # build up data structure with fields we'd want
         sim_results = []
         for idx, result in enumerate(method_results):
-            sim_txn: Dict[str, Any] = txn_group["txn-results"][idx]
-
             sim_results.append(
                 SimulateABIResult(
                     tx_id=result.tx_id,
@@ -809,6 +809,14 @@ class AtomicTransactionComposer:
                 )
             )
 
+        exec_trace_config: Optional[models.SimulateTraceConfig] = (
+            None
+            if "exec-trace-config" not in simulation_result
+            else models.SimulateTraceConfig.undictify(
+                simulation_result["exec-trace-config"]
+            )
+        )
+
         return SimulateAtomicTransactionResponse(
             version=simulation_result.get("version", 0),
             failure_message=txn_group.get("failure-message", ""),
@@ -819,6 +827,7 @@ class AtomicTransactionComposer:
             eval_overrides=SimulateEvalOverrides.from_simulation_result(
                 simulation_result
             ),
+            exec_trace_config=exec_trace_config,
         )
 
     def execute(

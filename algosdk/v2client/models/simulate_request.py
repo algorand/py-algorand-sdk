@@ -1,10 +1,10 @@
-from typing import List, Dict, Any, TYPE_CHECKING
+from typing import List, Dict, Any, TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from algosdk import transaction
 
 
-class SimulateRequestTransactionGroup(object):
+class SimulateRequestTransactionGroup:
     txns: "List[transaction.GenericSignedTransaction]"
 
     def __init__(
@@ -16,11 +16,44 @@ class SimulateRequestTransactionGroup(object):
         return {"txns": [txn.dictify() for txn in self.txns]}
 
 
-class SimulateRequest(object):
+class SimulateTraceConfig:
+    enable: bool
+    stack_change: bool
+    scratch_change: bool
+
+    def __init__(
+        self,
+        *,
+        enable: bool = False,
+        stack_change: bool = False,
+        scratch_change: bool = False,
+    ) -> None:
+        self.enable = enable
+        self.stack_change = stack_change
+        self.scratch_change = scratch_change
+
+    def dictify(self) -> Dict[str, Any]:
+        return {
+            "enable": self.enable,
+            "stack-change": self.stack_change,
+            "scratch-change": self.scratch_change,
+        }
+
+    @staticmethod
+    def undictify(d: Dict[str, Any]) -> "SimulateTraceConfig":
+        return SimulateTraceConfig(
+            enable="enable" in d and d["enable"],
+            stack_change="stack-change" in d and d["stack-change"],
+            scratch_change="scratch-change" in d and d["scratch-change"],
+        )
+
+
+class SimulateRequest:
     txn_groups: List[SimulateRequestTransactionGroup]
     allow_more_logs: bool
     allow_empty_signatures: bool
     extra_opcode_budget: int
+    exec_trace_config: SimulateTraceConfig
 
     def __init__(
         self,
@@ -29,11 +62,15 @@ class SimulateRequest(object):
         allow_more_logs: bool = False,
         allow_empty_signatures: bool = False,
         extra_opcode_budget: int = 0,
+        exec_trace_config: Optional[SimulateTraceConfig] = None,
     ) -> None:
         self.txn_groups = txn_groups
         self.allow_more_logs = allow_more_logs
         self.allow_empty_signatures = allow_empty_signatures
         self.extra_opcode_budget = extra_opcode_budget
+        self.exec_trace_config = (
+            exec_trace_config if exec_trace_config else SimulateTraceConfig()
+        )
 
     def dictify(self) -> Dict[str, Any]:
         return {
@@ -43,4 +80,5 @@ class SimulateRequest(object):
             "allow-more-logging": self.allow_more_logs,
             "allow-empty-signatures": self.allow_empty_signatures,
             "extra-opcode-budget": self.extra_opcode_budget,
+            "exec-trace-config": self.exec_trace_config.dictify(),
         }
