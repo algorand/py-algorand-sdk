@@ -1,5 +1,20 @@
 # Changelog
 
+# v2.4.0
+
+<!-- Release notes generated using configuration in .github/release.yml at release/v2.4.0 -->
+
+## What's Changed
+### Bugfixes
+* bug-fix: include currency-greater-than param for 0 value by @shiqizng in https://github.com/algorand/py-algorand-sdk/pull/508
+### New Features
+* Simulation: Execution trace (PC/Stack/Scratch) support by @ahangsu in https://github.com/algorand/py-algorand-sdk/pull/505
+### Enhancements
+* other: Ignore formatting commits in git blame by @algochoi in https://github.com/algorand/py-algorand-sdk/pull/485
+
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v2.3.0...v2.4.0
+
 # v2.3.0
 
 ## New Features
