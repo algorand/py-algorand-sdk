@@ -33,7 +33,7 @@ jobs:
       python-version:
         type: string
     machine:
-     image: "ubuntu-2004:202104-01"
+     image: "ubuntu-2204:2022.04.2"
     steps:
       - checkout
       - run: PYTHON_VERSION=<< parameters.python-version >> make docker-test
