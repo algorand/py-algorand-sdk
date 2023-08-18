@@ -9,7 +9,7 @@ on:
         required: true
         type: string
       pre_release_version:
-        description: "Pre-Release version, e.g. 'b1', will be added behind the release_version in setup.py."
+        description: "(Optional) Pre-Release version, e.g. 'b1'. Used mainly to support consensus release on betanet."
         required: false
         type: string
 
