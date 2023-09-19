@@ -1694,6 +1694,7 @@ def get_ledger_state_delta_for_transaction_group(context, id):
         )
     )
 
+
 @when("we make a GetBlockTxids call against block number {round}")
 def get_block_txids_call(context, round):
     context.response = context.acl.get_block_txids(round)
