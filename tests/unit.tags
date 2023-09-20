@@ -7,6 +7,7 @@
 @unit.atc_method_args
 @unit.atomic_transaction_composer
 @unit.blocksummary
+@unit.blocktxids
 @unit.dryrun
 @unit.dryrun.trace.application
 @unit.feetest
@@ -23,6 +24,7 @@
 @unit.responses.participationupdates
 @unit.responses.sync
 @unit.responses.timestamp
+@unit.responses.txid.json
 @unit.responses.unlimited_assets
 @unit.sourcemap
 @unit.statedelta
