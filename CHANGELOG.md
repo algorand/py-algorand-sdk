@@ -1,5 +1,16 @@
 # Changelog
 
+# v2.5.0
+
+<!-- Release notes generated using configuration in .github/release.yml at release/v2.5.0 -->
+
+## What's Changed
+### Enhancements
+* api: Sync client object. by @winder in https://github.com/algorand/py-algorand-sdk/pull/514
+
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v2.4.0...v2.5.0
+
 # v2.4.0
 
 <!-- Release notes generated using configuration in .github/release.yml at release/v2.4.0 -->
