@@ -779,6 +779,22 @@ class AlgodClient:
             "GET", req, params=query, response_format=response_format, **kwargs
         )
 
+    def get_block_txids(
+        self, round_num: int, **kwargs: Any
+    ) -> AlgodResponseType:
+        """
+        Get the top level transaction IDs for the block
+        on the given round.
+
+        Args:
+            round_num (int): The round in which the transaction appears.
+
+        Returns:
+            Dict[str, Any]: Response from algod
+        """
+        req = "/blocks/{}/txids".format(round_num)
+        return self.algod_request("GET", req, **kwargs)
+
 
 def _specify_round_string(
     block: Union[int, None], round_num: Union[int, None]
