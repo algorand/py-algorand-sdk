@@ -9,11 +9,13 @@ algosdk
    auction
    box_reference
    constants
+   dryrun_results
    encoding
    error
    kmd
    logic
    mnemonic
+   source_map
    transaction
    util
    v2client/index
