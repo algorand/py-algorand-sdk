@@ -105,10 +105,13 @@ class AlgodClient:
         except urllib.error.HTTPError as e:
             code = e.code
             es = e.read().decode("utf-8")
+            m = e  # If json.loads() fails, we'll return e itself
+            j = None
             try:
-                e = json.loads(es)["message"]
+                j = json.loads(es)
+                m = j["message"]
             finally:
-                raise error.AlgodHTTPError(e, code)
+                raise error.AlgodHTTPError(m, code, j)
         if response_format == "json":
             try:
                 return json.load(resp)
