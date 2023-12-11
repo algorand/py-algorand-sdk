@@ -471,13 +471,13 @@ class KeyregTxn(Transaction):
         Transaction.__init__(
             self, sender, sp, note, lease, constants.keyreg_txn, rekey_to
         )
-        self.votepk = self.fixed_bytes64(votekey, 32)
-        self.selkey = self.fixed_bytes64(selkey, 32)
+        self.votepk = self._fixed_bytes64(votekey, 32)
+        self.selkey = self._fixed_bytes64(selkey, 32)
         self.votefst = votefst
         self.votelst = votelst
         self.votekd = votekd
         self.nonpart = nonpart
-        self.sprfkey = self.fixed_bytes64(sprfkey, 64)
+        self.sprfkey = self._fixed_bytes64(sprfkey, 64)
 
         if not sp.flat_fee:
             self.fee = max(
@@ -521,7 +521,7 @@ class KeyregTxn(Transaction):
         )
 
     @staticmethod
-    def fixed_bytes64(key, size):
+    def _fixed_bytes64(key, size):
         if key is None:
             return None
         if isinstance(key, (bytes, bytearray)) and len(key) == size:
