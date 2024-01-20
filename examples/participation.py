@@ -40,5 +40,5 @@ offline_keyreg = transaction.KeyregTxn(
     votelst=None,
     votekd=None,
 )
-print(online_keyreg.dictify())
+print(offline_keyreg.dictify())
 # example: TRANSACTION_KEYREG_OFFLINE_CREATE
