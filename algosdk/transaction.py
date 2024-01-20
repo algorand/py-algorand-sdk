@@ -2179,6 +2179,64 @@ class SignedTransaction:
             and self.authorizing_address == other.authorizing_address
         )
 
+class SignedTxnWithAD:
+    def __init__(
+        self, stxn: SignedTransaction, apply_data
+    ):
+        self.stxn = stxn
+        self.apply_data = apply_data
+
+
+    @staticmethod
+    def undictify(d):
+        stxn = SignedTransaction.undictify(d)
+        ad = ApplyData.undictify(d)
+        return SignedTxnWithAD(stxn, ad)
+
+class ApplyData:
+    def __init__(
+        self,
+        closing_amount,
+        asset_closing_amount,
+        send_rewards,
+        receiver_rewards,
+        close_rewards,
+        eval_delta,
+        config_asset,
+        application_id
+    ):
+        self.closing_amount = closing_amount
+        self.asset_closing_amount = asset_closing_amount
+        self.send_rewards = send_rewards
+        self.receiver_rewards = receiver_rewards
+        self.close_rewards = close_rewards
+        self.eval_delta = eval_delta
+        self.config_asset = config_asset
+        self.application_id = application_id
+
+    @staticmethod
+    def undictify(d):
+        return ApplyData(
+            d.get("ca", 0),
+            d.get("aca", 0),
+
+            d.get("rs", 0),
+            d.get("rr", 0),
+            d.get("rc", 0),
+            EvalDelta.undictify(d.get("dt", {})),
+            d.get("caid", 0),
+            d.get("apid", 0),
+        )
+
+class EvalDelta:
+    def __init__(
+        self, gd
+    ):
+        self.global_delta = gd
+
+    @staticmethod
+    def undictify(d):
+        return EvalDelta(d.get("gd"))
 
 class MultisigTransaction:
     """

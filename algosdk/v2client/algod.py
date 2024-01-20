@@ -283,6 +283,15 @@ class AlgodClient:
         )
         return res
 
+    def block(
+        self,
+        round: int|str,
+        **kwargs: Any,
+    ) -> "block.BlockInfo":
+        msgp = self.block_info(round, "msgpack")
+        d = encoding.algo_msgp_decode(msgp)
+        return encoding.undictify(d)
+
     def ledger_supply(self, **kwargs: Any) -> AlgodResponseType:
         """Return supply details for node's ledger."""
         req = "/ledger/supply"

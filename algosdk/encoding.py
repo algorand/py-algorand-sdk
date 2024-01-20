@@ -5,7 +5,7 @@ from typing import Union
 import msgpack
 from Cryptodome.Hash import SHA512
 
-from algosdk import auction, constants, error, transaction
+from algosdk import auction, block, constants, error, transaction
 
 
 def msgpack_encode(obj):
@@ -68,32 +68,67 @@ def msgpack_decode(enc):
     """
     decoded = enc
     if not isinstance(enc, dict):
-        decoded = msgpack.unpackb(base64.b64decode(enc), raw=False)
-    if "type" in decoded:
-        return transaction.Transaction.undictify(decoded)
-    if "l" in decoded:
-        return transaction.LogicSig.undictify(decoded)
-    if "msig" in decoded:
-        return transaction.MultisigTransaction.undictify(decoded)
-    if "lsig" in decoded:
-        if "txn" in decoded:
-            return transaction.LogicSigTransaction.undictify(decoded)
-        return transaction.LogicSigAccount.undictify(decoded)
-    if "sig" in decoded:
-        return transaction.SignedTransaction.undictify(decoded)
-    if "txn" in decoded:
-        return transaction.Transaction.undictify(decoded["txn"])
-    if "subsig" in decoded:
-        return transaction.Multisig.undictify(decoded)
-    if "txlist" in decoded:
-        return transaction.TxGroup.undictify(decoded)
-    if "t" in decoded:
-        return auction.NoteField.undictify(decoded)
-    if "bid" in decoded:
-        return auction.SignedBid.undictify(decoded)
-    if "auc" in decoded:
-        return auction.Bid.undictify(decoded)
+        decoded = algo_msgp_decode(base64.b64decode(enc))
+    return undictify(decoded)
 
+def algo_msgp_decode(enc):
+    """Performs msgpack decoding on an Algorand object.  Extra care is
+    taken so that some internal fields that are marked as strings are
+    decoded without utf-8 processing, because they aren't utf-8. Yet,
+    we want most string like values to become Python str types for
+    simplicity.
+
+    """
+    raw = msgpack.unpackb(enc, raw=True, strict_map_key=False)
+    return cook(raw)
+
+def cook(raw):
+    stop = {b"gd", b"ld", b"lg"}
+    safe = {b"type"}
+
+    if isinstance(raw, dict):
+        cooked = {}
+        for key, value in raw.items():
+            v = value if key in stop else cook(value)
+            v = v.decode() if key in safe else v
+            if type(key) is bytes:
+                cooked[key.decode()] = v
+            else:
+                cooked[key] = v
+        return cooked
+    if isinstance(raw, list):
+        return [cook(item) for item in raw]
+    return raw
+
+def undictify(d):
+    if "type" in d:
+        return transaction.Transaction.undictify(d)
+    if "l" in d:
+        return transaction.LogicSig.undictify(d)
+    if "msig" in d:
+        return transaction.MultisigTransaction.undictify(d)
+    if "lsig" in d:
+        if "txn" in d:
+            return transaction.LogicSigTransaction.undictify(d)
+        return transaction.LogicSigAccount.undictify(d)
+    if "sig" in d:
+        return transaction.SignedTransaction.undictify(d)
+    if "gh" in d:               # must proceed next check, since `txn` is in header too, as txn root
+        return block.Block.undictify(d)
+    if "txn" in d:
+        return transaction.Transaction.undictify(d["txn"])
+    if "subsig" in d:
+        return transaction.Multisig.undictify(d)
+    if "txlist" in d:
+        return transaction.TxGroup.undictify(d)
+    if "t" in d:
+        return auction.NoteField.undictify(d)
+    if "bid" in d:
+        return auction.SignedBid.undictify(d)
+    if "auc" in d:
+        return auction.Bid.undictify(d)
+    if "block" in d:
+        return block.BlockInfo.undictify(d)
 
 def is_valid_address(addr):
     """
