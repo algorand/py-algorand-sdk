@@ -26,7 +26,7 @@ class KMDClient:
         self.kmd_token = kmd_token
         self.kmd_address = kmd_address
 
-    def kmd_request(self, method, requrl, params=None, data=None):
+    def kmd_request(self, method, requrl, params=None, data=None, timeout=30):
         """
         Execute a given request.
 
@@ -35,6 +35,7 @@ class KMDClient:
             requrl (str): url for the request
             params (dict, optional): parameters for the request
             data (dict, optional): data in the body of the request
+            timeout (int, optional): request timeout in seconds
 
         Returns:
             dict: loaded from json response body
@@ -56,7 +57,7 @@ class KMDClient:
         )
         resp = None
         try:
-            resp = urlopen(req)
+            resp = urlopen(req, timeout=timeout)
         except urllib.error.HTTPError as e:
             e = e.read().decode("utf-8")
             try:

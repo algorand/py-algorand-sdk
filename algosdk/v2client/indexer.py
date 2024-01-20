@@ -31,7 +31,7 @@ class IndexerClient:
         self.headers = headers
 
     def indexer_request(
-        self, method, requrl, params=None, data=None, headers=None
+        self, method, requrl, params=None, data=None, headers=None, timeout=30
     ):
         """
         Execute a given request.
@@ -42,6 +42,7 @@ class IndexerClient:
             params (dict, optional): parameters for the request
             data (dict, optional): data in the body of the request
             headers (dict, optional): additional header for request
+            timeout (int, optional): request timeout in seconds
 
         Returns:
             dict: loaded from json response body
@@ -70,7 +71,7 @@ class IndexerClient:
         )
 
         try:
-            resp = urlopen(req)
+            resp = urlopen(req, timeout=timeout)
         except urllib.error.HTTPError as e:
             e = e.read().decode("utf-8")
             try:
