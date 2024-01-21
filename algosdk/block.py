@@ -15,16 +15,7 @@ class BlockInfo:
         )
 
     def __str__(self):
-        return (
-            "{"
-            + ", ".join(
-                [
-                    str(key) + ": " + str(value)
-                    for key, value in self.__dict__.items()
-                ]
-            )
-            + "}"
-        )
+        return ostr(self)
 
 
 class Block:
@@ -124,16 +115,7 @@ class Block:
         )
 
     def __str__(self):
-        return (
-            "{"
-            + ", ".join(
-                [
-                    str(key) + ": " + str(value)
-                    for key, value in self.__dict__.items()
-                ]
-            )
-            + "}"
-        )
+        return ostr(self)
 
 
 class Cert:
@@ -159,16 +141,7 @@ class Cert:
         )
 
     def __str__(self):
-        return (
-            "{"
-            + ", ".join(
-                [
-                    str(key) + ": " + str(value)
-                    for key, value in self.__dict__.items()
-                ]
-            )
-            + "}"
-        )
+        return ostr(self)
 
 
 class ProposalValue:
@@ -184,19 +157,20 @@ class ProposalValue:
     def undictify(d):
         return ProposalValue(
             original_period=d.get("oper", 0),
-            original_proposer=d.get("oprop"),
+            original_proposer=encoding.encode_address(d.get("oprop")),
             block_digest=d.get("dig"),
             encoding_digest=d.get("encdig"),
         )
 
     def __str__(self):
-        return (
-            "{"
-            + ", ".join(
-                [
-                    str(key) + ": " + str(value)
-                    for key, value in self.__dict__.items()
-                ]
-            )
-            + "}"
+        return ostr(self)
+
+
+def ostr(o):
+    return (
+        "{"
+        + ", ".join(
+            [str(key) + ": " + str(value) for key, value in o.__dict__.items()]
         )
+        + "}"
+    )

@@ -86,7 +86,7 @@ def algo_msgp_decode(enc):
 
 def cook(raw):
     stop = {b"gd", b"ld", b"lg"}
-    safe = {b"type"}
+    safe = {b"type", b"gen"}
 
     if isinstance(raw, dict):
         cooked = {}

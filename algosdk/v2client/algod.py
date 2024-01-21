@@ -17,7 +17,7 @@ import urllib.error
 from urllib import parse
 from urllib.request import Request, urlopen
 
-from algosdk import constants, encoding, error, transaction, util
+from algosdk import block, constants, encoding, error, transaction, util
 from algosdk.v2client import models
 
 AlgodResponseType = Union[Dict[str, Any], bytes]
@@ -288,7 +288,7 @@ class AlgodClient:
         round: int | str,
         **kwargs: Any,
     ) -> "block.BlockInfo":
-        msgp = self.block_info(round, "msgpack")
+        msgp = self.block_info(int(round), "msgpack")
         d = encoding.algo_msgp_decode(msgp)
         return encoding.undictify(d)
 
