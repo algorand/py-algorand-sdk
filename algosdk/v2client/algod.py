@@ -285,7 +285,7 @@ class AlgodClient:
 
     def block(
         self,
-        round: int|str,
+        round: int | str,
         **kwargs: Any,
     ) -> "block.BlockInfo":
         msgp = self.block_info(round, "msgpack")

@@ -71,6 +71,7 @@ def msgpack_decode(enc):
         decoded = algo_msgp_decode(base64.b64decode(enc))
     return undictify(decoded)
 
+
 def algo_msgp_decode(enc):
     """Performs msgpack decoding on an Algorand object.  Extra care is
     taken so that some internal fields that are marked as strings are
@@ -81,6 +82,7 @@ def algo_msgp_decode(enc):
     """
     raw = msgpack.unpackb(enc, raw=True, strict_map_key=False)
     return cook(raw)
+
 
 def cook(raw):
     stop = {b"gd", b"ld", b"lg"}
@@ -100,6 +102,7 @@ def cook(raw):
         return [cook(item) for item in raw]
     return raw
 
+
 def undictify(d):
     if "type" in d:
         return transaction.Transaction.undictify(d)
@@ -113,8 +116,6 @@ def undictify(d):
         return transaction.LogicSigAccount.undictify(d)
     if "sig" in d:
         return transaction.SignedTransaction.undictify(d)
-    if "gh" in d:               # must proceed next check, since `txn` is in header too, as txn root
-        return block.Block.undictify(d)
     if "txn" in d:
         return transaction.Transaction.undictify(d["txn"])
     if "subsig" in d:
@@ -129,6 +130,7 @@ def undictify(d):
         return auction.Bid.undictify(d)
     if "block" in d:
         return block.BlockInfo.undictify(d)
+
 
 def is_valid_address(addr):
     """

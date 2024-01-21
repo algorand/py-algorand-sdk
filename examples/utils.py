@@ -72,11 +72,17 @@ def algod_env():
     if not algodata:
         return ()
     try:
-        token = open(os.path.join(algodata, "algod.token"), "rt").read().strip()
-        net = "http://"+open(os.path.join(algodata, "algod.net"), "rt").read().strip()
+        token = (
+            open(os.path.join(algodata, "algod.token"), "rt").read().strip()
+        )
+        net = (
+            "http://"
+            + open(os.path.join(algodata, "algod.net"), "rt").read().strip()
+        )
         return (net, token)
     except FileNotFoundError:
         return ()
+
 
 def get_accounts(
     kmd_address: str = KMD_URL,
