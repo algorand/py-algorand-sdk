@@ -61,6 +61,7 @@ class AlgodClient:
         data: Optional[bytes] = None,
         headers: Optional[Dict[str, str]] = None,
         response_format: Optional[str] = "json",
+        timeout: Optional[int] = 30,
     ) -> AlgodResponseType:
         """
         Execute a given request.
@@ -72,6 +73,7 @@ class AlgodClient:
             data (bytes, optional): data in the body of the request
             headers (dict, optional): additional header for request
             response_format (str, optional): format of the response
+            timeout (int, optional): request timeout in seconds
 
         Returns:
             dict loaded from json response body when response_format == "json"
@@ -101,7 +103,7 @@ class AlgodClient:
         )
 
         try:
-            resp = urlopen(req)
+            resp = urlopen(req, timeout=timeout)
         except urllib.error.HTTPError as e:
             code = e.code
             es = e.read().decode("utf-8")
