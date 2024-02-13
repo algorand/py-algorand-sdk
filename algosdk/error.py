@@ -48,7 +48,7 @@ class LogicSigSigningKeyMissing(Exception):
 
 
 class WrongAmountType(Exception):
-    def __init(self):
+    def __init__(self):
         Exception.__init__(self, "amount (amt) must be a non-negative integer")
 
 
