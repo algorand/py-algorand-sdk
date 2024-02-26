@@ -1,5 +1,6 @@
 import os
 import base64
+import time
 from dataclasses import dataclass
 from typing import List
 
@@ -53,6 +54,31 @@ def get_sandbox_default_wallet() -> Wallet:
         wallet_pswd=DEFAULT_KMD_WALLET_PASSWORD,
         kmd_client=get_kmd_client(),
     )
+
+
+def indexer_wait_for_round(
+    client: indexer.IndexerClient, round: int, max_attempts: int
+) -> None:
+    """waits for the indexer to catch up to the given round"""
+    indexer_round = 0
+    attempts = 0
+
+    while True:
+        indexer_status = client.health()
+        indexer_round = indexer_status["round"]
+        if indexer_round >= round:
+            # Success
+            break
+
+        # Sleep for 1 second and try again
+        time.sleep(1)
+        attempts += 1
+
+        if attempts >= max_attempts:
+            # Failsafe to prevent infinite loop
+            raise RuntimeError(
+                f"Timeout waiting for indexer to catch up to round {round}. It is currently on {indexer_round}"
+            )
 
 
 @dataclass
