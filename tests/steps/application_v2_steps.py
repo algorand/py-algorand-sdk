@@ -116,27 +116,32 @@ def s512_256_uint64(witness):
     return int.from_bytes(encoding.checksum(witness)[:8], "big")
 
 
-# Dev mode helper functions
-def wait_for_transaction_processing_to_complete_in_dev_mode(
-    millisecond_num=500,
-):
-    """
-    wait_for_transaction_processing_to_complete_in_dev_mode is a Dev mode helper method that waits for a transaction to be processed and serves as a rough analog to `context.app_acl.status_after_block(last_round + 2)`.
-     * <p>
-     * Since Dev mode produces blocks on a per transaction basis, it's possible algod generates a block _before_ the corresponding SDK call to wait for a block.
-     * Without _any_ wait, it's possible the SDK looks for the transaction before algod completes processing. The analogous problem may also exist in indexer. So, the method performs a local sleep to simulate waiting for a block.
-    """
-    time.sleep(millisecond_num / 1000)
-
-
-# Dev mode helper step
 @then(
-    "I sleep for {millisecond_num} milliseconds for indexer to digest things down."
+    "I wait for indexer to catch up to the round where my most recent transaction was confirmed."
 )
-def wait_for_indexer_in_dev_mode(context, millisecond_num):
-    wait_for_transaction_processing_to_complete_in_dev_mode(
-        int(millisecond_num)
-    )
+def wait_for_indexer_to_catch_up(context):
+    max_attempts = 30
+
+    round_to_wait_for = context.last_tx_confirmed_round
+    indexer_round = 0
+    attempts = 0
+
+    while True:
+        indexer_status = context.app_icl.health()
+        indexer_round = indexer_status["round"]
+        if indexer_round >= round_to_wait_for:
+            # Success
+            break
+
+        # Sleep for 1 second and try again
+        time.sleep(1)
+        attempts += 1
+
+        if attempts >= max_attempts:
+            # Failsafe to prevent infinite loop
+            raise RuntimeError(
+                f"Timeout waiting for indexer to catch up to round {round_to_wait_for}. It is currently on {indexer_round}"
+            )
 
 
 @step(
@@ -439,8 +444,10 @@ def remember_app_id(context):
 # TODO: this needs to be modified to use v2 only
 @step("I wait for the transaction to be confirmed.")
 def wait_for_app_txn_confirm(context):
-    wait_for_transaction_processing_to_complete_in_dev_mode()
-    transaction.wait_for_confirmation(context.app_acl, context.app_txid, 1)
+    tx_info = transaction.wait_for_confirmation(
+        context.app_acl, context.app_txid, 1
+    )
+    context.last_tx_confirmed_round = tx_info["confirmed-round"]
 
 
 @given("an application id {app_id}")
