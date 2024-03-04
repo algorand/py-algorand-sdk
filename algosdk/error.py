@@ -178,9 +178,10 @@ class AlgodRequestError(Exception):
 
 
 class AlgodHTTPError(Exception):
-    def __init__(self, msg, code=None):
+    def __init__(self, msg, code=None, data=None):
         super().__init__(msg)
         self.code = code
+        self.data = data
 
 
 class AlgodResponseError(Exception):
