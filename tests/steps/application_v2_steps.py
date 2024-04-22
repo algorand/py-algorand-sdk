@@ -701,7 +701,7 @@ def abi_method_adder(
             b"I should be unique thanks to this nonce: "
             + context.nonce.encode()
         )
-    
+
     boxes = None
     if comma_separated_boxes_string is not None:
         boxes = split_and_process_boxes(comma_separated_boxes_string)
@@ -747,7 +747,10 @@ def abi_method_adder(
         exception_key == "none"
     ), f"should have encountered an AtomicTransactionComposerError keyed by '{exception_key}', but no such exception has been detected"
 
-@when('I add a method call with the transient account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments, boxes "{boxes}".')
+
+@when(
+    'I add a method call with the transient account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments, boxes "{boxes}".'
+)
 def add_abi_method_call_with_boxes(context, operation, boxes):
     abi_method_adder(
         context,
@@ -755,6 +758,7 @@ def add_abi_method_call_with_boxes(context, operation, boxes):
         operation=operation,
         comma_separated_boxes_string=boxes,
     )
+
 
 @step(
     'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments; any resulting exception has key "{exception_key}".'

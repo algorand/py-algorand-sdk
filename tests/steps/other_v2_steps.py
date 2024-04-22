@@ -1544,7 +1544,9 @@ def exec_trace_config_in_simulation(context, options: str):
     )
 
 
-def compare_avm_value_with_string_literal(expected_string_literal, actual_avm_value):
+def compare_avm_value_with_string_literal(
+    expected_string_literal, actual_avm_value
+):
     [expected_avm_type, expected_value] = expected_string_literal.split(":")
 
     if expected_avm_type == "uint64":
@@ -1639,6 +1641,7 @@ def exec_trace_unit_in_simulation_check_stack_scratch(
     else:
         assert len(scratch_var) == 0
 
+
 @then('the current application initial "{state_type}" state should be empty.')
 def current_app_initial_state_should_be_empty(context, state_type):
     assert context.atomic_transaction_composer_return
@@ -1648,7 +1651,9 @@ def current_app_initial_state_should_be_empty(context, state_type):
     )
 
     assert simulation_response["initial-states"]
-    app_initial_states = simulation_response["initial-states"]["app-initial-states"]
+    app_initial_states = simulation_response["initial-states"][
+        "app-initial-states"
+    ]
     assert app_initial_states
 
     initial_app_state = None
@@ -1670,8 +1675,12 @@ def current_app_initial_state_should_be_empty(context, state_type):
             raise Exception(f"Unknown state type: {state_type}")
 
 
-@then(u'the current application initial "{state_type}" state should contain "{key_str}" with value "{value_str}".')
-def current_app_initial_state_should_contain_key_value(context, state_type, key_str, value_str):
+@then(
+    'the current application initial "{state_type}" state should contain "{key_str}" with value "{value_str}".'
+)
+def current_app_initial_state_should_contain_key_value(
+    context, state_type, key_str, value_str
+):
     assert context.atomic_transaction_composer_return
     assert context.atomic_transaction_composer_return.simulate_response
     simulation_response = (
@@ -1679,7 +1688,9 @@ def current_app_initial_state_should_contain_key_value(context, state_type, key_
     )
 
     assert simulation_response["initial-states"]
-    app_initial_states = simulation_response["initial-states"]["app-initial-states"]
+    app_initial_states = simulation_response["initial-states"][
+        "app-initial-states"
+    ]
     assert app_initial_states
 
     initial_app_state = None
@@ -1726,11 +1737,21 @@ def current_app_initial_state_should_contain_key_value(context, state_type, key_
     assert actual_value is not None
     compare_avm_value_with_string_literal(value_str, actual_value)
 
-@then('{unit_index}th unit in the "{trace_type}" trace at txn-groups path "{txn_group_path}" should write to "{state_type}" state "{state_key}" with new value "{state_new_value}".')
-def trace_unit_should_write_to_state_with_value(context, unit_index, trace_type, txn_group_path, state_type, state_key, state_new_value):
+
+@then(
+    '{unit_index}th unit in the "{trace_type}" trace at txn-groups path "{txn_group_path}" should write to "{state_type}" state "{state_key}" with new value "{state_new_value}".'
+)
+def trace_unit_should_write_to_state_with_value(
+    context,
+    unit_index,
+    trace_type,
+    txn_group_path,
+    state_type,
+    state_key,
+    state_new_value,
+):
     def unit_finder(txn_group_path_str, trace_type, unit_index):
         pass
-
 
 
 """
@@ -1812,9 +1833,15 @@ def trace_unit_should_write_to_state_with_value(context, unit_index, trace_type,
   );
 """
 
-@then('"{trace_type}" hash at txn-groups path "{txn_group_path}" should be "{b64_hash}".')
-def program_hash_at_path_should_be(context, trace_type, txn_group_path, b64_hash):
+
+@then(
+    '"{trace_type}" hash at txn-groups path "{txn_group_path}" should be "{b64_hash}".'
+)
+def program_hash_at_path_should_be(
+    context, trace_type, txn_group_path, b64_hash
+):
     pass
+
 
 """
   Then(
@@ -1852,6 +1879,7 @@ def program_hash_at_path_should_be(context, trace_type, txn_group_path, b64_hash
     }
   );
 """
+
 
 @when("we make a SetSyncRound call against round {round}")
 def set_sync_round_call(context, round):
