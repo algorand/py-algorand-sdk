@@ -1540,7 +1540,28 @@ def exec_trace_config_in_simulation(context, options: str):
         enable=True,
         stack_change="stack" in option_list,
         scratch_change="scratch" in option_list,
+        state_change="state" in option_list,
     )
+
+
+def compare_avm_value_with_string_literal(expected_string_literal, actual_avm_value):
+    [expected_avm_type, expected_value] = expected_string_literal.split(":")
+
+    if expected_avm_type == "uint64":
+        assert actual_avm_value["type"] == 2
+        if expected_value == "0":
+            assert "uint" not in actual_avm_value
+        else:
+            assert actual_avm_value["uint"] == int(expected_value)
+    elif expected_avm_type == "bytes":
+        assert actual_avm_value["type"] == 1
+        if len(expected_value) == 0:
+            assert "bytes" not in actual_avm_value
+        else:
+            # expected_value and actual bytes should both be b64 encoded
+            assert actual_avm_value["bytes"] == expected_value
+    else:
+        raise Exception(f"Unknown AVM type: {expected_avm_type}")
 
 
 @then(
@@ -1589,23 +1610,6 @@ def exec_trace_unit_in_simulation_check_stack_scratch(
     unit_index = int(unit_index)
     unit = trace[unit_index]
 
-    def compare_avm_value_with_string_literal(string_literal, avm_value):
-        [avm_type, value] = string_literal.split(":")
-        assert avm_type in ["uint64", "bytes"]
-        assert "type" in avm_value
-        if avm_type == "uint64":
-            assert avm_value["type"] == 2
-            if int(value) > 0:
-                assert avm_value["uint"] == int(value)
-            else:
-                assert "uint" not in avm_value
-        elif avm_value == "bytes":
-            assert avm_value["type"] == 1
-            if len(value) > 0:
-                assert avm_value["bytes"] == base64.b64decode(bytearray(value))
-            else:
-                assert "bytes" not in avm_value
-
     pop_count = int(pop_count)
     if pop_count > 0:
         assert unit["stack-pop-count"]
@@ -1635,6 +1639,219 @@ def exec_trace_unit_in_simulation_check_stack_scratch(
     else:
         assert len(scratch_var) == 0
 
+@then('the current application initial "{state_type}" state should be empty.')
+def current_app_initial_state_should_be_empty(context, state_type):
+    assert context.atomic_transaction_composer_return
+    assert context.atomic_transaction_composer_return.simulate_response
+    simulation_response = (
+        context.atomic_transaction_composer_return.simulate_response
+    )
+
+    assert simulation_response["initial-states"]
+    app_initial_states = simulation_response["initial-states"]["app-initial-states"]
+    assert app_initial_states
+
+    initial_app_state = None
+    found = False
+    for app_state in app_initial_states:
+        if app_state["id"] == context.current_application_id:
+            initial_app_state = app_state
+            found = True
+            break
+    assert found
+    if initial_app_state:
+        if state_type == "local":
+            assert "app-locals" not in initial_app_state
+        elif state_type == "global":
+            assert "app-globals" not in initial_app_state
+        elif state_type == "box":
+            assert "app-boxes" not in initial_app_state
+        else:
+            raise Exception(f"Unknown state type: {state_type}")
+
+
+@then(u'the current application initial "{state_type}" state should contain "{key_str}" with value "{value_str}".')
+def current_app_initial_state_should_contain_key_value(context, state_type, key_str, value_str):
+    assert context.atomic_transaction_composer_return
+    assert context.atomic_transaction_composer_return.simulate_response
+    simulation_response = (
+        context.atomic_transaction_composer_return.simulate_response
+    )
+
+    assert simulation_response["initial-states"]
+    app_initial_states = simulation_response["initial-states"]["app-initial-states"]
+    assert app_initial_states
+
+    initial_app_state = None
+    for app_state in app_initial_states:
+        if app_state["id"] == context.current_application_id:
+            initial_app_state = app_state
+            break
+    assert initial_app_state is not None
+    kvs = None
+    if state_type == "local":
+        assert "app-locals" in initial_app_state
+        assert isinstance(initial_app_state["app-locals"], list)
+        assert len(initial_app_state["app-locals"]) == 1
+        assert "account" in initial_app_state["app-locals"][0]
+        # TODO: verify account is an algorand address
+        assert "kvs" in initial_app_state["app-locals"][0]
+        assert isinstance(initial_app_state["app-locals"][0]["kvs"], list)
+        kvs = initial_app_state["app-locals"][0]["kvs"]
+    elif state_type == "global":
+        assert "app-globals" in initial_app_state
+        assert "account" not in initial_app_state["app-globals"]
+        assert "kvs" in initial_app_state["app-globals"]
+        assert isinstance(initial_app_state["app-globals"]["kvs"], list)
+        kvs = initial_app_state["app-globals"]["kvs"]
+    elif state_type == "box":
+        assert "app-boxes" in initial_app_state
+        assert "account" not in initial_app_state["app-boxes"]
+        assert "kvs" in initial_app_state["app-boxes"]
+        assert isinstance(initial_app_state["app-boxes"]["kvs"], list)
+        kvs = initial_app_state["app-boxes"]["kvs"]
+    else:
+        raise Exception(f"Unknown state type: {state_type}")
+    assert isinstance(kvs, list)
+    assert len(kvs) > 0
+
+    actual_value = None
+    b64_key = base64.b64encode(key_str.encode()).decode()
+    for kv in kvs:
+        assert "key" in kv
+        assert "value" in kv
+        if kv["key"] == b64_key:
+            actual_value = kv["value"]
+            break
+    assert actual_value is not None
+    compare_avm_value_with_string_literal(value_str, actual_value)
+
+@then('{unit_index}th unit in the "{trace_type}" trace at txn-groups path "{txn_group_path}" should write to "{state_type}" state "{state_key}" with new value "{state_new_value}".')
+def trace_unit_should_write_to_state_with_value(context, unit_index, trace_type, txn_group_path, state_type, state_key, state_new_value):
+    def unit_finder(txn_group_path_str, trace_type, unit_index):
+        pass
+
+
+
+"""
+  Then(
+    '{int}th unit in the {string} trace at txn-groups path {string} should write to {string} state {string} with new value {string}.',
+    function (
+      unitIndex,
+      traceType,
+      txnGroupPath,
+      stateType,
+      stateName,
+      newValue
+    ) {
+      const unitFinder = (txnGroupPathStr, traceTypeStr, unitIndexInt) => {
+        const txnGroupPathSplit = txnGroupPathStr
+          .split(',')
+          .filter((r) => r !== '')
+          .map(Number);
+        assert.ok(txnGroupPathSplit.length > 0);
+
+        let traces = this.simulateResponse.txnGroups[0].txnResults[
+          txnGroupPathSplit[0]
+        ].execTrace;
+        assert.ok(traces);
+
+        for (let i = 1; i < txnGroupPathSplit.length; i++) {
+          traces = traces.innerTrace[txnGroupPathSplit[i]];
+          assert.ok(traces);
+        }
+
+        let trace = traces.approvalProgramTrace;
+        if (traceTypeStr === 'approval') {
+          trace = traces.approvalProgramTrace;
+        } else if (traceTypeStr === 'clearState') {
+          trace = traces.clearStateProgramTrace;
+        } else if (traceTypeStr === 'logic') {
+          trace = traces.logicSigTrace;
+        }
+
+        assert.ok(
+          unitIndexInt < trace.length,
+          `unitIndexInt (${unitIndexInt}) < trace.length (${trace.length})`
+        );
+
+        const changeUnit = trace[unitIndexInt];
+        return changeUnit;
+      };
+
+      assert.ok(this.simulateResponse);
+
+      const changeUnit = unitFinder(txnGroupPath, traceType, unitIndex);
+      assert.ok(changeUnit.stateChanges);
+      assert.strictEqual(changeUnit.stateChanges.length, 1);
+      const stateChange = changeUnit.stateChanges[0];
+
+      if (stateType === 'global') {
+        assert.strictEqual(stateChange.appStateType, 'g');
+        assert.ok(!stateChange.account);
+      } else if (stateType === 'local') {
+        assert.strictEqual(stateChange.appStateType, 'l');
+        assert.ok(stateChange.account);
+        algosdk.decodeAddress(stateChange.account);
+      } else if (stateType === 'box') {
+        assert.strictEqual(stateChange.appStateType, 'b');
+        assert.ok(!stateChange.account);
+      } else {
+        assert.fail('state type can only be one of local/global/box');
+      }
+
+      assert.strictEqual(stateChange.operation, 'w');
+
+      assert.deepStrictEqual(
+        stateChange.key,
+        makeUint8Array(Buffer.from(stateName))
+      );
+      assert.ok(stateChange.newValue);
+      avmValueCheck(newValue, stateChange.newValue);
+    }
+  );
+"""
+
+@then('"{trace_type}" hash at txn-groups path "{txn_group_path}" should be "{b64_hash}".')
+def program_hash_at_path_should_be(context, trace_type, txn_group_path, b64_hash):
+    pass
+
+"""
+  Then(
+    '{string} hash at txn-groups path {string} should be {string}.',
+    function (traceType, txnGroupPath, b64ProgHash) {
+      const txnGroupPathSplit = txnGroupPath
+        .split(',')
+        .filter((r) => r !== '')
+        .map(Number);
+      assert.ok(txnGroupPathSplit.length > 0);
+
+      let traces = this.simulateResponse.txnGroups[0].txnResults[
+        txnGroupPathSplit[0]
+      ].execTrace;
+      assert.ok(traces);
+
+      for (let i = 1; i < txnGroupPathSplit.length; i++) {
+        traces = traces.innerTrace[txnGroupPathSplit[i]];
+        assert.ok(traces);
+      }
+
+      let hash = traces.approvalProgramHash;
+
+      if (traceType === 'approval') {
+        hash = traces.approvalProgramHash;
+      } else if (traceType === 'clearState') {
+        hash = traces.clearStateProgramHash;
+      } else if (traceType === 'logic') {
+        hash = traces.logicSigHash;
+      }
+      assert.deepStrictEqual(
+        hash,
+        makeUint8Array(Buffer.from(b64ProgHash, 'base64'))
+      );
+    }
+  );
+"""
 
 @when("we make a SetSyncRound call against round {round}")
 def set_sync_round_call(context, round):
