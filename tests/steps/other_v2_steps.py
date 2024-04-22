@@ -1545,7 +1545,7 @@ def exec_trace_config_in_simulation(context, options: str):
 
 
 def compare_avm_value_with_string_literal(
-    expected_string_literal, actual_avm_value
+    expected_string_literal: str, actual_avm_value: dict
 ):
     [expected_avm_type, expected_value] = expected_string_literal.split(":")
 
@@ -1750,88 +1750,71 @@ def trace_unit_should_write_to_state_with_value(
     state_key,
     state_new_value,
 ):
-    def unit_finder(txn_group_path_str, trace_type, unit_index):
-        pass
+    def unit_finder(
+        simulation_response: dict,
+        txn_group_path: str,
+        trace_type: str,
+        unit_index: int,
+    ) -> dict:
+        txn_group_path_split = [
+            int(p) for p in txn_group_path.split(",") if p != ""
+        ]
+        assert len(txn_group_path_split) > 0
 
+        traces = simulation_response["txn-groups"][0]["txn-results"][
+            txn_group_path_split[0]
+        ]["exec-trace"]
+        assert traces
 
-"""
-  Then(
-    '{int}th unit in the {string} trace at txn-groups path {string} should write to {string} state {string} with new value {string}.',
-    function (
-      unitIndex,
-      traceType,
-      txnGroupPath,
-      stateType,
-      stateName,
-      newValue
-    ) {
-      const unitFinder = (txnGroupPathStr, traceTypeStr, unitIndexInt) => {
-        const txnGroupPathSplit = txnGroupPathStr
-          .split(',')
-          .filter((r) => r !== '')
-          .map(Number);
-        assert.ok(txnGroupPathSplit.length > 0);
+        for i in range(1, len(txn_group_path_split)):
+            traces = traces["inner-trace"][txn_group_path_split[i]]
+            assert traces
 
-        let traces = this.simulateResponse.txnGroups[0].txnResults[
-          txnGroupPathSplit[0]
-        ].execTrace;
-        assert.ok(traces);
+        trace = None
+        if trace_type == "approval":
+            trace = traces["approval-program-trace"]
+        elif trace_type == "clearState":
+            trace = traces["clear-state-program-trace"]
+        elif trace_type == "logic":
+            trace = traces["logic-sig-trace"]
+        else:
+            raise Exception(f"Unknown trace type: {trace_type}")
 
-        for (let i = 1; i < txnGroupPathSplit.length; i++) {
-          traces = traces.innerTrace[txnGroupPathSplit[i]];
-          assert.ok(traces);
-        }
+        assert unit_index < len(trace)
+        return trace[unit_index]
 
-        let trace = traces.approvalProgramTrace;
-        if (traceTypeStr === 'approval') {
-          trace = traces.approvalProgramTrace;
-        } else if (traceTypeStr === 'clearState') {
-          trace = traces.clearStateProgramTrace;
-        } else if (traceTypeStr === 'logic') {
-          trace = traces.logicSigTrace;
-        }
+    assert context.atomic_transaction_composer_return
+    assert context.atomic_transaction_composer_return.simulate_response
+    simulation_response = (
+        context.atomic_transaction_composer_return.simulate_response
+    )
 
-        assert.ok(
-          unitIndexInt < trace.length,
-          `unitIndexInt (${unitIndexInt}) < trace.length (${trace.length})`
-        );
+    change_unit = unit_finder(
+        simulation_response, txn_group_path, trace_type, int(unit_index)
+    )
+    assert change_unit["state-changes"]
+    assert len(change_unit["state-changes"]) == 1
+    state_change = change_unit["state-changes"][0]
 
-        const changeUnit = trace[unitIndexInt];
-        return changeUnit;
-      };
+    if state_type == "global":
+        assert state_change["app-state-type"] == "g"
+        assert "account" not in state_change
+    elif state_type == "local":
+        assert state_change["app-state-type"] == "l"
+        assert "account" in state_change
+        # TODO: verify account is an algorand address
+    elif state_type == "box":
+        assert state_change["app-state-type"] == "b"
+        assert "account" not in state_change
+    else:
+        raise Exception(f"Unknown state type: {state_type}")
 
-      assert.ok(this.simulateResponse);
-
-      const changeUnit = unitFinder(txnGroupPath, traceType, unitIndex);
-      assert.ok(changeUnit.stateChanges);
-      assert.strictEqual(changeUnit.stateChanges.length, 1);
-      const stateChange = changeUnit.stateChanges[0];
-
-      if (stateType === 'global') {
-        assert.strictEqual(stateChange.appStateType, 'g');
-        assert.ok(!stateChange.account);
-      } else if (stateType === 'local') {
-        assert.strictEqual(stateChange.appStateType, 'l');
-        assert.ok(stateChange.account);
-        algosdk.decodeAddress(stateChange.account);
-      } else if (stateType === 'box') {
-        assert.strictEqual(stateChange.appStateType, 'b');
-        assert.ok(!stateChange.account);
-      } else {
-        assert.fail('state type can only be one of local/global/box');
-      }
-
-      assert.strictEqual(stateChange.operation, 'w');
-
-      assert.deepStrictEqual(
-        stateChange.key,
-        makeUint8Array(Buffer.from(stateName))
-      );
-      assert.ok(stateChange.newValue);
-      avmValueCheck(newValue, stateChange.newValue);
-    }
-  );
-"""
+    assert state_change["operation"] == "w"
+    assert state_change["key"] == base64.b64encode(state_key.encode()).decode()
+    assert "new-value" in state_change
+    compare_avm_value_with_string_literal(
+        state_new_value, state_change["new-value"]
+    )
 
 
 @then(
@@ -1840,45 +1823,37 @@ def trace_unit_should_write_to_state_with_value(
 def program_hash_at_path_should_be(
     context, trace_type, txn_group_path, b64_hash
 ):
-    pass
+    assert context.atomic_transaction_composer_return
+    assert context.atomic_transaction_composer_return.simulate_response
+    simulation_response = (
+        context.atomic_transaction_composer_return.simulate_response
+    )
 
+    txn_group_path_split = [
+        int(p) for p in txn_group_path.split(",") if p != ""
+    ]
+    assert len(txn_group_path_split) > 0
 
-"""
-  Then(
-    '{string} hash at txn-groups path {string} should be {string}.',
-    function (traceType, txnGroupPath, b64ProgHash) {
-      const txnGroupPathSplit = txnGroupPath
-        .split(',')
-        .filter((r) => r !== '')
-        .map(Number);
-      assert.ok(txnGroupPathSplit.length > 0);
+    traces = simulation_response["txn-groups"][0]["txn-results"][
+        txn_group_path_split[0]
+    ]["exec-trace"]
+    assert traces
 
-      let traces = this.simulateResponse.txnGroups[0].txnResults[
-        txnGroupPathSplit[0]
-      ].execTrace;
-      assert.ok(traces);
+    for i in range(1, len(txn_group_path_split)):
+        traces = traces["inner-trace"][txn_group_path_split[i]]
+        assert traces
 
-      for (let i = 1; i < txnGroupPathSplit.length; i++) {
-        traces = traces.innerTrace[txnGroupPathSplit[i]];
-        assert.ok(traces);
-      }
+    hash = None
+    if trace_type == "approval":
+        hash = traces["approval-program-hash"]
+    elif trace_type == "clearState":
+        hash = traces["clear-state-program-hash"]
+    elif trace_type == "logic":
+        hash = traces["logic-sig-hash"]
+    else:
+        raise Exception(f"Unknown trace type: {trace_type}")
 
-      let hash = traces.approvalProgramHash;
-
-      if (traceType === 'approval') {
-        hash = traces.approvalProgramHash;
-      } else if (traceType === 'clearState') {
-        hash = traces.clearStateProgramHash;
-      } else if (traceType === 'logic') {
-        hash = traces.logicSigHash;
-      }
-      assert.deepStrictEqual(
-        hash,
-        makeUint8Array(Buffer.from(b64ProgHash, 'base64'))
-      );
-    }
-  );
-"""
+    assert hash == b64_hash
 
 
 @when("we make a SetSyncRound call against round {round}")
