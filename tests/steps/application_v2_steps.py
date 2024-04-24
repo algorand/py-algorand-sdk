@@ -24,6 +24,8 @@ def operation_string_to_enum(operation):
         return transaction.OnComplete.NoOpOC
     elif operation == "create":
         return transaction.OnComplete.NoOpOC
+    elif operation == "create-and-optin":
+        return transaction.OnComplete.OptInOC
     elif operation == "noop":
         return transaction.OnComplete.NoOpOC
     elif operation == "update":
@@ -359,7 +361,7 @@ def build_app_txn_with_transient(
         if (
             hasattr(context, "current_application_id")
             and context.current_application_id
-            and operation != "create"
+            and operation not in ("create", "create-and-optin")
         ):
             application_id = context.current_application_id
         operation = operation_string_to_enum(operation)
@@ -640,6 +642,7 @@ def add_nonce(context, nonce):
 
 def abi_method_adder(
     context,
+    *,
     account_type,
     operation,
     create_when_calling=False,
@@ -652,6 +655,7 @@ def abi_method_adder(
     extra_pages=None,
     force_unique_transactions=False,
     exception_key="none",
+    comma_separated_boxes_string=None,
 ):
     if account_type == "transient":
         sender = context.transient_pk
@@ -698,6 +702,10 @@ def abi_method_adder(
             + context.nonce.encode()
         )
 
+    boxes = None
+    if comma_separated_boxes_string is not None:
+        boxes = split_and_process_boxes(comma_separated_boxes_string)
+
     try:
         context.atomic_transaction_composer.add_method_call(
             app_id=app_id,
@@ -713,6 +721,7 @@ def abi_method_adder(
             clear_program=clear_program,
             extra_pages=extra_pages,
             note=note,
+            boxes=boxes,
         )
     except AtomicTransactionComposerError as atce:
         assert (
@@ -739,6 +748,18 @@ def abi_method_adder(
     ), f"should have encountered an AtomicTransactionComposerError keyed by '{exception_key}', but no such exception has been detected"
 
 
+@when(
+    'I add a method call with the transient account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments, boxes "{boxes}".'
+)
+def add_abi_method_call_with_boxes(context, operation, boxes):
+    abi_method_adder(
+        context,
+        account_type="transient",
+        operation=operation,
+        comma_separated_boxes_string=boxes,
+    )
+
+
 @step(
     'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments; any resulting exception has key "{exception_key}".'
 )
@@ -747,8 +768,8 @@ def add_abi_method_call_with_exception(
 ):
     abi_method_adder(
         context,
-        account_type,
-        operation,
+        account_type=account_type,
+        operation=operation,
         exception_key=exception_key,
     )
 
@@ -759,8 +780,8 @@ def add_abi_method_call_with_exception(
 def add_abi_method_call(context, account_type, operation):
     abi_method_adder(
         context,
-        account_type,
-        operation,
+        account_type=account_type,
+        operation=operation,
     )
 
 
@@ -781,16 +802,16 @@ def add_abi_method_call_creation_with_allocs(
 ):
     abi_method_adder(
         context,
-        account_type,
-        operation,
-        True,
-        approval_program_path,
-        clear_program_path,
-        global_bytes,
-        global_ints,
-        local_bytes,
-        local_ints,
-        extra_pages,
+        account_type=account_type,
+        operation=operation,
+        create_when_calling=True,
+        approval_program_path=approval_program_path,
+        clear_program_path=clear_program_path,
+        global_bytes=global_bytes,
+        global_ints=global_ints,
+        local_bytes=local_bytes,
+        local_ints=local_ints,
+        extra_pages=extra_pages,
     )
 
 
@@ -806,11 +827,11 @@ def add_abi_method_call_creation(
 ):
     abi_method_adder(
         context,
-        account_type,
-        operation,
-        True,
-        approval_program_path,
-        clear_program_path,
+        account_type=account_type,
+        operation=operation,
+        create_when_calling=True,
+        approval_program_path=approval_program_path,
+        clear_program_path=clear_program_path,
     )
 
 
@@ -820,8 +841,8 @@ def add_abi_method_call_creation(
 def add_abi_method_call_nonced(context, account_type, operation):
     abi_method_adder(
         context,
-        account_type,
-        operation,
+        account_type=account_type,
+        operation=operation,
         force_unique_transactions=True,
     )
 
