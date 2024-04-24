@@ -1595,8 +1595,8 @@ def exec_trace_unit_in_simulation_check_stack_scratch(
     ]["exec-trace"]
     assert traces
 
-    for i in range(1, len(group_path)):
-        traces = traces["inner-trace"][group_path[i]]
+    for p in group_path[1:]:
+        traces = traces["inner-trace"][p]
         assert traces
 
     trace = []
@@ -1766,8 +1766,8 @@ def trace_unit_should_write_to_state_with_value(
         ]["exec-trace"]
         assert traces
 
-        for i in range(1, len(txn_group_path_split)):
-            traces = traces["inner-trace"][txn_group_path_split[i]]
+        for p in txn_group_path_split[1:]:
+            traces = traces["inner-trace"][p]
             assert traces
 
         trace = None
@@ -1839,8 +1839,8 @@ def program_hash_at_path_should_be(
     ]["exec-trace"]
     assert traces
 
-    for i in range(1, len(txn_group_path_split)):
-        traces = traces["inner-trace"][txn_group_path_split[i]]
+    for p in txn_group_path_split[1:]:
+        traces = traces["inner-trace"][p]
         assert traces
 
     hash = None
