@@ -41,9 +41,9 @@ print(f"Account balance: {account_info.get('amount')} microAlgos")
 # includes things like suggested fee and first/last valid rounds
 params = algod_client.suggested_params()
 unsigned_txn = transaction.PaymentTxn(
-    sender=address,
+    sender=SRSMHLACP3GBOZD775YA7A2O64YC5VG63GCRAGR64CTTX2CBOA4RD6VVAE
     sp=params,
-    receiver=address2,
+    receiver=0x6Bd5D08467467206522E622818A17bC94A0C196A,
     amt=1000000,
     note=b"Hello World",
 )
