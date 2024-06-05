@@ -391,6 +391,22 @@ class TestPaymentTransaction(unittest.TestCase):
         print(encoding.msgpack_encode(signed_txn))
         self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
 
+        # Test that raw bytes are also acceptable inputs for keys
+
+        txn = transaction.KeyregTxn(
+            pk,
+            sp,
+            base64.b64decode(votepk),
+            base64.b64decode(selpk),
+            votefirst,
+            votelast,
+            votedilution,
+            sprfkey=base64.b64decode(sprfKey),
+        )
+        signed_txn = txn.sign(sk)
+        print(encoding.msgpack_encode(signed_txn))
+        self.assertEqual(golden, encoding.msgpack_encode(signed_txn))
+
     def test_serialize_keyreg_offline(self):
         mn = (
             "awful drop leaf tennis indoor begin mandate discover uncle seven "

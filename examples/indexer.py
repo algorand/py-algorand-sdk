@@ -1,7 +1,12 @@
 import json
 from algosdk import transaction
 from algosdk.v2client import indexer
-from utils import get_accounts, get_algod_client, get_indexer_client
+from utils import (
+    get_accounts,
+    get_algod_client,
+    get_indexer_client,
+    indexer_wait_for_round,
+)
 
 
 # example: INDEXER_CREATE_CLIENT
@@ -41,11 +46,8 @@ transaction.wait_for_confirmation(
     algod_client, algod_client.send_transaction(ptxn.sign(acct.private_key)), 4
 )
 
-# sleep for a couple seconds to allow indexer to catch up
-import time
-
-time.sleep(2)
-
+# allow indexer to catch up
+indexer_wait_for_round(indexer_client, res["confirmed-round"], 30)
 
 # example: INDEXER_LOOKUP_ASSET
 # lookup a single asset

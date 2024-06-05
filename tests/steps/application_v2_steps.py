@@ -24,6 +24,8 @@ def operation_string_to_enum(operation):
         return transaction.OnComplete.NoOpOC
     elif operation == "create":
         return transaction.OnComplete.NoOpOC
+    elif operation == "create-and-optin":
+        return transaction.OnComplete.OptInOC
     elif operation == "noop":
         return transaction.OnComplete.NoOpOC
     elif operation == "update":
@@ -116,27 +118,32 @@ def s512_256_uint64(witness):
     return int.from_bytes(encoding.checksum(witness)[:8], "big")
 
 
-# Dev mode helper functions
-def wait_for_transaction_processing_to_complete_in_dev_mode(
-    millisecond_num=500,
-):
-    """
-    wait_for_transaction_processing_to_complete_in_dev_mode is a Dev mode helper method that waits for a transaction to be processed and serves as a rough analog to `context.app_acl.status_after_block(last_round + 2)`.
-     * <p>
-     * Since Dev mode produces blocks on a per transaction basis, it's possible algod generates a block _before_ the corresponding SDK call to wait for a block.
-     * Without _any_ wait, it's possible the SDK looks for the transaction before algod completes processing. The analogous problem may also exist in indexer. So, the method performs a local sleep to simulate waiting for a block.
-    """
-    time.sleep(millisecond_num / 1000)
-
-
-# Dev mode helper step
 @then(
-    "I sleep for {millisecond_num} milliseconds for indexer to digest things down."
+    "I wait for indexer to catch up to the round where my most recent transaction was confirmed."
 )
-def wait_for_indexer_in_dev_mode(context, millisecond_num):
-    wait_for_transaction_processing_to_complete_in_dev_mode(
-        int(millisecond_num)
-    )
+def wait_for_indexer_to_catch_up(context):
+    max_attempts = 30
+
+    round_to_wait_for = context.last_tx_confirmed_round
+    indexer_round = 0
+    attempts = 0
+
+    while True:
+        indexer_status = context.app_icl.health()
+        indexer_round = indexer_status["round"]
+        if indexer_round >= round_to_wait_for:
+            # Success
+            break
+
+        # Sleep for 1 second and try again
+        time.sleep(1)
+        attempts += 1
+
+        if attempts >= max_attempts:
+            # Failsafe to prevent infinite loop
+            raise RuntimeError(
+                f"Timeout waiting for indexer to catch up to round {round_to_wait_for}. It is currently on {indexer_round}"
+            )
 
 
 @step(
@@ -354,7 +361,7 @@ def build_app_txn_with_transient(
         if (
             hasattr(context, "current_application_id")
             and context.current_application_id
-            and operation != "create"
+            and operation not in ("create", "create-and-optin")
         ):
             application_id = context.current_application_id
         operation = operation_string_to_enum(operation)
@@ -439,8 +446,10 @@ def remember_app_id(context):
 # TODO: this needs to be modified to use v2 only
 @step("I wait for the transaction to be confirmed.")
 def wait_for_app_txn_confirm(context):
-    wait_for_transaction_processing_to_complete_in_dev_mode()
-    transaction.wait_for_confirmation(context.app_acl, context.app_txid, 1)
+    tx_info = transaction.wait_for_confirmation(
+        context.app_acl, context.app_txid, 1
+    )
+    context.last_tx_confirmed_round = tx_info["confirmed-round"]
 
 
 @given("an application id {app_id}")
@@ -633,6 +642,7 @@ def add_nonce(context, nonce):
 
 def abi_method_adder(
     context,
+    *,
     account_type,
     operation,
     create_when_calling=False,
@@ -645,6 +655,7 @@ def abi_method_adder(
     extra_pages=None,
     force_unique_transactions=False,
     exception_key="none",
+    comma_separated_boxes_string=None,
 ):
     if account_type == "transient":
         sender = context.transient_pk
@@ -691,6 +702,10 @@ def abi_method_adder(
             + context.nonce.encode()
         )
 
+    boxes = None
+    if comma_separated_boxes_string is not None:
+        boxes = split_and_process_boxes(comma_separated_boxes_string)
+
     try:
         context.atomic_transaction_composer.add_method_call(
             app_id=app_id,
@@ -706,6 +721,7 @@ def abi_method_adder(
             clear_program=clear_program,
             extra_pages=extra_pages,
             note=note,
+            boxes=boxes,
         )
     except AtomicTransactionComposerError as atce:
         assert (
@@ -732,6 +748,18 @@ def abi_method_adder(
     ), f"should have encountered an AtomicTransactionComposerError keyed by '{exception_key}', but no such exception has been detected"
 
 
+@when(
+    'I add a method call with the transient account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments, boxes "{boxes}".'
+)
+def add_abi_method_call_with_boxes(context, operation, boxes):
+    abi_method_adder(
+        context,
+        account_type="transient",
+        operation=operation,
+        comma_separated_boxes_string=boxes,
+    )
+
+
 @step(
     'I add a method call with the {account_type} account, the current application, suggested params, on complete "{operation}", current transaction signer, current method arguments; any resulting exception has key "{exception_key}".'
 )
@@ -740,8 +768,8 @@ def add_abi_method_call_with_exception(
 ):
     abi_method_adder(
         context,
-        account_type,
-        operation,
+        account_type=account_type,
+        operation=operation,
         exception_key=exception_key,
     )
 
@@ -752,8 +780,8 @@ def add_abi_method_call_with_exception(
 def add_abi_method_call(context, account_type, operation):
     abi_method_adder(
         context,
-        account_type,
-        operation,
+        account_type=account_type,
+        operation=operation,
     )
 
 
@@ -774,16 +802,16 @@ def add_abi_method_call_creation_with_allocs(
 ):
     abi_method_adder(
         context,
-        account_type,
-        operation,
-        True,
-        approval_program_path,
-        clear_program_path,
-        global_bytes,
-        global_ints,
-        local_bytes,
-        local_ints,
-        extra_pages,
+        account_type=account_type,
+        operation=operation,
+        create_when_calling=True,
+        approval_program_path=approval_program_path,
+        clear_program_path=clear_program_path,
+        global_bytes=global_bytes,
+        global_ints=global_ints,
+        local_bytes=local_bytes,
+        local_ints=local_ints,
+        extra_pages=extra_pages,
     )
 
 
@@ -799,11 +827,11 @@ def add_abi_method_call_creation(
 ):
     abi_method_adder(
         context,
-        account_type,
-        operation,
-        True,
-        approval_program_path,
-        clear_program_path,
+        account_type=account_type,
+        operation=operation,
+        create_when_calling=True,
+        approval_program_path=approval_program_path,
+        clear_program_path=clear_program_path,
     )
 
 
@@ -813,8 +841,8 @@ def add_abi_method_call_creation(
 def add_abi_method_call_nonced(context, account_type, operation):
     abi_method_adder(
         context,
-        account_type,
-        operation,
+        account_type=account_type,
+        operation=operation,
         force_unique_transactions=True,
     )
 

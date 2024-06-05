@@ -48,7 +48,7 @@ class LogicSigSigningKeyMissing(Exception):
 
 
 class WrongAmountType(Exception):
-    def __init(self):
+    def __init__(self):
         Exception.__init__(self, "amount (amt) must be a non-negative integer")
 
 
@@ -70,7 +70,7 @@ class WrongMnemonicLengthError(Exception):
 class WrongHashLengthError(Exception):
     """General error that is normally changed to be more specific"""
 
-    def __init(self):
+    def __init__(self):
         Exception.__init__(self, "length must be 32 bytes")
 
 
@@ -85,22 +85,22 @@ class UnknownMsigVersionError(Exception):
 
 
 class WrongMetadataLengthError(Exception):
-    def __init(self):
+    def __init__(self):
         Exception.__init__(self, "metadata length must be 32 bytes")
 
 
 class WrongLeaseLengthError(Exception):
-    def __init(self):
+    def __init__(self):
         Exception.__init__(self, "lease length must be 32 bytes")
 
 
 class WrongNoteType(Exception):
-    def __init(self):
+    def __init__(self):
         Exception.__init__(self, 'note must be of type "bytes"')
 
 
 class WrongNoteLength(Exception):
-    def __init(self):
+    def __init__(self):
         Exception.__init__(self, "note length must be at most 1024")
 
 

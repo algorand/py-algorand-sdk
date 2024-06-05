@@ -21,6 +21,7 @@
 @unit.responses
 @unit.responses.231
 @unit.responses.blocksummary
+@unit.responses.minbalance
 @unit.responses.participationupdates
 @unit.responses.sync
 @unit.responses.timestamp

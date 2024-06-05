@@ -368,9 +368,8 @@ class PaymentTxn(Transaction):
             raise error.WrongAmountType
         self.close_remainder_to = close_remainder_to
         if not sp.flat_fee:
-            self.fee = max(
-                self.estimate_size() * self.fee, constants.min_txn_fee
-            )
+            mf = constants.min_txn_fee if sp.min_fee is None else sp.min_fee
+            self.fee = max(self.estimate_size() * self.fee, mf)
 
     def dictify(self):
         d = dict()
@@ -419,8 +418,8 @@ class KeyregTxn(Transaction):
     Args:
         sender (str): address of sender
         sp (SuggestedParams): suggested params from algod
-        votekey (str): participation public key in base64
-        selkey (str): VRF public key in base64
+        votekey (str|bytes): participation public key bytes, optionally encoded in base64
+        selkey (str|bytes): VRF public key bytes, optionally encoded in base64
         votefst (int): first round to vote
         votelst (int): last round to vote
         votekd (int): vote key dilution
@@ -430,7 +429,7 @@ class KeyregTxn(Transaction):
             transaction's valid rounds
         rekey_to (str, optional): additionally rekey the sender to this address
         nonpart (bool, optional): mark the account non-participating if true
-        StateProofPK: state proof
+        sprfkey (str|bytes, optional): state proof ID bytes, optionally encoded in base64
 
     Attributes:
         sender (str)
@@ -440,7 +439,7 @@ class KeyregTxn(Transaction):
         note (bytes)
         genesis_id (str)
         genesis_hash (str)
-        group(bytes)
+        group (bytes)
         votepk (str)
         selkey (str)
         votefst (int)
@@ -471,18 +470,17 @@ class KeyregTxn(Transaction):
         Transaction.__init__(
             self, sender, sp, note, lease, constants.keyreg_txn, rekey_to
         )
-        self.votepk = votekey
-        self.selkey = selkey
+        self.votepk = self._fixed_bytes64(votekey, 32)
+        self.selkey = self._fixed_bytes64(selkey, 32)
         self.votefst = votefst
         self.votelst = votelst
         self.votekd = votekd
         self.nonpart = nonpart
-        self.sprfkey = sprfkey
+        self.sprfkey = self._fixed_bytes64(sprfkey, 64)
 
         if not sp.flat_fee:
-            self.fee = max(
-                self.estimate_size() * self.fee, constants.min_txn_fee
-            )
+            mf = constants.min_txn_fee if sp.min_fee is None else sp.min_fee
+            self.fee = max(self.estimate_size() * self.fee, mf)
 
     def dictify(self):
         d = {}
@@ -520,6 +518,18 @@ class KeyregTxn(Transaction):
             and self.sprfkey == other.sprfkey
         )
 
+    @staticmethod
+    def _fixed_bytes64(key, size):
+        if key is None:
+            return None
+        if isinstance(key, (bytes, bytearray)) and len(key) == size:
+            return base64.b64encode(key)
+        if len(base64.b64decode(key)) == size:
+            return key
+        assert False, "{} is not {} bytes or b64 decodable as such".format(
+            key, size
+        )
+
 
 class KeyregOnlineTxn(KeyregTxn):
     """
@@ -529,8 +539,8 @@ class KeyregOnlineTxn(KeyregTxn):
     Args:
         sender (str): address of sender
         sp (SuggestedParams): suggested params from algod
-        votekey (str): participation public key in base64
-        selkey (str): VRF public key in base64
+        votekey (str|bytes): participation public key bytes, optionally encoded in base64
+        selkey (str|bytes): VRF public key bytes, optionally encoded in base64
         votefst (int): first round to vote
         votelst (int): last round to vote
         votekd (int): vote key dilution
@@ -539,7 +549,7 @@ class KeyregOnlineTxn(KeyregTxn):
             with the same sender and lease can be confirmed in this
             transaction's valid rounds
         rekey_to (str, optional): additionally rekey the sender to this address
-        sprfkey (str, optional): state proof ID
+        sprfkey (str|bytes, optional): state proof ID bytes, optionally encoded in base64
 
     Attributes:
         sender (str)
@@ -549,7 +559,7 @@ class KeyregOnlineTxn(KeyregTxn):
         note (bytes)
         genesis_id (str)
         genesis_hash (str)
-        group(bytes)
+        group (bytes)
         votepk (str)
         selkey (str)
         votefst (int)
@@ -590,12 +600,6 @@ class KeyregOnlineTxn(KeyregTxn):
             nonpart=False,
             sprfkey=sprfkey,
         )
-        self.votepk = votekey
-        self.selkey = selkey
-        self.votefst = votefst
-        self.votelst = votelst
-        self.votekd = votekd
-        self.sprfkey = sprfkey
         if votekey is None:
             raise error.KeyregOnlineTxnInitError("votekey")
         if selkey is None:
@@ -606,37 +610,19 @@ class KeyregOnlineTxn(KeyregTxn):
             raise error.KeyregOnlineTxnInitError("votelst")
         if votekd is None:
             raise error.KeyregOnlineTxnInitError("votekd")
-        if not sp.flat_fee:
-            self.fee = max(
-                self.estimate_size() * self.fee, constants.min_txn_fee
-            )
 
     @staticmethod
     def _undictify(d):
-        votekey = base64.b64encode(d["votekey"]).decode()
-        selkey = base64.b64encode(d["selkey"]).decode()
-        votefst = d["votefst"]
-        votelst = d["votelst"]
-        votekd = d["votekd"]
-        if "sprfkey" in d:
-            sprfID = base64.b64encode(d["sprfkey"]).decode()
+        args = {
+            "votekey": base64.b64encode(d["votekey"]).decode(),
+            "selkey": base64.b64encode(d["selkey"]).decode(),
+            "votefst": d["votefst"],
+            "votelst": d["votelst"],
+            "votekd": d["votekd"],
+        }
 
-            args = {
-                "votekey": votekey,
-                "selkey": selkey,
-                "votefst": votefst,
-                "votelst": votelst,
-                "votekd": votekd,
-                "sprfkey": sprfID,
-            }
-        else:
-            args = {
-                "votekey": votekey,
-                "selkey": selkey,
-                "votefst": votefst,
-                "votelst": votelst,
-                "votekd": votekd,
-            }
+        if "sprfkey" in d:
+            args["sprfkey"] = base64.b64encode(d["sprfkey"]).decode()
 
         return args
 
@@ -668,7 +654,7 @@ class KeyregOfflineTxn(KeyregTxn):
         note (bytes)
         genesis_id (str)
         genesis_hash (str)
-        group(bytes)
+        group (bytes)
         type (str)
         lease (byte[32])
         rekey_to (str)
@@ -690,10 +676,6 @@ class KeyregOfflineTxn(KeyregTxn):
             nonpart=False,
             sprfkey=None,
         )
-        if not sp.flat_fee:
-            self.fee = max(
-                self.estimate_size() * self.fee, constants.min_txn_fee
-            )
 
     @staticmethod
     def _undictify(d):
@@ -728,7 +710,7 @@ class KeyregNonparticipatingTxn(KeyregTxn):
         note (bytes)
         genesis_id (str)
         genesis_hash (str)
-        group(bytes)
+        group (bytes)
         type (str)
         lease (byte[32])
         rekey_to (str)
@@ -750,10 +732,6 @@ class KeyregNonparticipatingTxn(KeyregTxn):
             nonpart=True,
             sprfkey=None,
         )
-        if not sp.flat_fee:
-            self.fee = max(
-                self.estimate_size() * self.fee, constants.min_txn_fee
-            )
 
     @staticmethod
     def _undictify(d):
@@ -886,9 +864,8 @@ class AssetConfigTxn(Transaction):
         if self.decimals < 0 or self.decimals > constants.max_asset_decimals:
             raise error.OutOfRangeDecimalsError
         if not sp.flat_fee:
-            self.fee = max(
-                self.estimate_size() * self.fee, constants.min_txn_fee
-            )
+            mf = constants.min_txn_fee if sp.min_fee is None else sp.min_fee
+            self.fee = max(self.estimate_size() * self.fee, mf)
 
     def dictify(self):
         d = dict()
@@ -1241,9 +1218,8 @@ class AssetFreezeTxn(Transaction):
         self.target = target
         self.new_freeze_state = new_freeze_state
         if not sp.flat_fee:
-            self.fee = max(
-                self.estimate_size() * self.fee, constants.min_txn_fee
-            )
+            mf = constants.min_txn_fee if sp.min_fee is None else sp.min_fee
+            self.fee = max(self.estimate_size() * self.fee, mf)
 
     def dictify(self):
         d = dict()
@@ -1359,9 +1335,8 @@ class AssetTransferTxn(Transaction):
         self.close_assets_to = close_assets_to
         self.revocation_target = revocation_target
         if not sp.flat_fee:
-            self.fee = max(
-                self.estimate_size() * self.fee, constants.min_txn_fee
-            )
+            mf = constants.min_txn_fee if sp.min_fee is None else sp.min_fee
+            self.fee = max(self.estimate_size() * self.fee, mf)
 
     def dictify(self):
         d = dict()
@@ -1632,9 +1607,8 @@ class ApplicationCallTxn(Transaction):
             boxes, self.foreign_apps, self.index
         )
         if not sp.flat_fee:
-            self.fee = max(
-                self.estimate_size() * self.fee, constants.min_txn_fee
-            )
+            mf = constants.min_txn_fee if sp.min_fee is None else sp.min_fee
+            self.fee = max(self.estimate_size() * self.fee, mf)
 
     @staticmethod
     def state_schema(schema):
