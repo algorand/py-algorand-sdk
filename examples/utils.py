@@ -93,6 +93,23 @@ class SandboxAccount:
     signer: AccountTransactionSigner
 
 
+def algod_env():
+    algodata = os.environ.get("ALGORAND_DATA")
+    if not algodata:
+        return ()
+    try:
+        token = (
+            open(os.path.join(algodata, "algod.token"), "rt").read().strip()
+        )
+        net = (
+            "http://"
+            + open(os.path.join(algodata, "algod.net"), "rt").read().strip()
+        )
+        return (net, token)
+    except FileNotFoundError:
+        return ()
+
+
 def get_accounts(
     kmd_address: str = KMD_URL,
     kmd_token: str = KMD_TOKEN,

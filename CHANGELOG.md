@@ -1,5 +1,17 @@
 # Changelog
 
+# v2.6.1
+
+<!-- Release notes generated using configuration in .github/release.yml at release/v2.6.1 -->
+
+## What's Changed
+### Bugfixes
+* algod: Even in the face of urllib.error.HTTPError, return the json by @jannotti in https://github.com/algorand/py-algorand-sdk/pull/529
+* Fix: Pass args to underlying `kmd_request` function, including timeout by @jasonpaulos in https://github.com/algorand/py-algorand-sdk/pull/545
+
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v2.6.0...v2.6.1
+
 # v2.6.0
 
 <!-- Release notes generated using configuration in .github/release.yml at release/v2.6.0 -->
