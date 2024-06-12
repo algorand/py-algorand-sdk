@@ -15,6 +15,7 @@ atc = AtomicTransactionComposer()
 
 accts = get_accounts()
 acct = accts.pop()
+acct2 = accts.pop()
 
 algod_client = get_algod_client()
 
@@ -85,3 +86,18 @@ atc.add_method_call(
     boxes=[[app_id, b"key"]],
 )
 # example: ATC_BOX_REF
+
+# example: ATC_FOREIGN_REFS
+atc = AtomicTransactionComposer()
+atc.add_method_call(
+    app_id,
+    my_method,
+    addr,
+    sp,
+    signer,
+    accounts=[acct2.address],
+    foreign_apps=[1337],
+    foreign_assets=[42],
+    boxes=[[app_id, b"key"]],
+)
+# example: ATC_FOREIGN_REFS
