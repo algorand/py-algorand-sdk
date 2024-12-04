@@ -263,6 +263,9 @@ class Transaction:
             args.pop("note"), args.pop("rekey_to"), args.pop("lease")
             args.update(StateProofTxn._undictify(d))
             txn = StateProofTxn(**args)
+        elif txn_type == constants.heartbeat_txn:
+            args.update(HeartbeatTxn._undictify(d))
+            txn = HeartbeatTxn(**args)
         if "grp" in d:
             txn.group = d["grp"]
         return txn
@@ -3005,6 +3008,92 @@ class StateProofTxn(Transaction):
             and self.sprf_type == other.sprf_type
             and self.sprf == other.sprf
             and self.sprfmsg == other.sprfmsg
+        )
+
+        return False
+
+
+class HeartbeatTxn(Transaction):
+    """
+    Represents a heartbeat transaction
+
+    Arguments:
+        sender (str): address of the sender (note that sender may be different from heartbeat_address)
+        sp (SuggestedParams): suggested params from algod
+        heartbeat_address (str, optional): account this txn is proving onlineness for
+        heartbeat_proof (dict(), optional): signature using heartbeat_address's partkey
+        heartbeat_seed (str, optional): the block seed for the block before this transaction's firstValid
+        note (bytes, optional): arbitrary optional bytes
+        lease (byte[32], optional): specifies a lease, and no other transaction
+            with the same sender and lease can be confirmed in this
+            transaction's valid rounds
+        rekey_to (str, optional): additionally rekey the sender to this address
+
+
+    Attributes:
+        sender (str)
+        hb_address (str)
+        hb_proof (dict())
+        hb_seed (str)
+        first_valid_round (int)
+        last_valid_round (int)
+        genesis_id (str)
+        genesis_hash (str)
+        type (str)
+    """
+
+    def __init__(
+        self,
+        sender,
+        sp,
+        heartbeat_address=None,
+        heartbeat_proof=None,
+        heartbeat_seed=None,
+        note=None,
+        lease=None,
+        rekey_to=None,
+    ):
+        Transaction.__init__(
+            self, sender, sp, note, lease, constants.heartbeat_txn, rekey_to
+        )
+
+        self.hb_address = heartbeat_address
+        self.hb_proof = heartbeat_proof
+        self.hb_seed = heartbeat_seed
+
+    def dictify(self):
+        d = dict()
+        if self.hb_address:
+            d["hbaddr"] = self.hb_address
+        if self.hb_proof:
+            d["hbprf"] = self.hb_proof
+        if self.hb_seed:
+            d["hbseed"] = self.hb_seed
+        d.update(super(HeartbeatTxn, self).dictify())
+        od = OrderedDict(sorted(d.items()))
+
+        return od
+
+    @staticmethod
+    def _undictify(d):
+        args = {}
+        if "hbaddr" in d:
+            args["heartbeat_address"] = d["hbaddr"]
+        if "hbprf" in d:
+            args["heartbeat_proof"] = d["hbprf"]
+        if "hbseed" in d:
+            args["heartbeat_seed"] = d["hbseed"]
+
+        return args
+
+    def __eq__(self, other):
+        if not isinstance(other, HeartbeatTxn):
+            return False
+        return (
+            super(HeartbeatTxn, self).__eq__(other)
+            and self.hb_address == other.hb_address
+            and self.hb_proof == other.hb_proof
+            and self.hb_seed == other.hb_seed
         )
 
         return False
