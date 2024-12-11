@@ -3022,7 +3022,9 @@ class HeartbeatTxn(Transaction):
         sp (SuggestedParams): suggested params from algod
         heartbeat_address (str, optional): account this txn is proving onlineness for
         heartbeat_proof (dict(), optional): signature using heartbeat_address's partkey
-        heartbeat_seed (str, optional): the block seed for the block before this transaction's firstValid
+        heartbeat_seed (str, optional): the block seed for this transaction's firstValid block
+        heartbeat_vote_id (str, optional): must match the heartbeat_address's current vote id
+        heartbeat_key_dilution (int, optional): must match heartbeat_address's current key dilution
         note (bytes, optional): arbitrary optional bytes
         lease (byte[32], optional): specifies a lease, and no other transaction
             with the same sender and lease can be confirmed in this
@@ -3035,6 +3037,8 @@ class HeartbeatTxn(Transaction):
         hb_address (str)
         hb_proof (dict())
         hb_seed (str)
+        hb_vote_id (str)
+        hb_key_dilution (str)
         first_valid_round (int)
         last_valid_round (int)
         genesis_id (str)
@@ -3049,6 +3053,8 @@ class HeartbeatTxn(Transaction):
         heartbeat_address=None,
         heartbeat_proof=None,
         heartbeat_seed=None,
+        heartbeat_vote_id=None,
+        heartbeat_key_dilution=None,
         note=None,
         lease=None,
         rekey_to=None,
@@ -3060,6 +3066,8 @@ class HeartbeatTxn(Transaction):
         self.hb_address = heartbeat_address
         self.hb_proof = heartbeat_proof
         self.hb_seed = heartbeat_seed
+        self.hb_vote_id = heartbeat_vote_id
+        self.hb_key_dilution = heartbeat_key_dilution
 
     def dictify(self):
         d = dict()
@@ -3069,6 +3077,10 @@ class HeartbeatTxn(Transaction):
             d["hbprf"] = self.hb_proof
         if self.hb_seed:
             d["hbseed"] = self.hb_seed
+        if self.hb_vote_id:
+            d["hbvid"] = self.hb_vote_id
+        if self.hb_key_dilution:
+            d["hbkd"] = self.hb_key_dilution
         d.update(super(HeartbeatTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
 
@@ -3083,6 +3095,10 @@ class HeartbeatTxn(Transaction):
             args["heartbeat_proof"] = d["hbprf"]
         if "hbseed" in d:
             args["heartbeat_seed"] = d["hbseed"]
+        if "hbvid" in d:
+            args["heartbeat_vote_id"] = d["hbvid"]
+        if "hbkd" in d:
+            args["heartbeat_key_dilution"] = d["hbkd"]
 
         return args
 
@@ -3094,6 +3110,8 @@ class HeartbeatTxn(Transaction):
             and self.hb_address == other.hb_address
             and self.hb_proof == other.hb_proof
             and self.hb_seed == other.hb_seed
+            and self.hb_vote_id == other.hb_vote_id
+            and self.hb_key_dilution == other.hb_key_dilution
         )
 
         return False

@@ -1426,6 +1426,8 @@ class TestHeartbeatTransactions(unittest.TestCase):
         "Pk2Sig": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
     }
     hb_seed = "XNOEe4VHUzo+8kWmV8ZE1T/GViVIkC9zbz0IhwhKTjY="
+    hb_vote_id = "XNOEe4VHUzo+8kWmV8ZE1T/GViVIkC9zbz0IhwhKTjY="
+    hb_key_dilution = 10000
     note = b"\x00"
     lease = b"\0" * 32
     params = transaction.SuggestedParams(0, 1, 100, genesis)
@@ -1438,6 +1440,8 @@ class TestHeartbeatTransactions(unittest.TestCase):
             self.hb_address,
             self.hb_proof,
             self.hb_seed,
+            self.hb_vote_id,
+            self.hb_key_dilution,
             self.note,
             self.lease,
         )
