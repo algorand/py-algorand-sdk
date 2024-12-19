@@ -37,7 +37,7 @@ harness:
 harness-down:
 	./test-harness.sh down
 
-PYTHON_VERSION ?= 3.8
+PYTHON_VERSION ?= 3.10
 docker-pysdk-build:
 	docker build -t py-sdk-testing --build-arg PYTHON_VERSION="${PYTHON_VERSION}" .
 

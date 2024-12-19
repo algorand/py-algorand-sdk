@@ -28,7 +28,7 @@ setuptools.setup(
             "algosdk.*",
         )
     ),
-    python_requires=">=3.8",
+    python_requires=">=3.10",
     package_data={"": ["*.pyi", "py.typed"]},
     include_package_data=True,
 )
