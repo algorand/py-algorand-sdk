@@ -5,3 +5,4 @@ pytest==6.2.5
 mypy==1.0
 msgpack-types==0.2.0
 git+https://github.com/behave/behave
+setuptools==75.6.0

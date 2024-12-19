@@ -9,11 +9,11 @@ workflows:
       - unit-test:
           matrix:
             parameters:
-              python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+              python-version: ["3.10", "3.11", "3.12"]
       - integration-test:
           matrix:
             parameters:
-              python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+              python-version: ["3.10", "3.11", "3.12"]
       - docset
 
 jobs:
@@ -40,7 +40,7 @@ jobs:
   docset:
     docker:
       # NOTE: We might eventually need Docker authentication here.
-      - image: cimg/python:3.8
+      - image: cimg/python:3.10
     steps:
       - checkout
       - run:
