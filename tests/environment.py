@@ -94,7 +94,9 @@ class FileHandler(http.server.SimpleHTTPRequestHandler):
             f.close()
             if "base64" in mock_response_path:
                 s = encode_bytes(
-                    msgpack.unpackb(base64.b64decode(s), raw=False)
+                    msgpack.unpackb(
+                        base64.b64decode(s), raw=False, strict_map_key=False
+                    )
                 )
                 self.wfile.write(bytes(json.dumps(s), "ascii"))
             else:

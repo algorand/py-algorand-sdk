@@ -339,6 +339,26 @@ def parse_block(context, pool):
     assert context.response["block"]["rwd"] == pool
 
 
+@then(
+    'the parsed Get Block response should have heartbeat address "{hb_address}"'
+)
+def parse_block_heartbeat(context, hb_address):
+    context.response = json.loads(context.response)
+
+    response_address = context.response["block"]["txns"][0]["txn"]["hb"]["a"]
+
+    # This should cover the first example, notably if this is false will fall through to check below
+    if response_address == hb_address:
+        return
+
+    # Our test environment is base 64 encoding the address when it is sent as json, we need to switch the encoding to match
+    response_address = encoding.encode_address(
+        base64.b64decode(response_address)
+    )
+
+    assert response_address == hb_address
+
+
 @when(
     'we make a Lookup Asset Balances call against asset index {index} with limit {limit} afterAddress "{afterAddress:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan}'
 )
@@ -835,6 +855,22 @@ def parsed_search_for_txns(context, roundNum, length, index, rekeyTo):
     if int(length) > 0:
         assert (
             context.response["transactions"][int(index)]["rekey-to"] == rekeyTo
+        )
+
+
+@then(
+    'the parsed SearchForTransactions response should be valid on round {roundNum} and the array should be of len {length} and the element at index {index} should have hbaddress "{hb_address}"'
+)
+def parsed_search_for_hb_txns(context, roundNum, length, index, hb_address):
+    # context.response["block"]["txns"][0]["txn"]["hb"]["a"]
+    assert context.response["current-round"] == int(roundNum)
+    assert len(context.response["transactions"]) == int(length)
+    if int(length) > 0:
+        assert (
+            context.response["transactions"][int(index)][
+                "heartbeat-transaction"
+            ]["hb-address"]
+            == hb_address
         )
 
 

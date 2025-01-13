@@ -2,6 +2,8 @@
 @unit.abijson.byname
 @unit.algod
 @unit.algod.ledger_refactoring
+@unit.algod.heartbeat
+@unit.algod.heartbeat.msgp
 @unit.applications
 @unit.applications.boxes
 @unit.atc_method_args
@@ -12,6 +14,7 @@
 @unit.dryrun.trace.application
 @unit.feetest
 @unit.indexer
+@unit.indexer.heartbeat
 @unit.indexer.ledger_refactoring
 @unit.indexer.logs
 @unit.offline
