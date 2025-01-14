@@ -862,7 +862,6 @@ def parsed_search_for_txns(context, roundNum, length, index, rekeyTo):
     'the parsed SearchForTransactions response should be valid on round {roundNum} and the array should be of len {length} and the element at index {index} should have hbaddress "{hb_address}"'
 )
 def parsed_search_for_hb_txns(context, roundNum, length, index, hb_address):
-    # context.response["block"]["txns"][0]["txn"]["hb"]["a"]
     assert context.response["current-round"] == int(roundNum)
     assert len(context.response["transactions"]) == int(length)
     if int(length) > 0:

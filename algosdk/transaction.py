@@ -215,7 +215,6 @@ class Transaction:
             d["gen"] if "gen" in d else None,
             flat_fee=True,
         )
-        print()
         args = {
             "sp": sp,
             "sender": encoding.encode_address(d["snd"]),
