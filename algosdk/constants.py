@@ -30,6 +30,8 @@ APPCALL_TXN = "appl"
 """str: indicates an app call transaction, allows creating, deleting, and interacting with an application"""
 STATEPROOF_TXN = "stpf"
 """str: indicates an state proof transaction"""
+HEARTBEAT_TXN = "hb"
+"""str: indicates a heartbeat transaction"""
 
 # note field types
 NOTE_FIELD_TYPE_DEPOSIT = "d"
@@ -139,3 +141,4 @@ logic_sig_max_cost = LOGIC_SIG_MAX_COST
 logic_sig_max_size = LOGIC_SIG_MAX_SIZE
 app_page_max_size = APP_PAGE_MAX_SIZE
 stateproof_txn = STATEPROOF_TXN
+heartbeat_txn = HEARTBEAT_TXN

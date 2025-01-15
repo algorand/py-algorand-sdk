@@ -405,6 +405,25 @@ class TestMsgpack(unittest.TestCase):
             encoding.msgpack_encode(encoding.msgpack_decode(stateprooftxn)),
         )
 
+    def test_heartbeat_txn(self):
+        heartbeattxn = (
+            "hqJmdmqiZ2jEIDluDCudpBECh7Xg6253Qe2hY3T/SbzZSPR2Hn4Nlmw4omhihaFhxCC"
+            "KO7sD/YRwtvuGYoIFn32QyvIkduwZPFNn0XfhhqA7xqJrZGSjcHJmhaFwxCDFw5WgBE"
+            "2pznzObspCtutK6ehMwf7nohJ/YEs9fiTkM6NwMXPEQCsGZfJ3wNJYp0y/qrmdVBd7t"
+            "GnNMuOJyjb42lDomvLFhnnU1og697RJalk3SAlVabws59oSMHg2ljNUKkRFdgSicDLE"
+            "IDka1YrQ7H5oP7ZbH0SFrt+SJy1TUiwjVhz3/XMQM+K9o3Ayc8RAgBcItYg/otjdd3k"
+            "j0cPKkj6JO+CBeEgjBJ+NGLX4j3kU6u1d8+B8f2hytjkNwmja4w04JZaPzQpP5R8kgq"
+            "gjDKFzxEA289keXLoz6d4WBJfDOxiIveBq/h5qzD42Zq+nWr8bBbAsg4JfdbuMHOKUs"
+            "fKkbKaSyj8zVE3NSrc7zIx08DwLonNkxCCYXCMVsQ2z4r/Rz95sAxIfYsZyfZgx0nqB"
+            "PKjpcX2V9KN2aWTEIKJ823BOW9UAZ0HFq1lgtoP4RN1nmu9+4zGmqewkseLLomx2dKN"
+            "zbmTEIDAp2wPDnojyy8tTgb3sMH++26D5+l7nHZmyRvzFfLsOpHR5cGWiaGI="
+        )
+
+        self.assertEqual(
+            heartbeattxn,
+            encoding.msgpack_encode(encoding.msgpack_decode(heartbeattxn)),
+        )
+
     def test_asset_create(self):
         golden = (
             "gqNzaWfEQEDd1OMRoQI/rzNlU4iiF50XQXmup3k5czI9hEsNqHT7K4KsfmA/0DUVk"
@@ -417,6 +436,7 @@ class TestMsgpack(unittest.TestCase):
             "vf3DlCToiomx2zgAE7/ejc25kxCAJ+9J2LAj4bFrmv23Xp6kB3mZ111Dgfoxcdphk"
             "fbbh/aR0eXBlpGFjZmc="
         )
+
         self.assertEqual(
             golden, encoding.msgpack_encode(encoding.msgpack_decode(golden))
         )
