@@ -1414,6 +1414,45 @@ class TestApplicationTransactions(unittest.TestCase):
         self.assertEqual(i, call)
 
 
+class TestHeartbeatTransactions(unittest.TestCase):
+    sender = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+    genesis = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+    hb_address = "RI53WA75QRYLN64GMKBALH35SDFPEJDW5QMTYU3H2F36DBVAHPDN3FF4YA"
+    hb_proof = {
+        "Sig": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+        "PK": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+        "PK2": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+        "PK1Sig": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+        "Pk2Sig": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+    }
+    hb_seed = "XNOEe4VHUzo+8kWmV8ZE1T/GViVIkC9zbz0IhwhKTjY="
+    hb_vote_id = "XNOEe4VHUzo+8kWmV8ZE1T/GViVIkC9zbz0IhwhKTjY="
+    hb_key_dilution = 10000
+    note = b"\x00"
+    lease = b"\0" * 32
+    params = transaction.SuggestedParams(0, 1, 100, genesis)
+
+    def test_heartbeat(self):
+        # Test serializing a basic heartbeat with all standard fields filled in (save for rekey).
+        hb = transaction.HeartbeatTxn(
+            self.sender,
+            self.params,
+            self.hb_address,
+            self.hb_proof,
+            self.hb_seed,
+            self.hb_vote_id,
+            self.hb_key_dilution,
+            self.note,
+            self.lease,
+        )
+
+        enc = encoding.msgpack_encode(hb)
+        re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
+        self.assertEqual(enc, re_enc)
+
+        self.assertEqual(transaction.HeartbeatTxn.undictify(hb.dictify()), hb)
+
+
 class TestBoxReference(unittest.TestCase):
     def test_translate_box_references(self):
         # Test case: reference input, foreign app array, caller app id, expected output

@@ -1,5 +1,17 @@
 # Changelog
 
+# v2.7.0
+
+<!-- Release notes generated using configuration in .github/release.yml at release/v2.7.0 -->
+
+## What's Changed
+### Enhancements
+* Python: Remove 3.8 and 3.9 Support, Bump Runner Dependencies to Stabilize Build by @gmalouf in https://github.com/algorand/py-algorand-sdk/pull/550
+* Incentives: Heartbeat Transaction Support by @gmalouf in https://github.com/algorand/py-algorand-sdk/pull/548
+
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v2.6.1...v2.7.0
+
 # v2.6.1
 
 <!-- Release notes generated using configuration in .github/release.yml at release/v2.6.1 -->

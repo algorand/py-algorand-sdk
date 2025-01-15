@@ -9,7 +9,7 @@ setuptools.setup(
     description="Algorand SDK in Python",
     author="Algorand",
     author_email="pypiservice@algorand.com",
-    version="2.6.1",
+    version="2.7.0",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/algorand/py-algorand-sdk",
@@ -28,7 +28,7 @@ setuptools.setup(
             "algosdk.*",
         )
     ),
-    python_requires=">=3.8",
+    python_requires=">=3.10",
     package_data={"": ["*.pyi", "py.typed"]},
     include_package_data=True,
 )
