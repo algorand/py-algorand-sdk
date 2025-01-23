@@ -17,7 +17,7 @@ import urllib.error
 from urllib import parse
 from urllib.request import Request, urlopen
 
-from algosdk import constants, encoding, error, transaction, util
+from algosdk import block, constants, encoding, error, transaction, util
 from algosdk.v2client import models
 
 AlgodResponseType = Union[Dict[str, Any], bytes]
@@ -287,6 +287,15 @@ class AlgodClient:
             "GET", req, query, response_format=response_format, **kwargs
         )
         return res
+
+    def block(
+        self,
+        round: int | str,
+        **kwargs: Any,
+    ) -> "block.BlockInfo":
+        msgp = self.block_info(int(round), "msgpack")
+        d = encoding.algo_msgp_decode(msgp)
+        return encoding.undictify(d)
 
     def ledger_supply(self, **kwargs: Any) -> AlgodResponseType:
         """Return supply details for node's ledger."""
