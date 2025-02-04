@@ -831,6 +831,53 @@ def search_txns2(
     )
 
 
+@when(
+    'we make a Search For BlockHeaders call with minRound {minRound} maxRound {maxRound} limit {limit} nextToken "{next:MaybeString}" beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" proposers {proposers} expired {expired} absent {absent}'
+)
+def search_block_headers(
+    context,
+    minRound,
+    maxRound,
+    limit,
+    next,
+    beforeTime,
+    afterTime,
+    proposers,
+    expired,
+    absent,
+):
+    if next == "none":
+        next = None
+    if beforeTime == "none":
+        beforeTime = None
+    if afterTime == "none":
+        afterTime = None
+    if not proposers or proposers == '""':
+        proposers = None
+    else:
+        proposers = eval(proposers)
+    if not expired or expired == '""':
+        expired = None
+    else:
+        expired = eval(expired)
+    if not absent or absent == '""':
+        absent = None
+    else:
+        absent = eval(absent)
+
+    context.response = context.icl.search_block_headers(
+        limit=int(limit),
+        next_page=next,
+        min_round=int(minRound),
+        max_round=int(maxRound),
+        start_time=afterTime,
+        end_time=beforeTime,
+        proposers=proposers,
+        expired=expired,
+        absent=absent,
+    )
+
+
 @when("we make any SearchForTransactions call")
 def search_txns_any(context):
     context.response = context.icl.search_transactions(asset_id=2)
@@ -871,6 +918,19 @@ def parsed_search_for_hb_txns(context, roundNum, length, index, hb_address):
             ]["hb-address"]
             == hb_address
         )
+
+
+@when("we make any SearchForBlockHeaders call")
+def search_bhs_any(context):
+    context.response = context.icl.search_block_headers()
+
+
+@then(
+    'the parsed SearchForBlockHeaders response should have a block array of len {length} and the element at index {index} should have round "{round}"'
+)
+def step_impl(context, length, index, round):
+    assert len(context.response["blocks"]) == int(length)
+    assert (context.response["blocks"][int(index)]["round"]) == int(round)
 
 
 @when(

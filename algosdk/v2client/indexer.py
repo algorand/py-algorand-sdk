@@ -566,6 +566,64 @@ class IndexerClient:
 
         return self.indexer_request("GET", req, query, **kwargs)
 
+    def search_block_headers(
+        self,
+        limit=None,
+        next_page=None,
+        min_round=None,
+        max_round=None,
+        start_time=None,
+        end_time=None,
+        proposers=None,
+        absent=None,
+        expired=None,
+        **kwargs
+    ):
+        """
+        Return a list of block headers satisfying the conditions.
+
+        Args:
+            limit (int, optional): maximum number of results to return
+            next_page (str, optional): the next page of results; use the next
+                token provided by the previous results
+            min_round (int, optional): include results at or after the
+                specified round
+            max_round (int, optional): include results at or before the
+                specified round
+            start_time (str, optional): include results after the given time;
+                must be an RFC 3339 formatted string
+            end_time (str, optional): include results before the given time;
+                must be an RFC 3339 formatted string
+            proposers (list, optional): include results with accounts marked as
+            proposers in the block header's participation updates
+            expired (list, optional): include results with accounts marked as
+            expired in the block header's participation updates
+            absent (list, optional): include results with accounts marked as
+            absent in the block header's participation updates
+        """
+        req = "/block-headers"
+        query = dict()
+        if limit:
+            query["limit"] = limit
+        if next_page:
+            query["next"] = next_page
+        if min_round:
+            query["min-round"] = min_round
+        if max_round:
+            query["max-round"] = max_round
+        if end_time:
+            query["before-time"] = end_time
+        if start_time:
+            query["after-time"] = start_time
+        if proposers:
+            query["proposers"] = proposers
+        if expired:
+            query["expired"] = expired
+        if absent:
+            query["absent"] = absent
+
+        return self.indexer_request("GET", req, query, **kwargs)
+
     def search_transactions_by_address(
         self,
         address,
