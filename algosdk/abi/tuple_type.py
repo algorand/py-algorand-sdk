@@ -232,9 +232,9 @@ class TupleType(ABIType):
                 "value string must be in bytes: {}".format(bytestring)
             )
         tuple_elements = self.child_types
-        dynamic_segments: List[
-            List[int]
-        ] = list()  # Store the start and end of a dynamic element
+        dynamic_segments: List[List[int]] = (
+            list()
+        )  # Store the start and end of a dynamic element
         value_partitions: List[Optional[Union[bytes, bytearray]]] = list()
         i = 0
         array_index = 0

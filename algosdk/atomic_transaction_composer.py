@@ -679,9 +679,9 @@ class AtomicTransactionComposer:
         stxn_list: List[Optional[GenericSignedTransaction]] = [None] * len(
             self.txn_list
         )
-        signer_indexes: Dict[
-            TransactionSigner, List[int]
-        ] = {}  # Map a signer to a list of indices to sign
+        signer_indexes: Dict[TransactionSigner, List[int]] = (
+            {}
+        )  # Map a signer to a list of indices to sign
         txn_list = self.build_group()
         for i, txn_with_signer in enumerate(txn_list):
             if txn_with_signer.signer not in signer_indexes:

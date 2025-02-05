@@ -220,9 +220,9 @@ class Transaction:
             "sender": encoding.encode_address(d["snd"]),
             "note": d["note"] if "note" in d else None,
             "lease": d["lx"] if "lx" in d else None,
-            "rekey_to": encoding.encode_address(d["rekey"])
-            if "rekey" in d
-            else None,
+            "rekey_to": (
+                encoding.encode_address(d["rekey"]) if "rekey" in d else None
+            ),
         }
         txn_type = d["type"]
         if not isinstance(d["type"], str):
@@ -394,13 +394,15 @@ class PaymentTxn(Transaction):
     @staticmethod
     def _undictify(d):
         args = {
-            "close_remainder_to": encoding.encode_address(d["close"])
-            if "close" in d
-            else None,
+            "close_remainder_to": (
+                encoding.encode_address(d["close"]) if "close" in d else None
+            ),
             "amt": d["amt"] if "amt" in d else 0,
-            "receiver": encoding.encode_address(d["rcv"])
-            if "rcv" in d
-            else constants.ZERO_ADDRESS,
+            "receiver": (
+                encoding.encode_address(d["rcv"])
+                if "rcv" in d
+                else constants.ZERO_ADDRESS
+            ),
         }
         return args
 
@@ -1169,7 +1171,6 @@ class AssetUpdateTxn(AssetConfigTxn):
 
 
 class AssetFreezeTxn(Transaction):
-
     """
     Represents a transaction for freezing or unfreezing an account's asset
     holdings. Must be issued by the asset's freeze manager.
@@ -1367,17 +1368,19 @@ class AssetTransferTxn(Transaction):
     @staticmethod
     def _undictify(d):
         args = {
-            "receiver": encoding.encode_address(d["arcv"])
-            if "arcv" in d
-            else constants.ZERO_ADDRESS,
+            "receiver": (
+                encoding.encode_address(d["arcv"])
+                if "arcv" in d
+                else constants.ZERO_ADDRESS
+            ),
             "amt": d["aamt"] if "aamt" in d else 0,
             "index": d["xaid"] if "xaid" in d else None,
-            "close_assets_to": encoding.encode_address(d["aclose"])
-            if "aclose" in d
-            else None,
-            "revocation_target": encoding.encode_address(d["asnd"])
-            if "asnd" in d
-            else None,
+            "close_assets_to": (
+                encoding.encode_address(d["aclose"]) if "aclose" in d else None
+            ),
+            "revocation_target": (
+                encoding.encode_address(d["asnd"]) if "asnd" in d else None
+            ),
         }
 
         return args
@@ -1685,12 +1688,12 @@ class ApplicationCallTxn(Transaction):
         args = {
             "index": d["apid"] if "apid" in d else None,
             "on_complete": d["apan"] if "apan" in d else None,
-            "local_schema": StateSchema.undictify(d["apls"])
-            if "apls" in d
-            else None,
-            "global_schema": StateSchema.undictify(d["apgs"])
-            if "apgs" in d
-            else None,
+            "local_schema": (
+                StateSchema.undictify(d["apls"]) if "apls" in d else None
+            ),
+            "global_schema": (
+                StateSchema.undictify(d["apgs"]) if "apgs" in d else None
+            ),
             "approval_program": d["apap"] if "apap" in d else None,
             "clear_program": d["apsu"] if "apsu" in d else None,
             "app_args": d["apaa"] if "apaa" in d else None,
@@ -1698,9 +1701,11 @@ class ApplicationCallTxn(Transaction):
             "foreign_apps": d["apfa"] if "apfa" in d else None,
             "foreign_assets": d["apas"] if "apas" in d else None,
             "extra_pages": d["apep"] if "apep" in d else 0,
-            "boxes": [BoxReference.undictify(box) for box in d["apbx"]]
-            if "apbx" in d
-            else None,
+            "boxes": (
+                [BoxReference.undictify(box) for box in d["apbx"]]
+                if "apbx" in d
+                else None
+            ),
         }
         if args["accounts"]:
             args["accounts"] = [
@@ -2303,9 +2308,9 @@ class MultisigTransaction:
                 for s in range(len(stx.multisig.subsigs)):
                     if stx.multisig.subsigs[s].signature:
                         if not msigstx.multisig.subsigs[s].signature:
-                            msigstx.multisig.subsigs[
-                                s
-                            ].signature = stx.multisig.subsigs[s].signature
+                            msigstx.multisig.subsigs[s].signature = (
+                                stx.multisig.subsigs[s].signature
+                            )
                         elif (
                             not msigstx.multisig.subsigs[s].signature
                             == stx.multisig.subsigs[s].signature
