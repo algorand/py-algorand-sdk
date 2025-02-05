@@ -1,5 +1,18 @@
 # Changelog
 
+# v2.8.0
+
+<!-- Release notes generated using configuration in .github/release.yml at release/v2.8.0 -->
+
+## What's Changed
+### Enhancements
+* Blockheaders: Support for blockheaders call against Indexer API. by @gmalouf in https://github.com/algorand/py-algorand-sdk/pull/553
+
+## New Contributors
+* @dependabot made their first contribution in https://github.com/algorand/py-algorand-sdk/pull/535
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v2.7.0...v2.8.0
+
 # v2.7.0
 
 <!-- Release notes generated using configuration in .github/release.yml at release/v2.7.0 -->
