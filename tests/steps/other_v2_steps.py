@@ -328,6 +328,19 @@ def block(context, block, response_format):
     )
 
 
+@when(
+    'we make a Get Block call for round {round} with format "{response_format}" and header-only "{header_only}"'
+)
+def block(context, round, response_format, header_only):
+    bool_opt = None
+    if header_only == "true":
+        bool_opt = True
+
+    context.response = context.acl.block_info(
+        int(round), response_format=response_format, header_only=bool_opt
+    )
+
+
 @when("we make any Get Block call")
 def block_any(context):
     context.response = context.acl.block_info(3, response_format="msgpack")
@@ -337,6 +350,17 @@ def block_any(context):
 def parse_block(context, pool):
     context.response = json.loads(context.response)
     assert context.response["block"]["rwd"] == pool
+
+
+@then(
+    'the parsed Get Block response should have rewards pool "{pool}" and no certificate or payset'
+)
+def parse_block_header(context, pool):
+    context.response = json.loads(context.response)
+    assert context.response["block"]["rwd"] == pool
+    assert (
+        "cert" not in context.response
+    ), f"Key 'cert' unexpectedly found in dictionary"
 
 
 @then(
@@ -654,7 +678,6 @@ def parse_txns_by_addr(context, roundNum, length, idx, sender):
     'we make a Lookup Block call against round {block:d} and header "{headerOnly:MaybeBool}"'
 )
 def lookup_block(context, block, headerOnly):
-    print("Header only = " + str(headerOnly))
     context.response = context.icl.block_info(
         block=block, header_only=headerOnly
     )
