@@ -88,9 +88,11 @@ class Application(object):
             elif isinstance(value, dict):
                 result[oas_attr] = dict(
                     map(
-                        lambda item: (item[0], item[1].dictify())
-                        if hasattr(item[1], "dictify")
-                        else item,
+                        lambda item: (
+                            (item[0], item[1].dictify())
+                            if hasattr(item[1], "dictify")
+                            else item
+                        ),
                         value.items(),
                     )
                 )

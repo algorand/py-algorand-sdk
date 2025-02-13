@@ -270,6 +270,7 @@ class AlgodClient:
         block: Optional[int] = None,
         response_format: str = "json",
         round_num: Optional[int] = None,
+        header_only: Optional[bool] = None,
         **kwargs: Any,
     ) -> AlgodResponseType:
         """
@@ -280,8 +281,15 @@ class AlgodClient:
             response_format (str): the format in which the response is
                 returned: either "json" or "msgpack"
             round_num (int, optional): alias for block; specify one of these
+            header_only (bool, optional): if set to true, only block header would be
+                present in the the response
+
         """
         query = {"format": response_format}
+
+        if header_only:
+            query["header-only"] = "true"
+
         req = "/blocks/" + _specify_round_string(block, round_num)
         res = self.algod_request(
             "GET", req, query, response_format=response_format, **kwargs

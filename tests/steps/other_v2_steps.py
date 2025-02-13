@@ -328,6 +328,19 @@ def block(context, block, response_format):
     )
 
 
+@when(
+    'we make a Get Block call for round {round} with format "{response_format}" and header-only "{header_only}"'
+)
+def block(context, round, response_format, header_only):
+    bool_opt = None
+    if header_only == "true":
+        bool_opt = True
+
+    context.response = context.acl.block_info(
+        int(round), response_format=response_format, header_only=bool_opt
+    )
+
+
 @when("we make any Get Block call")
 def block_any(context):
     context.response = context.acl.block_info(3, response_format="msgpack")
@@ -337,6 +350,17 @@ def block_any(context):
 def parse_block(context, pool):
     context.response = json.loads(context.response)
     assert context.response["block"]["rwd"] == pool
+
+
+@then(
+    'the parsed Get Block response should have rewards pool "{pool}" and no certificate or payset'
+)
+def parse_block_header(context, pool):
+    context.response = json.loads(context.response)
+    assert context.response["block"]["rwd"] == pool
+    assert (
+        "cert" not in context.response
+    ), f"Key 'cert' unexpectedly found in dictionary"
 
 
 @then(
@@ -654,7 +678,6 @@ def parse_txns_by_addr(context, roundNum, length, idx, sender):
     'we make a Lookup Block call against round {block:d} and header "{headerOnly:MaybeBool}"'
 )
 def lookup_block(context, block, headerOnly):
-    print("Header only = " + str(headerOnly))
     context.response = context.icl.block_info(
         block=block, header_only=headerOnly
     )
@@ -831,6 +854,53 @@ def search_txns2(
     )
 
 
+@when(
+    'we make a Search For BlockHeaders call with minRound {minRound} maxRound {maxRound} limit {limit} nextToken "{next:MaybeString}" beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" proposers {proposers} expired {expired} absent {absent}'
+)
+def search_block_headers(
+    context,
+    minRound,
+    maxRound,
+    limit,
+    next,
+    beforeTime,
+    afterTime,
+    proposers,
+    expired,
+    absent,
+):
+    if next == "none":
+        next = None
+    if beforeTime == "none":
+        beforeTime = None
+    if afterTime == "none":
+        afterTime = None
+    if not proposers or proposers == '""':
+        proposers = None
+    else:
+        proposers = eval(proposers)
+    if not expired or expired == '""':
+        expired = None
+    else:
+        expired = eval(expired)
+    if not absent or absent == '""':
+        absent = None
+    else:
+        absent = eval(absent)
+
+    context.response = context.icl.search_block_headers(
+        limit=int(limit),
+        next_page=next,
+        min_round=int(minRound),
+        max_round=int(maxRound),
+        start_time=afterTime,
+        end_time=beforeTime,
+        proposers=proposers,
+        expired=expired,
+        absent=absent,
+    )
+
+
 @when("we make any SearchForTransactions call")
 def search_txns_any(context):
     context.response = context.icl.search_transactions(asset_id=2)
@@ -871,6 +941,19 @@ def parsed_search_for_hb_txns(context, roundNum, length, index, hb_address):
             ]["hb-address"]
             == hb_address
         )
+
+
+@when("we make any SearchForBlockHeaders call")
+def search_bhs_any(context):
+    context.response = context.icl.search_block_headers()
+
+
+@then(
+    'the parsed SearchForBlockHeaders response should have a block array of len {length} and the element at index {index} should have round "{round}"'
+)
+def step_impl(context, length, index, round):
+    assert len(context.response["blocks"]) == int(length)
+    assert (context.response["blocks"][int(index)]["round"]) == int(round)
 
 
 @when(

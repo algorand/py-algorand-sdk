@@ -1,5 +1,5 @@
 .
-black==23.1.0
+black==24.3.0
 glom==20.11.0
 pytest==6.2.5
 mypy==1.0
