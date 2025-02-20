@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import base64
 import copy
+from dataclasses import dataclass
 from enum import IntEnum
 from typing import (
     Any,
@@ -23,6 +24,18 @@ from algosdk.v2client import algod, models
 ABI_RETURN_HASH = b"\x15\x1f\x7c\x75"
 # Support for generic typing
 T = TypeVar("T")
+
+
+@dataclass(kw_only=True)
+class PopulatedResourceArrays:
+    """
+    Contains the populated resource arrays when `populate_resources` is set to true on a simulate request
+    """
+
+    apps: list[int]
+    accounts: list[str]
+    assets: list[int]
+    boxes: list[tuple[int, bytes]]
 
 
 def populate_foreign_array(
@@ -322,6 +335,8 @@ class SimulateAtomicTransactionResponse:
         results: List[SimulateABIResult],
         eval_overrides: Optional[SimulateEvalOverrides] = None,
         exec_trace_config: Optional[models.SimulateTraceConfig] = None,
+        extra_resource_arrays: list[PopulatedResourceArrays] | None = None,
+        populated_resource_arrays: list[PopulatedResourceArrays] | None = None,
     ) -> None:
         self.version = version
         self.failure_message = failure_message
@@ -331,6 +346,8 @@ class SimulateAtomicTransactionResponse:
         self.abi_results = results
         self.eval_overrides = eval_overrides
         self.exec_trace_config = exec_trace_config
+        self.extra_resource_arrays = extra_resource_arrays
+        self.populated_resource_arrays = populated_resource_arrays
 
 
 class AtomicTransactionComposer:
@@ -823,6 +840,40 @@ class AtomicTransactionComposer:
             )
         )
 
+        populated_resource_arrays = []
+        for txn in txn_group["txn-results"]:
+            if txn.get("populated-resource-arrays"):
+                populated_resource_arrays.append(
+                    PopulatedResourceArrays(
+                        apps=txn["populated-resource-arrays"].get("apps", []),
+                        accounts=txn["populated-resource-arrays"].get(
+                            "accounts", []
+                        ),
+                        assets=txn["populated-resource-arrays"].get(
+                            "assets", []
+                        ),
+                        boxes=[
+                            (b["app"], base64.b64decode(b["name"]))
+                            for b in txn["populated-resource-arrays"].get(
+                                "boxes", []
+                            )
+                        ],
+                    )
+                )
+
+        extra_resource_arrays = []
+        for arrays in txn_group.get("extra-resource-arrays", []):
+            extra_resource_arrays.append(
+                PopulatedResourceArrays(
+                    apps=arrays.get("apps", []),
+                    accounts=arrays.get("accounts", []),
+                    assets=arrays.get("assets", []),
+                    boxes=[
+                        (b["app"], base64.b64decode(b["name"]))
+                        for b in arrays.get("boxes", [])
+                    ],
+                )
+            )
         return SimulateAtomicTransactionResponse(
             version=simulation_result.get("version", 0),
             failure_message=txn_group.get("failure-message", ""),
@@ -834,6 +885,8 @@ class AtomicTransactionComposer:
                 simulation_result
             ),
             exec_trace_config=exec_trace_config,
+            extra_resource_arrays=extra_resource_arrays,
+            populated_resource_arrays=populated_resource_arrays,
         )
 
     def execute(

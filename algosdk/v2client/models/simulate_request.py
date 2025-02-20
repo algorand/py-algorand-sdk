@@ -72,6 +72,7 @@ class SimulateRequest:
         allow_unnamed_resources: bool = False,
         extra_opcode_budget: int = 0,
         exec_trace_config: Optional[SimulateTraceConfig] = None,
+        populate_resources: bool = False,
     ) -> None:
         self.txn_groups = txn_groups
         self.round = round
@@ -82,6 +83,7 @@ class SimulateRequest:
         self.exec_trace_config = (
             exec_trace_config if exec_trace_config else SimulateTraceConfig()
         )
+        self.populate_resources = populate_resources
 
     def dictify(self) -> Dict[str, Any]:
         return {
@@ -94,4 +96,5 @@ class SimulateRequest:
             "allow-empty-signatures": self.allow_empty_signatures,
             "extra-opcode-budget": self.extra_opcode_budget,
             "exec-trace-config": self.exec_trace_config.dictify(),
+            "populate-resources": self.populate_resources,
         }
