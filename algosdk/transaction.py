@@ -2182,6 +2182,116 @@ class SignedTransaction:
             and self.authorizing_address == other.authorizing_address
         )
 
+    def __str__(self):
+        return ostr(self)
+
+
+class SignedTxnWithAD:
+    def __init__(self, stxn: SignedTransaction, apply_data):
+        self.stxn = stxn
+        self.apply_data = apply_data
+
+    @staticmethod
+    def undictify(d):
+        stxn = SignedTransaction.undictify(d)
+        ad = ApplyData.undictify(d, stxn.transaction)
+        return SignedTxnWithAD(stxn, ad)
+
+
+class ApplyData:
+    def __init__(
+        self,
+        closing_amount,
+        asset_closing_amount,
+        send_rewards,
+        receiver_rewards,
+        close_rewards,
+        eval_delta,
+        config_asset,
+        application_id,
+    ):
+        self.closing_amount = closing_amount
+        self.asset_closing_amount = asset_closing_amount
+        self.send_rewards = send_rewards
+        self.receiver_rewards = receiver_rewards
+        self.close_rewards = close_rewards
+        self.eval_delta = eval_delta
+        self.config_asset = config_asset
+        self.application_id = application_id
+
+    @staticmethod
+    def undictify(d, txn):
+        return ApplyData(
+            d.get("ca", 0),
+            d.get("aca", 0),
+            d.get("rs", 0),
+            d.get("rr", 0),
+            d.get("rc", 0),
+            EvalDelta.undictify(d.get("dt"), txn),
+            d.get("caid", 0),
+            d.get("apid", 0),
+        )
+
+    def __str__(self):
+        return ostr(self)
+
+
+class EvalDelta:
+    def __init__(self, globals, locals, shared, logs, inners):
+        self.global_delta = globals
+        self.local_deltas = locals
+        self.shared_accounts = shared
+        self.logs = logs
+        self.inner_transactions = inners
+
+    @classmethod
+    def undictify(cls, d, txn):
+        if d is None:
+            return None
+        locals = {
+            i: EvalDelta.values(sd) for (i, sd) in d.get("ld", {}).items()
+        }
+        shared = d.get("sa", [])
+        if txn is not None:
+            locals = {
+                cls.resolve(i, txn, shared): sd for (i, sd) in locals.items()
+            }
+        return EvalDelta(
+            EvalDelta.values(d.get("gd", {})),
+            locals,
+            shared,
+            d.get("logs", []),
+            [SignedTxnWithAD.undictify(i) for i in d.get("itxn", [])],
+        )
+
+    @staticmethod
+    def resolve(i, txn, shared):
+        if i == 0:
+            return txn.sender
+        i -= 1
+        if i < len(txn.accounts):
+            return txn.accounts[i]
+        i -= len(txn.accounts)
+        return shared[i]
+
+    @classmethod
+    def values(cls, d):
+        return {k: cls.value(v) for (k, v) in d.items()}
+
+    @classmethod
+    def value(cls, v):
+        t = v[b"at"]
+        if t == 1:
+            return v[b"bs"]
+        elif t == 2:
+            return v[b"ui"]
+        elif t == 3:
+            return None
+        exit(1)
+
+    def __str__(self):
+        return ostr(self)
+
 
 class MultisigTransaction:
     """
@@ -3459,3 +3569,13 @@ def decode_programs(app):
         app["params"]["clear-state-program"]
     )
     return app
+
+
+def ostr(o):
+    return (
+        "{"
+        + ", ".join(
+            [str(key) + ": " + str(value) for key, value in o.__dict__.items()]
+        )
+        + "}"
+    )
