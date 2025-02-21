@@ -3,6 +3,7 @@ import os
 from utils import get_algod_client, get_accounts
 from algosdk import transaction
 from algosdk import encoding
+from algosdk import logic
 
 # example: CODEC_ADDRESS
 address = "4H5UNRBJ2Q6JENAXQ6HNTGKLKINP4J4VTQBEPK5F3I6RDICMZBPGNH6KD4"
@@ -11,6 +12,14 @@ addr = encoding.encode_address(pk)
 
 assert addr == address
 # example: CODEC_ADDRESS
+
+# example: CODEC_APPLICATION_ACCOUNT
+app_id = 123
+app_addr = logic.get_application_address(app_id)
+
+print(f"Application ID:   {app_id}")
+print(f"Application Addr: {app_addr}")
+# example: CODEC_APPLICATION_ACCOUNT
 
 # example: CODEC_BASE64
 encoded_str = "SGksIEknbSBkZWNvZGVkIGZyb20gYmFzZTY0"
