@@ -1243,7 +1243,10 @@ def check_all_boxes(context, from_client: str, box_names: str = None):
             base64.b64decode(box_encoded)
             for box_encoded in box_names.split(":")
         ]
+    expected_num_boxes = len(expected_box_names)
+
     if from_client == "algod":
+        advance_chain_wait_for_box(context, expected_num_boxes)
         box_response = context.app_acl.application_boxes(
             context.current_application_id
         )
@@ -1265,6 +1268,74 @@ def check_all_boxes(context, from_client: str, box_names: str = None):
     assert set(expected_box_names) == set(
         actual_box_names
     ), f"Expected box names array does not match actual array {expected_box_names} != {actual_box_names}"
+
+
+def advance_chain_wait_for_box(
+    context,
+    expected_num_boxes: int,
+    wait_rounds: int = 5,
+    max_attempts: int = 50,
+):
+    """
+    Advance the blockchain and wait for application boxes to persist in Algod.
+
+    Args:
+        context: Behave context containing necessary information like app_acl, current_application_id, sender, etc.
+        wait_rounds (int): The number of rounds to wait for persistence.
+        max_attempts (int): Maximum number of attempts to check for persistence.
+
+    Raises:
+        Exception: If the boxes do not persist within the specified number of attempts.
+    """
+    algod_client = context.app_acl
+    app_id = context.current_application_id
+    sender = context.transient_pk
+    sender_private_key = context.transient_sk
+
+    # Get the current round
+    status = algod_client.status()
+    current_round = status.get("last-round", 0)
+    target_round = current_round + wait_rounds
+
+    attempts = 0
+    while attempts < max_attempts:
+        # Submit a 0-pay transaction to advance the blockchain state
+        params = algod_client.suggested_params()
+        txn = transaction.PaymentTxn(
+            sender,
+            params,
+            sender,
+            0,
+            note=b"Advance round for box persistence",
+        )
+        signed_txn = txn.sign(sender_private_key)
+        tx_id = algod_client.send_transaction(signed_txn)
+
+        # Wait for transaction confirmation
+        transaction.wait_for_confirmation(algod_client, tx_id, 1)
+
+        # Wait for a second before checking again
+        time.sleep(1)
+        attempts += 1
+
+        # Get the latest status
+        status = algod_client.status()
+        current_round = status.get("last-round", 0)
+
+        if current_round >= target_round:
+            # Check if boxes are available
+            try:
+                box_response = algod_client.application_boxes(app_id)
+                actual_num_boxes = len(box_response.get("boxes", []))
+
+                if actual_num_boxes == expected_num_boxes:
+                    return  # Exit once the condition is met
+            except Exception as e:
+                print(f"Error retrieving boxes: {e}")
+
+    raise Exception(
+        f"Timeout waiting for boxes to persist for application {app_id}. Current round: {current_round}"
+    )
 
 
 @then(
