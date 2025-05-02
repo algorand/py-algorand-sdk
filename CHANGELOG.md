@@ -1,5 +1,20 @@
 # Changelog
 
+# v2.10.0
+
+<!-- Release notes generated using configuration in .github/release.yml at release/v2.10.0 -->
+
+## What's Changed
+### Enhancements
+* Introduce publishing/releasing entirely through github actions. by @gmalouf in https://github.com/gmalouf/py-algorand-sdk/pull/1
+* Set testpypi repo. by @gmalouf in https://github.com/gmalouf/py-algorand-sdk/pull/3
+
+## New Contributors
+* @gmalouf made their first contribution in https://github.com/gmalouf/py-algorand-sdk/pull/1
+* @github-actions made their first contribution in https://github.com/gmalouf/py-algorand-sdk/pull/6
+
+**Full Changelog**: https://github.com/gmalouf/py-algorand-sdk/compare/v2.8.0...v2.10.0
+
 # v2.9.0
 
 <!-- Release notes generated using configuration in .github/release.yml at release/v2.9.0 -->
