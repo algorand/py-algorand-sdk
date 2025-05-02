@@ -15,7 +15,7 @@ on:
         type: 'string'
       dry_run:
         description: 'Whether this is a dry_run publish.'
-        default: 'true'
+        default: 'false'
         required: true
         type: 'boolean'
 
