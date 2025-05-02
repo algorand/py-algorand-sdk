@@ -29,7 +29,7 @@ jobs:
             echo "release-tag: $RELEASE_VERSION"
             echo "release-tag=$RELEASE_VERSION" >> $GITHUB_OUTPUT
           else
-            echo "Version input doesn't match the regex pattern ^[0-9]+\.[0-9]+\.[0-9]+$"
+            echo "Version input doesn't match the regex pattern ^v[0-9]+\.[0-9]+\.[0-9]+$"
             exit 1
           fi
 
@@ -118,8 +118,8 @@ jobs:
             --body "${CHANGELOG_CONTENT}" | tail -n 1)
           if [[ $PULL_REQUEST_URL =~ ^https://github.com/${{ github.repository }}/pull/[0-9]+$ ]]; then
             PULL_REQUEST_NUM=$(echo $PULL_REQUEST_URL | sed 's:.*/::')
-            echo "pull-request-base-branch=$PULL_REQUEST_URL" >> $GITHUB_ENV
-            echo "pull-request-base-branch-num=$PULL_REQUEST_NUM" >> $GITHUB_ENV
+            echo "pull-request-url=$PULL_REQUEST_URL" >> $GITHUB_ENV
+            echo "pull-request-num=$PULL_REQUEST_NUM" >> $GITHUB_ENV
             echo "Pull request to ${{ inputs.base_branch }} created: $PULL_REQUEST_URL"
           else
             echo "There was an issue creating the pull request to ${{ inputs.base_branch }} branch."
@@ -149,14 +149,14 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Approval needed for*:\nPull Request to ${{ inputs.base_branch }}: ${{ env.pull-request-base-branch}}"
+                    "text": "*Approval needed for*:\nPull Request to ${{ inputs.base_branch }}: ${{ env.pull-request-url}}"
                   }
                 },
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*After approval*\nRelease and Deploy SDK using the <${{ env.RELEASE_WORKFLOW }}> with the following parameters:\n*release_pr_number*: ${{ env.pull-request-base-branch-num }}\n*release_version*: ${{ env.RELEASE_VERSION }}"
+                    "text": "*After approval*\nRelease and Deploy SDK using the <${{ env.RELEASE_WORKFLOW }}> with the following parameters:\n*release_pr_number*: ${{ env.pull-request-num }}\n*release_version*: ${{ env.RELEASE_VERSION }}"
                   }
                 }
               ]
