@@ -113,7 +113,7 @@ jobs:
           if [ "$DRY_RUN" == "false" ]; then
             twine upload dist/*
           else
-            twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+            twine upload --repository testpypi dist/*
           fi
         env:
           TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
