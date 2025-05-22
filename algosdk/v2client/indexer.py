@@ -106,6 +106,7 @@ class IndexerClient:
         round_num=None,
         include_all=False,
         exclude=None,
+        online_only=False,
         **kwargs
     ):
         """
@@ -144,6 +145,8 @@ class IndexerClient:
                 application local data stored for this account,
                 asset parameters created by this account,
                 and application parameters created by this account.
+            online_only (bool, optional): return only accounts whose participation
+                status is currently online. Defaults to false.
         """
         req = "/accounts"
         query = dict()
@@ -166,6 +169,8 @@ class IndexerClient:
             query["include-all"] = include_all
         if exclude:
             query["exclude"] = exclude
+        if online_only:
+            query["online-only"] = "true"
         return self.indexer_request("GET", req, query, **kwargs)
 
     def asset_balances(
