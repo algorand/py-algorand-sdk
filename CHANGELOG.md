@@ -1,5 +1,19 @@
 # Changelog
 
+# v2.9.0
+
+<!-- Release notes generated using configuration in .github/release.yml at release/v2.9.0 -->
+
+## What's Changed
+### Enhancements
+* Build: Update Box API Pagination-dependent integration tests by @gmalouf in https://github.com/algorand/py-algorand-sdk/pull/563
+* Devops: Release process update by @gmalouf in https://github.com/algorand/py-algorand-sdk/pull/564
+* Deps: Bump setuptools from 75.6.0 to 78.1.1 by @dependabot in https://github.com/algorand/py-algorand-sdk/pull/568
+* API: Algorand 4.1.x API updates support, includes enhanced Application Box… by @gmalouf in https://github.com/algorand/py-algorand-sdk/pull/570
+
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v2.8.0...v2.9.0
+
 # v2.8.0
 
 <!-- Release notes generated using configuration in .github/release.yml at release/v2.8.0 -->
