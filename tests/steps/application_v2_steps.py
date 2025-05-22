@@ -181,11 +181,11 @@ def application_box_by_name(context, app_id, box_name):
 
 
 @when(
-    "we make a GetApplicationBoxes call for applicationID {app_id} with max {max_results}"
+    'we make a GetApplicationBoxes call for applicationID {app_id} with max {max_results} prefix "{prefix:MaybeString}" next "{next:MaybeString}" values "{values:MaybeBool}"'
 )
-def application_boxes(context, app_id, max_results):
+def application_boxes(context, app_id, max_results, prefix, next, values):
     context.response = context.acl.application_boxes(
-        app_id, limit=int(max_results)
+        app_id, limit=int(max_results), prefix=prefix, next=next, values=values
     )
 
 

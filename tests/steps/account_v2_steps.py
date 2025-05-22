@@ -178,6 +178,15 @@ def search_accounts(
 
 
 @when(
+    'we make a Search Accounts call with onlineOnly "{onlineOnly:MaybeBool}"'
+)
+def search_accounts_online_only(context, onlineOnly):
+    context.response = context.icl.accounts(
+        online_only=onlineOnly,
+    )
+
+
+@when(
     'we make a Search Accounts call with assetID {index} limit {limit} currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} round {block} and authenticating address "{authAddr:MaybeString}"'
 )
 def search_accounts2(

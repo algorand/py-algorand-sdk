@@ -194,21 +194,41 @@ class AlgodClient:
         return self.algod_request("GET", req, params=params, **kwargs)
 
     def application_boxes(
-        self, application_id: int, limit: int = 0, **kwargs: Any
+        self,
+        application_id: int,
+        limit: int = 0,
+        prefix: Optional[str] = None,
+        next: Optional[str] = None,
+        values: Optional[bool] = False,
+        **kwargs: Any,
     ) -> AlgodResponseType:
         """
-        Given an application ID, return all Box names. No particular ordering is guaranteed. Request fails when client or server-side configured limits prevent returning all Box names.
-
+        Given an application ID, return boxes in lexographical order by name. If the results must be truncated, a next-token is supplied to continue the request.
         NOTE: box names are returned as base64-encoded strings.
 
         Args:
             application_id (int): The ID of the application to look up.
             limit (int, optional): Max number of box names to return.
                 If max is not set, or max == 0, returns all box-names up to the maximum configured by the algod server being queried.
+            prefix (str, optional): A box name prefix, in the goal app
+                call arg form 'encoding:value'. For ints, use the form 'int:1234'. For raw bytes, use the form 'b64:A=='.
+                For printable strings, use the form 'str:hello'. For addresses, use the form 'addr:XYZ...'.
+            next (str, optional): A box name, in the goal app call arg
+                form 'encoding:value'. When provided, the returned boxes begin (lexographically) with the supplied name. Callers may
+                implement pagination by reinvoking the endpoint with the token from a previous call's next-token.
+            values (bool, optional): If true, box values will be returned.
         """
+        query: Dict[str, Union[int, str]] = {}
+        if limit:
+            query["max"] = limit
+        if prefix:
+            query["prefix"] = prefix
+        if next:
+            query["next"] = next
+        if values:
+            query["values"] = "true"
         req = "/applications/" + str(application_id) + "/boxes"
-        params = {"max": limit} if limit else {}
-        return self.algod_request("GET", req, params=params, **kwargs)
+        return self.algod_request("GET", req, params=query, **kwargs)
 
     def account_asset_info(
         self, address: str, asset_id: int, **kwargs: Any
