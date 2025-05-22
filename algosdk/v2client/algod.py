@@ -218,7 +218,7 @@ class AlgodClient:
                 implement pagination by reinvoking the endpoint with the token from a previous call's next-token.
             values (bool, optional): If true, box values will be returned.
         """
-        query = {}
+        query: Dict[str, Union[int, str]] = {}
         if limit:
             query["max"] = limit
         if prefix:
