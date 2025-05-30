@@ -1,5 +1,16 @@
 # Changelog
 
+# v2.9.1
+
+<!-- Release notes generated using configuration in .github/release.yml at release/v2.9.1 -->
+
+## What's Changed
+### Bugfixes
+* API: Revert application boxes pagination by @gmalouf in https://github.com/algorand/py-algorand-sdk/pull/572
+
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v2.9.0...v2.9.1
+
 # v2.9.0
 
 <!-- Release notes generated using configuration in .github/release.yml at release/v2.9.0 -->
