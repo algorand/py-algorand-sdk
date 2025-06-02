@@ -1,4 +1,4 @@
-name: CI - Unit and Integration Tests
+name: CI - Test Suite
 
 on:
   pull_request:
