@@ -1,0 +1,89 @@
+name: CI - Pull Request
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  unit-test:
+    name: Unit Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}    
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-
+    - name: Install dependencies
+      run: pip install -r requirements.txt    
+    - name: Run linting
+      run: make lint
+    - name: Run unit tests
+      run: make pytest-unit
+
+  integration-test:
+    name: Integration Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Run integration tests
+      run: make ci-test
+
+  docset:
+    name: Generate Documentation
+    runs-on: ubuntu-24.04
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4    
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-docs-pip-3.10-${{ hashFiles('**/requirements.txt', 'docs/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-docs-pip-3.10-
+    
+    - name: Install dependencies and build documentation
+      run: |
+        pip install -r requirements.txt
+        cd docs
+        pip install -r requirements.txt
+        pip install sphinx sphinx_rtd_theme doc2dash
+        make html
+        doc2dash --name py-algo-sdk --index-page index.html --online-redirect-url https://py-algorand-sdk.readthedocs.io/en/latest/ _build/html
+        tar -czvf py-algo-sdk.docset.tar.gz py-algo-sdk.docset
+        mv py-algo-sdk.docset.tar.gz /tmp
+    
+    - name: Upload docset artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: py-algo-sdk-docset
+        path: /tmp/py-algo-sdk.docset.tar.gz
