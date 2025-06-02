@@ -13,7 +13,7 @@ on:
         type: string
       dry_run:
         description: "Set to true to 'dry-run'/not actually publish to PyPI."
-        default: "true"
+        default: "false"
         required: true
         type: boolean
       python_version:
