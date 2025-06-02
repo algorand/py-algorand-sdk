@@ -1,4 +1,4 @@
-name: CI - Pull Request
+name: CI - Unit and Integration Tests
 
 on:
   pull_request:
@@ -49,6 +49,15 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-
+    - name: Install dependencies
+      run: pip install -r requirements.txt
     - name: Run integration tests
       run: make ci-test
 
@@ -83,7 +92,7 @@ jobs:
         mv py-algo-sdk.docset.tar.gz /tmp
     
     - name: Upload docset artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: py-algo-sdk-docset
         path: /tmp/py-algo-sdk.docset.tar.gz
