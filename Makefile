@@ -43,11 +43,14 @@ docker-pysdk-build:
 
 docker-pysdk-run:
 	docker ps -a
-	docker run -it --network host py-sdk-testing:latest
+	docker run -t --network host py-sdk-testing:latest
 
 # todo replace with ports from harness .env file
 smoke-test-examples:
 	cd examples && bash smoke_test.sh && cd -
 
-
 docker-test: harness docker-pysdk-build docker-pysdk-run
+
+ci-test: harness unit integration smoke-test-examples
+
+.PHONY: ci-test
