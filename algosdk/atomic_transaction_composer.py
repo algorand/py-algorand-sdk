@@ -274,12 +274,14 @@ class SimulateEvalOverrides:
         allow_empty_signatures: Optional[bool] = None,
         allow_unnamed_resources: Optional[bool] = None,
         extra_opcode_budget: Optional[int] = None,
+        fix_signers: Optional[bool] = None,
     ) -> None:
         self.max_log_calls = max_log_calls
         self.max_log_size = max_log_size
         self.allow_empty_signatures = allow_empty_signatures
         self.allow_unnamed_resources = allow_unnamed_resources
         self.extra_opcode_budget = extra_opcode_budget
+        self.fix_signers = fix_signers
 
     @staticmethod
     def from_simulation_result(
@@ -307,6 +309,8 @@ class SimulateEvalOverrides:
             eval_override.extra_opcode_budget = eval_override_dict[
                 "extra-opcode-budget"
             ]
+        if "fix-signers" in eval_override_dict:
+            eval_override.fix_signers = eval_override_dict["fix-signers"]
 
         return eval_override
 
