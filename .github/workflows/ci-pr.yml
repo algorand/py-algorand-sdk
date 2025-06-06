@@ -6,6 +6,10 @@ on:
   push:
     branches: [ main ]
 
+concurrency:
+  group: pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   unit-test:
     name: Unit Tests (Python ${{ matrix.python-version }})
