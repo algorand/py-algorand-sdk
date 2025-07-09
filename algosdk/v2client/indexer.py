@@ -477,6 +477,7 @@ class IndexerClient:
         address_role=None,
         exclude_close_to=False,
         application_id=None,
+        group_id=None,
         rekey_to=False,
         round_num=None,
         **kwargs
@@ -524,6 +525,7 @@ class IndexerClient:
                 to true
             application_id (int, optional): filter for transactions pertaining
                 to an application
+            group_id (bytes, optional): filter transactions by group id
             rekey_to (bool, optional): include results which include the
                 rekey-to field
             round_num (int, optional): alias for block; only specify one of
@@ -566,6 +568,8 @@ class IndexerClient:
             query["exclude-close-to"] = "true"
         if application_id:
             query["application-id"] = application_id
+        if group_id:
+            query["group-id"] = base64.b64encode(group_id).decode()
         if rekey_to:
             query["rekey-to"] = "true"
 

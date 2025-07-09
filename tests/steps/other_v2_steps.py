@@ -728,7 +728,7 @@ def parse_asset(context, index):
 
 
 @when(
-    'we make a Search For Transactions call with account "{account:MaybeString}" NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index} addressRole "{addressRole:MaybeString}" ExcluseCloseTo "{excludeCloseTo:MaybeString}" rekeyTo "{rekeyTo:MaybeString}"'
+    'we make a Search For Transactions call with account "{account:MaybeString}" NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index} addressRole "{addressRole:MaybeString}" ExcluseCloseTo "{excludeCloseTo:MaybeString}" groupid "{groupidB64:MaybeString}" rekeyTo "{rekeyTo:MaybeString}"'
 )
 def search_txns(
     context,
@@ -748,6 +748,7 @@ def search_txns(
     index,
     addressRole,
     excludeCloseTo,
+    groupidB64,
     rekeyTo,
 ):
     if notePrefixB64 == "none":
@@ -768,6 +769,8 @@ def search_txns(
         addressRole = None
     if excludeCloseTo == "none":
         excludeCloseTo = None
+    if groupidB64 == "none":
+        groupidB64 = ""
     if rekeyTo == "none":
         rekeyTo = None
     context.response = context.icl.search_transactions(
@@ -788,12 +791,13 @@ def search_txns(
         address=account,
         address_role=addressRole,
         exclude_close_to=excludeCloseTo,
+        group_id=base64.b64decode(groupidB64),
         rekey_to=rekeyTo,
     )
 
 
 @when(
-    'we make a Search For Transactions call with account "{account:MaybeString}" NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index} addressRole "{addressRole:MaybeString}" ExcluseCloseTo "{excludeCloseTo:MaybeString}"'
+    'we make a Search For Transactions call with account "{account:MaybeString}" NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index} addressRole "{addressRole:MaybeString}" ExcluseCloseTo "{excludeCloseTo:MaybeString}" groupid "{groupidB64:MaybeString}"'
 )
 def search_txns2(
     context,
@@ -813,6 +817,7 @@ def search_txns2(
     index,
     addressRole,
     excludeCloseTo,
+    groupidB64,
 ):
     if notePrefixB64 == "none":
         notePrefixB64 = ""
@@ -832,6 +837,8 @@ def search_txns2(
         addressRole = None
     if excludeCloseTo == "none":
         excludeCloseTo = None
+    if groupidB64 == "none":
+        groupidB64 = ""
     context.response = context.icl.search_transactions(
         asset_id=int(index),
         limit=int(limit),
@@ -850,6 +857,7 @@ def search_txns2(
         address=account,
         address_role=addressRole,
         exclude_close_to=excludeCloseTo,
+        group_id=base64.b64decode(groupidB64),
         rekey_to=None,
     )
 
