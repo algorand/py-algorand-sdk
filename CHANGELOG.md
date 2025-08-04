@@ -1,5 +1,19 @@
 # Changelog
 
+# v2.10.0
+
+<!-- Release notes generated using configuration in .github/release.yml at release/v2.10.0 -->
+
+## What's Changed
+### New Features
+* CICD: implement tests in GitHub Actions by @onetechnical in https://github.com/algorand/py-algorand-sdk/pull/575
+### Enhancements
+* CICD: disable CircleCI and add a GitHub Actions concurrency limiter by @onetechnical in https://github.com/algorand/py-algorand-sdk/pull/576
+* API: Support for filtering /transactions by group-id. by @gmalouf in https://github.com/algorand/py-algorand-sdk/pull/577
+
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v2.9.1...v2.10.0
+
 # v2.9.1
 
 <!-- Release notes generated using configuration in .github/release.yml at release/v2.9.1 -->
