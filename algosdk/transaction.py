@@ -2364,8 +2364,8 @@ class Multisig:
         if len(self.subsigs) > constants.multisig_account_limit:
             raise error.MultisigAccountSizeError
 
-    def address(self):
-        """Return the multisig account address."""
+    def address_bytes(self):
+        """Return the raw bytes of the multisig account address."""
         msig_bytes = (
             bytes(constants.msig_addr_prefix, "utf-8")
             + bytes([self.version])
@@ -2373,8 +2373,11 @@ class Multisig:
         )
         for s in self.subsigs:
             msig_bytes += s.public_key
-        addr = encoding.checksum(msig_bytes)
-        return encoding.encode_address(addr)
+        return encoding.checksum(msig_bytes)
+
+    def address(self):
+        """Return the multisig account address."""
+        return encoding.encode_address(self.address_bytes())
 
     def verify(self, message):
         """Verify that the multisig is valid for the message."""
@@ -2509,6 +2512,7 @@ class LogicSig:
         self.args = args
         self.sig = None
         self.msig = None
+        self.lmsig = None
 
     @staticmethod
     def _sanity_check_program(program):
@@ -2561,6 +2565,8 @@ class LogicSig:
             od["sig"] = base64.b64decode(self.sig)
         elif self.msig:
             od["msig"] = self.msig.dictify()
+        elif self.lmsig:
+            od["lmsig"] = self.lmsig.dictify()
         return od
 
     @staticmethod
@@ -2570,6 +2576,8 @@ class LogicSig:
             lsig.sig = base64.b64encode(d["sig"]).decode()
         elif "msig" in d:
             lsig.msig = Multisig.undictify(d["msig"])
+        elif "lmsig" in d:
+            lsig.lmsig = Multisig.undictify(d["lmsig"])
         return lsig
 
     def verify(self, public_key):
@@ -2584,29 +2592,41 @@ class LogicSig:
                 the logic hash or the signature is valid against the sender\
                 address), false otherwise
         """
-        if self.sig and self.msig:
-            return False
-
         try:
             self._sanity_check_program(self.logic)
         except error.InvalidProgram:
             return False
 
-        to_sign = constants.logic_prefix + self.logic
-
-        if not self.sig and not self.msig:
-            checksum = encoding.checksum(to_sign)
-            return checksum == public_key
-
         if self.sig:
+            if self.msig or self.lmsig:
+                return False
             verify_key = VerifyKey(public_key)
             try:
+                to_sign = constants.logic_prefix + self.logic
                 verify_key.verify(to_sign, base64.b64decode(self.sig))
                 return True
             except (BadSignatureError, ValueError, TypeError):
                 return False
 
-        return self.msig.verify(to_sign)
+        if self.msig:
+            if self.sig or self.lmsig:
+                return False
+            to_sign = constants.logic_prefix + self.logic
+            return self.msig.verify(to_sign)
+
+        if self.lmsig:
+            if self.sig or self.msig:
+                return False
+            to_sign = (
+                constants.multisig_logic_prefix
+                + self.lmsig.address_bytes()
+                + self.logic
+            )
+            return self.lmsig.verify(to_sign)
+
+        # Non-delegated
+        to_sign = constants.logic_prefix + self.logic
+        return public_key == encoding.checksum(to_sign)
 
     def address(self):
         """
@@ -2627,6 +2647,18 @@ class LogicSig:
         return base64.b64encode(signed.signature).decode()
 
     @staticmethod
+    def multisig_sign_program(program, private_key, multisig):
+        private_key = base64.b64decode(private_key)
+        signing_key = SigningKey(private_key[: constants.key_len_bytes])
+        to_sign = (
+            constants.multisig_logic_prefix
+            + multisig.address_bytes()
+            + program
+        )
+        signed = signing_key.sign(to_sign)
+        return base64.b64encode(signed.signature).decode()
+
+    @staticmethod
     def single_sig_multisig(program, private_key, multisig):
         index = -1
         public_key = base64.b64decode(bytes(private_key, "utf-8"))
@@ -2637,7 +2669,7 @@ class LogicSig:
                 break
         if index == -1:
             raise error.InvalidSecretKeyError
-        sig = LogicSig.sign_program(program, private_key)
+        sig = LogicSig.multisig_sign_program(program, private_key, multisig)
 
         return sig, index
 
@@ -2657,7 +2689,7 @@ class LogicSig:
                 already been provided
         """
         if not multisig:
-            if self.msig:
+            if self.msig or self.lmsig:
                 raise error.LogicSigOverspecifiedSignature
             self.sig = LogicSig.sign_program(self.logic, private_key)
         else:
@@ -2667,7 +2699,7 @@ class LogicSig:
                 self.logic, private_key, multisig
             )
             multisig.subsigs[index].signature = base64.b64decode(sig)
-            self.msig = multisig
+            self.lmsig = multisig
 
     def append_to_multisig(self, private_key):
         """
@@ -2680,12 +2712,12 @@ class LogicSig:
             InvalidSecretKeyError: if no matching private key in multisig\
                 object
         """
-        if self.msig is None:
+        if self.lmsig is None:
             raise error.InvalidSecretKeyError
         sig, index = LogicSig.single_sig_multisig(
-            self.logic, private_key, self.msig
+            self.logic, private_key, self.lmsig
         )
-        self.msig.subsigs[index].signature = base64.b64decode(sig)
+        self.lmsig.subsigs[index].signature = base64.b64decode(sig)
 
     def __eq__(self, other):
         if not isinstance(other, LogicSig):
@@ -2695,6 +2727,7 @@ class LogicSig:
             and self.args == other.args
             and self.sig == other.sig
             and self.msig == other.msig
+            and self.lmsig == other.lmsig
         )
 
 
@@ -2744,7 +2777,7 @@ class LogicSigAccount:
         Returns:
             bool: True if and only if this is a delegated LogicSigAccount.
         """
-        return bool(self.lsig.sig or self.lsig.msig)
+        return bool(self.lsig.sig or self.lsig.msig or self.lsig.lmsig)
 
     def verify(self) -> bool:
         """
@@ -2767,9 +2800,6 @@ class LogicSigAccount:
         If the LogicSig is not delegated to another account, this will return an
         escrow address that is the hash of the LogicSig's program code.
         """
-        if self.lsig.sig and self.lsig.msig:
-            raise error.LogicSigOverspecifiedSignature
-
         if self.lsig.sig:
             if not self.sigkey:
                 raise error.LogicSigSigningKeyMissing
@@ -2777,6 +2807,9 @@ class LogicSigAccount:
 
         if self.lsig.msig:
             return self.lsig.msig.address()
+
+        if self.lsig.lmsig:
+            return self.lsig.lmsig.address()
 
         return self.lsig.address()
 
@@ -2874,6 +2907,8 @@ class LogicSigTransaction:
                 lsigAddr = transaction.sender
             elif lsig.msig:
                 lsigAddr = lsig.msig.address()
+            elif lsig.lmsig:
+                lsigAddr = lsig.lmsig.address()
             else:
                 lsigAddr = lsig.address()
             self.lsig = lsig
