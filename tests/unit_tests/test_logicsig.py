@@ -472,19 +472,17 @@ class TestLogicSigTransaction(unittest.TestCase):
         sender = TestLogicSigTransaction.otherAddr
         self._test_sign_txn(lsig, sender, None, False)
 
-    def test_LogicSig_msig_delegated(self):
+    def test_LogicSig_lmsig_delegated(self):
         lsig = transaction.LogicSigAccount(sampleProgram, sampleArgs).lsig
         lsig.sign(sampleAccount1, sampleMsig)
         lsig.append_to_multisig(sampleAccount2)
 
-        print(base64.b64encode(lsig.lmsig.subsigs[0].signature))
-        print(base64.b64encode(lsig.lmsig.subsigs[1].signature))
         sender = sampleMsig.address()
         # from: msgpacktool -e < tests/unit_tests/msig_delegated.txn | base64
         expected = "gqRsc2lng6NhcmeSxAEBxAICA6FsxAUBIAEBIqVsbXNpZ4Omc3Vic2lnk4KicGvEIBt+wLBL6mG3lpCX5sv0B+EIpwU1HQvJir6xIgmoq4F4oXPEQIwzZcSx0RNw8j9w13dGn+HZR3m/TY1kgXZJNe94TMx2V2zA4O/pwUb6YHba+s5V7przG3aOvDK07BosjD3AZwaConBrxCAJYzIJU3OJ8HVnEXc5kcfQPhtzyMT1K/av8BqiXPnCcaFzxEBPVtR92cCxahX1iGTp50PVMQkf969ssoHfNA0VOiNupdkXc9n/l2WO9+pj8Ddozf4ovorGgnrzca3ZhKc46uUNgaJwa8Qg5/D4TQaBHfnzHI2HixFV9GcdUaGFwgCQhmf0SVhwaKGjdGhyAqF2AaN0eG6Ko2FtdM0TiKNmZWXOAANPqKJmds4ADtbco2dlbq10ZXN0bmV0LXYzMS4womdoxCAmCyAJoJOohot5WHIvpeVG7eftF+TYXEx4r7BFJpDt0qJsds4ADtrEpG5vdGXECLRReTn8+tJxo3JjdsQgtMYiaKTDNVD1im3UuMojnJ8dELNBqn4aNuPOYfv8+Yqjc25kxCCNkrSJkAFzoE36Q1mjZmpq/OosQqBd2cH3PuulR4A36aR0eXBlo3BheQ=="
         self._test_sign_txn(lsig, sender, expected)
 
-    def test_LogicSig_msig_delegated_different_sender(self):
+    def test_LogicSig_lmsig_delegated_different_sender(self):
         lsig = transaction.LogicSigAccount(sampleProgram, sampleArgs).lsig
         lsig.sign(sampleAccount1, sampleMsig)
         lsig.append_to_multisig(sampleAccount2)

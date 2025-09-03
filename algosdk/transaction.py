@@ -2580,6 +2580,13 @@ class LogicSig:
             lsig.lmsig = Multisig.undictify(d["lmsig"])
         return lsig
 
+    def sig_count(self):
+        return (
+            int(self.sig is not None)
+            + int(self.msig is not None)
+            + int(self.lmsig is not None)
+        )
+
     def verify(self, public_key):
         """
         Verifies LogicSig against the transaction's sender address
@@ -2597,9 +2604,10 @@ class LogicSig:
         except error.InvalidProgram:
             return False
 
+        if self.sig_count() > 1:
+            return False
+
         if self.sig:
-            if self.msig or self.lmsig:
-                return False
             verify_key = VerifyKey(public_key)
             try:
                 to_sign = constants.logic_prefix + self.logic
@@ -2609,14 +2617,10 @@ class LogicSig:
                 return False
 
         if self.msig:
-            if self.sig or self.lmsig:
-                return False
             to_sign = constants.logic_prefix + self.logic
             return self.msig.verify(to_sign)
 
         if self.lmsig:
-            if self.sig or self.msig:
-                return False
             to_sign = (
                 constants.multisig_logic_prefix
                 + self.lmsig.address_bytes()
@@ -2790,6 +2794,15 @@ class LogicSigAccount:
         addr = self.address()
         return self.lsig.verify(encoding.decode_address(addr))
 
+    def sig_count(self) -> int:
+        """
+        Returns the number of cryptographic signatures on the LogicSig
+
+        Returns:
+            int: The number of signatures. Should never exceed 1.
+        """
+        return self.lsig.sig_count()
+
     def address(self) -> str:
         """
         Get the address of this LogicSigAccount.
@@ -2800,6 +2813,9 @@ class LogicSigAccount:
         If the LogicSig is not delegated to another account, this will return an
         escrow address that is the hash of the LogicSig's program code.
         """
+        if self.sig_count() > 1:
+            raise error.LogicSigOverspecifiedSignature
+
         if self.lsig.sig:
             if not self.sigkey:
                 raise error.LogicSigSigningKeyMissing
