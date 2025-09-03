@@ -221,17 +221,8 @@ class TestPaymentTransaction(unittest.TestCase):
         txn = transaction.PaymentTxn(msig.address(), params, receiver, 1000000)
         lstx = transaction.LogicSigTransaction(txn, lsig_account)
 
-        golden = (
-            "gqRsc2lngqFsxAUBIAEBIqRtc2lng6ZzdWJzaWeSgqJwa8QgeUdQSBmJmLH5xdID"
-            "nkf+V3AQH6usPifhfJVwnJ7d7nOhc8RAuP0Ms22j1xXTcXYOivDMztXm7vY2uBi8"
-            "vJCDlpWhVxLoEDKhqmqEbT7SfvCrS2aNXPiJUSZ7cNMyUdytOpFdD4KicGvEILxI"
-            "bwe4gu5YCR4TLASEBpTJ25cdJZqxMqhkgMHQqr61oXPEQGOeeZZ1FAJjJ65N5Asj"
-            "i1bK+Q2LZblC77u7NYcw4gPAig8rRUKJYNQtiKVVJQ53A8ufQkn9dZ6uybbaIPxu"
-            "bQejdGhyAqF2AaN0eG6Jo2FtdM4AD0JAo2ZlZc0D6KJmds0Bv6NnZW6qbmV0d29y"
-            "ay12MaJnaMQgzNQES/4IqimxRif40xYvzBBIYCZSbYvNSRIzVIh4swqibHbNBaej"
-            "cmN2xCAbmUF6psn/KWO13vSY9PFeZOSOzXhRxyNIQGngbeVbgqNzbmTEIIytL7Xv"
-            "2XuuO6mS+3IetwlKVPM0qdKBIiMVdhzAOMPKpHR5cGWjcGF5"
-        )
+        # from: msgpacktool -e < tests/unit_tests/pay_msig_delegated.txn | base64
+        golden = "gqRsc2lngqFsxAUBIAEBIqVsbXNpZ4Omc3Vic2lnkoKicGvEIHlHUEgZiZix+cXSA55H/ldwEB+rrD4n4XyVcJye3e5zoXPEQBORyxjnIFjg2USyJaULtogH/jS7nEUjc9cX4KJiXYIIFKzZY1hLK5CxlwYxTKhxyg9NleIJJeKYKi1/epaVNwCConBrxCC8SG8HuILuWAkeEywEhAaUyduXHSWasTKoZIDB0Kq+taFzxEDgg6ULzOGOPLuPnIpM4MHtKjmp92WEN7z38F0JDDuYvtQtfQsV2v4fI6Hf2Z2c92Azv6V+Ns6GytjVE7sDBHIDo3RocgKhdgGjdHhuiaNhbXTOAA9CQKNmZWXNA+iiZnbNAb+jZ2Vuqm5ldHdvcmstdjGiZ2jEIMzUBEv+CKopsUYn+NMWL8wQSGAmUm2LzUkSM1SIeLMKomx2zQWno3JjdsQgG5lBeqbJ/yljtd70mPTxXmTkjs14UccjSEBp4G3lW4Kjc25kxCCMrS+179l7rjupkvtyHrcJSlTzNKnSgSIjFXYcwDjDyqR0eXBlo3BheQ=="
 
         encoded = encoding.msgpack_encode(lstx)
         self.assertEqual(encoded, golden)

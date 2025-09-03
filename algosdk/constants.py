@@ -56,6 +56,8 @@ MSIG_ADDR_PREFIX = "MultisigAddr"
 """str: prefix for multisig addresses"""
 LOGIC_PREFIX = b"Program"
 """bytes: program (logic) prefix when signing"""
+MULTISIG_LOGIC_PREFIX = b"MsigProgram"
+"""bytes: program (logic) prefix when signing"""
 LOGIC_DATA_PREFIX = b"ProgData"
 """bytes: program (logic) data prefix when signing"""
 APPID_PREFIX = b"appID"
@@ -123,6 +125,7 @@ bid_prefix = BID_PREFIX
 bytes_prefix = BYTES_PREFIX
 msig_addr_prefix = MSIG_ADDR_PREFIX
 logic_prefix = LOGIC_PREFIX
+multisig_logic_prefix = MULTISIG_LOGIC_PREFIX
 logic_data_prefix = LOGIC_DATA_PREFIX
 hash_len = HASH_LEN
 check_sum_len_bytes = CHECK_SUM_LEN_BYTES
