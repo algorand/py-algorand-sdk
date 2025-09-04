@@ -14,6 +14,8 @@ from algosdk import (
     transaction,
 )
 
+from algosdk.app_access import HoldingRef, LocalsRef
+
 
 class TestPaymentTransaction(unittest.TestCase):
     def test_min_txn_fee(self):
@@ -1524,3 +1526,142 @@ class TestBoxReference(unittest.TestCase):
                 transaction.BoxReference.translate_box_references(
                     test_case[0], test_case[1], 9999
                 )
+
+
+class TestAppAccess(unittest.TestCase):
+    def test_translate_to_resource_references(self):
+        translate_to_resource_references = (
+            transaction.translate_to_resource_references
+        )
+        rr = transaction.ResourceReference
+        br = transaction.BoxReference
+        hr = HoldingRef
+        lr = LocalsRef
+
+        accounts = [
+            "47YPQTIGQEO7T4Y4RWDYWEKV6RTR2UNBQXBABEEGM72ESWDQNCQ52OPASU",
+            "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4",
+        ]
+        zero = ""
+        one = "AEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKE3PRHE"
+        two = "AIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGFFWAF4"
+        foreign_assets = [2222, 3333]
+        foreign_apps = [222, 333]
+        full_acc_asset_app_pack = [
+            rr(address=accounts[0]),
+            rr(address=accounts[1]),
+            rr(asset_id=foreign_assets[0]),
+            rr(asset_id=foreign_assets[1]),
+            rr(app_id=foreign_apps[0]),
+            rr(app_id=foreign_apps[1]),
+        ]
+        test_cases = [
+            (
+                dict(
+                    app_id=111,
+                    accounts=accounts,
+                ),
+                [
+                    rr(address=accounts[0]),
+                    rr(address=accounts[1]),
+                ],
+            ),
+            (
+                dict(
+                    app_id=111,
+                    accounts=accounts,
+                    foreign_assets=foreign_assets,
+                ),
+                [
+                    rr(address=accounts[0]),
+                    rr(address=accounts[1]),
+                    rr(asset_id=foreign_assets[0]),
+                    rr(asset_id=foreign_assets[1]),
+                ],
+            ),
+            (
+                dict(
+                    app_id=111,
+                    accounts=accounts,
+                    foreign_assets=foreign_assets,
+                    foreign_apps=foreign_apps,
+                ),
+                full_acc_asset_app_pack,
+            ),
+            (
+                dict(
+                    app_id=111,
+                    accounts=accounts,
+                    foreign_assets=foreign_assets,
+                    foreign_apps=foreign_apps,
+                ),
+                full_acc_asset_app_pack,
+            ),
+            (
+                dict(
+                    app_id=111,
+                    accounts=accounts,
+                    foreign_assets=foreign_assets,
+                    foreign_apps=foreign_apps,
+                    boxes=[(3, "aaa"), (0, "bbb"), (111, "bbb2")],
+                ),
+                full_acc_asset_app_pack
+                + [
+                    rr(app_id=3),
+                    rr(box_reference=br(app_index=7, name="aaa")),
+                    rr(box_reference=br(app_index=0, name="bbb")),
+                    rr(box_reference=br(app_index=0, name="bbb2")),
+                ],
+            ),
+            (
+                dict(
+                    app_id=111,
+                    accounts=accounts,
+                    foreign_assets=foreign_assets,
+                    foreign_apps=foreign_apps,
+                    boxes=[(3, "aaa"), (0, "bbb"), (111, "bbb2")],
+                    holdings=[(111, one), (3333, zero)],
+                ),
+                full_acc_asset_app_pack
+                + [
+                    rr(address=one),
+                    rr(asset_id=111),
+                    rr(holding_reference=hr(asset_index=8, addr_index=7)),
+                    rr(holding_reference=hr(asset_index=4, addr_index=0)),
+                    rr(app_id=3),
+                    rr(box_reference=br(app_index=11, name="aaa")),
+                    rr(box_reference=br(app_index=0, name="bbb")),
+                    rr(box_reference=br(app_index=0, name="bbb2")),
+                ],
+            ),
+            (
+                dict(
+                    app_id=111,
+                    accounts=accounts,
+                    foreign_assets=foreign_assets,
+                    foreign_apps=foreign_apps,
+                    boxes=[(3, "aaa"), (0, "bbb"), (111, "bbb2")],
+                    holdings=[(111, one), (3333, zero)],
+                    locals=[(111, two), (333, zero), (444, one)],
+                ),
+                full_acc_asset_app_pack
+                + [
+                    rr(address=one),
+                    rr(asset_id=111),
+                    rr(holding_reference=hr(asset_index=8, addr_index=7)),
+                    rr(holding_reference=hr(asset_index=4, addr_index=0)),
+                    rr(address=two),
+                    rr(locals_reference=lr(app_index=0, addr_index=11)),
+                    rr(locals_reference=lr(app_index=6, addr_index=0)),
+                    rr(app_id=444),
+                    rr(locals_reference=lr(app_index=14, addr_index=7)),
+                    rr(app_id=3),
+                    rr(box_reference=br(app_index=16, name="aaa")),
+                    rr(box_reference=br(app_index=0, name="bbb")),
+                    rr(box_reference=br(app_index=0, name="bbb2")),
+                ],
+            ),
+        ]
+        for test_case in test_cases:
+            result = translate_to_resource_references(**test_case[0])
+            self.assertEqual(result, test_case[1])
