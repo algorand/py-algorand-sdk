@@ -7,7 +7,10 @@ from collections import OrderedDict
 
 from algosdk import account, constants, encoding, error, logic
 from algosdk.box_reference import BoxReference
-from algosdk.app_access import translate_to_resource_references, ResourceReference
+from algosdk.app_access import (
+    translate_to_resource_references,
+    ResourceReference,
+)
 from algosdk.v2client import algod, models
 from nacl.exceptions import BadSignatureError
 from nacl.signing import SigningKey, VerifyKey
@@ -1580,8 +1583,7 @@ class ApplicationCallTxn(Transaction):
         foreign_assets (list[int])
         extra_pages (int)
         boxes (list[(int, bytes)])
-        holdings (list[int, str])
-        locals (list[int, str])
+        resources (list[ResourceReference])
     """
 
     def __init__(
@@ -1605,7 +1607,7 @@ class ApplicationCallTxn(Transaction):
         boxes=None,
         use_access=None,
         holdings=None,
-        locals=None
+        locals=None,
     ):
         Transaction.__init__(
             self, sender, sp, note, lease, constants.appcall_txn, rekey_to
@@ -1631,7 +1633,7 @@ class ApplicationCallTxn(Transaction):
                 foreign_assets=foreign_assets,
                 boxes=boxes,
                 holdings=holdings,
-                locals=locals
+                locals=locals,
             )
         else:
             self.accounts = accounts if accounts else None
@@ -1728,9 +1730,14 @@ class ApplicationCallTxn(Transaction):
             "clear_program": d["apsu"] if "apsu" in d else None,
             "app_args": d["apaa"] if "apaa" in d else None,
             "accounts": (
-                [encoding.encode_address(account_bytes) for account_bytes in d["apat"]]
-                if "apat" in d
-                else None,
+                (
+                    [
+                        encoding.encode_address(account_bytes)
+                        for account_bytes in d["apat"]
+                    ]
+                    if "apat" in d
+                    else None
+                ),
             ),
             "foreign_apps": d["apfa"] if "apfa" in d else None,
             "foreign_assets": d["apas"] if "apas" in d else None,
@@ -1740,7 +1747,11 @@ class ApplicationCallTxn(Transaction):
                 if "apbx" in d
                 else None
             ),
-            "resources": [ResourceReference.undictify(ref) for ref in d["al"]] if "al" in d else None,
+            "resources": (
+                [ResourceReference.undictify(ref) for ref in d["al"]]
+                if "al" in d
+                else None
+            ),
         }
 
         return args
@@ -1762,9 +1773,6 @@ class ApplicationCallTxn(Transaction):
             and self.foreign_assets == other.foreign_assets
             and self.extra_pages == other.extra_pages
             and self.boxes == other.boxes
-            and self.use_access == other.use_access
-            and self.holdings == other.holdings
-            and self.locals == other.locals
         )
 
 
