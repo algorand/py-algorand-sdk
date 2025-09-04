@@ -60,6 +60,7 @@ class SimulateRequest:
     allow_unnamed_resources: bool
     extra_opcode_budget: int
     exec_trace_config: SimulateTraceConfig
+    fix_signers: bool
     round: Optional[int]
 
     def __init__(
@@ -72,6 +73,7 @@ class SimulateRequest:
         allow_unnamed_resources: bool = False,
         extra_opcode_budget: int = 0,
         exec_trace_config: Optional[SimulateTraceConfig] = None,
+        fix_signers: bool = False,
     ) -> None:
         self.txn_groups = txn_groups
         self.round = round
@@ -82,6 +84,7 @@ class SimulateRequest:
         self.exec_trace_config = (
             exec_trace_config if exec_trace_config else SimulateTraceConfig()
         )
+        self.fix_signers = fix_signers
 
     def dictify(self) -> Dict[str, Any]:
         return {
@@ -94,4 +97,5 @@ class SimulateRequest:
             "allow-empty-signatures": self.allow_empty_signatures,
             "extra-opcode-budget": self.extra_opcode_budget,
             "exec-trace-config": self.exec_trace_config.dictify(),
+            "fix-signers": self.fix_signers,
         }
