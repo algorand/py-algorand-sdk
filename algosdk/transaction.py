@@ -1608,6 +1608,7 @@ class ApplicationCallTxn(Transaction):
         use_access=None,
         holdings=None,
         locals=None,
+        resources=None,
     ):
         Transaction.__init__(
             self, sender, sp, note, lease, constants.appcall_txn, rekey_to
@@ -1625,7 +1626,14 @@ class ApplicationCallTxn(Transaction):
         self.foreign_assets: Optional[List[int]] = None
         self.boxes: Optional[List[Tuple[int, bytes]]] = None
         self.resources: Optional[List[ResourceReference]] = None
-        if use_access:
+
+        if resources and (use_access or accounts or foreign_apps or foreign_assets or boxes or holdings or locals):
+            print(use_access, accounts, foreign_apps, foreign_assets, boxes, holdings, locals)
+            raise ValueError("cannot specify both resources and other access fields")
+
+        if resources:
+            self.resources = resources
+        elif use_access:
             self.resources = translate_to_resource_references(
                 app_id=self.index,
                 accounts=accounts,
@@ -1737,7 +1745,7 @@ class ApplicationCallTxn(Transaction):
                     ]
                     if "apat" in d
                     else None
-                ),
+                )
             ),
             "foreign_apps": d["apfa"] if "apfa" in d else None,
             "foreign_assets": d["apas"] if "apas" in d else None,
@@ -1753,7 +1761,6 @@ class ApplicationCallTxn(Transaction):
                 else None
             ),
         }
-
         return args
 
     def __eq__(self, other):

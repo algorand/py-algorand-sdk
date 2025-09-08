@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from os import access
 from typing import List, Optional, Tuple, Union
 
 from algosdk import encoding
@@ -64,7 +65,6 @@ def translate_to_resource_references(
             )
         )
 
-    # Locals (local state (app, address?))
     for app, addr in locals or []:
         app_idx = 0
         if app and app != 0 and app != app_id:
@@ -80,7 +80,6 @@ def translate_to_resource_references(
             )
         )
 
-    # Boxes ( (app, name) )
     for app, name in boxes or []:
         app_idx = 0
         if app and app != 0 and app != app_id:

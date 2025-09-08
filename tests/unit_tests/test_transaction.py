@@ -1415,120 +1415,6 @@ class TestApplicationTransactions(unittest.TestCase):
         self.assertEqual(i.dictify(), call.dictify())
         self.assertEqual(i, call)
 
-
-class TestHeartbeatTransactions(unittest.TestCase):
-    sender = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
-    genesis = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
-    hb_address = "RI53WA75QRYLN64GMKBALH35SDFPEJDW5QMTYU3H2F36DBVAHPDN3FF4YA"
-    hb_proof = {
-        "Sig": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-        "PK": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-        "PK2": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-        "PK1Sig": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-        "Pk2Sig": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-    }
-    hb_seed = "XNOEe4VHUzo+8kWmV8ZE1T/GViVIkC9zbz0IhwhKTjY="
-    hb_vote_id = "XNOEe4VHUzo+8kWmV8ZE1T/GViVIkC9zbz0IhwhKTjY="
-    hb_key_dilution = 10000
-    note = b"\x00"
-    lease = b"\0" * 32
-    params = transaction.SuggestedParams(0, 1, 100, genesis)
-
-    def test_heartbeat(self):
-        # Test serializing a basic heartbeat with all standard fields filled in (save for rekey).
-        hb = transaction.HeartbeatTxn(
-            self.sender,
-            self.params,
-            self.hb_address,
-            self.hb_proof,
-            self.hb_seed,
-            self.hb_vote_id,
-            self.hb_key_dilution,
-            self.note,
-            self.lease,
-        )
-
-        enc = encoding.msgpack_encode(hb)
-        re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
-        self.assertEqual(enc, re_enc)
-
-        self.assertEqual(transaction.HeartbeatTxn.undictify(hb.dictify()), hb)
-
-
-class TestBoxReference(unittest.TestCase):
-    def test_translate_box_references(self):
-        # Test case: reference input, foreign app array, caller app id, expected output
-        test_cases = [
-            ([], [], 9999, []),
-            (
-                [(100, "potato")],
-                [100],
-                9999,
-                [transaction.BoxReference(1, "potato".encode())],
-            ),
-            (
-                [(9999, "potato"), (0, "tomato")],
-                [100],
-                9999,
-                [
-                    transaction.BoxReference(0, "potato".encode()),
-                    transaction.BoxReference(0, "tomato".encode()),
-                ],
-            ),
-            # Self referencing its own app id in foreign array.
-            (
-                [(100, "potato")],
-                [100],
-                100,
-                [transaction.BoxReference(1, "potato".encode())],
-            ),
-            (
-                [(777, "tomato"), (888, "pomato")],
-                [100, 777, 888, 1000],
-                9999,
-                [
-                    transaction.BoxReference(2, "tomato".encode()),
-                    transaction.BoxReference(3, "pomato".encode()),
-                ],
-            ),
-        ]
-        for test_case in test_cases:
-            expected = test_case[3]
-            actual = transaction.BoxReference.translate_box_references(
-                test_case[0], test_case[1], test_case[2]
-            )
-
-            self.assertEqual(len(expected), len(actual))
-            for i, actual_refs in enumerate(actual):
-                self.assertEqual(expected[i], actual_refs)
-
-    def test_translate_invalid_box_references(self):
-        # Test case: reference input, foreign app array, error
-        test_cases_id_error = [
-            ([(1, "tomato")], [], error.InvalidForeignIndexError),
-            ([(-1, "tomato")], [1], error.InvalidForeignIndexError),
-            (
-                [(444, "pomato")],
-                [2, 3, 100, 888],
-                error.InvalidForeignIndexError,
-            ),
-            (
-                [(2, "tomato"), (444, "pomato")],
-                [2, 3, 100, 888],
-                error.InvalidForeignIndexError,
-            ),
-            ([("tomato", "tomato")], [1], TypeError),
-            ([(2, "zomato")], None, error.InvalidForeignIndexError),
-        ]
-
-        for test_case in test_cases_id_error:
-            with self.assertRaises(test_case[2]) as e:
-                transaction.BoxReference.translate_box_references(
-                    test_case[0], test_case[1], 9999
-                )
-
-
-class TestAppAccess(unittest.TestCase):
     def test_translate_to_resource_references(self):
         translate_to_resource_references = (
             transaction.translate_to_resource_references
@@ -1665,3 +1551,169 @@ class TestAppAccess(unittest.TestCase):
         for test_case in test_cases:
             result = translate_to_resource_references(**test_case[0])
             self.assertEqual(result, test_case[1])
+
+    def test_resources_to_fro(self):
+        accounts = [
+            "47YPQTIGQEO7T4Y4RWDYWEKV6RTR2UNBQXBABEEGM72ESWDQNCQ52OPASU",
+            "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4",
+        ]
+        zero = ""
+        one = "AEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKE3PRHE"
+        two = "AIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGFFWAF4"
+        foreign_assets = [2222, 3333]
+        foreign_apps = [222, 333]
+        boxes = [(222, "aaa"), (333, "bbb"), (111, "bbb2")]
+        holdings = [(111, one), (3333, zero)]
+        locals = [(111, two), (333, zero), (444, one)]
+
+        txn_args = dict(
+            accounts=accounts,
+            foreign_assets=foreign_assets,
+            foreign_apps=foreign_apps,
+            boxes=boxes,
+            holdings=holdings,
+            locals=locals,
+        )
+
+        access = transaction.translate_to_resource_references(app_id=111, **txn_args)
+        params = transaction.SuggestedParams(0, 1, 100, self.genesis)
+
+        # no access but foreign data
+        txn1 = transaction.ApplicationCallTxn(
+            self.sender, params, 111, transaction.OnComplete.NoOpOC, app_args=[b"hello"],
+            **txn_args
+        )
+        d1 = txn1.dictify()
+        self.assertEqual(txn1, transaction.ApplicationCallTxn.undictify(d1))
+
+        # with access
+        txn2 = transaction.ApplicationCallTxn(
+            self.sender, params, 111, transaction.OnComplete.NoOpOC, app_args=[b"hello"],
+            **txn_args, use_access=True
+        )
+        d2 = txn2.dictify()
+        self.assertEqual(txn2, transaction.ApplicationCallTxn.undictify(d2))
+
+        # with resources
+        txn3 = transaction.ApplicationCallTxn(
+            self.sender, params, 111, transaction.OnComplete.NoOpOC, app_args=[b"hello"],
+            resources=access
+        )
+        d3 = txn3.dictify()
+        self.assertEqual(txn3, transaction.ApplicationCallTxn.undictify(d3))
+
+        # make sure use_access and resources are dictified the same way
+        self.assertEqual(d2, d3)
+
+
+
+class TestHeartbeatTransactions(unittest.TestCase):
+    sender = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
+    genesis = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
+    hb_address = "RI53WA75QRYLN64GMKBALH35SDFPEJDW5QMTYU3H2F36DBVAHPDN3FF4YA"
+    hb_proof = {
+        "Sig": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+        "PK": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+        "PK2": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+        "PK1Sig": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+        "Pk2Sig": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+    }
+    hb_seed = "XNOEe4VHUzo+8kWmV8ZE1T/GViVIkC9zbz0IhwhKTjY="
+    hb_vote_id = "XNOEe4VHUzo+8kWmV8ZE1T/GViVIkC9zbz0IhwhKTjY="
+    hb_key_dilution = 10000
+    note = b"\x00"
+    lease = b"\0" * 32
+    params = transaction.SuggestedParams(0, 1, 100, genesis)
+
+    def test_heartbeat(self):
+        # Test serializing a basic heartbeat with all standard fields filled in (save for rekey).
+        hb = transaction.HeartbeatTxn(
+            self.sender,
+            self.params,
+            self.hb_address,
+            self.hb_proof,
+            self.hb_seed,
+            self.hb_vote_id,
+            self.hb_key_dilution,
+            self.note,
+            self.lease,
+        )
+
+        enc = encoding.msgpack_encode(hb)
+        re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
+        self.assertEqual(enc, re_enc)
+
+        self.assertEqual(transaction.HeartbeatTxn.undictify(hb.dictify()), hb)
+
+
+class TestBoxReference(unittest.TestCase):
+    def test_translate_box_references(self):
+        # Test case: reference input, foreign app array, caller app id, expected output
+        test_cases = [
+            ([], [], 9999, []),
+            (
+                [(100, "potato")],
+                [100],
+                9999,
+                [transaction.BoxReference(1, "potato".encode())],
+            ),
+            (
+                [(9999, "potato"), (0, "tomato")],
+                [100],
+                9999,
+                [
+                    transaction.BoxReference(0, "potato".encode()),
+                    transaction.BoxReference(0, "tomato".encode()),
+                ],
+            ),
+            # Self referencing its own app id in foreign array.
+            (
+                [(100, "potato")],
+                [100],
+                100,
+                [transaction.BoxReference(1, "potato".encode())],
+            ),
+            (
+                [(777, "tomato"), (888, "pomato")],
+                [100, 777, 888, 1000],
+                9999,
+                [
+                    transaction.BoxReference(2, "tomato".encode()),
+                    transaction.BoxReference(3, "pomato".encode()),
+                ],
+            ),
+        ]
+        for test_case in test_cases:
+            expected = test_case[3]
+            actual = transaction.BoxReference.translate_box_references(
+                test_case[0], test_case[1], test_case[2]
+            )
+
+            self.assertEqual(len(expected), len(actual))
+            for i, actual_refs in enumerate(actual):
+                self.assertEqual(expected[i], actual_refs)
+
+    def test_translate_invalid_box_references(self):
+        # Test case: reference input, foreign app array, error
+        test_cases_id_error = [
+            ([(1, "tomato")], [], error.InvalidForeignIndexError),
+            ([(-1, "tomato")], [1], error.InvalidForeignIndexError),
+            (
+                [(444, "pomato")],
+                [2, 3, 100, 888],
+                error.InvalidForeignIndexError,
+            ),
+            (
+                [(2, "tomato"), (444, "pomato")],
+                [2, 3, 100, 888],
+                error.InvalidForeignIndexError,
+            ),
+            ([("tomato", "tomato")], [1], TypeError),
+            ([(2, "zomato")], None, error.InvalidForeignIndexError),
+        ]
+
+        for test_case in test_cases_id_error:
+            with self.assertRaises(test_case[2]) as e:
+                transaction.BoxReference.translate_box_references(
+                    test_case[0], test_case[1], 9999
+                )
