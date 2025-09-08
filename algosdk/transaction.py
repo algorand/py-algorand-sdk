@@ -1636,15 +1636,6 @@ class ApplicationCallTxn(Transaction):
             or holdings
             or locals
         ):
-            print(
-                use_access,
-                accounts,
-                foreign_apps,
-                foreign_assets,
-                boxes,
-                holdings,
-                locals,
-            )
             raise ValueError(
                 "cannot specify both resources and other access fields"
             )
