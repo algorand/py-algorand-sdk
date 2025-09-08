@@ -1627,9 +1627,27 @@ class ApplicationCallTxn(Transaction):
         self.boxes: Optional[List[Tuple[int, bytes]]] = None
         self.resources: Optional[List[ResourceReference]] = None
 
-        if resources and (use_access or accounts or foreign_apps or foreign_assets or boxes or holdings or locals):
-            print(use_access, accounts, foreign_apps, foreign_assets, boxes, holdings, locals)
-            raise ValueError("cannot specify both resources and other access fields")
+        if resources and (
+            use_access
+            or accounts
+            or foreign_apps
+            or foreign_assets
+            or boxes
+            or holdings
+            or locals
+        ):
+            print(
+                use_access,
+                accounts,
+                foreign_apps,
+                foreign_assets,
+                boxes,
+                holdings,
+                locals,
+            )
+            raise ValueError(
+                "cannot specify both resources and other access fields"
+            )
 
         if resources:
             self.resources = resources

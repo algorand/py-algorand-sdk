@@ -1575,12 +1575,18 @@ class TestApplicationTransactions(unittest.TestCase):
             locals=locals,
         )
 
-        access = transaction.translate_to_resource_references(app_id=111, **txn_args)
+        access = transaction.translate_to_resource_references(
+            app_id=111, **txn_args
+        )
         params = transaction.SuggestedParams(0, 1, 100, self.genesis)
 
         # no access but foreign data
         txn1 = transaction.ApplicationCallTxn(
-            self.sender, params, 111, transaction.OnComplete.NoOpOC, app_args=[b"hello"],
+            self.sender,
+            params,
+            111,
+            transaction.OnComplete.NoOpOC,
+            app_args=[b"hello"],
             **txn_args
         )
         d1 = txn1.dictify()
@@ -1588,23 +1594,31 @@ class TestApplicationTransactions(unittest.TestCase):
 
         # with access
         txn2 = transaction.ApplicationCallTxn(
-            self.sender, params, 111, transaction.OnComplete.NoOpOC, app_args=[b"hello"],
-            **txn_args, use_access=True
+            self.sender,
+            params,
+            111,
+            transaction.OnComplete.NoOpOC,
+            app_args=[b"hello"],
+            **txn_args,
+            use_access=True
         )
         d2 = txn2.dictify()
         self.assertEqual(txn2, transaction.ApplicationCallTxn.undictify(d2))
 
         # with resources
         txn3 = transaction.ApplicationCallTxn(
-            self.sender, params, 111, transaction.OnComplete.NoOpOC, app_args=[b"hello"],
-            resources=access
+            self.sender,
+            params,
+            111,
+            transaction.OnComplete.NoOpOC,
+            app_args=[b"hello"],
+            resources=access,
         )
         d3 = txn3.dictify()
         self.assertEqual(txn3, transaction.ApplicationCallTxn.undictify(d3))
 
         # make sure use_access and resources are dictified the same way
         self.assertEqual(d2, d3)
-
 
 
 class TestHeartbeatTransactions(unittest.TestCase):
