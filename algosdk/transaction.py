@@ -1628,8 +1628,7 @@ class ApplicationCallTxn(Transaction):
         self.resources: Optional[List[ResourceReference]] = None
 
         if resources and (
-            use_access
-            or accounts
+            accounts
             or foreign_apps
             or foreign_assets
             or boxes
@@ -1712,20 +1711,19 @@ class ApplicationCallTxn(Transaction):
             d["apaa"] = self.app_args
         if self.extra_pages:
             d["apep"] = self.extra_pages
+        if self.accounts:
+            d["apat"] = [
+                encoding.decode_address(account_pubkey)
+                for account_pubkey in self.accounts
+            ]
+        if self.foreign_apps:
+            d["apfa"] = self.foreign_apps
+        if self.foreign_assets:
+            d["apas"] = self.foreign_assets
+        if self.boxes:
+            d["apbx"] = [box.dictify() for box in self.boxes]
         if self.resources:
             d["al"] = [ap.dictify() for ap in self.resources]
-        else:
-            if self.accounts:
-                d["apat"] = [
-                    encoding.decode_address(account_pubkey)
-                    for account_pubkey in self.accounts
-                ]
-            if self.foreign_apps:
-                d["apfa"] = self.foreign_apps
-            if self.foreign_assets:
-                d["apas"] = self.foreign_assets
-            if self.boxes:
-                d["apbx"] = [box.dictify() for box in self.boxes]
 
         d.update(super(ApplicationCallTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
@@ -1747,14 +1745,12 @@ class ApplicationCallTxn(Transaction):
             "clear_program": d["apsu"] if "apsu" in d else None,
             "app_args": d["apaa"] if "apaa" in d else None,
             "accounts": (
-                (
-                    [
-                        encoding.encode_address(account_bytes)
-                        for account_bytes in d["apat"]
-                    ]
-                    if "apat" in d
-                    else None
-                )
+                [
+                    encoding.encode_address(account_bytes)
+                    for account_bytes in d["apat"]
+                ]
+                if "apat" in d
+                else None
             ),
             "foreign_apps": d["apfa"] if "apfa" in d else None,
             "foreign_assets": d["apas"] if "apas" in d else None,

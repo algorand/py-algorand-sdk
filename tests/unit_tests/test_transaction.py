@@ -1441,6 +1441,8 @@ class TestApplicationTransactions(unittest.TestCase):
             rr(app_id=foreign_apps[0]),
             rr(app_id=foreign_apps[1]),
         ]
+        # gradually build up the resource references
+        # starting with only accounts, then foreign arrays, then boxes, then holdings and locals
         test_cases = [
             (
                 dict(
