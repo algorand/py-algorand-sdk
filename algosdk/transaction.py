@@ -1645,8 +1645,8 @@ class ApplicationCallTxn(Transaction):
             self.resources = translate_to_resource_references(
                 app_id=self.index,
                 accounts=accounts,
-                foreign_apps=foreign_apps,
                 foreign_assets=foreign_assets,
+                foreign_apps=foreign_apps,
                 boxes=boxes,
                 holdings=holdings,
                 locals=locals,

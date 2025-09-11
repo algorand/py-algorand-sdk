@@ -9,8 +9,8 @@ from algosdk.box_reference import BoxReference
 def translate_to_resource_references(
     app_id: int,
     accounts: Optional[List[str]] = None,
-    foreign_apps: Optional[List[int]] = None,
     foreign_assets: Optional[List[int]] = None,
+    foreign_apps: Optional[List[int]] = None,
     boxes: Optional[List[Tuple[int, bytes]]] = None,
     holdings: Optional[List[Tuple[int, str]]] = None,
     locals: Optional[List[Tuple[int, str]]] = None,
