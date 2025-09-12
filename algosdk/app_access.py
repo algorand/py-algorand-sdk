@@ -70,7 +70,7 @@ def translate_to_resource_references(
         if app and app != app_id:
             app_idx = ensure(ResourceReference(app_id=app))
         addr_idx = 0
-        if addr and addr != "":
+        if addr:
             addr_idx = ensure(ResourceReference(address=addr))
         access.append(
             ResourceReference(
