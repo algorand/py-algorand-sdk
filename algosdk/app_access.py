@@ -54,7 +54,7 @@ def translate_to_resource_references(
 
     for asset, addr in holdings or []:
         addr_idx = 0
-        if addr and addr != "":
+        if addr:
             addr_idx = ensure(ResourceReference(address=addr))
         asset_idx = ensure(ResourceReference(asset_id=asset))
         access.append(
@@ -67,7 +67,7 @@ def translate_to_resource_references(
 
     for app, addr in locals or []:
         app_idx = 0
-        if app and app != 0 and app != app_id:
+        if app and app != app_id:
             app_idx = ensure(ResourceReference(app_id=app))
         addr_idx = 0
         if addr and addr != "":
@@ -82,7 +82,7 @@ def translate_to_resource_references(
 
     for app, name in boxes or []:
         app_idx = 0
-        if app and app != 0 and app != app_id:
+        if app and app != app_id:
             app_idx = ensure(ResourceReference(app_id=app))
         access.append(
             ResourceReference(
