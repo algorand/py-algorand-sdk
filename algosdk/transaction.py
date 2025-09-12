@@ -2,11 +2,15 @@ import base64
 import binascii
 import msgpack
 from enum import IntEnum
-from typing import List, Union, Optional, cast
+from typing import cast, List, Optional, Tuple, Union
 from collections import OrderedDict
 
 from algosdk import account, constants, encoding, error, logic
 from algosdk.box_reference import BoxReference
+from algosdk.app_access import (
+    translate_to_resource_references,
+    ResourceReference,
+)
 from algosdk.v2client import algod, models
 from nacl.exceptions import BadSignatureError
 from nacl.signing import SigningKey, VerifyKey
@@ -1555,6 +1559,11 @@ class ApplicationCallTxn(Transaction):
         foreign_assets (list[int], optional): list of assets involved in call
         extra_pages (int, optional): additional program space for supporting larger programs.  A page is 1024 bytes.
         boxes(list[(int, bytes)], optional): list of tuples specifying app id and key for boxes the app may access
+        use_access (bool, optional): whether to use access lists for the application
+        holdings (list[int, str], optional): lists of tuples specifying the asset holdings to be accessed during evaluation of the application;
+            zero (empty) address means sender
+        locals (list[int, str], optional): lists of tuples specifying the local states to be accessed during evaluation of the application;
+            zero (empty) address means sender
 
     Attributes:
         sender (str)
@@ -1574,6 +1583,7 @@ class ApplicationCallTxn(Transaction):
         foreign_assets (list[int])
         extra_pages (int)
         boxes (list[(int, bytes)])
+        resources (list[ResourceReference])
     """
 
     def __init__(
@@ -1595,6 +1605,10 @@ class ApplicationCallTxn(Transaction):
         rekey_to=None,
         extra_pages=0,
         boxes=None,
+        use_access=None,
+        holdings=None,
+        locals=None,
+        resources=None,
     ):
         Transaction.__init__(
             self, sender, sp, note, lease, constants.appcall_txn, rekey_to
@@ -1606,13 +1620,44 @@ class ApplicationCallTxn(Transaction):
         self.approval_program = self.teal_bytes(approval_program)
         self.clear_program = self.teal_bytes(clear_program)
         self.app_args = self.bytes_list(app_args)
-        self.accounts = accounts if accounts else None
-        self.foreign_apps = self.int_list(foreign_apps)
-        self.foreign_assets = self.int_list(foreign_assets)
         self.extra_pages = extra_pages
-        self.boxes = BoxReference.translate_box_references(
-            boxes, self.foreign_apps, self.index
-        )
+        self.accounts: Optional[List[str]] = None
+        self.foreign_apps: Optional[List[int]] = None
+        self.foreign_assets: Optional[List[int]] = None
+        self.boxes: Optional[List[Tuple[int, bytes]]] = None
+        self.resources: Optional[List[ResourceReference]] = None
+
+        if resources and (
+            accounts
+            or foreign_apps
+            or foreign_assets
+            or boxes
+            or holdings
+            or locals
+        ):
+            raise ValueError(
+                "cannot specify both resources and other access fields"
+            )
+
+        if resources:
+            self.resources = resources
+        elif use_access:
+            self.resources = translate_to_resource_references(
+                app_id=self.index,
+                accounts=accounts,
+                foreign_assets=foreign_assets,
+                foreign_apps=foreign_apps,
+                boxes=boxes,
+                holdings=holdings,
+                locals=locals,
+            )
+        else:
+            self.accounts = accounts if accounts else None
+            self.foreign_apps = self.int_list(foreign_apps)
+            self.foreign_assets = self.int_list(foreign_assets)
+            self.boxes = BoxReference.translate_box_references(
+                boxes, self.foreign_apps, self.index
+            )
         if not sp.flat_fee:
             mf = constants.min_txn_fee if sp.min_fee is None else sp.min_fee
             self.fee = max(self.estimate_size() * self.fee, mf)
@@ -1664,6 +1709,8 @@ class ApplicationCallTxn(Transaction):
             d["apsu"] = self.clear_program
         if self.app_args:
             d["apaa"] = self.app_args
+        if self.extra_pages:
+            d["apep"] = self.extra_pages
         if self.accounts:
             d["apat"] = [
                 encoding.decode_address(account_pubkey)
@@ -1673,10 +1720,10 @@ class ApplicationCallTxn(Transaction):
             d["apfa"] = self.foreign_apps
         if self.foreign_assets:
             d["apas"] = self.foreign_assets
-        if self.extra_pages:
-            d["apep"] = self.extra_pages
         if self.boxes:
             d["apbx"] = [box.dictify() for box in self.boxes]
+        if self.resources:
+            d["al"] = [ap.dictify() for ap in self.resources]
 
         d.update(super(ApplicationCallTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
@@ -1697,7 +1744,14 @@ class ApplicationCallTxn(Transaction):
             "approval_program": d["apap"] if "apap" in d else None,
             "clear_program": d["apsu"] if "apsu" in d else None,
             "app_args": d["apaa"] if "apaa" in d else None,
-            "accounts": d["apat"] if "apat" in d else None,
+            "accounts": (
+                [
+                    encoding.encode_address(account_bytes)
+                    for account_bytes in d["apat"]
+                ]
+                if "apat" in d
+                else None
+            ),
             "foreign_apps": d["apfa"] if "apfa" in d else None,
             "foreign_assets": d["apas"] if "apas" in d else None,
             "extra_pages": d["apep"] if "apep" in d else 0,
@@ -1706,12 +1760,12 @@ class ApplicationCallTxn(Transaction):
                 if "apbx" in d
                 else None
             ),
+            "resources": (
+                [ResourceReference.undictify(ref) for ref in d["al"]]
+                if "al" in d
+                else None
+            ),
         }
-        if args["accounts"]:
-            args["accounts"] = [
-                encoding.encode_address(account_bytes)
-                for account_bytes in args["accounts"]
-            ]
         return args
 
     def __eq__(self, other):
