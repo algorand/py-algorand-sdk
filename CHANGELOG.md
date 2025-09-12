@@ -1,5 +1,17 @@
 # Changelog
 
+# v2.11.0
+
+<!-- Release notes generated using configuration in .github/release.yml at release/v2.11.0 -->
+
+## What's Changed
+### Enhancements
+* Signatures: Support new lmsig for multisig delegated logicsigs by @jannotti in https://github.com/algorand/py-algorand-sdk/pull/579
+* types: support txn.Access transaction constructor by @algorandskiy in https://github.com/algorand/py-algorand-sdk/pull/580
+
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v2.10.0...v2.11.0
+
 # v2.10.0
 
 <!-- Release notes generated using configuration in .github/release.yml at release/v2.10.0 -->
