@@ -1564,6 +1564,8 @@ class ApplicationCallTxn(Transaction):
             zero (empty) address means sender
         locals (list[int, str], optional): lists of tuples specifying the local states to be accessed during evaluation of the application;
             zero (empty) address means sender
+        reject_version (int, optional): the lowest application version for which this transaction should immediately fail.
+            0 indicates that no version check should be performed.
 
     Attributes:
         sender (str)
@@ -1584,6 +1586,7 @@ class ApplicationCallTxn(Transaction):
         extra_pages (int)
         boxes (list[(int, bytes)])
         resources (list[ResourceReference])
+        reject_version (int)
     """
 
     def __init__(
@@ -1609,6 +1612,7 @@ class ApplicationCallTxn(Transaction):
         holdings=None,
         locals=None,
         resources=None,
+        reject_version=None,
     ):
         Transaction.__init__(
             self, sender, sp, note, lease, constants.appcall_txn, rekey_to
@@ -1621,6 +1625,7 @@ class ApplicationCallTxn(Transaction):
         self.clear_program = self.teal_bytes(clear_program)
         self.app_args = self.bytes_list(app_args)
         self.extra_pages = extra_pages
+        self.reject_version = reject_version if reject_version else 0
         self.accounts: Optional[List[str]] = None
         self.foreign_apps: Optional[List[int]] = None
         self.foreign_assets: Optional[List[int]] = None
@@ -1724,6 +1729,8 @@ class ApplicationCallTxn(Transaction):
             d["apbx"] = [box.dictify() for box in self.boxes]
         if self.resources:
             d["al"] = [ap.dictify() for ap in self.resources]
+        if self.reject_version:
+            d["aprv"] = self.reject_version
 
         d.update(super(ApplicationCallTxn, self).dictify())
         od = OrderedDict(sorted(d.items()))
@@ -1765,6 +1772,7 @@ class ApplicationCallTxn(Transaction):
                 if "al" in d
                 else None
             ),
+            "reject_version": d["aprv"] if "aprv" in d else 0,
         }
         return args
 
@@ -1785,6 +1793,7 @@ class ApplicationCallTxn(Transaction):
             and self.foreign_assets == other.foreign_assets
             and self.extra_pages == other.extra_pages
             and self.boxes == other.boxes
+            and self.reject_version == other.reject_version
         )
 
 
