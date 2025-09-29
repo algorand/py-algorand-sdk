@@ -1613,6 +1613,69 @@ class TestApplicationTransactions(unittest.TestCase):
         # make sure use_access and resources are dictified the same way
         self.assertEqual(d2, d3)
 
+    def test_reject_version(self):
+        params = transaction.SuggestedParams(0, 1, 100, self.genesis)
+
+        # Test with specific reject_version
+        txn_with_reject = transaction.ApplicationCallTxn(
+            self.sender,
+            params,
+            123,
+            transaction.OnComplete.NoOpOC,
+            reject_version=5,
+        )
+
+        # Verify reject_version is set
+        self.assertEqual(txn_with_reject.reject_version, 5)
+
+        # Verify encoding includes reject_version
+        txn_dict = txn_with_reject.dictify()
+        self.assertIn("aprv", txn_dict)
+        self.assertEqual(txn_dict["aprv"], 5)
+
+        # Test serialization/deserialization
+        encoded_txn = encoding.msgpack_encode(txn_with_reject)
+        decoded_txn = encoding.msgpack_decode(encoded_txn)
+        self.assertEqual(decoded_txn.reject_version, 5)
+
+        # Test undictify
+        reconstructed_txn = transaction.ApplicationCallTxn.undictify(txn_dict)
+        self.assertEqual(reconstructed_txn.reject_version, 5)
+        self.assertEqual(txn_with_reject, reconstructed_txn)
+
+        # Test with default reject_version (should be 0)
+        txn_default = transaction.ApplicationCallTxn(
+            self.sender,
+            params,
+            456,
+            transaction.OnComplete.NoOpOC,
+        )
+
+        # Verify default reject_version is 0
+        self.assertEqual(txn_default.reject_version, 0)
+
+        # Verify default encoding does not include aprv when 0
+        txn_default_dict = txn_default.dictify()
+        self.assertNotIn("aprv", txn_default_dict)
+
+        # Test undictify with missing aprv field defaults to 0
+        reconstructed_default = transaction.ApplicationCallTxn.undictify(
+            txn_default_dict
+        )
+        self.assertEqual(reconstructed_default.reject_version, 0)
+        self.assertEqual(txn_default, reconstructed_default)
+
+        # Test with explicit 0 reject_version
+        txn_explicit_zero = transaction.ApplicationCallTxn(
+            self.sender,
+            params,
+            456,
+            transaction.OnComplete.NoOpOC,
+            reject_version=0,
+        )
+        self.assertEqual(txn_explicit_zero.reject_version, 0)
+        self.assertEqual(txn_default, txn_explicit_zero)
+
 
 class TestHeartbeatTransactions(unittest.TestCase):
     sender = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
