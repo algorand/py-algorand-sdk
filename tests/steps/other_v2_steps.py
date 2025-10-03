@@ -2044,3 +2044,48 @@ def get_ledger_state_delta_for_transaction_group(context, id):
 @when("we make a GetBlockTxids call against block number {round}")
 def get_block_txids_call(context, round):
     context.response = context.acl.get_block_txids(round)
+
+
+@when('I set unnamed-resources "{value}"')
+def step_impl(context, value):
+    context.simulate_request.allow_unnamed_resources = value == "true"
+
+
+@when('I set populate-resources "{value}"')
+def step_impl(context, value):
+    context.simulate_request.populate_resources = value == "true"
+
+
+@then(
+    "the response should include populated-resource-arrays for the transaction"
+)
+def step_impl(context):
+    resp: SimulateAtomicTransactionResponse = (
+        context.atomic_transaction_composer_return
+    )
+    assert len(resp.populated_resource_arrays) == 1
+
+    resources = resp.populated_resource_arrays[0]
+    assert resources.apps == [10000, 20000, 30000]
+    assert resources.accounts == [
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+        "AEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKE3PRHE",
+        "AIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGFFWAF4",
+        "AMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANVWEXNA",
+    ]
+    assert resources.boxes == [(context.current_application_id, b"box_key")]
+    assert resources.assets == []
+
+
+@then("the response should include extra-resource-arrays for the group")
+def step_impl(context):
+    resp: SimulateAtomicTransactionResponse = (
+        context.atomic_transaction_composer_return
+    )
+    assert len(resp.extra_resource_arrays) == 1
+    assert resp.extra_resource_arrays[0].apps == [40000]
+    assert resp.extra_resource_arrays[0].accounts == [
+        "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJVBPJXY"
+    ]
+    assert resp.extra_resource_arrays[0].assets == [10001]
+    assert resp.extra_resource_arrays[0].boxes == [(0, b"")]
