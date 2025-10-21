@@ -118,3 +118,5 @@ Documentation for the Python SDK is available at [py-algorand-sdk.readthedocs.io
 ## License
 
 py-algorand-sdk is licensed under an MIT license. See the [LICENSE](https://github.com/algorand/py-algorand-sdk/blob/master/LICENSE) file for details.
+<br>## Welcome to ASA Creation<br>Algorand SDK creates ASA tokens in Python—new contributors, start with the Account tutorial for your first asset. Tip: Use Indexer for queries! <br>
+
