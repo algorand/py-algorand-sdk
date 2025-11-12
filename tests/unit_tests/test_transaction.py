@@ -1613,6 +1613,45 @@ class TestApplicationTransactions(unittest.TestCase):
         # make sure use_access and resources are dictified the same way
         self.assertEqual(d2, d3)
 
+    def test_resources_reorder_decoding(self):
+        addr1 = "FDMKB5D72THLYSJEBHBDHUE7XFRDOM5IHO44SOJ7AWPD6EZMWOQ2WKN7HQ"
+        accounts = [addr1]
+        foreign_assets = [123]
+        holdings = [(123, addr1)]
+
+        txn_args = dict(
+            accounts=accounts,
+            foreign_assets=foreign_assets,
+            holdings=holdings,
+        )
+
+        access = transaction.translate_to_resource_references(
+            app_id=111, **txn_args
+        )
+        # make sure holdings is the last entry now
+        self.assertIsNotNone(access[-1].holding_reference)
+        self.assertIsNone(access[0].holding_reference)
+
+        params = transaction.SuggestedParams(0, 1, 100, self.genesis)
+
+        # rearrange access to be out of order
+        access_reordered = [access[2], access[0], access[1]]
+        # make sure holdings is the first entry now
+        self.assertIsNotNone(access_reordered[0].holding_reference)
+        self.assertIsNone(access_reordered[2].holding_reference)
+
+        # ensure decoding-encoding still works despite reordering
+        txn = transaction.ApplicationCallTxn(
+            self.sender,
+            params,
+            111,
+            transaction.OnComplete.NoOpOC,
+            app_args=[b"hello"],
+            resources=access,
+        )
+        d = txn.dictify()
+        self.assertEqual(txn, transaction.ApplicationCallTxn.undictify(d))
+
     def test_reject_version(self):
         params = transaction.SuggestedParams(0, 1, 100, self.genesis)
 
