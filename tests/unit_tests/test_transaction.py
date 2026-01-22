@@ -1826,3 +1826,53 @@ class TestBoxReference(unittest.TestCase):
                 transaction.BoxReference.translate_box_references(
                     test_case[0], test_case[1], 9999
                 )
+
+    def test_empty_resource_reference(self):
+        addr1 = "FDMKB5D72THLYSJEBHBDHUE7XFRDOM5IHO44SOJ7AWPD6EZMWOQ2WKN7HQ"
+
+        params = transaction.SuggestedParams(
+            1000,
+            322575,
+            323575,
+            "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=",
+            "testnet-v1.0",
+        )
+
+        txn = transaction.ApplicationCallTxn(
+            "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4",
+            params,
+            1134696561,
+            transaction.OnComplete.NoOpOC,
+        )
+
+        encoding_data = txn.dictify()
+
+        # Simulate an access list with empty resource references as might come from the blockchain
+        access_list = [
+            {"d": encoding.decode_address(addr1)},
+            {},  # Empty resource reference
+            {"s": 1134696561},
+            {"p": 1134695678},
+        ]
+        encoding_data["al"] = access_list
+
+        # This should not throw an error
+        decoded_txn = transaction.ApplicationCallTxn.undictify(encoding_data)
+
+        # Verify that the decoded transaction has the correct access list
+        self.assertIsNotNone(decoded_txn.resources)
+        self.assertEqual(len(decoded_txn.resources), 4)
+
+        # First reference should be an address
+        self.assertEqual(decoded_txn.resources[0].address, addr1)
+
+        # Second reference should be an empty box reference
+        self.assertIsNotNone(decoded_txn.resources[1].box_reference)
+        self.assertEqual(decoded_txn.resources[1].box_reference.app_index, 0)
+        self.assertEqual(decoded_txn.resources[1].box_reference.name, b"")
+
+        # Third reference should be an asset
+        self.assertEqual(decoded_txn.resources[2].asset_id, 1134696561)
+
+        # Fourth reference should be an app
+        self.assertEqual(decoded_txn.resources[3].app_id, 1134695678)

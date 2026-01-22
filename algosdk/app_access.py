@@ -129,6 +129,10 @@ class ResourceReference:
 
     @staticmethod
     def undictify(d):
+        if not d:
+            return ResourceReference(
+                box_reference=BoxReference(app_index=0, name=b"")
+            )
         return ResourceReference(
             address=encoding.encode_address(d["d"]) if "d" in d else "",
             asset_id=d["s"] if "s" in d else None,
