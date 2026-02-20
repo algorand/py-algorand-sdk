@@ -238,6 +238,35 @@ class AlgodClient:
         req = "/accounts/" + address + "/applications/" + str(application_id)
         return self.algod_request("GET", req, query, **kwargs)
 
+    def account_applications_info(
+        self,
+        address: str,
+        limit: int = 0,
+        next_page: Optional[str] = None,
+        include: Optional[str] = None,
+        **kwargs: Any,
+    ) -> AlgodResponseType:
+        """
+        Return a paginated list of application holdings for an account.
+
+        Args:
+            address (str): account public key
+            limit (int, optional): maximum number of results to return.
+            next_page (str, optional): the next page token from a
+                previous response.
+            include (str, optional): include additional items such
+                as "params".
+        """
+        params: Dict[str, Union[int, str]] = {}
+        if limit:
+            params["limit"] = limit
+        if next_page:
+            params["next"] = next_page
+        if include:
+            params["include"] = include
+        req = "/accounts/" + address + "/applications"
+        return self.algod_request("GET", req, params=params, **kwargs)
+
     def pending_transactions_by_address(
         self,
         address: str,
