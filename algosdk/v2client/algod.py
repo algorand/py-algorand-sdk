@@ -238,6 +238,61 @@ class AlgodClient:
         req = "/accounts/" + address + "/applications/" + str(application_id)
         return self.algod_request("GET", req, query, **kwargs)
 
+    def account_assets_info(
+        self,
+        address: str,
+        limit: int = 0,
+        next_page: Optional[str] = None,
+        **kwargs: Any,
+    ) -> AlgodResponseType:
+        """
+        Return a paginated list of assets held by an account, inclusive of
+        asset params.
+
+        Args:
+            address (str): account public key
+            limit (int, optional): maximum number of results to return.
+            next_page (str, optional): the next page token from a previous
+                response.
+        """
+        params: Dict[str, Union[int, str]] = {}
+        if limit:
+            params["limit"] = limit
+        if next_page:
+            params["next"] = next_page
+        req = "/accounts/" + address + "/assets"
+        return self.algod_request("GET", req, params=params, **kwargs)
+
+    def account_applications_info(
+        self,
+        address: str,
+        limit: int = 0,
+        next_page: Optional[str] = None,
+        include: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> AlgodResponseType:
+        """
+        Return a paginated list of applications held by an account (local
+        state and params if the account is the creator).
+
+        Args:
+            address (str): account public key
+            limit (int, optional): maximum number of results to return.
+            next_page (str, optional): the next page token from a previous
+                response.
+            include (list, optional): include additional items such as
+                ``"params"`` to include full application parameters.
+        """
+        params: Dict[str, Union[int, str]] = {}
+        if limit:
+            params["limit"] = limit
+        if next_page:
+            params["next"] = next_page
+        if include:
+            params["include"] = ",".join(include)
+        req = "/accounts/" + address + "/applications"
+        return self.algod_request("GET", req, params=params, **kwargs)
+
     def pending_transactions_by_address(
         self,
         address: str,

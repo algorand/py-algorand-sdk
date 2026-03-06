@@ -89,6 +89,25 @@ def acc_application_info(context, account, applicationID):
 
 
 @when(
+    'we make an Account Assets Information call against account "{account}" with limit {limit} and next "{next:MaybeString}"'
+)
+def acc_assets_info(context, account, limit, next):
+    context.response = context.acl.account_assets_info(
+        account, limit=int(limit), next_page=next
+    )
+
+
+@when(
+    'we make an Account Applications Information call against account "{account}" with limit {limit} next "{next:MaybeString}" and include "{include:MaybeString}"'
+)
+def acc_applications_info(context, account, limit, next, include):
+    inc = include.split(",") if include else None
+    context.response = context.acl.account_applications_info(
+        account, limit=int(limit), next_page=next, include=inc
+    )
+
+
+@when(
     'we make a LookupAccountAssets call with accountID "{account}" assetID {asset_id} includeAll "{includeAll:MaybeBool}" limit {limit} next "{next:MaybeString}"'
 )
 def lookup_account_assets(context, account, asset_id, includeAll, limit, next):

@@ -1,6 +1,7 @@
 @unit.abijson
 @unit.abijson.byname
 @unit.algod
+@unit.algod.account_info_extras
 @unit.algod.ledger_refactoring
 @unit.algod.heartbeat
 @unit.algod.heartbeat.msgp
@@ -23,6 +24,7 @@
 @unit.ready
 @unit.rekey
 @unit.responses
+@unit.responses.account_info_extras
 @unit.responses.231
 @unit.responses.blocksummary
 @unit.responses.minbalance
