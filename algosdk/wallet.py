@@ -149,9 +149,12 @@ class Wallet:
             address (str): base32 address of account to be deleted
 
         Returns:
-            bool: True if the account has been deleted
+            bool: True if the account has been deleted, False if the
+                address was not found in the wallet
         """
         self.automate_handle()
+        if address not in self.list_keys():
+            return False
         return self.kcl.delete_key(self.handle, self.pswd, address)
 
     def sign_transaction(self, txn):
