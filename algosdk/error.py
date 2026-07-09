@@ -227,3 +227,26 @@ class SourceMapVersionError(Exception):
             self,
             "Only SourceMap version 3 is supported, got: {}".format(version),
         )
+
+
+class PQSchemeLengthError(Exception):
+    def __init__(self, length):
+        Exception.__init__(
+            self,
+            "post-quantum scheme must be 2 bytes, got {}".format(length),
+        )
+
+
+class NoCanonicalSaltError(Exception):
+    def __init__(self):
+        Exception.__init__(
+            self,
+            "no canonical salt exists for this public key and scheme",
+        )
+
+
+class PQMultisigUnsupportedError(Exception):
+    def __init__(self):
+        Exception.__init__(
+            self, "post-quantum signatures do not support multisig"
+        )

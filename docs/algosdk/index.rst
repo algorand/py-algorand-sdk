@@ -14,6 +14,7 @@ algosdk
    kmd
    logic
    mnemonic
+   signer
    source_map
    transaction
    util

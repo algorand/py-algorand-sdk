@@ -100,6 +100,20 @@ LOGIC_SIG_MAX_SIZE = 1000
 APP_PAGE_MAX_SIZE = 2048
 """int: max size of a page for an application in bytes"""
 
+# post-quantum (Falcon) related
+PQ_ADDRESS_PREFIX = b"PQA"
+"""bytes: prefix when deriving a post-quantum account address"""
+PQ_SEED_PREFIX = b"PQK"
+"""bytes: prefix when deriving a post-quantum key seed from a mnemonic"""
+PQ_PROGRAM_PREFIX = b"PQProgram"
+"""bytes: program prefix when signing a delegated post-quantum logic sig"""
+PQ_SCHEME_LEN = 2
+"""int: length in bytes of a post-quantum scheme identifier"""
+FALCON_1024_SCHEME = b"f1"
+"""bytes: 2-byte scheme identifier for Falcon-1024"""
+PQSIG_KEY = "pq"
+"""str: msgpack key for a post-quantum signature"""
+
 ZERO_ADDRESS = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ"
 """str: algorand encoded address of 32 zero bytes"""
 
@@ -145,3 +159,9 @@ logic_sig_max_size = LOGIC_SIG_MAX_SIZE
 app_page_max_size = APP_PAGE_MAX_SIZE
 stateproof_txn = STATEPROOF_TXN
 heartbeat_txn = HEARTBEAT_TXN
+pq_address_prefix = PQ_ADDRESS_PREFIX
+pq_seed_prefix = PQ_SEED_PREFIX
+pq_program_prefix = PQ_PROGRAM_PREFIX
+pq_scheme_len = PQ_SCHEME_LEN
+falcon_1024_scheme = FALCON_1024_SCHEME
+pqsig_key = PQSIG_KEY

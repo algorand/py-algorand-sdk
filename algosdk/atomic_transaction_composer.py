@@ -13,7 +13,7 @@ from typing import (
     cast,
 )
 
-from algosdk import abi, error, transaction
+from algosdk import abi, constants, encoding, error, transaction
 from algosdk.transaction import GenericSignedTransaction
 from algosdk.abi.address_type import AddressType
 from algosdk.v2client import algod, models
@@ -210,6 +210,28 @@ class EmptySigner(TransactionSigner):
         for i in indexes:
             stxns.append(transaction.SignedTransaction(txn_group[i], ""))
         return stxns
+
+
+def sign_transaction_with_signer(
+    txn: transaction.Transaction,
+    signer: TransactionSigner,
+) -> GenericSignedTransaction:
+    """
+    Sign a single transaction with a TransactionSigner.
+
+    A convenience wrapper over `signer.sign_transactions([txn], [0])` that
+    returns the single signed transaction. This is the signer-based
+    replacement for the deprecated `Transaction.sign(private_key)`; pass an
+    `AccountTransactionSigner(private_key)` as the signer.
+
+    Args:
+        txn (Transaction): the transaction to sign
+        signer (TransactionSigner): the signer to sign with
+
+    Returns:
+        GenericSignedTransaction: the signed transaction
+    """
+    return signer.sign_transactions([txn], [0])[0]
 
 
 class TransactionWithSigner:
