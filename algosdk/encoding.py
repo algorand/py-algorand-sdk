@@ -79,6 +79,10 @@ def msgpack_decode(enc):
         if "txn" in decoded:
             return transaction.LogicSigTransaction.undictify(decoded)
         return transaction.LogicSigAccount.undictify(decoded)
+    if "sch" in decoded:
+        # A standalone PQSig also carries a "sig" key, so this check must
+        # come before the SignedTransaction dispatch.
+        return transaction.PQSig.undictify(decoded)
     if "sig" in decoded:
         return transaction.SignedTransaction.undictify(decoded)
     if constants.pqsig_key in decoded:

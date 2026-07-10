@@ -103,23 +103,18 @@ class TestEd25519TransactionSigner(unittest.TestCase):
         sk, addr = account.generate_account()
         pk = encoding.decode_address(addr)
         data = b"a message to sign"
-        ref = base64.b64decode(util.sign_bytes(data, sk))
         got = Ed25519TransactionSigner(pk, _raw(sk)).sign_bytes(data)
-        self.assertEqual(got, ref)
-        self.assertTrue(
-            util.verify_bytes(data, base64.b64encode(got).decode(), addr)
-        )
+        # drop-in replacement for util.sign_bytes: same base64 output,
+        # verifies directly with util.verify_bytes
+        self.assertEqual(got, util.sign_bytes(data, sk))
+        self.assertTrue(util.verify_bytes(data, got, addr))
 
     def test_sign_bytes_does_not_verify_other_bytes(self):
         # negative check: the "MX" signature must not verify for other bytes
         sk, addr = account.generate_account()
         pk = encoding.decode_address(addr)
         sig = Ed25519TransactionSigner(pk, _raw(sk)).sign_bytes(b"hello world")
-        self.assertFalse(
-            util.verify_bytes(
-                b"goodbye world", base64.b64encode(sig).decode(), addr
-            )
-        )
+        self.assertFalse(util.verify_bytes(b"goodbye world", sig, addr))
 
     def test_sign_program_data_equivalence(self):
         sk, addr = account.generate_account()

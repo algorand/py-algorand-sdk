@@ -150,6 +150,14 @@ class TestPQSigEncoding(unittest.TestCase):
         pqsig = PQSig(b"f1", 3, b"pk-bytes", b"sig-bytes")
         self.assertEqual(PQSig.undictify(pqsig.dictify()), pqsig)
 
+    def test_standalone_msgpack_roundtrip(self):
+        # a bare PQSig (like a bare Multisig) must survive the generic
+        # msgpack encode/decode path, despite carrying a "sig" key
+        pqsig = PQSig(b"f1", 3, b"pk-bytes", b"sig-bytes")
+        decoded = encoding.msgpack_decode(encoding.msgpack_encode(pqsig))
+        self.assertIsInstance(decoded, PQSig)
+        self.assertEqual(decoded, pqsig)
+
     def test_zero_salt_is_omitted(self):
         pqsig = PQSig(b"f1", 0, b"pk", b"sig")
         self.assertNotIn("slt", pqsig.dictify())

@@ -97,9 +97,14 @@ class Ed25519TransactionSigner(TransactionSigner):
             )
         return stxns
 
-    def sign_bytes(self, data: bytes) -> bytes:
-        """Sign arbitrary bytes prefixed with "MX" (see util.sign_bytes)."""
-        return self.signer(constants.bytes_prefix + data)
+    def sign_bytes(self, data: bytes) -> str:
+        """
+        Sign arbitrary bytes prefixed with "MX" (see util.sign_bytes): the
+        base64 signature this returns verifies with util.verify_bytes.
+        """
+        return base64.b64encode(
+            self.signer(constants.bytes_prefix + data)
+        ).decode()
 
     def sign_program_data(
         self, data: bytes, lsig: "transaction.LogicSig"
