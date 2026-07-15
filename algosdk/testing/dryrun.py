@@ -46,6 +46,10 @@ class DryrunTestCaseMixin:
     Mixin class for unittest.TestCase
 
     Expects self.algo_client to be initialized in TestCase.setUp
+
+    **Deprecated:** the dryrun endpoint has been removed from algod. Use the
+    simulate endpoint instead
+    (:meth:`~algosdk.v2client.algod.AlgodClient.simulate_transactions`).
     """
 
     def assertPass(
@@ -501,7 +505,12 @@ class DryrunTestCaseMixin:
 
 
 class Helper:
-    """Utility functions for dryrun"""
+    """Utility functions for dryrun
+
+    **Deprecated:** the dryrun endpoint has been removed from algod. Use the
+    simulate endpoint instead
+    (:meth:`~algosdk.v2client.algod.AlgodClient.simulate_transactions`).
+    """
 
     @classmethod
     def build_dryrun_request(

@@ -3453,6 +3453,10 @@ def create_dryrun(
     """
     Create DryrunRequest object from a client and list of signed transactions
 
+    **Deprecated:** the dryrun endpoint has been removed from algod. Use the
+    simulate endpoint instead
+    (:meth:`~algosdk.v2client.algod.AlgodClient.simulate_transactions`).
+
     Args:
         algod_client (algod.AlgodClient): Instance of the `algod` client
         txns (List[SignedTransaction]): transaction ID

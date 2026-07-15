@@ -122,6 +122,11 @@ class DryrunTransactionResult:
         return "\n".join(trace) + "\n"
 
     def app_trace(self, spc: Optional[StackPrinterConfig] = None) -> str:
+        """
+        **Deprecated:** the dryrun endpoint has been removed from algod. Use
+        the simulate endpoint instead
+        (:meth:`~algosdk.v2client.algod.AlgodClient.simulate_transactions`).
+        """
         if not hasattr(self, "app_call_trace"):
             return ""
 
@@ -132,6 +137,11 @@ class DryrunTransactionResult:
         return self.trace(self.app_call_trace, self.disassembly, spc=spc)  # type: ignore[attr-defined]  # dynamic attribute
 
     def lsig_trace(self, spc: Optional[StackPrinterConfig] = None) -> str:
+        """
+        **Deprecated:** the dryrun endpoint has been removed from algod. Use
+        the simulate endpoint instead
+        (:meth:`~algosdk.v2client.algod.AlgodClient.simulate_transactions`).
+        """
         if not hasattr(self, "logic_sig_trace"):
             return ""
 

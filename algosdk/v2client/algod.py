@@ -583,6 +583,10 @@ class AlgodClient:
         """
         Dryrun with remote algod.
 
+        **Deprecated:** the dryrun endpoint has been removed from algod. Use
+        the simulate endpoint instead
+        (:meth:`~algosdk.v2client.algod.AlgodClient.simulate_transactions`).
+
         Args:
             drr (obj): dryrun request object
             request_header (dict, optional): additional header for request
