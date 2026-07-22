@@ -579,30 +579,6 @@ class AlgodClient:
             self.algod_request("POST", req, data=program_bytes, **kwargs),
         )
 
-    def dryrun(self, drr: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
-        """
-        Dryrun with remote algod.
-
-        Args:
-            drr (obj): dryrun request object
-            request_header (dict, optional): additional header for request
-
-        Returns:
-            dict: loaded from json response body
-        """
-        self._assert_json_response(kwargs, "dryrun")
-
-        req = "/teal/dryrun"
-        headers = util.build_headers_from(
-            kwargs.get("headers", False),
-            {"Content-Type": "application/msgpack"},
-        )
-        kwargs["headers"] = headers
-        data = encoding.msgpack_encode(drr)
-        data = base64.b64decode(data)
-
-        return cast(dict, self.algod_request("POST", req, data=data, **kwargs))
-
     def genesis(self, **kwargs: Any) -> AlgodResponseType:
         """Returns the entire genesis file."""
         req = "/genesis"
