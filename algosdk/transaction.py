@@ -3182,7 +3182,7 @@ class LogicSigTransaction:
             lsigAddr = lsig.address()
             self.lsig = lsig.lsig
         else:
-            if lsig.sig:
+            if lsig.sig or lsig.pqsig:
                 # For a LogicSig with a non-multisig delegating account, we
                 # cannot derive the address of that account from only its
                 # signature, so assume the delegating account is the sender. If
@@ -3192,11 +3192,6 @@ class LogicSigTransaction:
                 lsigAddr = lsig.msig.address()
             elif lsig.lmsig:
                 lsigAddr = lsig.lmsig.address()
-            elif lsig.pqsig:
-                addr, _ = encoding.address_from_pq_key(
-                    lsig.pqsig.scheme, lsig.pqsig.public_key
-                )
-                lsigAddr = addr
             else:
                 lsigAddr = lsig.address()
             self.lsig = lsig

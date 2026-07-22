@@ -244,17 +244,20 @@ class Ed25519MultisigTransactionSigner(TransactionSigner):
 class PQTransactionSigner(TransactionSigner):
     """
     A TransactionSigner backed by a post-quantum signing callback (a public key
-    plus a function that signs a 32-byte digest) instead of a raw secret key,
+    plus a function that signs exact bytes) instead of a raw secret key,
     parameterized by a 2-byte scheme identifier. Besides signing transactions it
     can delegate a logic signature via `sign_logicsig`.
+
+    As with the ed25519 signer, the callback receives the full signing preimage
+    and is responsible for any hashing the scheme itself requires.
 
     For Falcon-1024 use the `Falcon1024TransactionSigner` subclass, which fixes
     the scheme for you.
 
     Args:
         public_key (bytes): the scheme's public key
-        signer (RawSigner): callback that returns a raw post-quantum signature
-            over the given 32-byte digest
+        signer (RawSigner): callback that signs exact preimage bytes and
+            returns the raw post-quantum signature
         scheme (bytes): 2-byte scheme identifier (e.g. b"f1" for Falcon-1024)
     """
 
@@ -290,8 +293,7 @@ class PQTransactionSigner(TransactionSigner):
         stxns: List[GenericSignedTransaction] = []
         for i in indexes:
             txn = txn_group[i]
-            to_sign = encoding.checksum(txn.bytes_to_sign())
-            sig = self.signer(to_sign)
+            sig = self.signer(txn.bytes_to_sign())
             pqsig = transaction.PQSig(
                 self.scheme, self.salt, self.public_key, sig
             )
@@ -327,9 +329,7 @@ class PQTransactionSigner(TransactionSigner):
         if lsig.sig or lsig.msig or lsig.lmsig or lsig.pqsig:
             raise error.LogicSigOverspecifiedSignature
         address_bytes = encoding.decode_address(self.address)
-        to_sign = encoding.checksum(
-            constants.pq_program_prefix + address_bytes + lsig.logic
-        )
+        to_sign = constants.pq_program_prefix + address_bytes + lsig.logic
         sig = self.signer(to_sign)
         lsig.pqsig = transaction.PQSig(
             self.scheme, self.salt, self.public_key, sig
@@ -345,8 +345,8 @@ class Falcon1024TransactionSigner(PQTransactionSigner):
 
     Args:
         public_key (bytes): the Falcon-1024 public key
-        signer (RawSigner): callback that returns a raw Falcon-1024 signature
-            over the given 32-byte digest
+        signer (RawSigner): callback that signs exact preimage bytes and
+            returns the raw Falcon-1024 signature
     """
 
     def __init__(

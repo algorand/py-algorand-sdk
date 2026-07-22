@@ -233,11 +233,12 @@ def is_ed25519_point(public_key: bytes) -> bool:
     if len(public_key) != constants.key_len_bytes:
         return False
     p = _ED25519_P
-    # the low 255 bits are y; the top bit encodes the sign of x, ignored here
+    # The low 255 bits are y; the top bit encodes the sign of x, which does
+    # not affect whether a point exists.
     y = (int.from_bytes(public_key, "little") & ((1 << 255) - 1)) % p
     u = (y * y - 1) % p
     v = (_ED25519_D * y * y + 1) % p
-    # a point exists iff x^2 = u / v has a solution (u / v is a square)
+    # A point exists iff x^2 = u / v has a solution, i.e. u / v is a square.
     x = (u * pow(v, 3, p) * pow(u * pow(v, 7, p) % p, (p - 5) // 8, p)) % p
     vxx = (v * x * x) % p
     return vxx == u % p or vxx == (-u) % p

@@ -8,9 +8,13 @@
 # The ed25519 point-check known-answer test (KAT) comes from falcon-signatures:
 #   https://github.com/algorandfoundation/falcon-signatures/blob/main/algorand/testdata/README.md
 #
-# NOTE: upstream vectors currently use the pre-rename msgpack key "pq"; once they
-# are regenerated against post-rename go-algorand (key "pqsig") the legacy-decode
-# tests in test_pq.py will need updating. Always re-run `make pytest-unit` after.
+# The factory builds against a go-algorand git submodule, so the vectors
+# reflect whichever commit that submodule is pinned to. Check the pin to know
+# which protocol behaviour a refresh brings in:
+#   https://github.com/algorandfoundation/algokit-polytest/tree/pq/resources/data-factory
+#
+# Always re-run `make pytest-unit` after refreshing: a change to the wire key
+# or to the post-quantum signing payload surfaces as a failure there.
 set -euo pipefail
 cd "$(dirname "$0")"
 

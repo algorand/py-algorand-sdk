@@ -6,7 +6,7 @@ import unittest
 
 import msgpack
 
-from algosdk import constants, encoding, error, mnemonic
+from algosdk import constants, encoding, error, mnemonic, transaction
 from algosdk.atomic_transaction_composer import LogicSigTransactionSigner
 from algosdk.signer import Falcon1024TransactionSigner
 from algosdk.transaction import LogicSigAccount, PQSig
@@ -67,8 +67,8 @@ class TestPQAddressDerivation(unittest.TestCase):
         self.assertTrue(0 <= salt <= 255)
 
     def test_derived_address_is_well_formed(self):
-        # A PQ-derived address is a normal 58-char Algorand address that
-        # round-trips through decode/encode.
+        # a PQ-derived address is a normal 58-char Algorand address that
+        # round-trips through decode/encode
         pubkey = base64.b64decode(_load("pqMnemonic.json")["publicKey"])
         address, _ = encoding.address_from_pq_key(
             constants.falcon_1024_scheme, pubkey
@@ -86,10 +86,10 @@ class TestPQAddressDerivation(unittest.TestCase):
                 encoding.address_from_pq_key(bad, b"\x00" * 32)
 
     def test_arbitrary_scheme_and_key_is_deterministic(self):
-        # Port of go-algorand's
+        # port of go-algorand's
         # TestCanonicalPQAddressSaltDoesNotRequireRegisteredSchemeOrValidatedKey:
         # derivation needs neither a registered scheme nor a validated key, and
-        # is deterministic.
+        # is deterministic
         scheme, pubkey = b"x1", bytes([0xAB, 0xCD, 0xEF])
         address, salt = encoding.address_from_pq_key(scheme, pubkey)
         again, salt_again = encoding.address_from_pq_key(scheme, pubkey)
@@ -98,8 +98,8 @@ class TestPQAddressDerivation(unittest.TestCase):
 
     def test_nonzero_salt_derivation_and_wire(self):
         scheme = constants.falcon_1024_scheme
-        # every shipped fixture happens to derive canonical salt 0; find a
-        # public key whose salt-0 candidate lands ON the curve, forcing salt>0
+        # search for a public key whose salt-0 candidate lands ON the curve,
+        # forcing salt>0, so the rejection-sampling loop is exercised directly
         pk, salt = None, 0
         for i in range(1, 2000):
             candidate = i.to_bytes(32, "big")
@@ -125,7 +125,7 @@ class TestPQAddressDerivation(unittest.TestCase):
         self.assertEqual(signer.salt, salt)
         blob = encoding.msgpack_encode(signer.sign_transactions([txn], [0])[0])
         raw = msgpack.unpackb(base64.b64decode(blob), raw=False)
-        self.assertEqual(raw["pq"]["slt"], salt)
+        self.assertEqual(raw["pqsig"]["slt"], salt)
         self.assertEqual(encoding.msgpack_decode(blob).pqsig.salt, salt)
 
 
@@ -138,7 +138,7 @@ class TestPQMnemonicSeed(unittest.TestCase):
         self.assertEqual(base64.b64encode(seed).decode(), fx["seed"])
 
     def test_scheme_length_validation(self):
-        # to_pq_seed validates the scheme length just like address_from_pq_key.
+        # to_pq_seed validates the scheme length just like address_from_pq_key
         fx = _load("pqMnemonic.json")
         for bad in [b"", b"x", b"xyz"]:
             with self.assertRaises(error.PQSchemeLengthError):
@@ -169,14 +169,14 @@ class TestPQTransactionSigner(unittest.TestCase):
     def _run(self, fixture_name):
         fx = _load(fixture_name)
         pk = base64.b64decode(fx["signer"]["pqSigner"]["pk"])
-        expected_sig = base64.b64decode(fx["stxn"]["pq"]["sig"])
+        expected_sig = base64.b64decode(fx["stxn"]["pqsig"]["sig"])
         txn = encoding.msgpack_decode(fx["txnBlob"])
         # sanity: the unsigned txn re-encodes to the fixture byte-for-byte
         self.assertEqual(encoding.msgpack_encode(txn), fx["txnBlob"])
         captured = {}
 
-        def fake(digest):
-            captured["digest"] = digest
+        def fake(to_sign):
+            captured["to_sign"] = to_sign
             return expected_sig
 
         signer = Falcon1024TransactionSigner(pk, fake)
@@ -186,12 +186,12 @@ class TestPQTransactionSigner(unittest.TestCase):
 
     def test_direct_payment(self):
         fx, stxn, blob, captured = self._run("pqPayment.json")
-        # Falcon signs SHA-512/256("TX" + txn)
+        # the signed payload is the "TX"-prefixed transaction
         self.assertEqual(
-            captured["digest"],
-            encoding.checksum(stxn.transaction.bytes_to_sign()),
+            captured["to_sign"],
+            stxn.transaction.bytes_to_sign(),
         )
-        # byte-exact vs the go-algorand fixture (wire key "pq")
+        # byte-exact vs the go-algorand fixture
         expected = base64.b64decode(fx["stxnBlob"])
         self.assertEqual(base64.b64decode(blob), expected)
         self.assertIsNone(stxn.authorizing_address)
@@ -208,7 +208,7 @@ class TestPQTransactionSigner(unittest.TestCase):
     def test_signs_only_requested_indexes(self):
         fx = _load("pqPayment.json")
         pk = base64.b64decode(fx["signer"]["pqSigner"]["pk"])
-        sig = base64.b64decode(fx["stxn"]["pq"]["sig"])
+        sig = base64.b64decode(fx["stxn"]["pqsig"]["sig"])
         base = encoding.msgpack_decode(fx["txnBlob"])
         t0, t1, t2 = (copy.deepcopy(base) for _ in range(3))
         t1.note, t2.note = b"1", b"2"
@@ -260,12 +260,12 @@ class TestPQDelegatedLogicSig(unittest.TestCase):
         fx = _load(fixture_name)
         pk = base64.b64decode(fx["signer"]["pqSigner"]["pk"])
         program = base64.b64decode(fx["signer"]["lsig"])
-        expected_sig = base64.b64decode(fx["stxn"]["lsig"]["pq"]["sig"])
+        expected_sig = base64.b64decode(fx["stxn"]["lsig"]["pqsig"]["sig"])
         txn = encoding.msgpack_decode(fx["txnBlob"])
         captured = {}
 
-        def fake(digest):
-            captured["digest"] = digest
+        def fake(to_sign):
+            captured["to_sign"] = to_sign
             return expected_sig
 
         lsig_acct = LogicSigAccount(program)
@@ -280,13 +280,11 @@ class TestPQDelegatedLogicSig(unittest.TestCase):
         fx, stxn, blob, captured, lsig_acct = self._run(
             "pqDelegatedPayment.json"
         )
-        # Falcon signs SHA-512/256("PQProgram" + address + program)
+        # the signed payload binds the delegating address to the program
         addr_bytes = encoding.decode_address(lsig_acct.address())
         self.assertEqual(
-            captured["digest"],
-            encoding.checksum(
-                constants.pq_program_prefix + addr_bytes + lsig_acct.lsig.logic
-            ),
+            captured["to_sign"],
+            constants.pq_program_prefix + addr_bytes + lsig_acct.lsig.logic,
         )
         expected = base64.b64decode(fx["stxnBlob"])
         self.assertEqual(base64.b64decode(blob), expected)
@@ -306,7 +304,7 @@ class TestPQDelegatedLogicSig(unittest.TestCase):
         fx = _load("pqDelegatedPayment.json")
         pk = base64.b64decode(fx["signer"]["pqSigner"]["pk"])
         program = base64.b64decode(fx["signer"]["lsig"])
-        sig = base64.b64decode(fx["stxn"]["lsig"]["pq"]["sig"])
+        sig = base64.b64decode(fx["stxn"]["lsig"]["pqsig"]["sig"])
         lsig_acct = LogicSigAccount(program)
         Falcon1024TransactionSigner(pk, lambda d: sig).sign_logicsig(lsig_acct)
         self.assertTrue(lsig_acct.is_delegated())
@@ -317,7 +315,7 @@ class TestPQDelegatedLogicSig(unittest.TestCase):
     def test_sign_pq_rejects_double_sign(self):
         fx = _load("pqDelegatedPayment.json")
         pk = base64.b64decode(fx["signer"]["pqSigner"]["pk"])
-        sig = base64.b64decode(fx["stxn"]["lsig"]["pq"]["sig"])
+        sig = base64.b64decode(fx["stxn"]["lsig"]["pqsig"]["sig"])
         program = base64.b64decode(fx["signer"]["lsig"])
         lsig_acct = LogicSigAccount(program)
         signer = Falcon1024TransactionSigner(pk, lambda d: sig)
@@ -328,7 +326,7 @@ class TestPQDelegatedLogicSig(unittest.TestCase):
     def test_pq_logicsig_verify(self):
         fx = _load("pqDelegatedPayment.json")
         pk = base64.b64decode(fx["signer"]["pqSigner"]["pk"])
-        sig = base64.b64decode(fx["stxn"]["lsig"]["pq"]["sig"])
+        sig = base64.b64decode(fx["stxn"]["lsig"]["pqsig"]["sig"])
         program = base64.b64decode(fx["signer"]["lsig"])
         la = LogicSigAccount(program)
         Falcon1024TransactionSigner(pk, lambda d: sig).sign_logicsig(la)
@@ -338,6 +336,24 @@ class TestPQDelegatedLogicSig(unittest.TestCase):
         # a mismatched delegating address must not verify
         self.assertFalse(la.lsig.verify(b"\x00" * 32))
 
+    def test_decoding_tolerates_an_underivable_pq_address(self):
+        # decoding does not derive the delegating address, so a scheme that
+        # no address can be derived from still decodes for inspection
+        for name, pick in [
+            ("pqDelegatedPayment.json", lambda r: r["lsig"]["pqsig"]),
+            ("pqPayment.json", lambda r: r["pqsig"]),
+        ]:
+            with self.subTest(name):
+                fx = _load(name)
+                raw = msgpack.unpackb(
+                    base64.b64decode(fx["stxnBlob"]), raw=False
+                )
+                pick(raw)["sch"] = b"f123"
+                blob = base64.b64encode(
+                    msgpack.packb(raw, use_bin_type=True)
+                ).decode()
+                self.assertIsNotNone(encoding.msgpack_decode(blob))
+
     def test_sign_pq_then_ed25519_sign_rejected(self):
         # a post-quantum-signed logicsig must reject a subsequent ed25519
         # sign(), or the pqsig would be silently dropped on the wire
@@ -345,7 +361,7 @@ class TestPQDelegatedLogicSig(unittest.TestCase):
 
         fx = _load("pqDelegatedPayment.json")
         pk = base64.b64decode(fx["signer"]["pqSigner"]["pk"])
-        sig = base64.b64decode(fx["stxn"]["lsig"]["pq"]["sig"])
+        sig = base64.b64decode(fx["stxn"]["lsig"]["pqsig"]["sig"])
         program = base64.b64decode(fx["signer"]["lsig"])
         lsig_acct = LogicSigAccount(program)
         Falcon1024TransactionSigner(pk, lambda d: sig).sign_logicsig(lsig_acct)
@@ -356,7 +372,7 @@ class TestPQDelegatedLogicSig(unittest.TestCase):
     def test_logicsig_eq_distinguishes_pqsig(self):
         fx = _load("pqDelegatedPayment.json")
         pk = base64.b64decode(fx["signer"]["pqSigner"]["pk"])
-        sig = base64.b64decode(fx["stxn"]["lsig"]["pq"]["sig"])
+        sig = base64.b64decode(fx["stxn"]["lsig"]["pqsig"]["sig"])
         program = base64.b64decode(fx["signer"]["lsig"])
         signed = LogicSigAccount(program)
         Falcon1024TransactionSigner(pk, lambda d: sig).sign_logicsig(signed)
@@ -372,7 +388,7 @@ class TestPQDelegatedLogicSig(unittest.TestCase):
 
 class TestPQFixtureDecode(unittest.TestCase):
     """Decoding a go-algorand fixture blob recovers the signature and
-    re-encodes to the exact same bytes (wire key "pq")."""
+    re-encodes to the exact same bytes (wire key "pqsig")."""
 
     def test_decode_direct(self):
         from algosdk.transaction import PQSignedTransaction
@@ -382,7 +398,7 @@ class TestPQFixtureDecode(unittest.TestCase):
         self.assertIsInstance(stxn, PQSignedTransaction)
         self.assertEqual(
             base64.b64encode(stxn.pqsig.signature).decode(),
-            fx["stxn"]["pq"]["sig"],
+            fx["stxn"]["pqsig"]["sig"],
         )
         self.assertEqual(encoding.msgpack_encode(stxn), fx["stxnBlob"])
 
@@ -392,7 +408,7 @@ class TestPQFixtureDecode(unittest.TestCase):
         self.assertIsNotNone(stxn.lsig.pqsig)
         self.assertEqual(
             base64.b64encode(stxn.lsig.pqsig.signature).decode(),
-            fx["stxn"]["lsig"]["pq"]["sig"],
+            fx["stxn"]["lsig"]["pqsig"]["sig"],
         )
         self.assertEqual(encoding.msgpack_encode(stxn), fx["stxnBlob"])
 
@@ -438,4 +454,4 @@ class TestPQPublicAPI(unittest.TestCase):
             self.assertTrue(issubclass(exc, Exception))
         # pin the wire-format constants
         self.assertEqual(constants.falcon_1024_scheme, b"f1")
-        self.assertEqual(constants.pqsig_key, "pq")
+        self.assertEqual(constants.pqsig_key, "pqsig")
