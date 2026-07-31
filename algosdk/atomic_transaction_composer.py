@@ -344,6 +344,8 @@ class SimulateAtomicTransactionResponse:
         results: List[SimulateABIResult],
         eval_overrides: Optional[SimulateEvalOverrides] = None,
         exec_trace_config: Optional[models.SimulateTraceConfig] = None,
+        group_fees_paid: Optional[int] = None,
+        group_usage: Optional[int] = None,
     ) -> None:
         self.version = version
         self.failure_message = failure_message
@@ -353,6 +355,12 @@ class SimulateAtomicTransactionResponse:
         self.abi_results = results
         self.eval_overrides = eval_overrides
         self.exec_trace_config = exec_trace_config
+        # Total fees paid by the group and its descendant inner transactions,
+        # in microAlgos.
+        self.group_fees_paid = group_fees_paid
+        # Fee usage for the group and its descendant inner transactions, in
+        # millionths of a basic transaction fee unit.
+        self.group_usage = group_usage
 
 
 class AtomicTransactionComposer:
@@ -779,7 +787,10 @@ class AtomicTransactionComposer:
                 transaction group, a list of txIDs of the simulated transactions,
                 an array of results for each method call transaction in this group.
                 If a method has no return value (void), then the method results array
-                will contain None for that method's return value.
+                will contain None for that method's return value. When the node
+                reports them, group_fees_paid carries the total fees the group
+                would pay in microAlgos and group_usage its fee usage in
+                millionths of a basic transaction fee unit.
         """
 
         if self.status <= AtomicTransactionComposerStatus.SUBMITTED:
@@ -860,6 +871,8 @@ class AtomicTransactionComposer:
                 simulation_result
             ),
             exec_trace_config=exec_trace_config,
+            group_fees_paid=txn_group.get("group-fees-paid"),
+            group_usage=txn_group.get("group-usage"),
         )
 
     def execute(
