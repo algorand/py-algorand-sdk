@@ -1394,6 +1394,45 @@ class TestApplicationTransactions(unittest.TestCase):
         self.assertEqual(i.dictify(), call.dictify())
         self.assertEqual(i, call)
 
+    def test_application_update_global_schema_and_extra_pages(self):
+        # An update may change the global schema and extra program pages, so
+        # those fields are encoded (apgs, apep) and survive a round trip.
+        empty = b""
+        params = transaction.SuggestedParams(0, 1, 100, self.genesis)
+        gschema = transaction.StateSchema(3, 4)
+        txn = transaction.ApplicationUpdateTxn(
+            self.sender,
+            params,
+            10,
+            empty,
+            empty,
+            global_schema=gschema,
+            extra_pages=2,
+        )
+
+        d = txn.dictify()
+        self.assertEqual(d["apgs"], gschema.dictify())
+        self.assertEqual(d["apep"], 2)
+        # Local schema is not settable on an update, so it is never encoded.
+        self.assertNotIn("apls", d)
+
+        self.assertEqual(transaction.Transaction.undictify(d), txn)
+
+        # An update built through the generic call sets the same fields.
+        call = transaction.ApplicationCallTxn(
+            self.sender,
+            params,
+            10,
+            transaction.OnComplete.UpdateApplicationOC,
+            None,
+            gschema,
+            empty,
+            empty,
+            extra_pages=2,
+        )
+        self.assertEqual(txn.dictify(), call.dictify())
+        self.assertEqual(txn, call)
+
     def test_application_delete(self):
         params = transaction.SuggestedParams(0, 1, 100, self.genesis)
         i = transaction.ApplicationDeleteTxn(self.sender, params, 10)

@@ -485,13 +485,17 @@ class AtomicTransactionComposer:
             local_schema (StateSchema, optional): restricts what can be stored by created application;
                 must be omitted if not creating an application
             global_schema (StateSchema, optional): restricts what can be stored by created application;
-                must be omitted if not creating an application
+                must be omitted if not creating or updating an application. On an
+                update, the node installs global_schema and extra_pages together:
+                a field left at its default sets that size to zero, so pass the
+                current value of any size that should not change
             approval_program (bytes, optional): the program to run on transaction approval;
                 must be omitted if not creating or updating an application
             clear_program (bytes, optional): the program to run when state is being cleared;
                 must be omitted if not creating or updating an application
             extra_pages (int, optional): additional program space for supporting larger programs.
-                A page is 1024 bytes.
+                A page is 1024 bytes; must be omitted if not creating or updating
+                an application.
             accounts (list[string], optional): list of additional accounts involved in call
             foreign_apps (list[int], optional): list of other applications (identified by index) involved in call
             foreign_assets (list[int], optional): list of assets involved in call
@@ -521,9 +525,9 @@ class AtomicTransactionComposer:
                 raise error.AtomicTransactionComposerError(
                     "One of the following required parameters for OnApplicationComplete.UpdateApplicationOC is missing: approvalProgram, clearProgram"
                 )
-            if local_schema or global_schema or extra_pages:
+            if local_schema:
                 raise error.AtomicTransactionComposerError(
-                    "One of the following application creation parameters were set on a non-creation call: numGlobalInts, numGlobalByteSlices, numLocalInts, numLocalByteSlices, extraPages"
+                    "One of the following application creation parameters were set on an update call: numLocalInts, numLocalByteSlices"
                 )
         elif (
             approval_program

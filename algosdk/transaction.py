@@ -1598,7 +1598,7 @@ class ApplicationCallTxn(Transaction):
         local_schema (StateSchema, optional): restricts what can be stored by created application;
             must be omitted if not creating an application
         global_schema (StateSchema, optional): restricts what can be stored by created application;
-            must be omitted if not creating an application
+            must be omitted if not creating or updating an application
         approval_program (bytes, optional): the program to run on transaction approval;
             must be omitted if not creating or updating an application
         clear_program (bytes, optional): the program to run when state is being cleared;
@@ -1932,6 +1932,18 @@ class ApplicationUpdateTxn(ApplicationCallTxn):
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
         boxes(list[(int, bytes)], optional): list of tuples specifying app id and key for boxes the app may access
+        global_schema (StateSchema, optional): new global schema for the application
+        extra_pages (int, optional): new number of additional program pages, each 1024 bytes
+
+    Note:
+        The local state schema cannot be changed after application creation,
+        so this transaction takes no local_schema.
+
+        If either global_schema or extra_pages is set, the node installs both
+        values as the application's new sizes, and a field left at its default
+        sets that size to zero. To change one size while keeping the other,
+        pass the current value of the other explicitly. Leave both unset to
+        keep the current sizes.
 
 
     Attributes:
@@ -1953,6 +1965,8 @@ class ApplicationUpdateTxn(ApplicationCallTxn):
         lease=None,
         rekey_to=None,
         boxes=None,
+        global_schema=None,
+        extra_pages=0,
     ):
         ApplicationCallTxn.__init__(
             self,
@@ -1970,6 +1984,8 @@ class ApplicationUpdateTxn(ApplicationCallTxn):
             lease=lease,
             rekey_to=rekey_to,
             boxes=boxes,
+            global_schema=global_schema,
+            extra_pages=extra_pages,
         )
 
 
