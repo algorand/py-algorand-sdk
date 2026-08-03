@@ -504,8 +504,8 @@ class AtomicTransactionComposer:
             clear_program (bytes, optional): the program to run when state is being cleared;
                 must be omitted if not creating or updating an application
             extra_pages (int, optional): additional program space for supporting larger programs.
-                A page is pooled between the approval and clear state programs, and
-                is usually spent on the approval program. Must be omitted if not
+                Each extra page grants 2048 extra bytes which are available for
+                use by the approval or clear state programs. Must be omitted if not
                 creating or updating an application; on an update it installs
                 together with global_schema.
             accounts (list[string], optional): list of additional accounts involved in call
