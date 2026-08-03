@@ -1941,12 +1941,11 @@ class ApplicationUpdateTxn(ApplicationCallTxn):
         The local state schema cannot be changed after application creation,
         so this transaction takes no local_schema.
 
-        If either global_schema or extra_pages is set, the node installs both
-        values as the application's new sizes, and a field left at its default
-        sets that size to zero. To change one size while keeping the other,
-        pass the current value of the other explicitly. Leave both unset to
-        keep the current sizes.
-
+        If either global_schema or extra_pages is non-zero, the update installs
+        both values as the application's new sizes, and a field left at its
+        default sets that size to zero. To change one size while keeping the
+        other, pass the current value of the other explicitly. Leave both at
+        their defaults to keep the current sizes.
 
     Attributes:
         See ApplicationCallTxn

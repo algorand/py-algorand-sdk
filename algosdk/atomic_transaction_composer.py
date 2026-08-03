@@ -494,9 +494,9 @@ class AtomicTransactionComposer:
                 must be omitted if not creating an application
             global_schema (StateSchema, optional): restricts what can be stored by created application;
                 must be omitted if not creating or updating an application. On an
-                update, the node installs global_schema and extra_pages together:
-                a field left at its default sets that size to zero, so pass the
-                current value of any size that should not change
+                update, a non-zero global_schema or extra_pages installs both sizes
+                and zeroes the one left out, so pass the current value of a size
+                that should not change. Leaving both out keeps the current sizes.
             approval_program (bytes, optional): the program to run on transaction approval;
                 must be omitted if not creating or updating an application
             clear_program (bytes, optional): the program to run when state is being cleared;
@@ -504,7 +504,8 @@ class AtomicTransactionComposer:
             extra_pages (int, optional): additional program space for supporting larger programs.
                 A page is pooled between the approval and clear state programs, and
                 is usually spent on the approval program. Must be omitted if not
-                creating or updating an application.
+                creating or updating an application; on an update it installs
+                together with global_schema.
             accounts (list[string], optional): list of additional accounts involved in call
             foreign_apps (list[int], optional): list of other applications (identified by index) involved in call
             foreign_assets (list[int], optional): list of assets involved in call
