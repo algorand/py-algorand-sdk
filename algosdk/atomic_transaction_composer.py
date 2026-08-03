@@ -355,11 +355,13 @@ class SimulateAtomicTransactionResponse:
         self.abi_results = results
         self.eval_overrides = eval_overrides
         self.exec_trace_config = exec_trace_config
-        # Total fees paid by the group and its descendant inner transactions,
-        # in microAlgos.
+        # Total of the fee fields of the group and its descendant inner
+        # transactions, in microAlgos. This is the fee the group carries, not
+        # the fee it needs.
         self.group_fees_paid = group_fees_paid
-        # Fee usage for the group and its descendant inner transactions, in
-        # millionths of a basic transaction fee unit.
+        # Fee usage for the group and its descendant inner transactions, as a
+        # fixed point number in millionths of the minimum fee: 2100000 means
+        # 2.1 minimum fees.
         self.group_usage = group_usage
 
 
@@ -790,9 +792,13 @@ class AtomicTransactionComposer:
                 an array of results for each method call transaction in this group.
                 If a method has no return value (void), then the method results array
                 will contain None for that method's return value. When the node
-                reports them, group_fees_paid carries the total fees the group
-                would pay in microAlgos and group_usage its fee usage in
-                millionths of a basic transaction fee unit.
+                reports them, group_fees_paid totals the fee fields of the group
+                and its inner transactions in microAlgos, so it is the fee the
+                group carries rather than the fee it needs. group_usage measures
+                the same transactions as a fixed point number in millionths of
+                the minimum fee, so 2100000 means 2.1 minimum fees. Multiply it
+                by SuggestedParams.min_fee and divide by 1000000, rounding up,
+                for the fee in microAlgos that the group needs.
         """
 
         if self.status <= AtomicTransactionComposerStatus.SUBMITTED:
