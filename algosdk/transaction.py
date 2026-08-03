@@ -1607,7 +1607,8 @@ class ApplicationCallTxn(Transaction):
         accounts (list[string], optional): list of additional accounts involved in call
         foreign_apps (list[int], optional): list of other applications (identified by index) involved in call
         foreign_assets (list[int], optional): list of assets involved in call
-        extra_pages (int, optional): additional program space for supporting larger programs.  A page is 1024 bytes.
+        extra_pages (int, optional): additional program space for supporting larger programs.
+            A page is pooled between the approval and clear state programs, and is usually spent on the approval program.
         boxes(list[(int, bytes)], optional): list of tuples specifying app id and key for boxes the app may access
         use_access (bool, optional): whether to use access lists for the application
         holdings (list[int, str], optional): lists of tuples specifying the asset holdings to be accessed during evaluation of the application;
@@ -1933,7 +1934,8 @@ class ApplicationUpdateTxn(ApplicationCallTxn):
         rekey_to(str, optional): rekey-to field, see Transaction
         boxes(list[(int, bytes)], optional): list of tuples specifying app id and key for boxes the app may access
         global_schema (StateSchema, optional): new global schema for the application
-        extra_pages (int, optional): new number of additional program pages, each 1024 bytes
+        extra_pages (int, optional): new number of additional program pages.
+            A page is pooled between the approval and clear state programs, and is usually spent on the approval program
 
     Note:
         The local state schema cannot be changed after application creation,
