@@ -49,7 +49,8 @@ def translate_to_resource_references(
         return len(access)
 
     for account in accounts or []:
-        ensure(ResourceReference(address=account))
+        if _address_is_set(account):
+            ensure(ResourceReference(address=account))
 
     for asset in foreign_assets or []:
         ensure(ResourceReference(asset_id=asset))
@@ -59,7 +60,7 @@ def translate_to_resource_references(
 
     for asset, addr in holdings or []:
         addr_idx = 0
-        if addr:
+        if _address_is_set(addr):
             addr_idx = ensure(ResourceReference(address=addr))
         asset_idx = ensure(ResourceReference(asset_id=asset))
         access.append(
@@ -75,7 +76,7 @@ def translate_to_resource_references(
         if app and app != app_id:
             app_idx = ensure(ResourceReference(app_id=app))
         addr_idx = 0
-        if addr:
+        if _address_is_set(addr):
             addr_idx = ensure(ResourceReference(address=addr))
         access.append(
             ResourceReference(

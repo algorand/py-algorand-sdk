@@ -1467,6 +1467,7 @@ class TestApplicationTransactions(unittest.TestCase):
             "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4",
         ]
         zero = ""
+        zero_address = encoding.encode_address(bytes(32))
         one = "AEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKE3PRHE"
         two = "AIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGFFWAF4"
         foreign_assets = [2222, 3333]
@@ -1585,6 +1586,34 @@ class TestApplicationTransactions(unittest.TestCase):
                     rr(box_reference=br(app_index=16, name=b"aaa")),
                     rr(box_reference=br(app_index=0, name=b"bbb")),
                     rr(box_reference=br(app_index=0, name=b"bbb2")),
+                ],
+            ),
+            # the zero address means the sender: dropped from accounts,
+            # index 0 in holdings and locals
+            (
+                dict(app_id=111, accounts=[zero_address]),
+                [],
+            ),
+            (
+                dict(app_id=111, holdings=[(5, zero_address)]),
+                [
+                    rr(asset_id=5),
+                    rr(holding_reference=hr(asset_index=1, addr_index=0)),
+                ],
+            ),
+            (
+                dict(app_id=111, locals=[(9, zero_address)]),
+                [
+                    rr(app_id=9),
+                    rr(locals_reference=lr(app_index=1, addr_index=0)),
+                ],
+            ),
+            (
+                dict(app_id=111, locals=[(9, one)]),
+                [
+                    rr(app_id=9),
+                    rr(address=one),
+                    rr(locals_reference=lr(app_index=1, addr_index=2)),
                 ],
             ),
         ]
@@ -1944,6 +1973,7 @@ class TestBoxReference(unittest.TestCase):
             "testnet-v1.0",
         )
         sender = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        zero_address = encoding.encode_address(bytes(32))
 
         for kwargs in (dict(boxes=[(0, b"")]), dict(locals=[(0, "")])):
             txn = transaction.ApplicationCallTxn(
@@ -1963,6 +1993,18 @@ class TestBoxReference(unittest.TestCase):
         self.assertEqual(
             golden, encoding.msgpack_encode(encoding.msgpack_decode(golden))
         )
+
+        # a zero-address account is not listed at all, matching the other
+        # SDKs, so the access list is absent entirely
+        txn = transaction.ApplicationCallTxn(
+            sender,
+            params,
+            111,
+            transaction.OnComplete.NoOpOC,
+            use_access=True,
+            accounts=[zero_address],
+        )
+        self.assertIsNone(txn.resources)
 
     def test_access_reference_golden_encoding(self):
         # goldens matching go-algorand's canonical ResourceRef msgpack
