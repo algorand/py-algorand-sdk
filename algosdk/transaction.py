@@ -105,8 +105,6 @@ class Transaction:
             raise error.WrongNoteType
         if isinstance(note, str):
             note = note.encode()
-        if len(note) > constants.note_max_length:
-            raise error.WrongNoteLength
         return note
 
     @classmethod

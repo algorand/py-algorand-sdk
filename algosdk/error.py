@@ -100,8 +100,17 @@ class WrongNoteType(Exception):
 
 
 class WrongNoteLength(Exception):
+    """
+    Deprecated: note size is a consensus parameter enforced by algod; the
+    SDK no longer validates it and this exception is no longer raised.
+    """
+
     def __init__(self):
-        Exception.__init__(self, "note length must be at most 1024")
+        Exception.__init__(
+            self,
+            "note size is a consensus parameter enforced by algod; "
+            "this exception is no longer raised by the SDK",
+        )
 
 
 class InvalidProgram(Exception):

@@ -53,14 +53,17 @@ class TestPaymentTransaction(unittest.TestCase):
         txn = transaction.PaymentTxn(address, sp, address, 1000, note="helo")
         self.assertEqual(constants.min_txn_fee, txn.fee)
 
-    def test_note_wrong_length(self):
+    def test_note_large_is_not_validated(self):
+        # note size is a consensus parameter enforced by algod, not by the
+        # SDK: building a transaction with a note larger than the
+        # historical 1024-byte cap must succeed without raising
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         sp = transaction.SuggestedParams(0, 1, 100, gh)
-        f = lambda: transaction.PaymentTxn(
-            address, sp, address, 1000, note=("0" * 1025).encode()
+        txn = transaction.PaymentTxn(
+            address, sp, address, 1000, note=("0" * 4096).encode()
         )
-        self.assertRaises(error.WrongNoteLength, f)
+        self.assertEqual(len(txn.note), 4096)
 
     def test_leases(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
@@ -102,12 +105,17 @@ class TestPaymentTransaction(unittest.TestCase):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         sp = transaction.SuggestedParams(3, 1, 100, gh)
-        txn = transaction.PaymentTxn(
-            address, sp, address, 1000, note=("0" * 1024).encode()
-        )
-        enc = encoding.msgpack_encode(txn)
-        re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
-        self.assertEqual(enc, re_enc)
+        # both the historical 1024-byte cap and the larger notes algod
+        # accepts as of vFuture must serialize and decode round-trip
+        for note_length in (1024, 4096):
+            txn = transaction.PaymentTxn(
+                address, sp, address, 1000, note=("0" * note_length).encode()
+            )
+            enc = encoding.msgpack_encode(txn)
+            decoded = encoding.msgpack_decode(enc)
+            self.assertEqual(len(decoded.note), note_length)
+            re_enc = encoding.msgpack_encode(decoded)
+            self.assertEqual(enc, re_enc)
 
     def test_serialize_zero_amt(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
