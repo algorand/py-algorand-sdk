@@ -1627,7 +1627,7 @@ class TestApplicationTransactions(unittest.TestCase):
             111,
             transaction.OnComplete.NoOpOC,
             app_args=[b"hello"],
-            **txn_args
+            **txn_args,
         )
         d1 = txn1.dictify()
         self.assertEqual(txn1, transaction.ApplicationCallTxn.undictify(d1))
@@ -1640,7 +1640,7 @@ class TestApplicationTransactions(unittest.TestCase):
             transaction.OnComplete.NoOpOC,
             app_args=[b"hello"],
             **txn_args,
-            use_access=True
+            use_access=True,
         )
         d2 = txn2.dictify()
         self.assertEqual(txn2, transaction.ApplicationCallTxn.undictify(d2))
@@ -1913,13 +1913,109 @@ class TestBoxReference(unittest.TestCase):
         # First reference should be an address
         self.assertEqual(decoded_txn.resources[0].address, addr1)
 
-        # Second reference should be an empty box reference
-        self.assertIsNotNone(decoded_txn.resources[1].box_reference)
-        self.assertEqual(decoded_txn.resources[1].box_reference.app_index, 0)
-        self.assertEqual(decoded_txn.resources[1].box_reference.name, b"")
+        # Second reference should be the canonical empty reference
+        self.assertEqual(
+            decoded_txn.resources[1], transaction.ResourceReference()
+        )
 
         # Third reference should be an asset
         self.assertEqual(decoded_txn.resources[2].asset_id, 1134696561)
 
         # Fourth reference should be an app
         self.assertEqual(decoded_txn.resources[3].app_id, 1134695678)
+
+    def test_empty_access_refs_encode_canonically(self):
+        # an empty resource reference (an io quota bump) must encode as an
+        # empty map, matching algod's canonical re-encoding; a non-canonical
+        # form like {"b": {}} changes the signed bytes and fails signature
+        # verification at the node. A quota-bump box and an all-zero locals
+        # ref collapse to the same empty reference, so both encode to the
+        # same golden.
+        golden = (
+            "iaJhbJGApGFwaWRvo2ZlZc4AAzwgomZ2zgAE7A+jZ2VurHRlc3RuZXQtdjEuMK"
+            "JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOAATv96Nz"
+            "bmTEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWkYXBwbA=="
+        )
+        params = transaction.SuggestedParams(
+            1000,
+            322575,
+            323575,
+            "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=",
+            "testnet-v1.0",
+        )
+        sender = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+
+        for kwargs in (dict(boxes=[(0, b"")]), dict(locals=[(0, "")])):
+            txn = transaction.ApplicationCallTxn(
+                sender,
+                params,
+                111,
+                transaction.OnComplete.NoOpOC,
+                use_access=True,
+                **kwargs,
+            )
+            self.assertEqual(golden, encoding.msgpack_encode(txn))
+            self.assertEqual(
+                txn, transaction.ApplicationCallTxn.undictify(txn.dictify())
+            )
+
+        # decoding and re-encoding must not change the signed bytes
+        self.assertEqual(
+            golden, encoding.msgpack_encode(encoding.msgpack_decode(golden))
+        )
+
+    def test_access_reference_golden_encoding(self):
+        # goldens matching go-algorand's canonical ResourceRef msgpack
+        # encoding (sorted keys, omitted zero fields, bin box names)
+        cases = [
+            (transaction.ResourceReference(), "gA=="),
+            (
+                transaction.ResourceReference(
+                    locals_reference=LocalsRef(app_index=2, addr_index=1)
+                ),
+                "gaFsgqFkAaFwAg==",
+            ),
+            (
+                transaction.ResourceReference(
+                    holding_reference=HoldingRef(asset_index=1, addr_index=0)
+                ),
+                "gaFogaFzAQ==",
+            ),
+            (
+                transaction.ResourceReference(
+                    box_reference=transaction.BoxReference(0, b"name")
+                ),
+                "gaFigaFuxARuYW1l",
+            ),
+        ]
+        for ref, golden in cases:
+            self.assertEqual(golden, encoding.msgpack_encode(ref))
+
+        # str box names are normalized to bytes so they encode as msgpack
+        # bin, the same as algod's []byte re-encoding; this holds on the
+        # tuple path and on direct BoxReference construction alike
+        refs = transaction.translate_to_resource_references(
+            app_id=111, boxes=[(0, "name")]
+        )
+        self.assertEqual(refs[0].box_reference.name, b"name")
+        self.assertEqual(transaction.BoxReference(0, "name").name, b"name")
+
+        # canonical decode-side inputs re-encode byte-identically
+        canonical_dicts = [
+            {},
+            {"b": {"i": 3}},
+            {"b": {"n": b"x"}},
+            {"h": {"d": 2, "s": 1}},
+            {"l": {"d": 1}},
+            {"l": {"p": 2}},
+            {"s": 7},
+            {"p": 9},
+            {"d": bytes(range(32))},
+        ]
+        for d in canonical_dicts:
+            self.assertEqual(
+                encoding.msgpack_encode(
+                    transaction.ResourceReference.undictify(d)
+                ),
+                encoding.msgpack_encode(d),
+            )

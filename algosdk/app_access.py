@@ -6,6 +6,11 @@ from algosdk import encoding
 from algosdk.box_reference import BoxReference
 
 
+def _address_is_set(address: Optional[str]) -> bool:
+    """The zero (empty) address means the sender and is never listed."""
+    return bool(address) and any(encoding.decode_address(address))
+
+
 def translate_to_resource_references(
     app_id: int,
     accounts: Optional[List[str]] = None,
@@ -103,12 +108,31 @@ class ResourceReference:
         holding_reference: Optional["HoldingRef"] = None,
         locals_reference: Optional["LocalsRef"] = None,
     ):
-        self.app_id = app_id
-        self.address = address
-        self.asset_id = asset_id
-        self.box_reference = box_reference
-        self.holding_reference = holding_reference
-        self.locals_reference = locals_reference
+        # Coerce empty values to None, to help __eq__ and to keep the
+        # canonical wire form: every empty reference must encode as an
+        # empty map, matching algod's re-encoding. A zero address and an
+        # all-zero inner reference count as empty.
+        if _address_is_set(address):
+            self.address: Optional[str] = address
+        else:
+            self.address = None
+        self.asset_id = asset_id if asset_id else None
+        self.app_id = app_id if app_id else None
+        self.box_reference = (
+            box_reference
+            if box_reference and box_reference.dictify()
+            else None
+        )
+        self.holding_reference = (
+            holding_reference
+            if holding_reference and holding_reference.dictify()
+            else None
+        )
+        self.locals_reference = (
+            locals_reference
+            if locals_reference and locals_reference.dictify()
+            else None
+        )
 
     def dictify(self):
         d = dict()
@@ -129,12 +153,8 @@ class ResourceReference:
 
     @staticmethod
     def undictify(d):
-        if not d:
-            return ResourceReference(
-                box_reference=BoxReference(app_index=0, name=b"")
-            )
         return ResourceReference(
-            address=encoding.encode_address(d["d"]) if "d" in d else "",
+            address=encoding.encode_address(d["d"]) if "d" in d else None,
             asset_id=d["s"] if "s" in d else None,
             app_id=d["p"] if "p" in d else None,
             box_reference=BoxReference.undictify(d["b"]) if "b" in d else None,

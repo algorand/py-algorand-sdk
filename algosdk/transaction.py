@@ -1696,14 +1696,20 @@ class ApplicationCallTxn(Transaction):
         if resources:
             self.resources = resources
         elif use_access:
-            self.resources = translate_to_resource_references(
-                app_id=self.index,
-                accounts=accounts,
-                foreign_assets=foreign_assets,
-                foreign_apps=foreign_apps,
-                boxes=boxes,
-                holdings=holdings,
-                locals=locals,
+            # coerce an empty translation to None so a constructed
+            # transaction compares equal to its decoded form, which
+            # carries no "al" field
+            self.resources = (
+                translate_to_resource_references(
+                    app_id=self.index,
+                    accounts=accounts,
+                    foreign_assets=foreign_assets,
+                    foreign_apps=foreign_apps,
+                    boxes=boxes,
+                    holdings=holdings,
+                    locals=locals,
+                )
+                or None
             )
         else:
             self.accounts = accounts if accounts else None
@@ -1842,6 +1848,7 @@ class ApplicationCallTxn(Transaction):
             and self.foreign_assets == other.foreign_assets
             and self.extra_pages == other.extra_pages
             and self.boxes == other.boxes
+            and self.resources == other.resources
             and self.reject_version == other.reject_version
         )
 
