@@ -10,16 +10,21 @@ class BoxReference:
 
     Args:
         app_index (int): index of the application in the foreign app array
-        name (bytes): key for the box in bytes
+        name (bytes, bytearray, str, or int): key for the box; coerced to
+            bytes
     """
 
-    def __init__(self, app_index: int, name: bytes):
+    def __init__(
+        self, app_index: int, name: Union[bytes, bytearray, str, int]
+    ):
         if app_index < 0:
             raise ValueError(
                 f"Box app index must be a non-negative integer: {app_index}"
             )
         self.app_index = app_index
-        self.name = name
+        # Normalize to bytes so the name encodes as msgpack bin, matching
+        # algod's canonical re-encoding of a []byte name.
+        self.name = encoding.encode_as_bytes(name)
 
     @staticmethod
     def translate_box_reference(

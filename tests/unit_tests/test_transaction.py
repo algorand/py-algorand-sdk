@@ -1534,9 +1534,9 @@ class TestApplicationTransactions(unittest.TestCase):
                 full_acc_asset_app_pack
                 + [
                     rr(app_id=3),
-                    rr(box_reference=br(app_index=7, name="aaa")),
-                    rr(box_reference=br(app_index=0, name="bbb")),
-                    rr(box_reference=br(app_index=0, name="bbb2")),
+                    rr(box_reference=br(app_index=7, name=b"aaa")),
+                    rr(box_reference=br(app_index=0, name=b"bbb")),
+                    rr(box_reference=br(app_index=0, name=b"bbb2")),
                 ],
             ),
             (
@@ -1555,9 +1555,9 @@ class TestApplicationTransactions(unittest.TestCase):
                     rr(holding_reference=hr(asset_index=8, addr_index=7)),
                     rr(holding_reference=hr(asset_index=4, addr_index=0)),
                     rr(app_id=3),
-                    rr(box_reference=br(app_index=11, name="aaa")),
-                    rr(box_reference=br(app_index=0, name="bbb")),
-                    rr(box_reference=br(app_index=0, name="bbb2")),
+                    rr(box_reference=br(app_index=11, name=b"aaa")),
+                    rr(box_reference=br(app_index=0, name=b"bbb")),
+                    rr(box_reference=br(app_index=0, name=b"bbb2")),
                 ],
             ),
             (
@@ -1582,9 +1582,9 @@ class TestApplicationTransactions(unittest.TestCase):
                     rr(app_id=444),
                     rr(locals_reference=lr(app_index=14, addr_index=7)),
                     rr(app_id=3),
-                    rr(box_reference=br(app_index=16, name="aaa")),
-                    rr(box_reference=br(app_index=0, name="bbb")),
-                    rr(box_reference=br(app_index=0, name="bbb2")),
+                    rr(box_reference=br(app_index=16, name=b"aaa")),
+                    rr(box_reference=br(app_index=0, name=b"bbb")),
+                    rr(box_reference=br(app_index=0, name=b"bbb2")),
                 ],
             ),
         ]
