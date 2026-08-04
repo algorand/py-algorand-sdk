@@ -81,11 +81,12 @@ MICROALGOS_TO_ALGOS_RATIO = 1000000
 METADATA_LENGTH = 32
 """int: length of asset metadata"""
 NOTE_MAX_LENGTH = 1024
-"""int: number of note bytes a transaction may carry at the base fee.
-Additional note space up to an absolute cap can be bought with additional
-fees (a per-byte surcharge). All these limits are consensus parameters
-enforced by algod; use simulate to determine the required fee instead of
-pre-validating locally."""
+"""int: number of note bytes currently included in a transaction's base
+fee. Larger notes are paid for with a per-byte surcharge, up to an
+absolute cap. All of these values are consensus parameters that can
+change with an upgrade; in particular the fee-free allowance may drop to
+zero, making every note byte paid. Use simulate to determine the
+required fee instead of relying on this value."""
 LEASE_LENGTH = 32
 """int: byte length of leases"""
 MULTISIG_ACCOUNT_LIMIT = 255
