@@ -66,7 +66,7 @@ class TestPQAddressDerivation(unittest.TestCase):
         self.assertIsInstance(salt, int)
         self.assertTrue(0 <= salt <= 255)
 
-    def test_derived_address_is_well_formed(self):
+    def test_canonical_address_from_pq_key(self):
         # a PQ-derived address is a normal 58-char Algorand address that
         # round-trips through decode/encode
         pubkey = base64.b64decode(_load("pqMnemonic.json")["publicKey"])
