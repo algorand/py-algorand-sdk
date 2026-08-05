@@ -454,4 +454,3 @@ class TestPQPublicAPI(unittest.TestCase):
             self.assertTrue(issubclass(exc, Exception))
         # pin the wire-format constants
         self.assertEqual(constants.falcon_1024_scheme, b"f1")
-        self.assertEqual(constants.pqsig_key, "pqsig")

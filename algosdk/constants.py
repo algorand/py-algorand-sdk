@@ -111,8 +111,6 @@ PQ_SCHEME_LEN = 2
 """int: length in bytes of a post-quantum scheme identifier"""
 FALCON_1024_SCHEME = b"f1"
 """bytes: 2-byte scheme identifier for Falcon-1024"""
-PQSIG_KEY = "pqsig"
-"""str: msgpack key for a post-quantum signature"""
 
 ZERO_ADDRESS = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ"
 """str: algorand encoded address of 32 zero bytes"""
@@ -164,4 +162,3 @@ pq_seed_prefix = PQ_SEED_PREFIX
 pq_program_prefix = PQ_PROGRAM_PREFIX
 pq_scheme_len = PQ_SCHEME_LEN
 falcon_1024_scheme = FALCON_1024_SCHEME
-pqsig_key = PQSIG_KEY

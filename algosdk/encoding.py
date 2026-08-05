@@ -85,7 +85,7 @@ def msgpack_decode(enc):
         return transaction.PQSig.undictify(decoded)
     if "sig" in decoded:
         return transaction.SignedTransaction.undictify(decoded)
-    if constants.pqsig_key in decoded:
+    if "pqsig" in decoded:
         return transaction.PQSignedTransaction.undictify(decoded)
     if "txn" in decoded:
         return transaction.Transaction.undictify(decoded["txn"])

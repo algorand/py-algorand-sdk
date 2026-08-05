@@ -2357,7 +2357,7 @@ class PQSignedTransaction:
 
     def dictify(self):
         od = OrderedDict()
-        od[constants.pqsig_key] = self.pqsig.dictify()
+        od["pqsig"] = self.pqsig.dictify()
         if self.authorizing_address:
             od["sgnr"] = encoding.decode_address(self.authorizing_address)
         od["txn"] = self.transaction.dictify()
@@ -2369,7 +2369,7 @@ class PQSignedTransaction:
         if "sgnr" in d:
             auth = encoding.encode_address(d["sgnr"])
         txn = Transaction.undictify(d["txn"])
-        pqsig = PQSig.undictify(d[constants.pqsig_key])
+        pqsig = PQSig.undictify(d["pqsig"])
         return PQSignedTransaction(txn, pqsig, auth)
 
     def __eq__(self, other):
@@ -2770,7 +2770,7 @@ class LogicSig:
         elif self.lmsig:
             od["lmsig"] = self.lmsig.dictify()
         elif self.pqsig:
-            od[constants.pqsig_key] = self.pqsig.dictify()
+            od["pqsig"] = self.pqsig.dictify()
         return od
 
     @staticmethod
@@ -2782,8 +2782,8 @@ class LogicSig:
             lsig.msig = Multisig.undictify(d["msig"])
         elif "lmsig" in d:
             lsig.lmsig = Multisig.undictify(d["lmsig"])
-        elif constants.pqsig_key in d:
-            lsig.pqsig = PQSig.undictify(d[constants.pqsig_key])
+        elif "pqsig" in d:
+            lsig.pqsig = PQSig.undictify(d["pqsig"])
         return lsig
 
     def sig_count(self):
@@ -3507,7 +3507,7 @@ def retrieve_from_file(path):
             txns.append(SignedTransaction.undictify(txn))
         elif "lsig" in txn:
             txns.append(LogicSigTransaction.undictify(txn))
-        elif constants.pqsig_key in txn:
+        elif "pqsig" in txn:
             txns.append(PQSignedTransaction.undictify(txn))
         elif "type" in txn:
             txns.append(Transaction.undictify(txn))
