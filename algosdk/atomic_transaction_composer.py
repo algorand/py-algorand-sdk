@@ -346,6 +346,7 @@ class SimulateAtomicTransactionResponse:
         exec_trace_config: Optional[models.SimulateTraceConfig] = None,
         group_fees_paid: Optional[int] = None,
         group_usage: Optional[int] = None,
+        fees_paid: Optional[List[Optional[int]]] = None,
     ) -> None:
         self.version = version
         self.failure_message = failure_message
@@ -363,6 +364,10 @@ class SimulateAtomicTransactionResponse:
         # fixed point number in millionths of the minimum fee: 2100000 means
         # 2.1 minimum fees.
         self.group_usage = group_usage
+        # Total of the fee fields of each top-level transaction and its
+        # descendant inner transactions, in microAlgos, in the same order as
+        # tx_ids. Entries are None when the node does not report the field.
+        self.fees_paid = fees_paid
 
 
 class AtomicTransactionComposer:
@@ -798,7 +803,9 @@ class AtomicTransactionComposer:
                 the same transactions as a fixed point number in millionths of
                 the minimum fee, so 2100000 means 2.1 minimum fees. Multiply it
                 by SuggestedParams.min_fee and divide by 1000000, rounding up,
-                for the fee in microAlgos that the group needs.
+                for the fee in microAlgos that the group needs. fees_paid
+                carries the same total as group_fees_paid split per top-level
+                transaction, in tx_ids order.
         """
 
         if self.status <= AtomicTransactionComposerStatus.SUBMITTED:
@@ -881,6 +888,7 @@ class AtomicTransactionComposer:
             exec_trace_config=exec_trace_config,
             group_fees_paid=txn_group.get("group-fees-paid"),
             group_usage=txn_group.get("group-usage"),
+            fees_paid=[t.get("fees-paid") for t in txn_group["txn-results"]],
         )
 
     def execute(
