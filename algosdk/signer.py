@@ -21,6 +21,7 @@ import base64
 from typing import Callable, List, Optional
 
 from algosdk import constants, encoding, error, transaction
+from algosdk.constants import PQScheme
 from algosdk.atomic_transaction_composer import TransactionSigner
 from algosdk.transaction import GenericSignedTransaction
 
@@ -265,7 +266,7 @@ class PQTransactionSigner(TransactionSigner):
         self,
         public_key: bytes,
         signer: RawSigner,
-        scheme: bytes,
+        scheme: PQScheme,
     ) -> None:
         super().__init__()
         self.public_key = public_key

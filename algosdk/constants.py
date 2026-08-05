@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Literal
 
 """
 Contains useful constants.
@@ -109,7 +109,10 @@ PQ_PROGRAM_PREFIX = b"PQProgram"
 """bytes: program prefix when signing a delegated post-quantum logic sig"""
 PQ_SCHEME_LEN = 2
 """int: length in bytes of a post-quantum scheme identifier"""
-FALCON_1024_SCHEME = b"f1"
+PQScheme = Literal[b"f1"]
+"""the supported post-quantum scheme identifiers. Widen this union when a
+new scheme ships so type checkers keep rejecting unknown schemes."""
+FALCON_1024_SCHEME: PQScheme = b"f1"
 """bytes: 2-byte scheme identifier for Falcon-1024"""
 
 ZERO_ADDRESS = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ"
@@ -161,4 +164,4 @@ pq_address_prefix = PQ_ADDRESS_PREFIX
 pq_seed_prefix = PQ_SEED_PREFIX
 pq_program_prefix = PQ_PROGRAM_PREFIX
 pq_scheme_len = PQ_SCHEME_LEN
-falcon_1024_scheme = FALCON_1024_SCHEME
+falcon_1024_scheme: PQScheme = FALCON_1024_SCHEME
