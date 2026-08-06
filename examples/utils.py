@@ -6,7 +6,10 @@ from typing import List
 
 from algosdk import transaction
 from algosdk.v2client import algod, indexer
-from algosdk.atomic_transaction_composer import AccountTransactionSigner
+from algosdk.atomic_transaction_composer import (
+    AccountTransactionSigner,
+    sign_transaction_with_signer,
+)
 from algosdk.kmd import KMDClient
 from algosdk.wallet import Wallet
 
@@ -181,7 +184,9 @@ def deploy_calculator_app(
         global_schema=transaction.StateSchema(num_uints=1, num_byte_slices=1),
     )
     # sign transaction
-    signed_create_txn = app_create_txn.sign(acct.private_key)
+    signed_create_txn = sign_transaction_with_signer(
+        app_create_txn, AccountTransactionSigner(acct.private_key)
+    )
     txid = algod_client.send_transaction(signed_create_txn)
     result = transaction.wait_for_confirmation(algod_client, txid, 4)
     app_id = result["application-index"]

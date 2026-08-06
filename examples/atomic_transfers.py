@@ -1,5 +1,9 @@
 from typing import Dict, Any
 from algosdk import transaction
+from algosdk.atomic_transaction_composer import (
+    AccountTransactionSigner,
+    sign_transaction_with_signer,
+)
 from utils import get_accounts, get_algod_client
 
 algod_client = get_algod_client()
@@ -33,8 +37,8 @@ transaction.assign_group_id([txn_1, txn_2])
 
 # example: ATOMIC_GROUP_SIGN
 # sign transactions
-stxn_1 = txn_1.sign(sk1)
-stxn_2 = txn_2.sign(sk2)
+stxn_1 = sign_transaction_with_signer(txn_1, AccountTransactionSigner(sk1))
+stxn_2 = sign_transaction_with_signer(txn_2, AccountTransactionSigner(sk2))
 # example: ATOMIC_GROUP_SIGN
 
 # example: ATOMIC_GROUP_ASSEMBLE

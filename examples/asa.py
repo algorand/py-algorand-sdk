@@ -1,5 +1,9 @@
 from typing import Dict, Any
 from algosdk import transaction
+from algosdk.atomic_transaction_composer import (
+    AccountTransactionSigner,
+    sign_transaction_with_signer,
+)
 from utils import get_accounts, get_algod_client
 
 # Setup
@@ -30,7 +34,9 @@ txn = transaction.AssetConfigTxn(
 )
 
 # Sign with secret key of creator
-stxn = txn.sign(acct1.private_key)
+stxn = sign_transaction_with_signer(
+    txn, AccountTransactionSigner(acct1.private_key)
+)
 # Send the transaction to the network and retrieve the txid.
 txid = algod_client.send_transaction(stxn)
 print(f"Sent asset create transaction with txid: {txid}")
@@ -57,7 +63,9 @@ txn = transaction.AssetConfigTxn(
     strict_empty_address_check=False,
 )
 # Sign with secret key of manager
-stxn = txn.sign(acct1.private_key)
+stxn = sign_transaction_with_signer(
+    txn, AccountTransactionSigner(acct1.private_key)
+)
 # Send the transaction to the network and retrieve the txid.
 txid = algod_client.send_transaction(stxn)
 print(f"Sent asset config transaction with txid: {txid}")
@@ -83,7 +91,9 @@ sp = algod_client.suggested_params()
 optin_txn = transaction.AssetOptInTxn(
     sender=acct2.address, sp=sp, index=created_asset
 )
-signed_optin_txn = optin_txn.sign(acct2.private_key)
+signed_optin_txn = sign_transaction_with_signer(
+    optin_txn, AccountTransactionSigner(acct2.private_key)
+)
 txid = algod_client.send_transaction(signed_optin_txn)
 print(f"Sent opt in transaction with txid: {txid}")
 
@@ -112,7 +122,9 @@ xfer_txn = transaction.AssetTransferTxn(
     amt=1,
     index=created_asset,
 )
-signed_xfer_txn = xfer_txn.sign(acct1.private_key)
+signed_xfer_txn = sign_transaction_with_signer(
+    xfer_txn, AccountTransactionSigner(acct1.private_key)
+)
 txid = algod_client.send_transaction(signed_xfer_txn)
 print(f"Sent transfer transaction with txid: {txid}")
 
@@ -138,7 +150,9 @@ freeze_txn = transaction.AssetFreezeTxn(
     target=acct2.address,
     new_freeze_state=True,
 )
-signed_freeze_txn = freeze_txn.sign(acct1.private_key)
+signed_freeze_txn = sign_transaction_with_signer(
+    freeze_txn, AccountTransactionSigner(acct1.private_key)
+)
 txid = algod_client.send_transaction(signed_freeze_txn)
 print(f"Sent freeze transaction with txid: {txid}")
 
@@ -165,7 +179,9 @@ clawback_txn = transaction.AssetTransferTxn(
     index=created_asset,
     revocation_target=acct2.address,
 )
-signed_clawback_txn = clawback_txn.sign(acct1.private_key)
+signed_clawback_txn = sign_transaction_with_signer(
+    clawback_txn, AccountTransactionSigner(acct1.private_key)
+)
 txid = algod_client.send_transaction(signed_clawback_txn)
 print(f"Sent clawback transaction with txid: {txid}")
 
@@ -194,7 +210,9 @@ opt_out_txn = transaction.AssetTransferTxn(
     close_assets_to=acct1.address,
     amt=0,
 )
-signed_opt_out = opt_out_txn.sign(acct2.private_key)
+signed_opt_out = sign_transaction_with_signer(
+    opt_out_txn, AccountTransactionSigner(acct2.private_key)
+)
 txid = algod_client.send_transaction(signed_opt_out)
 print(f"Sent opt out transaction with txid: {txid}")
 
@@ -211,7 +229,9 @@ destroy_txn = transaction.AssetDestroyTxn(
     sp=sp,
     index=created_asset,
 )
-signed_destroy_txn = destroy_txn.sign(acct1.private_key)
+signed_destroy_txn = sign_transaction_with_signer(
+    destroy_txn, AccountTransactionSigner(acct1.private_key)
+)
 txid = algod_client.send_transaction(signed_destroy_txn)
 print(f"Sent destroy transaction with txid: {txid}")
 

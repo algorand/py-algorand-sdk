@@ -1,6 +1,10 @@
 import base64
 import datetime
 from algosdk import transaction
+from algosdk.atomic_transaction_composer import (
+    AccountTransactionSigner,
+    sign_transaction_with_signer,
+)
 from utils import get_algod_client, get_accounts
 
 
@@ -49,7 +53,9 @@ app_create_txn = transaction.ApplicationCreateTxn(
     local_schema=local_schema,
 )
 # sign transaction
-signed_create_txn = app_create_txn.sign(creator.private_key)
+signed_create_txn = sign_transaction_with_signer(
+    app_create_txn, AccountTransactionSigner(creator.private_key)
+)
 txid = algod_client.send_transaction(signed_create_txn)
 result = transaction.wait_for_confirmation(algod_client, txid, 4)
 app_id = result["application-index"]
@@ -58,7 +64,9 @@ print(f"Created app with id: {app_id}")
 
 # example: APP_OPTIN
 opt_in_txn = transaction.ApplicationOptInTxn(user.address, sp, app_id)
-signed_opt_in = opt_in_txn.sign(user.private_key)
+signed_opt_in = sign_transaction_with_signer(
+    opt_in_txn, AccountTransactionSigner(user.private_key)
+)
 txid = algod_client.send_transaction(signed_opt_in)
 optin_result = transaction.wait_for_confirmation(algod_client, txid, 4)
 assert optin_result["confirmed-round"] > 0
@@ -66,7 +74,9 @@ assert optin_result["confirmed-round"] > 0
 
 # example: APP_NOOP
 noop_txn = transaction.ApplicationNoOpTxn(user.address, sp, app_id)
-signed_noop = noop_txn.sign(user.private_key)
+signed_noop = sign_transaction_with_signer(
+    noop_txn, AccountTransactionSigner(user.private_key)
+)
 txid = algod_client.send_transaction(signed_noop)
 noop_result = transaction.wait_for_confirmation(algod_client, txid, 4)
 assert noop_result["confirmed-round"] > 0
@@ -96,7 +106,9 @@ app_update_txn = transaction.ApplicationUpdateTxn(
     approval_program=approval_binary,
     clear_program=clear_binary,
 )
-signed_update = app_update_txn.sign(creator.private_key)
+signed_update = sign_transaction_with_signer(
+    app_update_txn, AccountTransactionSigner(creator.private_key)
+)
 txid = algod_client.send_transaction(signed_update)
 update_result = transaction.wait_for_confirmation(algod_client, txid, 4)
 assert update_result["confirmed-round"] > 0
@@ -107,7 +119,9 @@ now = datetime.datetime.now().strftime("%H:%M:%S")
 app_args = [now.encode("utf-8")]
 call_txn = transaction.ApplicationNoOpTxn(user.address, sp, app_id, app_args)
 
-signed_call = call_txn.sign(user.private_key)
+signed_call = sign_transaction_with_signer(
+    call_txn, AccountTransactionSigner(user.private_key)
+)
 txid = algod_client.send_transaction(signed_call)
 call_result = transaction.wait_for_confirmation(algod_client, txid, 4)
 assert call_result["confirmed-round"] > 0
@@ -122,7 +136,9 @@ if "local-state-delta" in call_result:
 
 # example: APP_CLOSEOUT
 close_txn = transaction.ApplicationCloseOutTxn(user.address, sp, app_id)
-signed_close = close_txn.sign(user.private_key)
+signed_close = sign_transaction_with_signer(
+    close_txn, AccountTransactionSigner(user.private_key)
+)
 txid = algod_client.send_transaction(signed_close)
 optin_result = transaction.wait_for_confirmation(algod_client, txid, 4)
 assert optin_result["confirmed-round"] > 0
@@ -130,7 +146,9 @@ assert optin_result["confirmed-round"] > 0
 
 # example: APP_DELETE
 delete_txn = transaction.ApplicationDeleteTxn(creator.address, sp, app_id)
-signed_delete = delete_txn.sign(creator.private_key)
+signed_delete = sign_transaction_with_signer(
+    delete_txn, AccountTransactionSigner(creator.private_key)
+)
 txid = algod_client.send_transaction(signed_delete)
 optin_result = transaction.wait_for_confirmation(algod_client, txid, 4)
 assert optin_result["confirmed-round"] > 0
