@@ -3,6 +3,7 @@ import binascii
 import msgpack
 from enum import IntEnum
 from typing import cast, List, Optional, Tuple, Union
+from typing_extensions import deprecated  # type: ignore[attr-defined]
 from collections import OrderedDict
 
 from algosdk import account, constants, encoding, error, logic
@@ -128,6 +129,11 @@ class Transaction:
         txid = base64.b32encode(txid).decode()
         return encoding._undo_padding(txid)
 
+    @deprecated(
+        "Use sign_transaction_with_signer(txn,"
+        " AccountTransactionSigner(private_key)) instead.",
+        category=None,
+    )
     def sign(self, private_key):
         """
         Sign the transaction with a private key.
@@ -140,7 +146,19 @@ class Transaction:
         Returns:
             SignedTransaction: signed transaction with the signature
         """
-        sig = self.raw_sign(private_key)
+        return self._sign(private_key)
+
+    def _sign(self, private_key):
+        """
+        Sign the transaction with a private key.
+
+        Args:
+            private_key (str): the private key of the signing account
+
+        Returns:
+            SignedTransaction: signed transaction with the signature
+        """
+        sig = self._raw_sign(private_key)
         sig = base64.b64encode(sig).decode()
         authorizing_address = None
         if not (self.sender == account.address_from_private_key(private_key)):
@@ -159,7 +177,7 @@ class Transaction:
         Returns:
             SignedTransaction: signed transaction with the signature
         """
-        sig = self.raw_sign(private_key)
+        sig = self._raw_sign(private_key)
         sig = base64.b64encode(sig).decode()
         stx = SignedTransaction(self, sig)
         return stx
@@ -176,11 +194,28 @@ class Transaction:
         txn = encoding.msgpack_encode(self)
         return constants.txid_prefix + base64.b64decode(txn)
 
+    @deprecated(
+        "Use sign_transaction_with_signer(txn,"
+        " AccountTransactionSigner(private_key)).signature instead.",
+        category=None,
+    )
     def raw_sign(self, private_key):
         """
         Sign the transaction.
 
         Deprecated: use `sign_transaction_with_signer(txn, AccountTransactionSigner(private_key)).signature` instead.
+
+        Args:
+            private_key (str): the private key of the signing account
+
+        Returns:
+            bytes: signature
+        """
+        return self._raw_sign(private_key)
+
+    def _raw_sign(self, private_key):
+        """
+        Sign the transaction bytes with a private key.
 
         Args:
             private_key (str): the private key of the signing account
@@ -2406,6 +2441,10 @@ class MultisigTransaction:
         else:
             self.auth_addr = None
 
+    @deprecated(
+        "Use MultisigTransactionSigner(multisig, [private_key]) instead.",
+        category=None,
+    )
     def sign(self, private_key):
         """
         Sign the multisig transaction.
@@ -2422,6 +2461,15 @@ class MultisigTransaction:
             can use Multisig.get_multisig_account() to get a new multisig
             object with the same addresses.
         """
+        self._sign(private_key)
+
+    def _sign(self, private_key):
+        """
+        Sign the multisig transaction.
+
+        Args:
+            private_key (str): private key of signing account
+        """
         self.multisig.validate()
         index = -1
         public_key = base64.b64decode(bytes(private_key, "utf-8"))
@@ -2432,7 +2480,7 @@ class MultisigTransaction:
                 break
         if index == -1:
             raise error.InvalidSecretKeyError
-        sig = self.transaction.raw_sign(private_key)
+        sig = self.transaction._raw_sign(private_key)
         self.multisig.subsigs[index].signature = sig
 
     def get_txid(self):
@@ -2482,8 +2530,11 @@ class MultisigTransaction:
 
         Note:
             Only use this if you are given two partially signed multisig
-            transactions. To append a signature to a multisig transaction, just
-            use MultisigTransaction.sign()
+            transactions. If every key is available in one place, sign once
+            with `MultisigTransactionSigner(multisig, private_keys)` instead
+            of merging. To add one more member's signature, sign a fresh
+            partial with `MultisigTransactionSigner(multisig, [private_key])`
+            and merge it with the existing one.
         """
         ref_msig_addr = None
         ref_auth_addr = None
@@ -2859,6 +2910,10 @@ class LogicSig:
         return logic.address(self.logic)
 
     @staticmethod
+    @deprecated(
+        "Use LogicSigAccount.sign_with_signer then read .lsig.sig.",
+        category=None,
+    )
     def sign_program(program, private_key):
         """
         Deprecated: use `LogicSigAccount.sign_with_signer` then read `.lsig.sig`.
@@ -2870,6 +2925,10 @@ class LogicSig:
         return base64.b64encode(signed.signature).decode()
 
     @staticmethod
+    @deprecated(
+        "Use LogicSigAccount.sign_with_signer instead.",
+        category=None,
+    )
     def multisig_sign_program(program, private_key, multisig):
         """
         Deprecated: use `LogicSigAccount.sign_with_signer` instead.
@@ -2885,6 +2944,10 @@ class LogicSig:
         return base64.b64encode(signed.signature).decode()
 
     @staticmethod
+    @deprecated(
+        "Use LogicSigAccount.sign_with_signer instead.",
+        category=None,
+    )
     def single_sig_multisig(program, private_key, multisig):
         """
         Deprecated: use `LogicSigAccount.sign_with_signer` instead.
@@ -2902,6 +2965,10 @@ class LogicSig:
 
         return sig, index
 
+    @deprecated(
+        "Use LogicSigAccount.sign_with_signer instead.",
+        category=None,
+    )
     def sign(self, private_key, multisig=None):
         """
         Creates signature (if no pk provided) or multi signature
@@ -2932,6 +2999,10 @@ class LogicSig:
             multisig.subsigs[index].signature = base64.b64decode(sig)
             self.lmsig = multisig
 
+    @deprecated(
+        "Use LogicSigAccount.append_to_multisig_with_signer instead.",
+        category=None,
+    )
     def append_to_multisig(self, private_key):
         """
         Appends a signature to multi signature
@@ -3064,6 +3135,10 @@ class LogicSigAccount:
 
         return self.lsig.address()
 
+    @deprecated(
+        "Use sign_with_signer(signer, multisig=...) instead.",
+        category=None,
+    )
     def sign_multisig(self, multisig: Multisig, private_key: str) -> None:
         """
         Turns this LogicSigAccount into a delegated LogicSig.
@@ -3088,6 +3163,10 @@ class LogicSigAccount:
         """
         self.lsig.sign(private_key, multisig)
 
+    @deprecated(
+        "Use append_to_multisig_with_signer(signer) instead.",
+        category=None,
+    )
     def append_to_multisig(self, private_key: str) -> None:
         """
         Adds an additional signature from a member of the delegating multisig
@@ -3105,6 +3184,10 @@ class LogicSigAccount:
         """
         self.lsig.append_to_multisig(private_key)
 
+    @deprecated(
+        "Use sign_with_signer(signer) instead.",
+        category=None,
+    )
     def sign(self, private_key: str) -> None:
         """
         Turns this LogicSigAccount into a delegated LogicSig.

@@ -122,7 +122,7 @@ class AccountTransactionSigner(TransactionSigner):
         """
         stxns = []
         for i in indexes:
-            stxn = txn_group[i].sign(self.private_key)
+            stxn = txn_group[i]._sign(self.private_key)
             stxns.append(stxn)
         return stxns
 
@@ -194,7 +194,7 @@ class MultisigTransactionSigner(TransactionSigner):
         for i in indexes:
             mtxn = transaction.MultisigTransaction(txn_group[i], self.msig)
             for sk in self.sks:
-                mtxn.sign(sk)
+                mtxn._sign(sk)
             stxns.append(mtxn)
         return stxns
 
