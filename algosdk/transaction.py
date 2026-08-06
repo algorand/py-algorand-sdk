@@ -2483,6 +2483,23 @@ class MultisigTransaction:
         sig = self.transaction._raw_sign(private_key)
         self.multisig.subsigs[index].signature = sig
 
+    def append_with_signer(self, signer):
+        """
+        Add a member's signature to this multisig transaction, in place,
+        using a callback signer. The signer-based replacement for the
+        append use of `sign`.
+
+        Args:
+            signer: a callback signer exposing
+                `append_to_multisig_transaction` (for example
+                `algosdk.signer.Ed25519TransactionSigner`)
+
+        Note:
+            A new signature will replace the old if there is already a
+            signature for the address.
+        """
+        signer.append_to_multisig_transaction(self)
+
     def get_txid(self):
         """
         Get the transaction's ID.
@@ -2532,9 +2549,8 @@ class MultisigTransaction:
             Only use this if you are given two partially signed multisig
             transactions. If every key is available in one place, sign once
             with `MultisigTransactionSigner(multisig, private_keys)` instead
-            of merging. To add one more member's signature, sign a fresh
-            partial with `MultisigTransactionSigner(multisig, [private_key])`
-            and merge it with the existing one.
+            of merging. To add one more member's signature, use
+            `append_with_signer(signer)`.
         """
         ref_msig_addr = None
         ref_auth_addr = None

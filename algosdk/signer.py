@@ -10,7 +10,8 @@ Falcon-1024 specialization `Falcon1024TransactionSigner`) are all
 `TransactionSigner`s (so they plug straight into an atomic transaction
 composer) and delegate a logic signature in place via `sign_logicsig`.
 `Ed25519TransactionSigner` additionally signs messages ("MX") and program
-data; `Ed25519MultisigTransactionSigner` fills a multisig from several
+data and appends member signatures to multisig transactions;
+`Ed25519MultisigTransactionSigner` fills a multisig from several
 ed25519 callback signers.
 
 For signing a single transaction, pair any of these with
@@ -186,6 +187,33 @@ class Ed25519TransactionSigner(TransactionSigner):
             + lsig_account.lsig.logic
         )
         lmsig.subsigs[index].signature = self.signer(to_sign)
+
+    def append_to_multisig_transaction(
+        self, mtxn: "transaction.MultisigTransaction"
+    ) -> None:
+        """
+        Add this signer's subsig to a MultisigTransaction, in place.
+
+        A new signature will replace the old if this member has already
+        signed. This is the callback counterpart of the append use of
+        `MultisigTransaction.sign`.
+
+        Args:
+            mtxn (MultisigTransaction): the multisig transaction; mutated
+
+        Raises:
+            InvalidSecretKeyError: if the transaction carries no multisig, or
+                this signer's public key is not a member of the multisig
+        """
+        if mtxn.multisig is None:
+            raise error.InvalidSecretKeyError
+        # Fail fast on a malformed multisig, matching the secret-key path
+        # (MultisigTransaction.sign validates before signing).
+        mtxn.multisig.validate()
+        index = _subsig_index(mtxn.multisig, self.public_key)
+        mtxn.multisig.subsigs[index].signature = self.signer(
+            mtxn.transaction.bytes_to_sign()
+        )
 
 
 class Ed25519MultisigTransactionSigner(TransactionSigner):

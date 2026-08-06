@@ -22,7 +22,12 @@ from algosdk.signer import (
     Ed25519TransactionSigner,
     Falcon1024TransactionSigner,
 )
-from algosdk.transaction import LogicSigAccount, Multisig, PaymentTxn
+from algosdk.transaction import (
+    LogicSigAccount,
+    Multisig,
+    MultisigTransaction,
+    PaymentTxn,
+)
 
 GH = base64.b64encode(bytes(32)).decode()
 PROGRAM = bytes([0x01, 0x20, 0x01, 0x01, 0x22])  # int 1
@@ -56,6 +61,7 @@ class TestEd25519TransactionSigner(unittest.TestCase):
             "sign_program_data",
             "sign_logicsig",
             "append_to_logicsig_multisig",
+            "append_to_multisig_transaction",
         ):
             self.assertTrue(callable(getattr(signer, method)))
 
@@ -208,6 +214,52 @@ class TestEd25519TransactionSigner(unittest.TestCase):
             Ed25519TransactionSigner(
                 encoding.decode_address(outsider_addr), _raw(outsider_sk)
             ).append_to_logicsig_multisig(la)
+
+    def test_append_to_multisig_transaction_equivalence(self):
+        sk1, a1 = account.generate_account()
+        sk2, a2 = account.generate_account()
+        _, a3 = account.generate_account()
+        msig = Multisig(1, 2, [a1, a2, a3])
+        txn = PaymentTxn(msig.address(), _sp(), a1, 1000)
+        # secret-key reference: sign then append via the deprecated path
+        ref = MultisigTransaction(txn, msig.get_multisig_account())
+        ref.sign(sk1)
+        ref.sign(sk2)
+        # callback path: first member via the signer method, second member
+        # via the MultisigTransaction.append_with_signer delegate
+        got = MultisigTransaction(txn, msig.get_multisig_account())
+        Ed25519TransactionSigner(
+            encoding.decode_address(a1), _raw(sk1)
+        ).append_to_multisig_transaction(got)
+        got.append_with_signer(
+            Ed25519TransactionSigner(encoding.decode_address(a2), _raw(sk2))
+        )
+        self.assertEqual(
+            encoding.msgpack_encode(got), encoding.msgpack_encode(ref)
+        )
+
+    def test_append_to_multisig_transaction_rejects_non_member(self):
+        _, a1 = account.generate_account()
+        _, a2 = account.generate_account()
+        outsider_sk, outsider_addr = account.generate_account()
+        msig = Multisig(1, 2, [a1, a2])
+        txn = PaymentTxn(msig.address(), _sp(), a1, 1000)
+        mtxn = MultisigTransaction(txn, msig.get_multisig_account())
+        with self.assertRaises(error.InvalidSecretKeyError):
+            Ed25519TransactionSigner(
+                encoding.decode_address(outsider_addr), _raw(outsider_sk)
+            ).append_to_multisig_transaction(mtxn)
+
+    def test_append_to_multisig_transaction_rejects_malformed_multisig(self):
+        # a malformed multisig fails fast, matching the secret-key path
+        sk1, a1 = account.generate_account()
+        bad = Multisig(1, 2, [a1])  # threshold 2 with a single member
+        txn = PaymentTxn(a1, _sp(), a1, 1000)
+        mtxn = MultisigTransaction(txn, bad.get_multisig_account())
+        with self.assertRaises(error.InvalidThresholdError):
+            Ed25519TransactionSigner(
+                encoding.decode_address(a1), _raw(sk1)
+            ).append_to_multisig_transaction(mtxn)
 
 
 class TestEd25519MultisigTransactionSigner(unittest.TestCase):
