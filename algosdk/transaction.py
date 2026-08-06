@@ -131,8 +131,8 @@ class Transaction:
 
     @deprecated(
         "Use sign_transaction_with_signer(txn,"
-        " AccountTransactionSigner(private_key)) instead.",
-        category=None,
+        " AccountTransactionSigner(private_key)) instead."
+        " Will be removed in a future major release.",
     )
     def sign(self, private_key):
         """
@@ -196,8 +196,8 @@ class Transaction:
 
     @deprecated(
         "Use sign_transaction_with_signer(txn,"
-        " AccountTransactionSigner(private_key)).signature instead.",
-        category=None,
+        " AccountTransactionSigner(private_key)).signature instead."
+        " Will be removed in a future major release.",
     )
     def raw_sign(self, private_key):
         """
@@ -2442,14 +2442,17 @@ class MultisigTransaction:
             self.auth_addr = None
 
     @deprecated(
-        "Use MultisigTransactionSigner(multisig, [private_key]) instead.",
-        category=None,
+        "Use MultisigTransactionSigner(multisig, [private_key]) to sign, or"
+        " append_with_signer(signer) to add a signature to an existing"
+        " MultisigTransaction. Will be removed in a future major release.",
     )
     def sign(self, private_key):
         """
         Sign the multisig transaction.
 
-        Deprecated: use `MultisigTransactionSigner(multisig, [private_key])` instead.
+        Deprecated: use `MultisigTransactionSigner(multisig, [private_key])`
+        to sign, or `append_with_signer(signer)` to add a signature to an
+        existing MultisigTransaction.
 
         Args:
             private_key (str): private key of signing account
@@ -2927,13 +2930,18 @@ class LogicSig:
 
     @staticmethod
     @deprecated(
-        "Use LogicSigAccount.sign_with_signer then read .lsig.sig.",
-        category=None,
+        "Use LogicSigAccount.sign_with_signer then read .lsig.sig."
+        " Will be removed in a future major release.",
     )
     def sign_program(program, private_key):
         """
         Deprecated: use `LogicSigAccount.sign_with_signer` then read `.lsig.sig`.
         """
+        return LogicSig._sign_program(program, private_key)
+
+    @staticmethod
+    def _sign_program(program, private_key):
+        """Sign the program bytes with a private key."""
         private_key = base64.b64decode(private_key)
         signing_key = SigningKey(private_key[: constants.key_len_bytes])
         to_sign = constants.logic_prefix + program
@@ -2942,13 +2950,18 @@ class LogicSig:
 
     @staticmethod
     @deprecated(
-        "Use LogicSigAccount.sign_with_signer instead.",
-        category=None,
+        "Use LogicSigAccount.sign_with_signer instead."
+        " Will be removed in a future major release.",
     )
     def multisig_sign_program(program, private_key, multisig):
         """
         Deprecated: use `LogicSigAccount.sign_with_signer` instead.
         """
+        return LogicSig._multisig_sign_program(program, private_key, multisig)
+
+    @staticmethod
+    def _multisig_sign_program(program, private_key, multisig):
+        """Sign the program bytes for a multisig member."""
         private_key = base64.b64decode(private_key)
         signing_key = SigningKey(private_key[: constants.key_len_bytes])
         to_sign = (
@@ -2961,13 +2974,18 @@ class LogicSig:
 
     @staticmethod
     @deprecated(
-        "Use LogicSigAccount.sign_with_signer instead.",
-        category=None,
+        "Use LogicSigAccount.sign_with_signer instead."
+        " Will be removed in a future major release.",
     )
     def single_sig_multisig(program, private_key, multisig):
         """
         Deprecated: use `LogicSigAccount.sign_with_signer` instead.
         """
+        return LogicSig._single_sig_multisig(program, private_key, multisig)
+
+    @staticmethod
+    def _single_sig_multisig(program, private_key, multisig):
+        """Sign the program bytes for the matching multisig member."""
         index = -1
         public_key = base64.b64decode(bytes(private_key, "utf-8"))
         public_key = public_key[constants.key_len_bytes :]
@@ -2977,13 +2995,13 @@ class LogicSig:
                 break
         if index == -1:
             raise error.InvalidSecretKeyError
-        sig = LogicSig.multisig_sign_program(program, private_key, multisig)
+        sig = LogicSig._multisig_sign_program(program, private_key, multisig)
 
         return sig, index
 
     @deprecated(
-        "Use LogicSigAccount.sign_with_signer instead.",
-        category=None,
+        "Use LogicSigAccount.sign_with_signer instead."
+        " Will be removed in a future major release.",
     )
     def sign(self, private_key, multisig=None):
         """
@@ -3002,22 +3020,33 @@ class LogicSig:
             LogicSigOverspecifiedSignature: if the opposite signature type has
                 already been provided
         """
+        self._sign(private_key, multisig)
+
+    def _sign(self, private_key, multisig=None):
+        """
+        Creates signature (if no pk provided) or multi signature
+
+        Args:
+            private_key (str): private key of signing account
+            multisig (Multisig): optional multisig account without signatures
+                to sign with
+        """
         if not multisig:
             if self.msig or self.lmsig or self.pqsig:
                 raise error.LogicSigOverspecifiedSignature
-            self.sig = LogicSig.sign_program(self.logic, private_key)
+            self.sig = LogicSig._sign_program(self.logic, private_key)
         else:
             if self.sig or self.pqsig:
                 raise error.LogicSigOverspecifiedSignature
-            sig, index = LogicSig.single_sig_multisig(
+            sig, index = LogicSig._single_sig_multisig(
                 self.logic, private_key, multisig
             )
             multisig.subsigs[index].signature = base64.b64decode(sig)
             self.lmsig = multisig
 
     @deprecated(
-        "Use LogicSigAccount.append_to_multisig_with_signer instead.",
-        category=None,
+        "Use LogicSigAccount.append_to_multisig_with_signer instead."
+        " Will be removed in a future major release.",
     )
     def append_to_multisig(self, private_key):
         """
@@ -3032,9 +3061,18 @@ class LogicSig:
             InvalidSecretKeyError: if no matching private key in multisig\
                 object
         """
+        self._append_to_multisig(private_key)
+
+    def _append_to_multisig(self, private_key):
+        """
+        Appends a signature to multi signature
+
+        Args:
+            private_key (str): private key of signing account
+        """
         if self.lmsig is None:
             raise error.InvalidSecretKeyError
-        sig, index = LogicSig.single_sig_multisig(
+        sig, index = LogicSig._single_sig_multisig(
             self.logic, private_key, self.lmsig
         )
         self.lmsig.subsigs[index].signature = base64.b64decode(sig)
@@ -3152,8 +3190,8 @@ class LogicSigAccount:
         return self.lsig.address()
 
     @deprecated(
-        "Use sign_with_signer(signer, multisig=...) instead.",
-        category=None,
+        "Use sign_with_signer(signer, multisig=...) instead."
+        " Will be removed in a future major release.",
     )
     def sign_multisig(self, multisig: Multisig, private_key: str) -> None:
         """
@@ -3177,11 +3215,11 @@ class LogicSigAccount:
             LogicSigOverspecifiedSignature: if this LogicSigAccount has already
                 been signed with a single private key.
         """
-        self.lsig.sign(private_key, multisig)
+        self.lsig._sign(private_key, multisig)
 
     @deprecated(
-        "Use append_to_multisig_with_signer(signer) instead.",
-        category=None,
+        "Use append_to_multisig_with_signer(signer) instead."
+        " Will be removed in a future major release.",
     )
     def append_to_multisig(self, private_key: str) -> None:
         """
@@ -3198,11 +3236,11 @@ class LogicSigAccount:
             InvalidSecretKeyError: if no matching private key in multisig
                 object
         """
-        self.lsig.append_to_multisig(private_key)
+        self.lsig._append_to_multisig(private_key)
 
     @deprecated(
-        "Use sign_with_signer(signer) instead.",
-        category=None,
+        "Use sign_with_signer(signer) instead."
+        " Will be removed in a future major release.",
     )
     def sign(self, private_key: str) -> None:
         """
@@ -3221,7 +3259,7 @@ class LogicSigAccount:
             LogicSigOverspecifiedSignature: if this LogicSigAccount has already
                 been signed by a multisig account.
         """
-        self.lsig.sign(private_key)
+        self.lsig._sign(private_key)
         public_key = base64.b64decode(bytes(private_key, "utf-8"))
         public_key = public_key[constants.key_len_bytes :]
         self.sigkey = public_key
