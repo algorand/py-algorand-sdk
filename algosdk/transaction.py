@@ -2864,6 +2864,11 @@ class LogicSig:
             + int(self.pqsig is not None)
         )
 
+    @deprecated(
+        "This method does not perform full verification and should not be"
+        " fully trusted on its own: it does not evaluate the program, and it"
+        " does not have the ability to validate post-quantum signatures."
+    )
     def verify(self, public_key):
         """
         Verifies LogicSig against the transaction's sender address
@@ -2876,6 +2881,10 @@ class LogicSig:
                 the logic hash or the signature is valid against the sender\
                 address), false otherwise
         """
+        return self._verify(public_key)
+
+    def _verify(self, public_key):
+        """Implementation of `verify`, also used internally by the SDK."""
         try:
             self._sanity_check_program(self.logic)
         except error.InvalidProgram:
@@ -2894,10 +2903,14 @@ class LogicSig:
                 return False
 
         if self.msig:
+            if public_key != self.msig.address_bytes():
+                return False
             to_sign = constants.logic_prefix + self.logic
             return self.msig.verify(to_sign)
 
         if self.lmsig:
+            if public_key != self.lmsig.address_bytes():
+                return False
             to_sign = (
                 constants.multisig_logic_prefix
                 + self.lmsig.address_bytes()
@@ -2906,13 +2919,10 @@ class LogicSig:
             return self.lmsig.verify(to_sign)
 
         if self.pqsig:
-            # There is no local Falcon verification; consensus verifies the
-            # signature. Here we only confirm the delegating address matches
-            # the address derived from the post-quantum public key.
-            addr, _ = encoding.address_from_pq_key(
-                self.pqsig.scheme, self.pqsig.public_key
-            )
-            return public_key == encoding.decode_address(addr)
+            # There is no local Falcon verification, so this method has no way
+            # to validate a post-quantum signature and must not report
+            # success; the network is what verifies the signature.
+            return False
 
         # Non-delegated
         to_sign = constants.logic_prefix + self.logic
@@ -3143,6 +3153,11 @@ class LogicSigAccount:
             or self.lsig.pqsig
         )
 
+    @deprecated(
+        "This method does not perform full verification and should not be"
+        " fully trusted on its own: it does not evaluate the program, and it"
+        " does not have the ability to validate post-quantum signatures."
+    )
     def verify(self) -> bool:
         """
         Verifies the LogicSig's program and signatures.
@@ -3152,7 +3167,7 @@ class LogicSigAccount:
                 valid.
         """
         addr = self.address()
-        return self.lsig.verify(encoding.decode_address(addr))
+        return self.lsig._verify(encoding.decode_address(addr))
 
     def sig_count(self) -> int:
         """
@@ -3176,7 +3191,24 @@ class LogicSigAccount:
         if self.sig_count() > 1:
             raise error.LogicSigOverspecifiedSignature
 
-        if self.lsig.sig or self.lsig.pqsig:
+        if self.lsig.pqsig:
+            # A PQ signature carries the scheme, salt and public key of the
+            # delegating account, so derive the address rather than trusting
+            # `sigkey`. Also raises when the signature is not
+            # self-consistent.
+            pqsig = self.lsig.pqsig
+            addr, salt = encoding.address_from_pq_key(
+                pqsig.scheme, pqsig.public_key
+            )
+            if salt != pqsig.salt:
+                raise error.InvalidPQSaltError(salt, pqsig.salt)
+            if self.sigkey and self.sigkey != encoding.decode_address(addr):
+                raise error.LogicSigPQSigningKeyMismatchError(
+                    addr, encoding.encode_address(self.sigkey)
+                )
+            return addr
+
+        if self.lsig.sig:
             if not self.sigkey:
                 raise error.LogicSigSigningKeyMissing
             return encoding.encode_address(self.sigkey)
@@ -3351,7 +3383,7 @@ class LogicSigTransaction:
             addr_to_verify = self.transaction.sender
 
         public_key = encoding.decode_address(addr_to_verify)
-        return self.lsig.verify(public_key)
+        return self.lsig._verify(public_key)
 
     def get_txid(self):
         """

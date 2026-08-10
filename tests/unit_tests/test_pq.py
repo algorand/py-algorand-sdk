@@ -330,11 +330,39 @@ class TestPQDelegatedLogicSig(unittest.TestCase):
         program = base64.b64decode(fx["signer"]["lsig"])
         la = LogicSigAccount(program)
         Falcon1024TransactionSigner(pk, lambda d: sig).sign_logicsig(la)
-        # verify() re-derives the delegating address from the PQ public key
-        # and confirms it matches
-        self.assertTrue(la.verify())
-        # a mismatched delegating address must not verify
+        # This SDK cannot validate a PQ signature, so verify() must not claim
+        # the delegation is good.
+        self.assertFalse(la.verify())
+        # a mismatched delegating address must not verify either
         self.assertFalse(la.lsig.verify(b"\x00" * 32))
+
+    def test_pq_logicsig_address_derives_from_pqsig(self):
+        fx = _load("pqDelegatedPayment.json")
+        pk = base64.b64decode(fx["signer"]["pqSigner"]["pk"])
+        sig = base64.b64decode(fx["stxn"]["lsig"]["pqsig"]["sig"])
+        program = base64.b64decode(fx["signer"]["lsig"])
+        derived_addr, salt = encoding.address_from_pq_key(
+            constants.falcon_1024_scheme, pk
+        )
+
+        # The address comes from the pqsig itself, so sigkey is not required.
+        la = LogicSigAccount(program)
+        la.lsig.pqsig = PQSig(constants.falcon_1024_scheme, salt, pk, sig)
+        self.assertEqual(la.address(), derived_addr)
+        self.assertFalse(la.verify())
+
+        # A sigkey that does not match the pqsig-derived address must raise.
+        la.sigkey = b"\x07" * 32
+        with self.assertRaises(error.LogicSigPQSigningKeyMismatchError):
+            la.address()
+
+        # A non-canonical salt must raise.
+        lb = LogicSigAccount(program)
+        lb.lsig.pqsig = PQSig(
+            constants.falcon_1024_scheme, (salt + 1) % 256, pk, sig
+        )
+        with self.assertRaises(error.InvalidPQSaltError):
+            lb.address()
 
     def test_decoding_tolerates_an_underivable_pq_address(self):
         # decoding does not derive the delegating address, so a scheme that

@@ -250,3 +250,22 @@ class PQMultisigUnsupportedError(Exception):
         Exception.__init__(
             self, "post-quantum signatures do not support multisig"
         )
+
+
+class InvalidPQSaltError(Exception):
+    def __init__(self, expected, got):
+        Exception.__init__(
+            self,
+            "invalid post-quantum signature salt: expected the canonical"
+            " salt {}, got {}".format(expected, got),
+        )
+
+
+class LogicSigPQSigningKeyMismatchError(Exception):
+    def __init__(self, derived, sigkey):
+        Exception.__init__(
+            self,
+            "signing key for the delegated account does not match the"
+            " post-quantum signature: the signature authorizes {}, but"
+            " sigkey is {}".format(derived, sigkey),
+        )
