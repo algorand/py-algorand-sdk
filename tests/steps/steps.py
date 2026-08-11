@@ -3,12 +3,13 @@ import random
 import time
 
 import parse
-from behave import given, register_type, then, when
+from behave import given, register_type, step, then, when
 from nacl.signing import SigningKey
 
 from algosdk import (
     account,
     auction,
+    constants,
     encoding,
     kmd,
     logic,
@@ -836,7 +837,7 @@ def set_from_to(context, from_addr):
     context.txn.sender = from_addr
 
 
-@when("I add a rekeyTo field with the private key algorand address")
+@step("I add a rekeyTo field with the private key algorand address")
 def add_rekey_to_sk(context):
     context.txn.rekey_to = account.address_from_private_key(context.sk)
 
@@ -953,3 +954,91 @@ def check_error_if_matching(context, err_msg: str = None):
         assert err_msg in context.sanity_check_err
     else:
         assert len(context.sanity_check_err) == 0
+
+
+def _falcon1024_signer(seed):
+    # temp-falcon is only needed by the post-quantum scenarios, so the
+    # import is deferred to keep this module importable without it
+    from temp_falcon import falcon1024
+
+    from algosdk.signer import Falcon1024TransactionSigner
+
+    falcon = falcon1024.Signer.generate(seed)
+    return Falcon1024TransactionSigner(falcon.public_key, falcon.sign)
+
+
+@given("I get the default falcon1024 account")
+def default_falcon1024_account(context):
+    # the default falcon1024 account is derived from the 32-byte counting
+    # seed; the offline feature goldens are signed with it
+    context.falcon = _falcon1024_signer(bytes(range(32)))
+
+
+@given('mnemonic for falcon1024 private key "{mn}"')
+def falcon1024_mn(context, mn):
+    seed = mnemonic.to_pq_seed(mn, constants.falcon_1024_scheme)
+    context.falcon = _falcon1024_signer(seed)
+
+
+@given("I generate and fund a falcon1024 key")
+def generate_and_fund_falcon1024(context):
+    from algosdk.atomic_transaction_composer import (
+        AccountTransactionSigner,
+        sign_transaction_with_signer,
+    )
+
+    context.falcon = _falcon1024_signer(None)
+    params = context.app_acl.suggested_params()
+    sk = context.wallet.export_key(context.accounts[0])
+    txn = transaction.PaymentTxn(
+        context.accounts[0], params, context.falcon.address, 5_000_000
+    )
+    stxn = sign_transaction_with_signer(txn, AccountTransactionSigner(sk))
+    txid = context.app_acl.send_transaction(stxn)
+    transaction.wait_for_confirmation(context.app_acl, txid, 10)
+
+
+@given(
+    'I create the default falcon1024 transaction with parameters {amt} "{note}"'
+)
+def default_falcon1024_txn(context, amt, note):
+    # a flat fee large enough to cover the oversized falcon signature
+    params = context.app_acl.suggested_params()
+    params.flat_fee = True
+    params.fee = 3000
+    if note == "none":
+        note = None
+    else:
+        note = base64.b64decode(note)
+    context.txn = transaction.PaymentTxn(
+        context.falcon.address,
+        params,
+        context.accounts[1],
+        int(amt),
+        note=note,
+    )
+    context.pk = context.falcon.address
+
+
+@when("I create the falcon1024 payment transaction")
+def create_falcon1024_paytxn(context):
+    context.params.flat_fee = True
+    context.txn = transaction.PaymentTxn(
+        context.falcon.address,
+        context.params,
+        context.to,
+        context.amt,
+        context.close,
+        context.note,
+    )
+
+
+@given("I add a fee to cover falcon1024 signatures")
+def add_falcon1024_fee(context):
+    # bump to a flat fee large enough to cover the oversized falcon signature
+    context.txn.fee = 3000
+
+
+@step("I sign the falcon1024 transaction with the private key")
+def sign_falcon1024(context):
+    context.stx = context.falcon.sign_transactions([context.txn], [0])[0]
