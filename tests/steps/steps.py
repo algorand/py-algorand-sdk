@@ -35,6 +35,40 @@ kmd_port = 60001
 
 DEV_ACCOUNT_INITIAL_MICROALGOS: int = 100_000_000
 
+# The rekey scenarios only send zero-amount transactions, so their throwaway
+# account just needs min balance plus a few (falcon-sized) fees.
+REKEY_FUNDING_MICROALGOS: int = 1_000_000
+
+# Each falcon1024 scenario funds a brand new account that is never swept
+# back, so keep the amount just large enough for min balance + the largest
+# amount sent by those scenarios + fees.
+FALCON_FUNDING_MICROALGOS: int = 5_000_000
+
+
+# Order the wallet's keys so the accounts steps reach for by index are the
+# ones that can actually pay.
+#
+# Steps treat `context.accounts[0]` (and [1]) as well-funded genesis accounts,
+# but scenarios that generate keys add them to the same kmd wallet and never
+# sweep them back, and kmd does not list keys in insertion order. Without
+# this, index 0 eventually lands on a modestly funded throwaway account and
+# the sends overspend. Accounts that a rekey scenario pointed at another
+# authorizer sort last: kmd can no longer sign for them at all.
+def order_wallet_accounts(context):
+    if not hasattr(context, "app_acl") or not hasattr(context, "accounts"):
+        return
+
+    def usable_balance(address):
+        info = context.app_acl.account_info(address)
+        auth_addr = info.get("auth-addr")
+        if auth_addr is not None and auth_addr != address:
+            return -1
+        return info["amount"]
+
+    context.accounts = sorted(
+        context.accounts, key=usable_balance, reverse=True
+    )
+
 
 def wait_for_algod_transaction_processing_to_complete():
     """
@@ -48,12 +82,23 @@ def wait_for_algod_transaction_processing_to_complete():
 
 
 # Initialize a transient account in dev mode to make payment transactions.
-def initialize_account(context, account):
+def initialize_account(
+    context, account, amount=DEV_ACCOUNT_INITIAL_MICROALGOS
+):
+    sender = context.accounts[0]
+    params = context.app_acl.suggested_params()
+    balance = context.app_acl.account_info(sender)["amount"]
+    required = amount + max(params.min_fee, constants.min_txn_fee)
+    assert (
+        balance >= required
+    ), "{} cannot fund {} microAlgos, it holds {}".format(
+        sender, required, balance
+    )
     payment = transaction.PaymentTxn(
-        sender=context.accounts[0],
-        sp=context.app_acl.suggested_params(),
+        sender=sender,
+        sp=params,
         receiver=account,
-        amt=DEV_ACCOUNT_INITIAL_MICROALGOS,
+        amt=amount,
     )
     signed_payment = context.wallet.sign_transaction(payment)
     context.app_acl.send_transaction(signed_payment)
@@ -309,7 +354,7 @@ def gen_key_kmd(context):
 @when("I generate a key using kmd for rekeying and fund it")
 def gen_rekey_kmd(context):
     context.rekey = context.wallet.generate_key()
-    initialize_account(context, context.rekey)
+    initialize_account(context, context.rekey, REKEY_FUNDING_MICROALGOS)
 
 
 @then("the key should be in the wallet")
@@ -362,6 +407,7 @@ def wallet_info(context):
     )
     context.wallet_id = context.wallet.id
     context.accounts = context.wallet.list_keys()
+    order_wallet_accounts(context)
 
 
 def default_txn_with_addr(context, amt, note, sender_addr):
@@ -991,7 +1037,10 @@ def generate_and_fund_falcon1024(context):
     params = context.app_acl.suggested_params()
     sk = context.wallet.export_key(context.accounts[0])
     txn = transaction.PaymentTxn(
-        context.accounts[0], params, context.falcon.address, 5_000_000
+        context.accounts[0],
+        params,
+        context.falcon.address,
+        FALCON_FUNDING_MICROALGOS,
     )
     stxn = sign_transaction_with_signer(txn, AccountTransactionSigner(sk))
     txid = context.app_acl.send_transaction(stxn)

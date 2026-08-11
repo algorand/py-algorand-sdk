@@ -27,6 +27,7 @@ from algosdk.v2client.models import (
     SimulateTraceConfig,
 )
 from tests.steps.steps import algod_port, indexer_port
+from tests.steps.steps import order_wallet_accounts
 from tests.steps.steps import token as daemon_token
 
 
@@ -1157,12 +1158,14 @@ def compare_to_original(context):
 def algod_v2_client_at_host_port_and_token(context, host, port, token):
     algod_address = "http://" + str(host) + ":" + str(port)
     context.app_acl = algod.AlgodClient(token, algod_address)
+    order_wallet_accounts(context)
 
 
 @given("an algod v2 client")
 def algod_v2_client(context):
     algod_address = "http://localhost" + ":" + str(algod_port)
     context.app_acl = algod.AlgodClient(daemon_token, algod_address)
+    order_wallet_accounts(context)
 
 
 @given("an indexer v2 client")
