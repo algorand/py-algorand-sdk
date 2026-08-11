@@ -154,7 +154,27 @@ def get_accounts(
     finally:
         kmd.release_wallet_handle(wallet_handle)
 
-    return kmd_accounts
+    # Keep only well funded accounts kmd can still sign for, so examples can
+    # fund from any of them no matter how they index into the list. Example
+    # scripts add throwaway keys to this wallet and never sweep them back,
+    # and kmd does not list keys in insertion order, so without this a
+    # drained throwaway account can end up wherever an example looks for a
+    # dispenser. Accounts rekeyed to another authorizer are dropped too:
+    # their own key can no longer sign for them. Genesis accounts hold
+    # several orders of magnitude more than any throwaway ever receives, so
+    # the threshold only has to sit between the two.
+    algod_client = get_algod_client()
+    min_balance = 1_000_000_000_000
+
+    def is_funded_and_signable(acct: SandboxAccount) -> bool:
+        info = algod_client.account_info(acct.address)
+        auth_addr = info.get("auth-addr")
+        if auth_addr is not None and auth_addr != acct.address:
+            return False
+        return info["amount"] >= min_balance
+
+    funded = [acct for acct in kmd_accounts if is_funded_and_signable(acct)]
+    return funded or kmd_accounts
 
 
 def deploy_calculator_app(
