@@ -9,3 +9,5 @@ Assuming a sandboxed node is running locally, any example can be run with the fo
     python3 <example_name>.py
 ```
 
+The post-quantum example, `falcon.py`, has two extra requirements: the Falcon-1024 implementation from the `temp-falcon` package (`pip install temp-falcon`, not a dependency of the SDK), and a node running the `future` consensus version. It skips itself when either is missing.
+
