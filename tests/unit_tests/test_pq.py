@@ -301,6 +301,47 @@ class TestPQDelegatedLogicSig(unittest.TestCase):
         self.assertEqual(stxn.auth_addr, fx["stxn"]["sgnr"])
         self.assertEqual(encoding.msgpack_decode(blob), stxn)
 
+    def test_bare_logicsig_derives_delegator_from_pqsig(self):
+        # Unlike an ed25519 sig, a pqsig identifies its own delegating
+        # account, so a bare LogicSig can authorize a transaction whose sender
+        # was rekeyed to that account. sgnr must name the delegating account,
+        # not the sender.
+        fx = _load("pqRekeyedDelegatedPayment.json")
+        pk = base64.b64decode(fx["signer"]["pqSigner"]["pk"])
+        program = base64.b64decode(fx["signer"]["lsig"])
+        sig = base64.b64decode(fx["stxn"]["lsig"]["pqsig"]["sig"])
+        txn = encoding.msgpack_decode(fx["txnBlob"])
+
+        lsig_acct = LogicSigAccount(program)
+        Falcon1024AlgorandSigner(pk, lambda d: sig).sign_logicsig(lsig_acct)
+        self.assertNotEqual(txn.sender, lsig_acct.address())
+
+        # Passing the bare LogicSig must produce the same blob as passing the
+        # LogicSigAccount, which knows its delegating account via sigkey.
+        stxn = transaction.LogicSigTransaction(txn, lsig_acct.lsig)
+        self.assertEqual(stxn.auth_addr, fx["stxn"]["sgnr"])
+        self.assertEqual(
+            base64.b64decode(encoding.msgpack_encode(stxn)),
+            base64.b64decode(fx["stxnBlob"]),
+        )
+
+    def test_bare_logicsig_rejects_non_canonical_salt(self):
+        fx = _load("pqDelegatedPayment.json")
+        pk = base64.b64decode(fx["signer"]["pqSigner"]["pk"])
+        program = base64.b64decode(fx["signer"]["lsig"])
+        sig = base64.b64decode(fx["stxn"]["lsig"]["pqsig"]["sig"])
+        txn = encoding.msgpack_decode(fx["txnBlob"])
+        _, salt = encoding.address_from_pq_key(
+            constants.falcon_1024_scheme, pk
+        )
+
+        lsig = transaction.LogicSig(program)
+        lsig.pqsig = PQSig(
+            constants.falcon_1024_scheme, (salt + 1) % 256, pk, sig
+        )
+        with self.assertRaises(error.InvalidPQSaltError):
+            transaction.LogicSigTransaction(txn, lsig)
+
     def test_pq_lsig_is_delegated_single_sig(self):
         fx = _load("pqDelegatedPayment.json")
         pk = base64.b64decode(fx["signer"]["pqSigner"]["pk"])

@@ -3196,12 +3196,7 @@ class LogicSigAccount:
             # delegating account, so derive the address rather than trusting
             # `sigkey`. Also raises when the signature is not
             # self-consistent.
-            pqsig = self.lsig.pqsig
-            addr, salt = encoding.address_from_pq_key(
-                pqsig.scheme, pqsig.public_key
-            )
-            if salt != pqsig.salt:
-                raise error.InvalidPQSaltError(salt, pqsig.salt)
+            addr = encoding.address_from_pq_sig(self.lsig.pqsig)
             if self.sigkey and self.sigkey != encoding.decode_address(addr):
                 raise error.LogicSigPQSigningKeyMismatchError(
                     addr, encoding.encode_address(self.sigkey)
@@ -3351,11 +3346,17 @@ class LogicSigTransaction:
             lsigAddr = lsig.address()
             self.lsig = lsig.lsig
         else:
-            if lsig.sig or lsig.pqsig:
-                # For a LogicSig with a non-multisig delegating account, we
-                # cannot derive the address of that account from only its
-                # signature, so assume the delegating account is the sender. If
-                # that's not the case, verify will fail.
+            if lsig.pqsig:
+                # A post-quantum signature carries the scheme, salt and public
+                # key of the delegating account, so its address is derivable.
+                # This is what lets a bare PQ-delegated LogicSig authorize a
+                # transaction whose sender was rekeyed to that account.
+                lsigAddr = encoding.address_from_pq_sig(lsig.pqsig)
+            elif lsig.sig:
+                # For an ed25519 LogicSig with a non-multisig delegating
+                # account, we cannot derive the address of that account from
+                # only its signature, so assume the delegating account is the
+                # sender. If that's not the case, verify will fail.
                 lsigAddr = transaction.sender
             elif lsig.msig:
                 lsigAddr = lsig.msig.address()
@@ -3413,7 +3414,12 @@ class LogicSigTransaction:
         if "sgnr" in d:
             auth_addr = encoding.encode_address(d["sgnr"])
         txn = Transaction.undictify(d["txn"])
-        lstx = LogicSigTransaction(txn, lsig)
+        # The blob states the authorizing address, so take it as given instead
+        # of deriving it. Decoding stays tolerant of a LogicSig no address can
+        # be derived from, so that it can still be inspected.
+        lstx = LogicSigTransaction.__new__(LogicSigTransaction)
+        lstx.transaction = txn
+        lstx.lsig = cast(LogicSig, lsig)
         lstx.auth_addr = auth_addr
         return lstx
 

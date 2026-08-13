@@ -235,6 +235,34 @@ def address_from_pq_key(scheme: bytes, public_key: bytes) -> Tuple[str, int]:
     raise error.NoCanonicalSaltError()
 
 
+def address_from_pq_sig(pqsig: "transaction.PQSig") -> str:
+    """
+    Derive the account address that a post-quantum signature authorizes.
+
+    Unlike an ed25519 signature, a post-quantum signature carries the scheme,
+    salt and public key of the signing account, so the address it authorizes
+    is fully determined by the signature and does not have to be supplied out
+    of band.
+
+    This also validates the signature's self-consistency: the salt must be the
+    canonical one for the given scheme and public key, which is what the
+    network requires.
+
+    Args:
+        pqsig (PQSig): the post-quantum signature to derive the address from
+
+    Returns:
+        str: the address of the account the signature authorizes
+
+    Raises:
+        InvalidPQSaltError: if the salt is not the canonical one
+    """
+    address, salt = address_from_pq_key(pqsig.scheme, pqsig.public_key)
+    if salt != pqsig.salt:
+        raise error.InvalidPQSaltError(salt, pqsig.salt)
+    return address
+
+
 def encode_as_bytes(
     e: Union[bytes, bytearray, str, int]
 ) -> Union[bytes, bytearray]:
