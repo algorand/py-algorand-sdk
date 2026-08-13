@@ -7,6 +7,7 @@ import unittest
 import msgpack
 
 from algosdk import constants, encoding, error, mnemonic, transaction
+from algosdk.ed25519_check import is_ed25519_point
 from algosdk.atomic_transaction_composer import LogicSigTransactionSigner
 from algosdk.signer import Falcon1024TransactionSigner
 from algosdk.transaction import LogicSigAccount, PQSig
@@ -45,14 +46,14 @@ class TestEd25519PointCheck(unittest.TestCase):
         self.assertEqual(len(cases), 7)
         for hexval, expected, name in cases:
             self.assertEqual(
-                encoding.is_ed25519_point(bytes.fromhex(hexval)),
+                is_ed25519_point(bytes.fromhex(hexval)),
                 expected,
                 "point check mismatch for {}".format(name),
             )
 
     def test_wrong_length_is_not_a_point(self):
-        self.assertFalse(encoding.is_ed25519_point(b"\x00" * 31))
-        self.assertFalse(encoding.is_ed25519_point(b"\x00" * 33))
+        self.assertFalse(is_ed25519_point(b"\x00" * 31))
+        self.assertFalse(is_ed25519_point(b"\x00" * 33))
 
 
 class TestPQAddressDerivation(unittest.TestCase):
@@ -114,11 +115,11 @@ class TestPQAddressDerivation(unittest.TestCase):
             on = encoding.checksum(
                 constants.pq_address_prefix + scheme + bytes([lower]) + pk
             )
-            self.assertTrue(encoding.is_ed25519_point(on))
+            self.assertTrue(is_ed25519_point(on))
         off = encoding.checksum(
             constants.pq_address_prefix + scheme + bytes([salt]) + pk
         )
-        self.assertFalse(encoding.is_ed25519_point(off))
+        self.assertFalse(is_ed25519_point(off))
         # end-to-end: the nonzero salt threads into the wire "slt" field
         txn = encoding.msgpack_decode(_load("pqPayment.json")["txnBlob"])
         signer = Falcon1024TransactionSigner(pk, lambda d: b"\x00" * 1280)
