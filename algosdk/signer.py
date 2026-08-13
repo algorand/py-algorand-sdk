@@ -5,13 +5,13 @@ These let a custom key backend (HD wallet, hardware device, KMS, ...) plug into
 Algorand signing operations by supplying a single low-level callback that signs
 exact bytes, instead of exposing a raw secret key.
 
-`Ed25519TransactionSigner` and the post-quantum `PQTransactionSigner` (and its
-Falcon-1024 specialization `Falcon1024TransactionSigner`) are all
+`Ed25519AlgorandSigner` and the post-quantum `PQAlgorandSigner` (and its
+Falcon-1024 specialization `Falcon1024AlgorandSigner`) are all
 `TransactionSigner`s (so they plug straight into an atomic transaction
 composer) and delegate a logic signature in place via `sign_logicsig`.
-`Ed25519TransactionSigner` additionally signs messages ("MX") and program
+`Ed25519AlgorandSigner` additionally signs messages ("MX") and program
 data and appends member signatures to multisig transactions;
-`Ed25519MultisigTransactionSigner` fills a multisig from several
+`Ed25519MultisigAlgorandSigner` fills a multisig from several
 ed25519 callback signers.
 
 For signing a single transaction, pair any of these with
@@ -28,10 +28,10 @@ from algosdk.transaction import GenericSignedTransaction
 
 __all__ = [
     "RawSigner",
-    "Ed25519TransactionSigner",
-    "Ed25519MultisigTransactionSigner",
-    "PQTransactionSigner",
-    "Falcon1024TransactionSigner",
+    "Ed25519AlgorandSigner",
+    "Ed25519MultisigAlgorandSigner",
+    "PQAlgorandSigner",
+    "Falcon1024AlgorandSigner",
 ]
 
 # A low-level signing callback: signs the exact preimage bytes and returns the
@@ -46,7 +46,7 @@ def _subsig_index(multisig: "transaction.Multisig", public_key: bytes) -> int:
     raise error.InvalidSecretKeyError
 
 
-class Ed25519TransactionSigner(TransactionSigner):
+class Ed25519AlgorandSigner(TransactionSigner):
     """
     A TransactionSigner backed by a single low-level ed25519 signing callback
     (a public key plus a function that signs exact bytes) instead of a raw
@@ -216,14 +216,14 @@ class Ed25519TransactionSigner(TransactionSigner):
         )
 
 
-class Ed25519MultisigTransactionSigner(TransactionSigner):
+class Ed25519MultisigAlgorandSigner(TransactionSigner):
     """
     Multisig TransactionSigner that fills each member's subsig using an
-    Ed25519TransactionSigner callback instead of a raw secret key.
+    Ed25519AlgorandSigner callback instead of a raw secret key.
 
     Args:
         msig (Multisig): the multisig account
-        signers (List[Ed25519TransactionSigner]): the members to sign with;
+        signers (List[Ed25519AlgorandSigner]): the members to sign with;
             each must be a public key present in the multisig. Only each
             member's public key and signing callback are used.
     """
@@ -231,7 +231,7 @@ class Ed25519MultisigTransactionSigner(TransactionSigner):
     def __init__(
         self,
         msig: "transaction.Multisig",
-        signers: List[Ed25519TransactionSigner],
+        signers: List[Ed25519AlgorandSigner],
     ) -> None:
         super().__init__()
         self.msig = msig
@@ -270,7 +270,7 @@ class Ed25519MultisigTransactionSigner(TransactionSigner):
         return stxns
 
 
-class PQTransactionSigner(TransactionSigner):
+class PQAlgorandSigner(TransactionSigner):
     """
     A TransactionSigner backed by a post-quantum signing callback (a public key
     plus a function that signs exact bytes) instead of a raw secret key,
@@ -280,7 +280,7 @@ class PQTransactionSigner(TransactionSigner):
     As with the ed25519 signer, the callback receives the full signing preimage
     and is responsible for any hashing the scheme itself requires.
 
-    For Falcon-1024 use the `Falcon1024TransactionSigner` subclass, which fixes
+    For Falcon-1024 use the `Falcon1024AlgorandSigner` subclass, which fixes
     the scheme for you.
 
     Args:
@@ -366,9 +366,9 @@ class PQTransactionSigner(TransactionSigner):
         lsig_account.sigkey = address_bytes
 
 
-class Falcon1024TransactionSigner(PQTransactionSigner):
+class Falcon1024AlgorandSigner(PQAlgorandSigner):
     """
-    A PQTransactionSigner specialized to the Falcon-1024 post-quantum signature
+    A PQAlgorandSigner specialized to the Falcon-1024 post-quantum signature
     scheme (`constants.falcon_1024_scheme`). This is the post-quantum signer to
     reach for.
 

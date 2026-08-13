@@ -9,7 +9,7 @@ import msgpack
 from algosdk import constants, encoding, error, mnemonic, transaction
 from algosdk.ed25519_check import is_ed25519_point
 from algosdk.atomic_transaction_composer import LogicSigTransactionSigner
-from algosdk.signer import Falcon1024TransactionSigner
+from algosdk.signer import Falcon1024AlgorandSigner
 from algosdk.transaction import LogicSigAccount, PQSig
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "pq_test_data")
@@ -122,7 +122,7 @@ class TestPQAddressDerivation(unittest.TestCase):
         self.assertFalse(is_ed25519_point(off))
         # end-to-end: the nonzero salt threads into the wire "slt" field
         txn = encoding.msgpack_decode(_load("pqPayment.json")["txnBlob"])
-        signer = Falcon1024TransactionSigner(pk, lambda d: b"\x00" * 1280)
+        signer = Falcon1024AlgorandSigner(pk, lambda d: b"\x00" * 1280)
         self.assertEqual(signer.salt, salt)
         blob = encoding.msgpack_encode(signer.sign_transactions([txn], [0])[0])
         raw = msgpack.unpackb(base64.b64decode(blob), raw=False)
@@ -166,7 +166,7 @@ class TestPQSigEncoding(unittest.TestCase):
         self.assertEqual(PQSig.undictify(pqsig.dictify()).salt, 0)
 
 
-class TestPQTransactionSigner(unittest.TestCase):
+class TestPQAlgorandSigner(unittest.TestCase):
     def _run(self, fixture_name):
         fx = _load(fixture_name)
         pk = base64.b64decode(fx["signer"]["pqSigner"]["pk"])
@@ -180,7 +180,7 @@ class TestPQTransactionSigner(unittest.TestCase):
             captured["to_sign"] = to_sign
             return expected_sig
 
-        signer = Falcon1024TransactionSigner(pk, fake)
+        signer = Falcon1024AlgorandSigner(pk, fake)
         stxn = signer.sign_transactions([txn], [0])[0]
         blob = encoding.msgpack_encode(stxn)
         return fx, stxn, blob, captured
@@ -213,7 +213,7 @@ class TestPQTransactionSigner(unittest.TestCase):
         base = encoding.msgpack_decode(fx["txnBlob"])
         t0, t1, t2 = (copy.deepcopy(base) for _ in range(3))
         t1.note, t2.note = b"1", b"2"
-        signer = Falcon1024TransactionSigner(pk, lambda d: sig)
+        signer = Falcon1024AlgorandSigner(pk, lambda d: sig)
         stxns = signer.sign_transactions([t0, t1, t2], [0, 2])
         # only the requested indexes are signed, in order
         self.assertEqual(len(stxns), 2)
@@ -222,12 +222,12 @@ class TestPQTransactionSigner(unittest.TestCase):
         self.assertNotEqual(stxns[1].transaction, t1)
 
     def test_honors_custom_scheme(self):
-        # the generic PQTransactionSigner threads an arbitrary 2-byte scheme
-        # into the wire signature (Falcon1024TransactionSigner fixes it to "f1")
-        from algosdk.signer import PQTransactionSigner
+        # the generic PQAlgorandSigner threads an arbitrary 2-byte scheme
+        # into the wire signature (Falcon1024AlgorandSigner fixes it to "f1")
+        from algosdk.signer import PQAlgorandSigner
 
         txn = encoding.msgpack_decode(_load("pqPayment.json")["txnBlob"])
-        signer = PQTransactionSigner(
+        signer = PQAlgorandSigner(
             bytes([0xAB, 0xCD, 0xEF]), lambda d: b"\x00" * 1280, b"x1"
         )
         self.assertEqual(signer.scheme, b"x1")
@@ -270,7 +270,7 @@ class TestPQDelegatedLogicSig(unittest.TestCase):
             return expected_sig
 
         lsig_acct = LogicSigAccount(program)
-        Falcon1024TransactionSigner(pk, fake).sign_logicsig(lsig_acct)
+        Falcon1024AlgorandSigner(pk, fake).sign_logicsig(lsig_acct)
         stxn = LogicSigTransactionSigner(lsig_acct).sign_transactions(
             [txn], [0]
         )[0]
@@ -307,7 +307,7 @@ class TestPQDelegatedLogicSig(unittest.TestCase):
         program = base64.b64decode(fx["signer"]["lsig"])
         sig = base64.b64decode(fx["stxn"]["lsig"]["pqsig"]["sig"])
         lsig_acct = LogicSigAccount(program)
-        Falcon1024TransactionSigner(pk, lambda d: sig).sign_logicsig(lsig_acct)
+        Falcon1024AlgorandSigner(pk, lambda d: sig).sign_logicsig(lsig_acct)
         self.assertTrue(lsig_acct.is_delegated())
         self.assertEqual(lsig_acct.sig_count(), 1)
         # the delegated address is the derived PQ address, not the escrow hash
@@ -319,7 +319,7 @@ class TestPQDelegatedLogicSig(unittest.TestCase):
         sig = base64.b64decode(fx["stxn"]["lsig"]["pqsig"]["sig"])
         program = base64.b64decode(fx["signer"]["lsig"])
         lsig_acct = LogicSigAccount(program)
-        signer = Falcon1024TransactionSigner(pk, lambda d: sig)
+        signer = Falcon1024AlgorandSigner(pk, lambda d: sig)
         signer.sign_logicsig(lsig_acct)
         with self.assertRaises(error.LogicSigOverspecifiedSignature):
             signer.sign_logicsig(lsig_acct)
@@ -330,7 +330,7 @@ class TestPQDelegatedLogicSig(unittest.TestCase):
         sig = base64.b64decode(fx["stxn"]["lsig"]["pqsig"]["sig"])
         program = base64.b64decode(fx["signer"]["lsig"])
         la = LogicSigAccount(program)
-        Falcon1024TransactionSigner(pk, lambda d: sig).sign_logicsig(la)
+        Falcon1024AlgorandSigner(pk, lambda d: sig).sign_logicsig(la)
         # This SDK cannot validate a PQ signature, so verify() must not claim
         # the delegation is good.
         self.assertFalse(la.verify())
@@ -393,7 +393,7 @@ class TestPQDelegatedLogicSig(unittest.TestCase):
         sig = base64.b64decode(fx["stxn"]["lsig"]["pqsig"]["sig"])
         program = base64.b64decode(fx["signer"]["lsig"])
         lsig_acct = LogicSigAccount(program)
-        Falcon1024TransactionSigner(pk, lambda d: sig).sign_logicsig(lsig_acct)
+        Falcon1024AlgorandSigner(pk, lambda d: sig).sign_logicsig(lsig_acct)
         _, sk = account.generate_account()
         with self.assertRaises(error.LogicSigOverspecifiedSignature):
             lsig_acct.sign(sk)
@@ -404,12 +404,12 @@ class TestPQDelegatedLogicSig(unittest.TestCase):
         sig = base64.b64decode(fx["stxn"]["lsig"]["pqsig"]["sig"])
         program = base64.b64decode(fx["signer"]["lsig"])
         signed = LogicSigAccount(program)
-        Falcon1024TransactionSigner(pk, lambda d: sig).sign_logicsig(signed)
+        Falcon1024AlgorandSigner(pk, lambda d: sig).sign_logicsig(signed)
         unsigned = LogicSigAccount(program)
         self.assertNotEqual(signed.lsig, unsigned.lsig)
         # a different post-quantum public key must not compare equal
         other = LogicSigAccount(program)
-        Falcon1024TransactionSigner(
+        Falcon1024AlgorandSigner(
             bytes(reversed(pk)), lambda d: sig
         ).sign_logicsig(other)
         self.assertNotEqual(signed.lsig, other.lsig)

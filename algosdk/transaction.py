@@ -2495,7 +2495,7 @@ class MultisigTransaction:
         Args:
             signer: a callback signer exposing
                 `append_to_multisig_transaction` (for example
-                `algosdk.signer.Ed25519TransactionSigner`)
+                `algosdk.signer.Ed25519AlgorandSigner`)
 
         Note:
             A new signature will replace the old if there is already a
@@ -3303,8 +3303,8 @@ class LogicSigAccount:
 
         Args:
             signer: a callback signer exposing `sign_logicsig` (for example
-                `algosdk.signer.Ed25519TransactionSigner` or
-                `algosdk.signer.Falcon1024TransactionSigner`)
+                `algosdk.signer.Ed25519AlgorandSigner` or
+                `algosdk.signer.Falcon1024AlgorandSigner`)
             multisig (Multisig, optional): the delegating multisig account, for
                 a multisig-delegated LogicSig
         """
@@ -3318,7 +3318,7 @@ class LogicSigAccount:
 
         Args:
             signer: a callback signer exposing `append_to_logicsig_multisig`
-                (for example `algosdk.signer.Ed25519TransactionSigner`)
+                (for example `algosdk.signer.Ed25519AlgorandSigner`)
         """
         signer.append_to_logicsig_multisig(self)
 

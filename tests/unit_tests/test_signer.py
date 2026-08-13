@@ -18,9 +18,9 @@ from algosdk.atomic_transaction_composer import (
     sign_transaction_with_signer,
 )
 from algosdk.signer import (
-    Ed25519MultisigTransactionSigner,
-    Ed25519TransactionSigner,
-    Falcon1024TransactionSigner,
+    Ed25519MultisigAlgorandSigner,
+    Ed25519AlgorandSigner,
+    Falcon1024AlgorandSigner,
 )
 from algosdk.transaction import (
     LogicSigAccount,
@@ -44,14 +44,12 @@ def _raw(sk):
     return lambda data: signing_key.sign(data).signature
 
 
-class TestEd25519TransactionSigner(unittest.TestCase):
+class TestEd25519AlgorandSigner(unittest.TestCase):
     """Every callback signer must be byte-identical to the existing sk path."""
 
     def test_exposes_capabilities_and_default_address(self):
         sk, addr = account.generate_account()
-        signer = Ed25519TransactionSigner(
-            encoding.decode_address(addr), _raw(sk)
-        )
+        signer = Ed25519AlgorandSigner(encoding.decode_address(addr), _raw(sk))
         # the signer's address defaults to its public key's address
         self.assertEqual(signer.address, addr)
         # and it exposes the full ed25519 signer capability surface
@@ -70,7 +68,7 @@ class TestEd25519TransactionSigner(unittest.TestCase):
         pk = encoding.decode_address(addr)
         txn = PaymentTxn(addr, _sp(), addr, 1000)
         ref = AccountTransactionSigner(sk).sign_transactions([txn], [0])[0]
-        got = Ed25519TransactionSigner(pk, _raw(sk)).sign_transactions(
+        got = Ed25519AlgorandSigner(pk, _raw(sk)).sign_transactions(
             [txn], [0]
         )[0]
         self.assertEqual(
@@ -82,7 +80,7 @@ class TestEd25519TransactionSigner(unittest.TestCase):
         sk, addr = account.generate_account()
         pk = encoding.decode_address(addr)
         txns = [PaymentTxn(addr, _sp(), addr, i) for i in range(3)]
-        signed = Ed25519TransactionSigner(pk, _raw(sk)).sign_transactions(
+        signed = Ed25519AlgorandSigner(pk, _raw(sk)).sign_transactions(
             txns, [0, 2]
         )
         self.assertEqual(len(signed), 2)
@@ -97,7 +95,7 @@ class TestEd25519TransactionSigner(unittest.TestCase):
         _, other = account.generate_account()
         txn = PaymentTxn(other, _sp(), other, 1000)
         ref = AccountTransactionSigner(sk).sign_transactions([txn], [0])[0]
-        got = Ed25519TransactionSigner(pk, _raw(sk)).sign_transactions(
+        got = Ed25519AlgorandSigner(pk, _raw(sk)).sign_transactions(
             [txn], [0]
         )[0]
         self.assertEqual(got.authorizing_address, addr)
@@ -109,7 +107,7 @@ class TestEd25519TransactionSigner(unittest.TestCase):
         sk, addr = account.generate_account()
         pk = encoding.decode_address(addr)
         data = b"a message to sign"
-        got = Ed25519TransactionSigner(pk, _raw(sk)).sign_bytes(data)
+        got = Ed25519AlgorandSigner(pk, _raw(sk)).sign_bytes(data)
         # drop-in replacement for util.sign_bytes: same base64 output,
         # verifies directly with util.verify_bytes
         self.assertEqual(got, util.sign_bytes(data, sk))
@@ -119,7 +117,7 @@ class TestEd25519TransactionSigner(unittest.TestCase):
         # negative check: the "MX" signature must not verify for other bytes
         sk, addr = account.generate_account()
         pk = encoding.decode_address(addr)
-        sig = Ed25519TransactionSigner(pk, _raw(sk)).sign_bytes(b"hello world")
+        sig = Ed25519AlgorandSigner(pk, _raw(sk)).sign_bytes(b"hello world")
         self.assertFalse(util.verify_bytes(b"goodbye world", sig, addr))
 
     def test_sign_program_data_equivalence(self):
@@ -128,9 +126,7 @@ class TestEd25519TransactionSigner(unittest.TestCase):
         lsig = transaction.LogicSig(PROGRAM)
         data = b"program data"
         ref = logic.teal_sign(sk, data, lsig.address())
-        got = Ed25519TransactionSigner(pk, _raw(sk)).sign_program_data(
-            data, lsig
-        )
+        got = Ed25519AlgorandSigner(pk, _raw(sk)).sign_program_data(data, lsig)
         self.assertEqual(got, ref)
 
     def test_sign_logicsig_single_equivalence(self):
@@ -139,7 +135,7 @@ class TestEd25519TransactionSigner(unittest.TestCase):
         ref = LogicSigAccount(PROGRAM)
         ref.sign(sk)
         got = LogicSigAccount(PROGRAM)
-        Ed25519TransactionSigner(pk, _raw(sk)).sign_logicsig(got)
+        Ed25519AlgorandSigner(pk, _raw(sk)).sign_logicsig(got)
         self.assertEqual(
             encoding.msgpack_encode(got), encoding.msgpack_encode(ref)
         )
@@ -149,7 +145,7 @@ class TestEd25519TransactionSigner(unittest.TestCase):
         sk, addr = account.generate_account()
         pk = encoding.decode_address(addr)
         la = LogicSigAccount(PROGRAM)
-        signer = Ed25519TransactionSigner(pk, _raw(sk))
+        signer = Ed25519AlgorandSigner(pk, _raw(sk))
         signer.sign_logicsig(la)
         with self.assertRaises(error.LogicSigOverspecifiedSignature):
             signer.sign_logicsig(la)
@@ -162,7 +158,7 @@ class TestEd25519TransactionSigner(unittest.TestCase):
         ref = LogicSigAccount(PROGRAM)
         ref.sign_multisig(msig.get_multisig_account(), sk1)
         got = LogicSigAccount(PROGRAM)
-        Ed25519TransactionSigner(
+        Ed25519AlgorandSigner(
             encoding.decode_address(a1), _raw(sk1)
         ).sign_logicsig(got, msig.get_multisig_account())
         self.assertEqual(
@@ -181,10 +177,10 @@ class TestEd25519TransactionSigner(unittest.TestCase):
         # callback path: sign_logicsig (first member) then
         # append_to_logicsig_multisig (each additional member)
         got = LogicSigAccount(PROGRAM)
-        Ed25519TransactionSigner(
+        Ed25519AlgorandSigner(
             encoding.decode_address(a1), _raw(sk1)
         ).sign_logicsig(got, msig.get_multisig_account())
-        Ed25519TransactionSigner(
+        Ed25519AlgorandSigner(
             encoding.decode_address(a2), _raw(sk2)
         ).append_to_logicsig_multisig(got)
         self.assertEqual(
@@ -197,7 +193,7 @@ class TestEd25519TransactionSigner(unittest.TestCase):
         sk1, a1 = account.generate_account()
         la = LogicSigAccount(PROGRAM)  # never delegated to a multisig
         with self.assertRaises(error.InvalidSecretKeyError):
-            Ed25519TransactionSigner(
+            Ed25519AlgorandSigner(
                 encoding.decode_address(a1), _raw(sk1)
             ).append_to_logicsig_multisig(la)
 
@@ -207,11 +203,11 @@ class TestEd25519TransactionSigner(unittest.TestCase):
         outsider_sk, outsider_addr = account.generate_account()
         msig = Multisig(1, 2, [a1, a2])
         la = LogicSigAccount(PROGRAM)
-        Ed25519TransactionSigner(
+        Ed25519AlgorandSigner(
             encoding.decode_address(a1), _raw(sk1)
         ).sign_logicsig(la, msig.get_multisig_account())
         with self.assertRaises(error.InvalidSecretKeyError):
-            Ed25519TransactionSigner(
+            Ed25519AlgorandSigner(
                 encoding.decode_address(outsider_addr), _raw(outsider_sk)
             ).append_to_logicsig_multisig(la)
 
@@ -228,11 +224,11 @@ class TestEd25519TransactionSigner(unittest.TestCase):
         # callback path: first member via the signer method, second member
         # via the MultisigTransaction.append_with_signer delegate
         got = MultisigTransaction(txn, msig.get_multisig_account())
-        Ed25519TransactionSigner(
+        Ed25519AlgorandSigner(
             encoding.decode_address(a1), _raw(sk1)
         ).append_to_multisig_transaction(got)
         got.append_with_signer(
-            Ed25519TransactionSigner(encoding.decode_address(a2), _raw(sk2))
+            Ed25519AlgorandSigner(encoding.decode_address(a2), _raw(sk2))
         )
         self.assertEqual(
             encoding.msgpack_encode(got), encoding.msgpack_encode(ref)
@@ -246,7 +242,7 @@ class TestEd25519TransactionSigner(unittest.TestCase):
         txn = PaymentTxn(msig.address(), _sp(), a1, 1000)
         mtxn = MultisigTransaction(txn, msig.get_multisig_account())
         with self.assertRaises(error.InvalidSecretKeyError):
-            Ed25519TransactionSigner(
+            Ed25519AlgorandSigner(
                 encoding.decode_address(outsider_addr), _raw(outsider_sk)
             ).append_to_multisig_transaction(mtxn)
 
@@ -257,12 +253,12 @@ class TestEd25519TransactionSigner(unittest.TestCase):
         txn = PaymentTxn(a1, _sp(), a1, 1000)
         mtxn = MultisigTransaction(txn, bad.get_multisig_account())
         with self.assertRaises(error.InvalidThresholdError):
-            Ed25519TransactionSigner(
+            Ed25519AlgorandSigner(
                 encoding.decode_address(a1), _raw(sk1)
             ).append_to_multisig_transaction(mtxn)
 
 
-class TestEd25519MultisigTransactionSigner(unittest.TestCase):
+class TestEd25519MultisigAlgorandSigner(unittest.TestCase):
     def test_equivalence_with_sk_signer(self):
         sk1, a1 = account.generate_account()
         sk2, a2 = account.generate_account()
@@ -273,10 +269,10 @@ class TestEd25519MultisigTransactionSigner(unittest.TestCase):
             msig.get_multisig_account(), [sk1, sk2]
         ).sign_transactions([txn], [0])[0]
         signers = [
-            Ed25519TransactionSigner(encoding.decode_address(a1), _raw(sk1)),
-            Ed25519TransactionSigner(encoding.decode_address(a2), _raw(sk2)),
+            Ed25519AlgorandSigner(encoding.decode_address(a1), _raw(sk1)),
+            Ed25519AlgorandSigner(encoding.decode_address(a2), _raw(sk2)),
         ]
-        got = Ed25519MultisigTransactionSigner(
+        got = Ed25519MultisigAlgorandSigner(
             msig.get_multisig_account(), signers
         ).sign_transactions([txn], [0])[0]
         self.assertEqual(
@@ -289,11 +285,11 @@ class TestEd25519MultisigTransactionSigner(unittest.TestCase):
         outsider_sk, outsider_addr = account.generate_account()
         msig = Multisig(1, 1, [a1, a2])
         txn = PaymentTxn(msig.address(), _sp(), a1, 1000)
-        signer = Ed25519TransactionSigner(
+        signer = Ed25519AlgorandSigner(
             encoding.decode_address(outsider_addr), _raw(outsider_sk)
         )
         with self.assertRaises(error.InvalidSecretKeyError):
-            Ed25519MultisigTransactionSigner(
+            Ed25519MultisigAlgorandSigner(
                 msig.get_multisig_account(), [signer]
             ).sign_transactions([txn], [0])
 
@@ -302,11 +298,9 @@ class TestEd25519MultisigTransactionSigner(unittest.TestCase):
         sk1, a1 = account.generate_account()
         bad = Multisig(1, 2, [a1])  # threshold 2 with a single member
         txn = PaymentTxn(a1, _sp(), a1, 1000)
-        signer = Ed25519TransactionSigner(
-            encoding.decode_address(a1), _raw(sk1)
-        )
+        signer = Ed25519AlgorandSigner(encoding.decode_address(a1), _raw(sk1))
         with self.assertRaises(error.InvalidThresholdError):
-            Ed25519MultisigTransactionSigner(
+            Ed25519MultisigAlgorandSigner(
                 bad.get_multisig_account(), [signer]
             ).sign_transactions([txn], [0])
 
@@ -316,7 +310,7 @@ class TestFalconMultisigRejection(unittest.TestCase):
         _, a1 = account.generate_account()
         msig = Multisig(1, 1, [a1])
         la = LogicSigAccount(PROGRAM)
-        signer = Falcon1024TransactionSigner(
+        signer = Falcon1024AlgorandSigner(
             b"\x00" * 1793, lambda d: b"\x00" * 1280
         )
         with self.assertRaises(error.PQMultisigUnsupportedError):
@@ -334,7 +328,7 @@ class TestSignWithSigner(unittest.TestCase):
         ref.sign(sk)
         got = LogicSigAccount(PROGRAM)
         got.sign_with_signer(
-            Ed25519TransactionSigner(encoding.decode_address(a1), _raw(sk))
+            Ed25519AlgorandSigner(encoding.decode_address(a1), _raw(sk))
         )
         self.assertEqual(
             encoding.msgpack_encode(got), encoding.msgpack_encode(ref)
@@ -351,11 +345,11 @@ class TestSignWithSigner(unittest.TestCase):
         ref.append_to_multisig(sk2)
         got = LogicSigAccount(PROGRAM)
         got.sign_with_signer(
-            Ed25519TransactionSigner(encoding.decode_address(a1), _raw(sk1)),
+            Ed25519AlgorandSigner(encoding.decode_address(a1), _raw(sk1)),
             msig.get_multisig_account(),
         )
         got.append_to_multisig_with_signer(
-            Ed25519TransactionSigner(encoding.decode_address(a2), _raw(sk2))
+            Ed25519AlgorandSigner(encoding.decode_address(a2), _raw(sk2))
         )
         self.assertEqual(
             encoding.msgpack_encode(got), encoding.msgpack_encode(ref)

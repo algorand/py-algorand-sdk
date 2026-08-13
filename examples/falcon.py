@@ -9,7 +9,7 @@ from algosdk.atomic_transaction_composer import (
     TransactionWithSigner,
     sign_transaction_with_signer,
 )
-from algosdk.signer import Falcon1024TransactionSigner
+from algosdk.signer import Falcon1024AlgorandSigner
 from algosdk.v2client import algod
 
 from utils import get_algod_client, get_accounts
@@ -38,7 +38,7 @@ def fund_account(
     transaction.wait_for_confirmation(algod_client, txid, 4)
 
 
-def get_falcon_signer() -> Falcon1024TransactionSigner:
+def get_falcon_signer() -> Falcon1024AlgorandSigner:
     # example: PQ_FALCON_KEYGEN
     # A 25 word post-quantum mnemonic seeds a Falcon-1024 keypair, the same
     # way a 25 word mnemonic seeds an ed25519 one. Key generation is
@@ -54,7 +54,7 @@ def get_falcon_signer() -> Falcon1024TransactionSigner:
     # HSM or a remote service. The object below is at once the post-quantum
     # address, a TransactionSigner an atomic transaction composer accepts,
     # and the signer that delegates a logic signature
-    falcon_signer = Falcon1024TransactionSigner(falcon.public_key, falcon.sign)
+    falcon_signer = Falcon1024AlgorandSigner(falcon.public_key, falcon.sign)
 
     # A Falcon-1024 public key is 1793 bytes, so the address commits to a
     # hash of the key plus a salt. Otherwise it behaves like any other
@@ -106,7 +106,7 @@ def falcon_example() -> None:
         falcon_signer.address, sp, falcon_signer.address, 0
     )
 
-    # Falcon1024TransactionSigner is a TransactionSigner, so the composer
+    # Falcon1024AlgorandSigner is a TransactionSigner, so the composer
     # takes it wherever an account signer would go
     atc = AtomicTransactionComposer()
     atc.add_transaction(TransactionWithSigner(txn, falcon_signer))

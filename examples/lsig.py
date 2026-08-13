@@ -9,7 +9,7 @@ from algosdk.atomic_transaction_composer import (
     AccountTransactionSigner,
     sign_transaction_with_signer,
 )
-from algosdk.signer import Ed25519TransactionSigner
+from algosdk.signer import Ed25519AlgorandSigner
 
 from utils import get_algod_client, get_accounts
 
@@ -119,10 +119,10 @@ def delegate_lsig_example():
 
     def ed25519_signer_from_private_key(
         private_key: str,
-    ) -> Ed25519TransactionSigner:
+    ) -> Ed25519AlgorandSigner:
         """Build a callback signer from a locally held private key.
 
-        For production key management, construct Ed25519TransactionSigner
+        For production key management, construct Ed25519AlgorandSigner
         directly with a callback that calls your HSM or KMS instead.
         """
         raw = base64.b64decode(private_key)
@@ -131,7 +131,7 @@ def delegate_lsig_example():
         def sign(data: bytes) -> bytes:
             return SigningKey(seed).sign(data).signature
 
-        return Ed25519TransactionSigner(public_key, sign)
+        return Ed25519AlgorandSigner(public_key, sign)
 
     # Delegate the logic signature to the account using a callback signer
     lsig.sign_with_signer(

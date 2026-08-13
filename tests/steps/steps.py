@@ -1007,10 +1007,10 @@ def _falcon1024_signer(seed):
     # import is deferred to keep this module importable without it
     from temp_falcon import falcon1024
 
-    from algosdk.signer import Falcon1024TransactionSigner
+    from algosdk.signer import Falcon1024AlgorandSigner
 
     falcon = falcon1024.Signer.generate(seed)
-    return Falcon1024TransactionSigner(falcon.public_key, falcon.sign)
+    return Falcon1024AlgorandSigner(falcon.public_key, falcon.sign)
 
 
 @given("I get the default falcon1024 account")
