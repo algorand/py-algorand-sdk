@@ -1,5 +1,23 @@
 # Changelog
 
+# v2.12.0
+
+<!-- Release notes generated using configuration in .github/release.yml at release/v2.12.0 -->
+
+## What's Changed
+### Bugfixes
+* Fix: Handle empty resource references in access list by @jannotti in https://github.com/algorand/py-algorand-sdk/pull/586
+### Enhancements
+* API: Support for Applications/Assets Pagination and new exclude parameters by @gmalouf in https://github.com/algorand/py-algorand-sdk/pull/588
+* chore: remove dryrun by @mrcointreau in https://github.com/algorand/py-algorand-sdk/pull/593
+* feat: add post-quantum (Falcon-1024) signature support by @mrcointreau in https://github.com/algorand/py-algorand-sdk/pull/595
+* feat: support for consensus v42 by @mrcointreau in https://github.com/algorand/py-algorand-sdk/pull/596
+
+## New Contributors
+* @mrcointreau made their first contribution in https://github.com/algorand/py-algorand-sdk/pull/593
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v2.11.1...v2.12.0
+
 # v2.11.1
 
 <!-- Release notes generated using configuration in .github/release.yml at release/v2.11.1 -->
