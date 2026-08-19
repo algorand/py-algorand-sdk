@@ -71,17 +71,6 @@ def falcon_example() -> None:
 
     algod_client = get_algod_client()
 
-    # Only a node running the future consensus version understands the
-    # post-quantum signature field, so skip instead of sending transactions
-    # it is bound to reject. A node that cannot be reached raises here
-    sp = algod_client.suggested_params()
-    if sp.consensus_version != "future":
-        print(
-            f"node runs consensus version {sp.consensus_version}, which has"
-            " no post-quantum support, skipping falcon example"
-        )
-        return
-
     falcon_signer = get_falcon_signer()
 
     # Verification only needs the public key, which is what a third party
