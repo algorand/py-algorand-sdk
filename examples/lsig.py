@@ -2,7 +2,14 @@ import base64
 import json
 from pathlib import Path
 
+from nacl.signing import SigningKey
+
 from algosdk import transaction, mnemonic, account
+from algosdk.atomic_transaction_composer import (
+    AccountTransactionSigner,
+    sign_transaction_with_signer,
+)
+from algosdk.signer import Ed25519AlgorandSigner
 
 from utils import get_algod_client, get_accounts
 
@@ -58,7 +65,10 @@ def contract_account_example():
         lsig.address(),
         10000000,
     )
-    txid = algod_client.send_transaction(ptxn.sign(seed_acct.private_key))
+    stxn = sign_transaction_with_signer(
+        ptxn, AccountTransactionSigner(seed_acct.private_key)
+    )
+    txid = algod_client.send_transaction(stxn)
     transaction.wait_for_confirmation(algod_client, txid, 4)
 
     receiver = seed_acct.address
@@ -107,8 +117,26 @@ def delegate_lsig_example():
     arg1 = (123).to_bytes(8, "big")
     lsig = transaction.LogicSigAccount(program_binary, args=[arg1])
 
-    # Sign the logic signature with an account sk
-    lsig.sign(signer_acct.private_key)
+    def ed25519_signer_from_private_key(
+        private_key: str,
+    ) -> Ed25519AlgorandSigner:
+        """Build a callback signer from a locally held private key.
+
+        For production key management, construct Ed25519AlgorandSigner
+        directly with a callback that calls your HSM or KMS instead.
+        """
+        raw = base64.b64decode(private_key)
+        seed, public_key = raw[:32], raw[32:]
+
+        def sign(data: bytes) -> bytes:
+            return SigningKey(seed).sign(data).signature
+
+        return Ed25519AlgorandSigner(public_key, sign)
+
+    # Delegate the logic signature to the account using a callback signer
+    lsig.sign_with_signer(
+        ed25519_signer_from_private_key(signer_acct.private_key)
+    )
 
     # Get suggested parameters
     params = algod_client.suggested_params()

@@ -78,6 +78,30 @@ def to_private_key(mnemonic):
     return base64.b64encode(key.encode() + key.verify_key.encode()).decode()
 
 
+def to_pq_seed(mnemonic, scheme):
+    """
+    Derive a post-quantum key seed from a 25-word mnemonic.
+
+    The seed is SHA-512/256("PQK" + scheme + seed_from_mnemonic), where
+    seed_from_mnemonic is the 32-byte value the mnemonic decodes to.
+
+    Args:
+        mnemonic (str): 25-word mnemonic
+        scheme (bytes): 2-byte scheme identifier (e.g. b"f1" for Falcon-1024)
+
+    Returns:
+        bytes: 32-byte post-quantum key seed
+
+    Raises:
+        PQSchemeLengthError: if scheme is not exactly 2 bytes
+    """
+    if len(scheme) != constants.pq_scheme_len:
+        raise error.PQSchemeLengthError(len(scheme))
+    return encoding.checksum(
+        constants.pq_seed_prefix + scheme + _to_key(mnemonic)
+    )
+
+
 def _from_key(key):
     """
     Return the mnemonic for the key.

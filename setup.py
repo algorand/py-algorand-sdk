@@ -21,6 +21,7 @@ setuptools.setup(
         "pynacl>=1.4.0,<2",
         "pycryptodomex>=3.6.0,<4",
         "msgpack>=1.0.0,<2",
+        "typing_extensions>=4.9.0,<5",
     ],
     packages=setuptools.find_packages(
         include=(

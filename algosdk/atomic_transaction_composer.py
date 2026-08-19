@@ -122,7 +122,7 @@ class AccountTransactionSigner(TransactionSigner):
         """
         stxns = []
         for i in indexes:
-            stxn = txn_group[i].sign(self.private_key)
+            stxn = txn_group[i]._sign(self.private_key)
             stxns.append(stxn)
         return stxns
 
@@ -194,7 +194,7 @@ class MultisigTransactionSigner(TransactionSigner):
         for i in indexes:
             mtxn = transaction.MultisigTransaction(txn_group[i], self.msig)
             for sk in self.sks:
-                mtxn.sign(sk)
+                mtxn._sign(sk)
             stxns.append(mtxn)
         return stxns
 
@@ -210,6 +210,28 @@ class EmptySigner(TransactionSigner):
         for i in indexes:
             stxns.append(transaction.SignedTransaction(txn_group[i], ""))
         return stxns
+
+
+def sign_transaction_with_signer(
+    txn: transaction.Transaction,
+    signer: TransactionSigner,
+) -> GenericSignedTransaction:
+    """
+    Sign a single transaction with a TransactionSigner.
+
+    A convenience wrapper over `signer.sign_transactions([txn], [0])` that
+    returns the single signed transaction. This is the signer-based
+    replacement for the deprecated `Transaction.sign(private_key)`; pass an
+    `AccountTransactionSigner(private_key)` as the signer.
+
+    Args:
+        txn (Transaction): the transaction to sign
+        signer (TransactionSigner): the signer to sign with
+
+    Returns:
+        GenericSignedTransaction: the signed transaction
+    """
+    return signer.sign_transactions([txn], [0])[0]
 
 
 class TransactionWithSigner:
