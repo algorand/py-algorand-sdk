@@ -53,14 +53,17 @@ class TestPaymentTransaction(unittest.TestCase):
         txn = transaction.PaymentTxn(address, sp, address, 1000, note="helo")
         self.assertEqual(constants.min_txn_fee, txn.fee)
 
-    def test_note_wrong_length(self):
+    def test_note_large_is_not_validated(self):
+        # note size is a consensus parameter enforced by algod, not by the
+        # SDK: building a transaction with a note larger than the
+        # historical 1024-byte cap must succeed without raising
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         sp = transaction.SuggestedParams(0, 1, 100, gh)
-        f = lambda: transaction.PaymentTxn(
-            address, sp, address, 1000, note=("0" * 1025).encode()
+        txn = transaction.PaymentTxn(
+            address, sp, address, 1000, note=("0" * 4096).encode()
         )
-        self.assertRaises(error.WrongNoteLength, f)
+        self.assertEqual(len(txn.note), 4096)
 
     def test_leases(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
@@ -102,12 +105,17 @@ class TestPaymentTransaction(unittest.TestCase):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         sp = transaction.SuggestedParams(3, 1, 100, gh)
-        txn = transaction.PaymentTxn(
-            address, sp, address, 1000, note=("0" * 1024).encode()
-        )
-        enc = encoding.msgpack_encode(txn)
-        re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
-        self.assertEqual(enc, re_enc)
+        # both the historical 1024-byte cap and the larger notes algod
+        # accepts as of vFuture must serialize and decode round-trip
+        for note_length in (1024, 4096):
+            txn = transaction.PaymentTxn(
+                address, sp, address, 1000, note=("0" * note_length).encode()
+            )
+            enc = encoding.msgpack_encode(txn)
+            decoded = encoding.msgpack_decode(enc)
+            self.assertEqual(len(decoded.note), note_length)
+            re_enc = encoding.msgpack_encode(decoded)
+            self.assertEqual(enc, re_enc)
 
     def test_serialize_zero_amt(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
@@ -1394,6 +1402,45 @@ class TestApplicationTransactions(unittest.TestCase):
         self.assertEqual(i.dictify(), call.dictify())
         self.assertEqual(i, call)
 
+    def test_application_update_global_schema_and_extra_pages(self):
+        # An update may change the global schema and extra program pages, so
+        # those fields are encoded (apgs, apep) and survive a round trip.
+        empty = b""
+        params = transaction.SuggestedParams(0, 1, 100, self.genesis)
+        gschema = transaction.StateSchema(3, 4)
+        txn = transaction.ApplicationUpdateTxn(
+            self.sender,
+            params,
+            10,
+            empty,
+            empty,
+            global_schema=gschema,
+            extra_pages=2,
+        )
+
+        d = txn.dictify()
+        self.assertEqual(d["apgs"], gschema.dictify())
+        self.assertEqual(d["apep"], 2)
+        # Local schema is not settable on an update, so it is never encoded.
+        self.assertNotIn("apls", d)
+
+        self.assertEqual(transaction.Transaction.undictify(d), txn)
+
+        # An update built through the generic call sets the same fields.
+        call = transaction.ApplicationCallTxn(
+            self.sender,
+            params,
+            10,
+            transaction.OnComplete.UpdateApplicationOC,
+            None,
+            gschema,
+            empty,
+            empty,
+            extra_pages=2,
+        )
+        self.assertEqual(txn.dictify(), call.dictify())
+        self.assertEqual(txn, call)
+
     def test_application_delete(self):
         params = transaction.SuggestedParams(0, 1, 100, self.genesis)
         i = transaction.ApplicationDeleteTxn(self.sender, params, 10)
@@ -1420,6 +1467,7 @@ class TestApplicationTransactions(unittest.TestCase):
             "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4",
         ]
         zero = ""
+        zero_address = encoding.encode_address(bytes(32))
         one = "AEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKE3PRHE"
         two = "AIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGFFWAF4"
         foreign_assets = [2222, 3333]
@@ -1487,9 +1535,9 @@ class TestApplicationTransactions(unittest.TestCase):
                 full_acc_asset_app_pack
                 + [
                     rr(app_id=3),
-                    rr(box_reference=br(app_index=7, name="aaa")),
-                    rr(box_reference=br(app_index=0, name="bbb")),
-                    rr(box_reference=br(app_index=0, name="bbb2")),
+                    rr(box_reference=br(app_index=7, name=b"aaa")),
+                    rr(box_reference=br(app_index=0, name=b"bbb")),
+                    rr(box_reference=br(app_index=0, name=b"bbb2")),
                 ],
             ),
             (
@@ -1508,9 +1556,9 @@ class TestApplicationTransactions(unittest.TestCase):
                     rr(holding_reference=hr(asset_index=8, addr_index=7)),
                     rr(holding_reference=hr(asset_index=4, addr_index=0)),
                     rr(app_id=3),
-                    rr(box_reference=br(app_index=11, name="aaa")),
-                    rr(box_reference=br(app_index=0, name="bbb")),
-                    rr(box_reference=br(app_index=0, name="bbb2")),
+                    rr(box_reference=br(app_index=11, name=b"aaa")),
+                    rr(box_reference=br(app_index=0, name=b"bbb")),
+                    rr(box_reference=br(app_index=0, name=b"bbb2")),
                 ],
             ),
             (
@@ -1535,9 +1583,37 @@ class TestApplicationTransactions(unittest.TestCase):
                     rr(app_id=444),
                     rr(locals_reference=lr(app_index=14, addr_index=7)),
                     rr(app_id=3),
-                    rr(box_reference=br(app_index=16, name="aaa")),
-                    rr(box_reference=br(app_index=0, name="bbb")),
-                    rr(box_reference=br(app_index=0, name="bbb2")),
+                    rr(box_reference=br(app_index=16, name=b"aaa")),
+                    rr(box_reference=br(app_index=0, name=b"bbb")),
+                    rr(box_reference=br(app_index=0, name=b"bbb2")),
+                ],
+            ),
+            # the zero address means the sender: dropped from accounts,
+            # index 0 in holdings and locals
+            (
+                dict(app_id=111, accounts=[zero_address]),
+                [],
+            ),
+            (
+                dict(app_id=111, holdings=[(5, zero_address)]),
+                [
+                    rr(asset_id=5),
+                    rr(holding_reference=hr(asset_index=1, addr_index=0)),
+                ],
+            ),
+            (
+                dict(app_id=111, locals=[(9, zero_address)]),
+                [
+                    rr(app_id=9),
+                    rr(locals_reference=lr(app_index=1, addr_index=0)),
+                ],
+            ),
+            (
+                dict(app_id=111, locals=[(9, one)]),
+                [
+                    rr(app_id=9),
+                    rr(address=one),
+                    rr(locals_reference=lr(app_index=1, addr_index=2)),
                 ],
             ),
         ]
@@ -1580,7 +1656,7 @@ class TestApplicationTransactions(unittest.TestCase):
             111,
             transaction.OnComplete.NoOpOC,
             app_args=[b"hello"],
-            **txn_args
+            **txn_args,
         )
         d1 = txn1.dictify()
         self.assertEqual(txn1, transaction.ApplicationCallTxn.undictify(d1))
@@ -1593,7 +1669,7 @@ class TestApplicationTransactions(unittest.TestCase):
             transaction.OnComplete.NoOpOC,
             app_args=[b"hello"],
             **txn_args,
-            use_access=True
+            use_access=True,
         )
         d2 = txn2.dictify()
         self.assertEqual(txn2, transaction.ApplicationCallTxn.undictify(d2))
@@ -1866,13 +1942,122 @@ class TestBoxReference(unittest.TestCase):
         # First reference should be an address
         self.assertEqual(decoded_txn.resources[0].address, addr1)
 
-        # Second reference should be an empty box reference
-        self.assertIsNotNone(decoded_txn.resources[1].box_reference)
-        self.assertEqual(decoded_txn.resources[1].box_reference.app_index, 0)
-        self.assertEqual(decoded_txn.resources[1].box_reference.name, b"")
+        # Second reference should be the canonical empty reference
+        self.assertEqual(
+            decoded_txn.resources[1], transaction.ResourceReference()
+        )
 
         # Third reference should be an asset
         self.assertEqual(decoded_txn.resources[2].asset_id, 1134696561)
 
         # Fourth reference should be an app
         self.assertEqual(decoded_txn.resources[3].app_id, 1134695678)
+
+    def test_empty_access_refs_encode_canonically(self):
+        # an empty resource reference (an io quota bump) must encode as an
+        # empty map, matching algod's canonical re-encoding; a non-canonical
+        # form like {"b": {}} changes the signed bytes and fails signature
+        # verification at the node. A quota-bump box and an all-zero locals
+        # ref collapse to the same empty reference, so both encode to the
+        # same golden.
+        golden = (
+            "iaJhbJGApGFwaWRvo2ZlZc4AAzwgomZ2zgAE7A+jZ2VurHRlc3RuZXQtdjEuMK"
+            "JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOAATv96Nz"
+            "bmTEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWkYXBwbA=="
+        )
+        params = transaction.SuggestedParams(
+            1000,
+            322575,
+            323575,
+            "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=",
+            "testnet-v1.0",
+        )
+        sender = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        zero_address = encoding.encode_address(bytes(32))
+
+        for kwargs in (dict(boxes=[(0, b"")]), dict(locals=[(0, "")])):
+            txn = transaction.ApplicationCallTxn(
+                sender,
+                params,
+                111,
+                transaction.OnComplete.NoOpOC,
+                use_access=True,
+                **kwargs,
+            )
+            self.assertEqual(golden, encoding.msgpack_encode(txn))
+            self.assertEqual(
+                txn, transaction.ApplicationCallTxn.undictify(txn.dictify())
+            )
+
+        # decoding and re-encoding must not change the signed bytes
+        self.assertEqual(
+            golden, encoding.msgpack_encode(encoding.msgpack_decode(golden))
+        )
+
+        # a zero-address account is not listed at all, matching the other
+        # SDKs, so the access list is absent entirely
+        txn = transaction.ApplicationCallTxn(
+            sender,
+            params,
+            111,
+            transaction.OnComplete.NoOpOC,
+            use_access=True,
+            accounts=[zero_address],
+        )
+        self.assertIsNone(txn.resources)
+
+    def test_access_reference_golden_encoding(self):
+        # goldens matching go-algorand's canonical ResourceRef msgpack
+        # encoding (sorted keys, omitted zero fields, bin box names)
+        cases = [
+            (transaction.ResourceReference(), "gA=="),
+            (
+                transaction.ResourceReference(
+                    locals_reference=LocalsRef(app_index=2, addr_index=1)
+                ),
+                "gaFsgqFkAaFwAg==",
+            ),
+            (
+                transaction.ResourceReference(
+                    holding_reference=HoldingRef(asset_index=1, addr_index=0)
+                ),
+                "gaFogaFzAQ==",
+            ),
+            (
+                transaction.ResourceReference(
+                    box_reference=transaction.BoxReference(0, b"name")
+                ),
+                "gaFigaFuxARuYW1l",
+            ),
+        ]
+        for ref, golden in cases:
+            self.assertEqual(golden, encoding.msgpack_encode(ref))
+
+        # str box names are normalized to bytes so they encode as msgpack
+        # bin, the same as algod's []byte re-encoding; this holds on the
+        # tuple path and on direct BoxReference construction alike
+        refs = transaction.translate_to_resource_references(
+            app_id=111, boxes=[(0, "name")]
+        )
+        self.assertEqual(refs[0].box_reference.name, b"name")
+        self.assertEqual(transaction.BoxReference(0, "name").name, b"name")
+
+        # canonical decode-side inputs re-encode byte-identically
+        canonical_dicts = [
+            {},
+            {"b": {"i": 3}},
+            {"b": {"n": b"x"}},
+            {"h": {"d": 2, "s": 1}},
+            {"l": {"d": 1}},
+            {"l": {"p": 2}},
+            {"s": 7},
+            {"p": 9},
+            {"d": bytes(range(32))},
+        ]
+        for d in canonical_dicts:
+            self.assertEqual(
+                encoding.msgpack_encode(
+                    transaction.ResourceReference.undictify(d)
+                ),
+                encoding.msgpack_encode(d),
+            )

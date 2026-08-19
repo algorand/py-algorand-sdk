@@ -98,7 +98,8 @@ approval_binary = base64.b64decode(approval_result["result"])
 
 sp = algod_client.suggested_params()
 # create the app update transaction, passing compiled programs and schema
-# note that schema is immutable, we cant change it after create
+# an update may also change the global schema and extra program pages via
+# global_schema and extra_pages; the local schema is fixed at creation
 app_update_txn = transaction.ApplicationUpdateTxn(
     creator.address,
     sp,

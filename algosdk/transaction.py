@@ -105,8 +105,6 @@ class Transaction:
             raise error.WrongNoteType
         if isinstance(note, str):
             note = note.encode()
-        if len(note) > constants.note_max_length:
-            raise error.WrongNoteLength
         return note
 
     @classmethod
@@ -1598,7 +1596,7 @@ class ApplicationCallTxn(Transaction):
         local_schema (StateSchema, optional): restricts what can be stored by created application;
             must be omitted if not creating an application
         global_schema (StateSchema, optional): restricts what can be stored by created application;
-            must be omitted if not creating an application
+            must be omitted if not creating or updating an application
         approval_program (bytes, optional): the program to run on transaction approval;
             must be omitted if not creating or updating an application
         clear_program (bytes, optional): the program to run when state is being cleared;
@@ -1607,7 +1605,8 @@ class ApplicationCallTxn(Transaction):
         accounts (list[string], optional): list of additional accounts involved in call
         foreign_apps (list[int], optional): list of other applications (identified by index) involved in call
         foreign_assets (list[int], optional): list of assets involved in call
-        extra_pages (int, optional): additional program space for supporting larger programs.  A page is 1024 bytes.
+        extra_pages (int, optional): additional program space for supporting larger programs.
+            A page is pooled between the approval and clear state programs, and is usually spent on the approval program.
         boxes(list[(int, bytes)], optional): list of tuples specifying app id and key for boxes the app may access
         use_access (bool, optional): whether to use access lists for the application
         holdings (list[int, str], optional): lists of tuples specifying the asset holdings to be accessed during evaluation of the application;
@@ -1697,14 +1696,20 @@ class ApplicationCallTxn(Transaction):
         if resources:
             self.resources = resources
         elif use_access:
-            self.resources = translate_to_resource_references(
-                app_id=self.index,
-                accounts=accounts,
-                foreign_assets=foreign_assets,
-                foreign_apps=foreign_apps,
-                boxes=boxes,
-                holdings=holdings,
-                locals=locals,
+            # coerce an empty translation to None so a constructed
+            # transaction compares equal to its decoded form, which
+            # carries no "al" field
+            self.resources = (
+                translate_to_resource_references(
+                    app_id=self.index,
+                    accounts=accounts,
+                    foreign_assets=foreign_assets,
+                    foreign_apps=foreign_apps,
+                    boxes=boxes,
+                    holdings=holdings,
+                    locals=locals,
+                )
+                or None
             )
         else:
             self.accounts = accounts if accounts else None
@@ -1843,6 +1848,7 @@ class ApplicationCallTxn(Transaction):
             and self.foreign_assets == other.foreign_assets
             and self.extra_pages == other.extra_pages
             and self.boxes == other.boxes
+            and self.resources == other.resources
             and self.reject_version == other.reject_version
         )
 
@@ -1932,7 +1938,19 @@ class ApplicationUpdateTxn(ApplicationCallTxn):
         lease(bytes, optional): transaction lease field
         rekey_to(str, optional): rekey-to field, see Transaction
         boxes(list[(int, bytes)], optional): list of tuples specifying app id and key for boxes the app may access
+        global_schema (StateSchema, optional): new global schema for the application
+        extra_pages (int, optional): new number of additional program pages.
+            A page is pooled between the approval and clear state programs, and is usually spent on the approval program
 
+    Note:
+        The local state schema cannot be changed after application creation,
+        so this transaction takes no local_schema.
+
+        If either global_schema or extra_pages is non-zero, the update installs
+        both values as the application's new sizes, and a field left at its
+        default sets that size to zero. To change one size while keeping the
+        other, pass the current value of the other explicitly. Leave both at
+        their defaults to keep the current sizes.
 
     Attributes:
         See ApplicationCallTxn
@@ -1953,6 +1971,8 @@ class ApplicationUpdateTxn(ApplicationCallTxn):
         lease=None,
         rekey_to=None,
         boxes=None,
+        global_schema=None,
+        extra_pages=0,
     ):
         ApplicationCallTxn.__init__(
             self,
@@ -1970,6 +1990,8 @@ class ApplicationUpdateTxn(ApplicationCallTxn):
             lease=lease,
             rekey_to=rekey_to,
             boxes=boxes,
+            global_schema=global_schema,
+            extra_pages=extra_pages,
         )
 
 

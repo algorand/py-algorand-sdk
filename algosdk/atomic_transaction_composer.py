@@ -344,6 +344,9 @@ class SimulateAtomicTransactionResponse:
         results: List[SimulateABIResult],
         eval_overrides: Optional[SimulateEvalOverrides] = None,
         exec_trace_config: Optional[models.SimulateTraceConfig] = None,
+        group_fees_paid: Optional[int] = None,
+        group_usage: Optional[int] = None,
+        fees_paid: Optional[List[Optional[int]]] = None,
     ) -> None:
         self.version = version
         self.failure_message = failure_message
@@ -353,6 +356,18 @@ class SimulateAtomicTransactionResponse:
         self.abi_results = results
         self.eval_overrides = eval_overrides
         self.exec_trace_config = exec_trace_config
+        # Total of the fee fields of the group and its descendant inner
+        # transactions, in microAlgos. This is the fee the group carries, not
+        # the fee it needs.
+        self.group_fees_paid = group_fees_paid
+        # Fee usage for the group and its descendant inner transactions, as a
+        # fixed point number in millionths of the minimum fee: 2100000 means
+        # 2.1 minimum fees.
+        self.group_usage = group_usage
+        # Total of the fee fields of each top-level transaction and its
+        # descendant inner transactions, in microAlgos, in the same order as
+        # tx_ids. Entries are None when the node does not report the field.
+        self.fees_paid = fees_paid
 
 
 class AtomicTransactionComposer:
@@ -485,13 +500,19 @@ class AtomicTransactionComposer:
             local_schema (StateSchema, optional): restricts what can be stored by created application;
                 must be omitted if not creating an application
             global_schema (StateSchema, optional): restricts what can be stored by created application;
-                must be omitted if not creating an application
+                must be omitted if not creating or updating an application. On an
+                update, a non-zero global_schema or extra_pages installs both sizes
+                and zeroes the one left out, so pass the current value of a size
+                that should not change. Leaving both out keeps the current sizes.
             approval_program (bytes, optional): the program to run on transaction approval;
                 must be omitted if not creating or updating an application
             clear_program (bytes, optional): the program to run when state is being cleared;
                 must be omitted if not creating or updating an application
             extra_pages (int, optional): additional program space for supporting larger programs.
-                A page is 1024 bytes.
+                Each extra page grants 2048 extra bytes which are available for
+                use by the approval or clear state programs. Must be omitted if not
+                creating or updating an application; on an update it installs
+                together with global_schema.
             accounts (list[string], optional): list of additional accounts involved in call
             foreign_apps (list[int], optional): list of other applications (identified by index) involved in call
             foreign_assets (list[int], optional): list of assets involved in call
@@ -521,9 +542,9 @@ class AtomicTransactionComposer:
                 raise error.AtomicTransactionComposerError(
                     "One of the following required parameters for OnApplicationComplete.UpdateApplicationOC is missing: approvalProgram, clearProgram"
                 )
-            if local_schema or global_schema or extra_pages:
+            if local_schema:
                 raise error.AtomicTransactionComposerError(
-                    "One of the following application creation parameters were set on a non-creation call: numGlobalInts, numGlobalByteSlices, numLocalInts, numLocalByteSlices, extraPages"
+                    "One of the following application creation parameters were set on an update call: numLocalInts, numLocalByteSlices"
                 )
         elif (
             approval_program
@@ -775,7 +796,16 @@ class AtomicTransactionComposer:
                 transaction group, a list of txIDs of the simulated transactions,
                 an array of results for each method call transaction in this group.
                 If a method has no return value (void), then the method results array
-                will contain None for that method's return value.
+                will contain None for that method's return value. When the node
+                reports them, group_fees_paid totals the fee fields of the group
+                and its inner transactions in microAlgos, so it is the fee the
+                group carries rather than the fee it needs. group_usage measures
+                the same transactions as a fixed point number in millionths of
+                the minimum fee, so 2100000 means 2.1 minimum fees. Multiply it
+                by SuggestedParams.min_fee and divide by 1000000, rounding up,
+                for the fee in microAlgos that the group needs. fees_paid
+                carries the same total as group_fees_paid split per top-level
+                transaction, in tx_ids order.
         """
 
         if self.status <= AtomicTransactionComposerStatus.SUBMITTED:
@@ -856,6 +886,9 @@ class AtomicTransactionComposer:
                 simulation_result
             ),
             exec_trace_config=exec_trace_config,
+            group_fees_paid=txn_group.get("group-fees-paid"),
+            group_usage=txn_group.get("group-usage"),
+            fees_paid=[t.get("fees-paid") for t in txn_group["txn-results"]],
         )
 
     def execute(

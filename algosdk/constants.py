@@ -81,7 +81,12 @@ MICROALGOS_TO_ALGOS_RATIO = 1000000
 METADATA_LENGTH = 32
 """int: length of asset metadata"""
 NOTE_MAX_LENGTH = 1024
-"""int: maximum length of note field"""
+"""int: number of note bytes currently included in a transaction's base
+fee. Larger notes are paid for with a per-byte surcharge, up to an
+absolute cap. All of these values are consensus parameters that can
+change with an upgrade; in particular the fee-free allowance may drop to
+zero, making every note byte paid. Use simulate to determine the
+required fee instead of relying on this value."""
 LEASE_LENGTH = 32
 """int: byte length of leases"""
 MULTISIG_ACCOUNT_LIMIT = 255
@@ -95,7 +100,8 @@ MAX_ASSET_DECIMALS = 19
 LOGIC_SIG_MAX_COST = 20000
 """int: max execution cost of a teal program"""
 LOGIC_SIG_MAX_SIZE = 1000
-"""int: max size of a teal program and its arguments in bytes"""
+"""int: Deprecated: logic signature size limits are consensus parameters
+enforced by algod; do not use this value to pre-validate transactions."""
 
 APP_PAGE_MAX_SIZE = 2048
 """int: max size of a page for an application in bytes"""
