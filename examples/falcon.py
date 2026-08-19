@@ -16,10 +16,10 @@ from utils import get_algod_client, get_accounts
 
 # The SDK is signature scheme agnostic and never bundles a post-quantum
 # implementation, so the Falcon-1024 keypair comes from a separate package:
-# `pip install temp-falcon` (0.4.0 or newer). It is not a dependency of the
+# `pip install algorand-falcon` (0.1.0 or newer). It is not a dependency of the
 # SDK, so this example skips itself wherever the package is missing
 try:
-    from temp_falcon import falcon1024
+    from algorand_falcon import falcon1024
 except ImportError:
     falcon1024 = None
 
@@ -43,7 +43,7 @@ def get_falcon_signer() -> Falcon1024AlgorandSigner:
     # A 25 word post-quantum mnemonic seeds a Falcon-1024 keypair, the same
     # way a 25 word mnemonic seeds an ed25519 one. Key generation is
     # deterministic, so these words always produce this keypair. Signer
-    # comes from the temp-falcon package, `pip install temp-falcon`
+    # comes from the algorand-falcon package, `pip install algorand-falcon`
     seed = mnemonic.to_pq_seed(PQ_MNEMONIC, constants.falcon_1024_scheme)
     falcon = falcon1024.Signer.generate(seed)
     # example: PQ_FALCON_KEYGEN
@@ -66,7 +66,7 @@ def get_falcon_signer() -> Falcon1024AlgorandSigner:
 
 def falcon_example() -> None:
     if falcon1024 is None:
-        print("temp-falcon is not installed, skipping falcon example")
+        print("algorand-falcon is not installed, skipping falcon example")
         return
 
     algod_client = get_algod_client()

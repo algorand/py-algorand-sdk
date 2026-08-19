@@ -1003,9 +1003,9 @@ def check_error_if_matching(context, err_msg: str = None):
 
 
 def _falcon1024_signer(seed):
-    # temp-falcon is only needed by the post-quantum scenarios, so the
+    # algorand-falcon is only needed by the post-quantum scenarios, so the
     # import is deferred to keep this module importable without it
-    from temp_falcon import falcon1024
+    from algorand_falcon import falcon1024
 
     from algosdk.signer import Falcon1024AlgorandSigner
 
