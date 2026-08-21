@@ -1441,6 +1441,43 @@ class TestApplicationTransactions(unittest.TestCase):
         self.assertEqual(txn.dictify(), call.dictify())
         self.assertEqual(txn, call)
 
+    def test_application_negative_extra_pages(self):
+        approve = b"\0"
+        clear = b"\1"
+        params = transaction.SuggestedParams(0, 1, 100, self.genesis)
+        with self.assertRaises(ValueError):
+            transaction.ApplicationCallTxn(
+                self.sender,
+                params,
+                10,
+                transaction.OnComplete.NoOpOC,
+                extra_pages=-1,
+            )
+        with self.assertRaises(ValueError):
+            transaction.ApplicationCreateTxn(
+                self.sender,
+                params,
+                transaction.OnComplete.NoOpOC,
+                approve,
+                clear,
+                self.gschema,
+                self.lschema,
+                extra_pages=-1,
+            )
+        with self.assertRaises(ValueError):
+            transaction.ApplicationUpdateTxn(
+                self.sender, params, 10, approve, clear, extra_pages=-2
+            )
+        # None is coerced to 0, same as the default
+        txn = transaction.ApplicationCallTxn(
+            self.sender,
+            params,
+            10,
+            transaction.OnComplete.NoOpOC,
+            extra_pages=None,
+        )
+        self.assertEqual(txn.extra_pages, 0)
+
     def test_application_delete(self):
         params = transaction.SuggestedParams(0, 1, 100, self.genesis)
         i = transaction.ApplicationDeleteTxn(self.sender, params, 10)
