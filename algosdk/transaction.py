@@ -1673,7 +1673,9 @@ class ApplicationCallTxn(Transaction):
         self.approval_program = self.teal_bytes(approval_program)
         self.clear_program = self.teal_bytes(clear_program)
         self.app_args = self.bytes_list(app_args)
-        self.extra_pages = extra_pages
+        self.extra_pages = int(extra_pages or 0)
+        if self.extra_pages < 0:
+            raise ValueError("extra_pages must be a non-negative integer")
         self.reject_version = reject_version if reject_version else 0
         self.accounts: Optional[List[str]] = None
         self.foreign_apps: Optional[List[int]] = None
