@@ -426,6 +426,77 @@ class AlgodClient:
         resp = self.algod_request("POST", req, data=txn_bytes, **kwargs)
         return cast(str, cast(dict, resp)["txId"])
 
+    def send_raw_transaction_async(
+        self, txn: Union[bytes, str], **kwargs: Any
+    ) -> AlgodResponseType:
+        """
+        Broadcast a signed transaction to the network asynchronously via /v2/transactions/async.
+
+        Args:
+            txn (Union[bytes, str]): transaction to send, encoded in base64 (str or bytes)
+            request_header (dict, optional): additional header for request
+
+        Returns:
+            AlgodResponseType: response from algod (typically empty dict on 200 OK)
+        """
+        self._assert_json_response(kwargs, "send_raw_transaction_async")
+
+        txn_bytes = base64.b64decode(txn)
+        req = "/transactions/async"
+        headers = util.build_headers_from(
+            kwargs.get("headers", False),
+            {"Content-Type": "application/x-binary"},
+        )
+        kwargs["headers"] = headers
+
+        return self.algod_request("POST", req, data=txn_bytes, **kwargs)
+
+    def send_transaction_async(
+        self, txn: "transaction.GenericSignedTransaction", **kwargs: Any
+    ) -> AlgodResponseType:
+        """
+        Broadcast a signed transaction object to the network asynchronously.
+
+        Args:
+            txn (SignedTransaction, LogicSigTransaction, or MultisigTransaction): transaction to send
+            request_header (dict, optional): additional header for request
+
+        Returns:
+            AlgodResponseType: response from algod
+        """
+        assert not isinstance(
+            txn, transaction.Transaction
+        ), "Attempt to send UNSUPPORTED type of transaction {}".format(txn)
+        return self.send_raw_transaction_async(
+            encoding.msgpack_encode(txn), **kwargs
+        )
+
+    def send_transactions_async(
+        self,
+        txns: "Iterable[transaction.GenericSignedTransaction]",
+        **kwargs: Any,
+    ) -> AlgodResponseType:
+        """
+        Broadcast list of signed transaction objects to the network asynchronously.
+
+        Args:
+            txns (SignedTransaction[] or MultisigTransaction[]):
+                transactions to send
+            request_header (dict, optional): additional header for request
+
+        Returns:
+            AlgodResponseType: response from algod
+        """
+        serialized: List[bytes] = []
+        for txn in txns:
+            assert not isinstance(
+                txn, transaction.Transaction
+            ), "Attempt to send UNSIGNED transaction {}".format(txn)
+            serialized.append(base64.b64decode(encoding.msgpack_encode(txn)))
+        return self.send_raw_transaction_async(
+            base64.b64encode(b"".join(serialized)), **kwargs
+        )
+
     def pending_transactions(
         self, max_txns: int = 0, response_format: str = "json", **kwargs: Any
     ) -> AlgodResponseType:
