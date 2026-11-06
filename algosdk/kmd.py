@@ -337,7 +337,9 @@ class KMDClient:
             "transaction": txn,
         }
         if signing_address:
-            query["public_key"] = signing_address
+            query["public_key"] = base64.b64encode(
+                encoding.decode_address(signing_address)
+            ).decode()
         result = self.kmd_request("POST", req, data=query, **kwargs)
         result = result["signed_transaction"]
         return encoding.msgpack_decode(result)
