@@ -1,5 +1,9 @@
 import json
 from algosdk import transaction
+from algosdk.atomic_transaction_composer import (
+    AccountTransactionSigner,
+    sign_transaction_with_signer,
+)
 from algosdk.v2client import indexer
 from utils import (
     get_accounts,
@@ -35,15 +39,21 @@ actxn = transaction.AssetCreateTxn(
     asset_name="example asset",
 )
 
-txid = algod_client.send_transaction(actxn.sign(acct.private_key))
+stxn = sign_transaction_with_signer(
+    actxn, AccountTransactionSigner(acct.private_key)
+)
+txid = algod_client.send_transaction(stxn)
 res = transaction.wait_for_confirmation(algod_client, txid, 4)
 asset_id = res["asset-index"]
 
 ptxn = transaction.PaymentTxn(
     acct.address, algod_client.suggested_params(), acct.address, 1000
 )
+stxn = sign_transaction_with_signer(
+    ptxn, AccountTransactionSigner(acct.private_key)
+)
 transaction.wait_for_confirmation(
-    algod_client, algod_client.send_transaction(ptxn.sign(acct.private_key)), 4
+    algod_client, algod_client.send_transaction(stxn), 4
 )
 
 # allow indexer to catch up

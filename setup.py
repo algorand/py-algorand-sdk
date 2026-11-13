@@ -9,7 +9,7 @@ setuptools.setup(
     description="Algorand SDK in Python",
     author="Algorand",
     author_email="pypiservice@algorand.com",
-    version="2.7.0",
+    version="2.12.0",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/algorand/py-algorand-sdk",
@@ -21,6 +21,7 @@ setuptools.setup(
         "pynacl>=1.4.0,<2",
         "pycryptodomex>=3.6.0,<4",
         "msgpack>=1.0.0,<2",
+        "typing_extensions>=4.9.0,<5",
     ],
     packages=setuptools.find_packages(
         include=(

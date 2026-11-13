@@ -8,8 +8,6 @@
 @compile
 @compile.disassemble
 @compile.sourcemap
-@dryrun
-@dryrun.testing
 @kmd
 @rekey_v1
 @send

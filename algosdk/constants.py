@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Literal
 
 """
 Contains useful constants.
@@ -56,6 +56,8 @@ MSIG_ADDR_PREFIX = "MultisigAddr"
 """str: prefix for multisig addresses"""
 LOGIC_PREFIX = b"Program"
 """bytes: program (logic) prefix when signing"""
+MULTISIG_LOGIC_PREFIX = b"MsigProgram"
+"""bytes: program (logic) prefix when signing"""
 LOGIC_DATA_PREFIX = b"ProgData"
 """bytes: program (logic) data prefix when signing"""
 APPID_PREFIX = b"appID"
@@ -79,7 +81,12 @@ MICROALGOS_TO_ALGOS_RATIO = 1000000
 METADATA_LENGTH = 32
 """int: length of asset metadata"""
 NOTE_MAX_LENGTH = 1024
-"""int: maximum length of note field"""
+"""int: number of note bytes currently included in a transaction's base
+fee. Larger notes are paid for with a per-byte surcharge, up to an
+absolute cap. All of these values are consensus parameters that can
+change with an upgrade; in particular the fee-free allowance may drop to
+zero, making every note byte paid. Use simulate to determine the
+required fee instead of relying on this value."""
 LEASE_LENGTH = 32
 """int: byte length of leases"""
 MULTISIG_ACCOUNT_LIMIT = 255
@@ -93,10 +100,26 @@ MAX_ASSET_DECIMALS = 19
 LOGIC_SIG_MAX_COST = 20000
 """int: max execution cost of a teal program"""
 LOGIC_SIG_MAX_SIZE = 1000
-"""int: max size of a teal program and its arguments in bytes"""
+"""int: Deprecated: logic signature size limits are consensus parameters
+enforced by algod; do not use this value to pre-validate transactions."""
 
 APP_PAGE_MAX_SIZE = 2048
 """int: max size of a page for an application in bytes"""
+
+# post-quantum (Falcon) related
+PQ_ADDRESS_PREFIX = b"PQA"
+"""bytes: prefix when deriving a post-quantum account address"""
+PQ_SEED_PREFIX = b"PQK"
+"""bytes: prefix when deriving a post-quantum key seed from a mnemonic"""
+PQ_PROGRAM_PREFIX = b"PQProgram"
+"""bytes: program prefix when signing a delegated post-quantum logic sig"""
+PQ_SCHEME_LEN = 2
+"""int: length in bytes of a post-quantum scheme identifier"""
+PQScheme = Literal[b"f1"]
+"""the supported post-quantum scheme identifiers. Widen this union when a
+new scheme ships so type checkers keep rejecting unknown schemes."""
+FALCON_1024_SCHEME: PQScheme = b"f1"
+"""bytes: 2-byte scheme identifier for Falcon-1024"""
 
 ZERO_ADDRESS = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ"
 """str: algorand encoded address of 32 zero bytes"""
@@ -123,6 +146,7 @@ bid_prefix = BID_PREFIX
 bytes_prefix = BYTES_PREFIX
 msig_addr_prefix = MSIG_ADDR_PREFIX
 logic_prefix = LOGIC_PREFIX
+multisig_logic_prefix = MULTISIG_LOGIC_PREFIX
 logic_data_prefix = LOGIC_DATA_PREFIX
 hash_len = HASH_LEN
 check_sum_len_bytes = CHECK_SUM_LEN_BYTES
@@ -142,3 +166,8 @@ logic_sig_max_size = LOGIC_SIG_MAX_SIZE
 app_page_max_size = APP_PAGE_MAX_SIZE
 stateproof_txn = STATEPROOF_TXN
 heartbeat_txn = HEARTBEAT_TXN
+pq_address_prefix = PQ_ADDRESS_PREFIX
+pq_seed_prefix = PQ_SEED_PREFIX
+pq_program_prefix = PQ_PROGRAM_PREFIX
+pq_scheme_len = PQ_SCHEME_LEN
+falcon_1024_scheme: PQScheme = FALCON_1024_SCHEME

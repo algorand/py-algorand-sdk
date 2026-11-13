@@ -3,12 +3,13 @@ import random
 import time
 
 import parse
-from behave import given, register_type, then, when
+from behave import given, register_type, step, then, when
 from nacl.signing import SigningKey
 
 from algosdk import (
     account,
     auction,
+    constants,
     encoding,
     kmd,
     logic,
@@ -34,6 +35,40 @@ kmd_port = 60001
 
 DEV_ACCOUNT_INITIAL_MICROALGOS: int = 100_000_000
 
+# The rekey scenarios only send zero-amount transactions, so their throwaway
+# account just needs min balance plus a few (falcon-sized) fees.
+REKEY_FUNDING_MICROALGOS: int = 1_000_000
+
+# Each falcon1024 scenario funds a brand new account that is never swept
+# back, so keep the amount just large enough for min balance + the largest
+# amount sent by those scenarios + fees.
+FALCON_FUNDING_MICROALGOS: int = 5_000_000
+
+
+# Order the wallet's keys so the accounts steps reach for by index are the
+# ones that can actually pay.
+#
+# Steps treat `context.accounts[0]` (and [1]) as well-funded genesis accounts,
+# but scenarios that generate keys add them to the same kmd wallet and never
+# sweep them back, and kmd does not list keys in insertion order. Without
+# this, index 0 eventually lands on a modestly funded throwaway account and
+# the sends overspend. Accounts that a rekey scenario pointed at another
+# authorizer sort last: kmd can no longer sign for them at all.
+def order_wallet_accounts(context):
+    if not hasattr(context, "app_acl") or not hasattr(context, "accounts"):
+        return
+
+    def usable_balance(address):
+        info = context.app_acl.account_info(address)
+        auth_addr = info.get("auth-addr")
+        if auth_addr is not None and auth_addr != address:
+            return -1
+        return info["amount"]
+
+    context.accounts = sorted(
+        context.accounts, key=usable_balance, reverse=True
+    )
+
 
 def wait_for_algod_transaction_processing_to_complete():
     """
@@ -47,12 +82,23 @@ def wait_for_algod_transaction_processing_to_complete():
 
 
 # Initialize a transient account in dev mode to make payment transactions.
-def initialize_account(context, account):
+def initialize_account(
+    context, account, amount=DEV_ACCOUNT_INITIAL_MICROALGOS
+):
+    sender = context.accounts[0]
+    params = context.app_acl.suggested_params()
+    balance = context.app_acl.account_info(sender)["amount"]
+    required = amount + max(params.min_fee, constants.min_txn_fee)
+    assert (
+        balance >= required
+    ), "{} cannot fund {} microAlgos, it holds {}".format(
+        sender, required, balance
+    )
     payment = transaction.PaymentTxn(
-        sender=context.accounts[0],
-        sp=context.app_acl.suggested_params(),
+        sender=sender,
+        sp=params,
         receiver=account,
-        amt=DEV_ACCOUNT_INITIAL_MICROALGOS,
+        amt=amount,
     )
     signed_payment = context.wallet.sign_transaction(payment)
     context.app_acl.send_transaction(signed_payment)
@@ -308,7 +354,7 @@ def gen_key_kmd(context):
 @when("I generate a key using kmd for rekeying and fund it")
 def gen_rekey_kmd(context):
     context.rekey = context.wallet.generate_key()
-    initialize_account(context, context.rekey)
+    initialize_account(context, context.rekey, REKEY_FUNDING_MICROALGOS)
 
 
 @then("the key should be in the wallet")
@@ -361,6 +407,7 @@ def wallet_info(context):
     )
     context.wallet_id = context.wallet.id
     context.accounts = context.wallet.list_keys()
+    order_wallet_accounts(context)
 
 
 def default_txn_with_addr(context, amt, note, sender_addr):
@@ -836,7 +883,7 @@ def set_from_to(context, from_addr):
     context.txn.sender = from_addr
 
 
-@when("I add a rekeyTo field with the private key algorand address")
+@step("I add a rekeyTo field with the private key algorand address")
 def add_rekey_to_sk(context):
     context.txn.rekey_to = account.address_from_private_key(context.sk)
 
@@ -953,3 +1000,94 @@ def check_error_if_matching(context, err_msg: str = None):
         assert err_msg in context.sanity_check_err
     else:
         assert len(context.sanity_check_err) == 0
+
+
+def _falcon1024_signer(seed):
+    # algorand-falcon is only needed by the post-quantum scenarios, so the
+    # import is deferred to keep this module importable without it
+    from algorand_falcon import falcon1024
+
+    from algosdk.signer import Falcon1024AlgorandSigner
+
+    falcon = falcon1024.Signer.generate(seed)
+    return Falcon1024AlgorandSigner(falcon.public_key, falcon.sign)
+
+
+@given("I get the default falcon1024 account")
+def default_falcon1024_account(context):
+    # the default falcon1024 account is derived from the 32-byte counting
+    # seed; the offline feature goldens are signed with it
+    context.falcon = _falcon1024_signer(bytes(range(32)))
+
+
+@given('mnemonic for falcon1024 private key "{mn}"')
+def falcon1024_mn(context, mn):
+    seed = mnemonic.to_pq_seed(mn, constants.falcon_1024_scheme)
+    context.falcon = _falcon1024_signer(seed)
+
+
+@given("I generate and fund a falcon1024 key")
+def generate_and_fund_falcon1024(context):
+    from algosdk.atomic_transaction_composer import (
+        AccountTransactionSigner,
+        sign_transaction_with_signer,
+    )
+
+    context.falcon = _falcon1024_signer(None)
+    params = context.app_acl.suggested_params()
+    sk = context.wallet.export_key(context.accounts[0])
+    txn = transaction.PaymentTxn(
+        context.accounts[0],
+        params,
+        context.falcon.address,
+        FALCON_FUNDING_MICROALGOS,
+    )
+    stxn = sign_transaction_with_signer(txn, AccountTransactionSigner(sk))
+    txid = context.app_acl.send_transaction(stxn)
+    transaction.wait_for_confirmation(context.app_acl, txid, 10)
+
+
+@given(
+    'I create the default falcon1024 transaction with parameters {amt} "{note}"'
+)
+def default_falcon1024_txn(context, amt, note):
+    # a flat fee large enough to cover the oversized falcon signature
+    params = context.app_acl.suggested_params()
+    params.flat_fee = True
+    params.fee = 3000
+    if note == "none":
+        note = None
+    else:
+        note = base64.b64decode(note)
+    context.txn = transaction.PaymentTxn(
+        context.falcon.address,
+        params,
+        context.accounts[1],
+        int(amt),
+        note=note,
+    )
+    context.pk = context.falcon.address
+
+
+@when("I create the falcon1024 payment transaction")
+def create_falcon1024_paytxn(context):
+    context.params.flat_fee = True
+    context.txn = transaction.PaymentTxn(
+        context.falcon.address,
+        context.params,
+        context.to,
+        context.amt,
+        context.close,
+        context.note,
+    )
+
+
+@given("I add a fee to cover falcon1024 signatures")
+def add_falcon1024_fee(context):
+    # bump to a flat fee large enough to cover the oversized falcon signature
+    context.txn.fee = 3000
+
+
+@step("I sign the falcon1024 transaction with the private key")
+def sign_falcon1024(context):
+    context.stx = context.falcon.sign_transactions([context.txn], [0])[0]

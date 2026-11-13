@@ -1,7 +1,5 @@
 import base64
 import json
-import os
-import unittest
 import urllib
 from pathlib import Path
 from urllib.request import Request, urlopen
@@ -12,7 +10,6 @@ from behave import given, step, then, when
 from glom import glom
 
 from algosdk import (
-    dryrun_results,
     encoding,
     error,
     mnemonic,
@@ -24,17 +21,13 @@ from algosdk.atomic_transaction_composer import (
     SimulateAtomicTransactionResponse,
 )
 from algosdk.error import AlgodHTTPError
-from algosdk.testing.dryrun import DryrunTestCaseMixin
 from algosdk.v2client import *
 from algosdk.v2client.models import (
-    Account,
-    ApplicationLocalState,
-    DryrunRequest,
-    DryrunSource,
     SimulateRequest,
     SimulateTraceConfig,
 )
 from tests.steps.steps import algod_port, indexer_port
+from tests.steps.steps import order_wallet_accounts
 from tests.steps.steps import token as daemon_token
 
 
@@ -328,6 +321,19 @@ def block(context, block, response_format):
     )
 
 
+@when(
+    'we make a Get Block call for round {round} with format "{response_format}" and header-only "{header_only}"'
+)
+def block(context, round, response_format, header_only):
+    bool_opt = None
+    if header_only == "true":
+        bool_opt = True
+
+    context.response = context.acl.block_info(
+        int(round), response_format=response_format, header_only=bool_opt
+    )
+
+
 @when("we make any Get Block call")
 def block_any(context):
     context.response = context.acl.block_info(3, response_format="msgpack")
@@ -337,6 +343,17 @@ def block_any(context):
 def parse_block(context, pool):
     context.response = json.loads(context.response)
     assert context.response["block"]["rwd"] == pool
+
+
+@then(
+    'the parsed Get Block response should have rewards pool "{pool}" and no certificate or payset'
+)
+def parse_block_header(context, pool):
+    context.response = json.loads(context.response)
+    assert context.response["block"]["rwd"] == pool
+    assert (
+        "cert" not in context.response
+    ), f"Key 'cert' unexpectedly found in dictionary"
 
 
 @then(
@@ -654,7 +671,6 @@ def parse_txns_by_addr(context, roundNum, length, idx, sender):
     'we make a Lookup Block call against round {block:d} and header "{headerOnly:MaybeBool}"'
 )
 def lookup_block(context, block, headerOnly):
-    print("Header only = " + str(headerOnly))
     context.response = context.icl.block_info(
         block=block, header_only=headerOnly
     )
@@ -705,7 +721,7 @@ def parse_asset(context, index):
 
 
 @when(
-    'we make a Search For Transactions call with account "{account:MaybeString}" NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index} addressRole "{addressRole:MaybeString}" ExcluseCloseTo "{excludeCloseTo:MaybeString}" rekeyTo "{rekeyTo:MaybeString}"'
+    'we make a Search For Transactions call with account "{account:MaybeString}" NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index} addressRole "{addressRole:MaybeString}" ExcluseCloseTo "{excludeCloseTo:MaybeString}" groupid "{groupidB64:MaybeString}" rekeyTo "{rekeyTo:MaybeString}"'
 )
 def search_txns(
     context,
@@ -725,6 +741,7 @@ def search_txns(
     index,
     addressRole,
     excludeCloseTo,
+    groupidB64,
     rekeyTo,
 ):
     if notePrefixB64 == "none":
@@ -745,6 +762,8 @@ def search_txns(
         addressRole = None
     if excludeCloseTo == "none":
         excludeCloseTo = None
+    if groupidB64 == "none":
+        groupidB64 = ""
     if rekeyTo == "none":
         rekeyTo = None
     context.response = context.icl.search_transactions(
@@ -765,12 +784,13 @@ def search_txns(
         address=account,
         address_role=addressRole,
         exclude_close_to=excludeCloseTo,
+        group_id=base64.b64decode(groupidB64),
         rekey_to=rekeyTo,
     )
 
 
 @when(
-    'we make a Search For Transactions call with account "{account:MaybeString}" NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index} addressRole "{addressRole:MaybeString}" ExcluseCloseTo "{excludeCloseTo:MaybeString}"'
+    'we make a Search For Transactions call with account "{account:MaybeString}" NotePrefix "{notePrefixB64:MaybeString}" TxType "{txType:MaybeString}" SigType "{sigType:MaybeString}" txid "{txid:MaybeString}" round {block} minRound {minRound} maxRound {maxRound} limit {limit} beforeTime "{beforeTime:MaybeString}" afterTime "{afterTime:MaybeString}" currencyGreaterThan {currencyGreaterThan} currencyLessThan {currencyLessThan} assetIndex {index} addressRole "{addressRole:MaybeString}" ExcluseCloseTo "{excludeCloseTo:MaybeString}" groupid "{groupidB64:MaybeString}"'
 )
 def search_txns2(
     context,
@@ -790,6 +810,7 @@ def search_txns2(
     index,
     addressRole,
     excludeCloseTo,
+    groupidB64,
 ):
     if notePrefixB64 == "none":
         notePrefixB64 = ""
@@ -809,6 +830,8 @@ def search_txns2(
         addressRole = None
     if excludeCloseTo == "none":
         excludeCloseTo = None
+    if groupidB64 == "none":
+        groupidB64 = ""
     context.response = context.icl.search_transactions(
         asset_id=int(index),
         limit=int(limit),
@@ -827,6 +850,7 @@ def search_txns2(
         address=account,
         address_role=addressRole,
         exclude_close_to=excludeCloseTo,
+        group_id=base64.b64decode(groupidB64),
         rekey_to=None,
     )
 
@@ -1134,12 +1158,14 @@ def compare_to_original(context):
 def algod_v2_client_at_host_port_and_token(context, host, port, token):
     algod_address = "http://" + str(host) + ":" + str(port)
     context.app_acl = algod.AlgodClient(token, algod_address)
+    order_wallet_accounts(context)
 
 
 @given("an algod v2 client")
 def algod_v2_client(context):
     algod_address = "http://localhost" + ":" + str(algod_port)
     context.app_acl = algod.AlgodClient(daemon_token, algod_address)
+    order_wallet_accounts(context)
 
 
 @given("an indexer v2 client")
@@ -1190,200 +1216,6 @@ def disassembly_matches_source(context, bytecode_filename, source_filename):
     assert actual_source == expected_source
 
 
-@when('I dryrun a "{kind}" program "{program}"')
-def dryrun_step(context, kind, program):
-    data = load_resource(program)
-    sp = transaction.SuggestedParams(
-        int(1000), int(1), int(100), "", flat_fee=True
-    )
-    zero_addr = encoding.encode_address(bytes(32))
-    txn = transaction.Transaction(zero_addr, sp, None, None, "pay", None)
-    sources = []
-
-    if kind == "compiled":
-        lsig = transaction.LogicSigAccount(bytes(data))
-        txns = [transaction.LogicSigTransaction(txn, lsig)]
-    elif kind == "source":
-        txns = [transaction.SignedTransaction(txn, None)]
-        sources = [DryrunSource(field_name="lsig", source=data, txn_index=0)]
-    else:
-        assert False, f"kind {kind} not in (source, compiled)"
-
-    drr = DryrunRequest(txns=txns, sources=sources)
-    context.response = context.app_acl.dryrun(drr)
-
-
-@then('I get execution result "{result}"')
-def dryrun_check_step(context, result):
-    ddr = context.response
-    assert len(ddr["txns"]) > 0
-
-    res = ddr["txns"][0]
-    if (
-        res["logic-sig-messages"] is not None
-        and len(res["logic-sig-messages"]) > 0
-    ):
-        msgs = res["logic-sig-messages"]
-    elif (
-        res["app-call-messages"] is not None
-        and len(res["app-call-messages"]) > 0
-    ):
-        msgs = res["app-call-messages"]
-
-    assert len(msgs) > 0
-    assert msgs[-1] == result
-
-
-@when("we make any Dryrun call")
-def dryrun_any_call_step(context):
-    context.response = context.acl.dryrun(DryrunRequest())
-
-
-@then(
-    'the parsed Dryrun Response should have global delta "{creator}" with {action}'
-)
-def dryrun_parsed_response(context, creator, action):
-    ddr = context.response
-    assert len(ddr["txns"]) > 0
-
-    delta = ddr["txns"][0]["global-delta"]
-    assert len(delta) > 0
-    assert delta[0]["key"] == creator
-    assert delta[0]["value"]["action"] == int(action)
-
-
-@given('dryrun test case with "{program}" of type "{kind}"')
-def dryrun_test_case_step(context, program, kind):
-    if kind not in set(["lsig", "approv", "clearp"]):
-        assert False, f"kind {kind} not in (lsig, approv, clearp)"
-
-    prog = load_resource(program)
-    # check if source
-    if prog[0] > 0x20:
-        prog = prog.decode("utf-8")
-
-    context.dryrun_case_program = prog
-    context.dryrun_case_kind = kind
-
-
-@then('status assert of "{status}" is succeed')
-def dryrun_test_case_status_assert_step(context, status):
-    class TestCase(DryrunTestCaseMixin, unittest.TestCase):
-        """Mock TestCase to test"""
-
-    ts = TestCase()
-    ts.algo_client = context.app_acl
-
-    lsig = None
-    app = None
-    if context.dryrun_case_kind == "lsig":
-        lsig = dict()
-    if context.dryrun_case_kind == "approv":
-        app = dict()
-    elif context.dryrun_case_kind == "clearp":
-        app = dict(on_complete=transaction.OnComplete.ClearStateOC)
-
-    if status == "PASS":
-        ts.assertPass(context.dryrun_case_program, lsig=lsig, app=app)
-    else:
-        ts.assertReject(context.dryrun_case_program, lsig=lsig, app=app)
-
-
-def dryrun_test_case_global_state_assert_impl(
-    context, key, value, action, raises
-):
-    class TestCase(DryrunTestCaseMixin, unittest.TestCase):
-        """Mock TestCase to test"""
-
-    ts = TestCase()
-    ts.algo_client = context.app_acl
-
-    action = int(action)
-
-    val = dict(action=action)
-    if action == 1:
-        val["bytes"] = value
-    elif action == 2:
-        val["uint"] = int(value)
-
-    on_complete = transaction.OnComplete.NoOpOC
-    if context.dryrun_case_kind == "clearp":
-        on_complete = transaction.OnComplete.ClearStateOC
-
-    raised = False
-    try:
-        ts.assertGlobalStateContains(
-            context.dryrun_case_program,
-            dict(key=key, value=val),
-            app=dict(on_complete=on_complete),
-        )
-    except AssertionError:
-        raised = True
-
-    if raises:
-        ts.assertTrue(raised, "assertGlobalStateContains expected to raise")
-
-
-@then('global delta assert with "{key}", "{value}" and {action} is succeed')
-def dryrun_test_case_global_state_assert_step(context, key, value, action):
-    dryrun_test_case_global_state_assert_impl(
-        context, key, value, action, False
-    )
-
-
-@then('global delta assert with "{key}", "{value}" and {action} is failed')
-def dryrun_test_case_global_state_assert_fail_step(
-    context, key, value, action
-):
-    dryrun_test_case_global_state_assert_impl(
-        context, key, value, action, True
-    )
-
-
-@then(
-    'local delta assert for "{account}" of accounts {index} with "{key}", "{value}" and {action} is succeed'
-)
-def dryrun_test_case_local_state_assert_fail_step(
-    context, account, index, key, value, action
-):
-    class TestCase(DryrunTestCaseMixin, unittest.TestCase):
-        """Mock TestCase to test"""
-
-    ts = TestCase()
-    ts.algo_client = context.app_acl
-
-    action = int(action)
-
-    val = dict(action=action)
-    if action == 1:
-        val["bytes"] = value
-    elif action == 2:
-        val["uint"] = int(value)
-
-    on_complete = transaction.OnComplete.NoOpOC
-    if context.dryrun_case_kind == "clearp":
-        on_complete = transaction.OnComplete.ClearStateOC
-
-    app_idx = 1
-    accounts = [
-        Account(
-            address=ts.default_address(),
-            status="Offline",
-            apps_local_state=[ApplicationLocalState(id=app_idx)],
-        )
-    ] * 2
-    accounts[int(index)].address = account
-
-    drr = ts.dryrun_request(
-        context.dryrun_case_program,
-        sender=accounts[0].address,
-        app=dict(app_idx=app_idx, on_complete=on_complete, accounts=accounts),
-    )
-
-    ts.assertNoError(drr)
-    ts.assertLocalStateContains(drr, account, dict(key=key, value=val))
-
-
 @then(
     'the produced json should equal "{json_path}" loaded from "{json_directory}"'
 )
@@ -1393,46 +1225,6 @@ def check_json_output_equals(context, json_path, json_directory):
     ) as f:
         loaded_response = json.load(f)
     assert context.json_output == loaded_response
-
-
-@given(
-    'a dryrun response file "{dryrun_response_file}" and a transaction at index "{txn_id}"'
-)
-def parse_dryrun_response_object(context, dryrun_response_file, txn_id):
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.dirname(os.path.dirname(dir_path))
-    with open(
-        dir_path + "/tests/features/resources/" + dryrun_response_file, "r"
-    ) as f:
-        drr_dict = json.loads(f.read())
-
-    context.dryrun_response_object = dryrun_results.DryrunResponse(drr_dict)
-    context.dryrun_txn_result = context.dryrun_response_object.txns[
-        int(txn_id)
-    ]
-
-
-@then('calling app trace produces "{app_trace_file}"')
-def dryrun_compare_golden(context, app_trace_file):
-    trace_expected = load_resource(app_trace_file, is_binary=False)
-
-    dryrun_trace = context.dryrun_txn_result.app_trace()
-
-    got_lines = dryrun_trace.split("\n")
-    expected_lines = trace_expected.split("\n")
-
-    print("{} {}".format(len(got_lines), len(expected_lines)))
-    for idx in range(len(got_lines)):
-        if got_lines[idx] != expected_lines[idx]:
-            print(
-                "  {}  \n{}\n{}\n".format(
-                    idx, got_lines[idx], expected_lines[idx]
-                )
-            )
-
-    assert trace_expected == dryrun_trace, "Expected \n{}\ngot\n{}\n".format(
-        trace_expected, dryrun_trace
-    )
 
 
 @then(

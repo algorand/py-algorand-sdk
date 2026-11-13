@@ -1,5 +1,99 @@
 # Changelog
 
+# v2.12.0
+
+<!-- Release notes generated using configuration in .github/release.yml at release/v2.12.0 -->
+
+## What's Changed
+### Bugfixes
+* Fix: Handle empty resource references in access list by @jannotti in https://github.com/algorand/py-algorand-sdk/pull/586
+### Enhancements
+* API: Support for Applications/Assets Pagination and new exclude parameters by @gmalouf in https://github.com/algorand/py-algorand-sdk/pull/588
+* chore: remove dryrun by @mrcointreau in https://github.com/algorand/py-algorand-sdk/pull/593
+* feat: add post-quantum (Falcon-1024) signature support by @mrcointreau in https://github.com/algorand/py-algorand-sdk/pull/595
+* feat: support for consensus v42 by @mrcointreau in https://github.com/algorand/py-algorand-sdk/pull/596
+
+## New Contributors
+* @mrcointreau made their first contribution in https://github.com/algorand/py-algorand-sdk/pull/593
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v2.11.1...v2.12.0
+
+# v2.11.1
+
+<!-- Release notes generated using configuration in .github/release.yml at release/v2.11.1 -->
+
+## What's Changed
+### Enhancements
+* Apps: Support for reject-version on application call transactions by @gmalouf in https://github.com/algorand/py-algorand-sdk/pull/582
+
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v2.11.0...v2.11.1
+
+# v2.11.0
+
+<!-- Release notes generated using configuration in .github/release.yml at release/v2.11.0 -->
+
+## What's Changed
+### Enhancements
+* Signatures: Support new lmsig for multisig delegated logicsigs by @jannotti in https://github.com/algorand/py-algorand-sdk/pull/579
+* types: support txn.Access transaction constructor by @algorandskiy in https://github.com/algorand/py-algorand-sdk/pull/580
+
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v2.10.0...v2.11.0
+
+# v2.10.0
+
+<!-- Release notes generated using configuration in .github/release.yml at release/v2.10.0 -->
+
+## What's Changed
+### New Features
+* CICD: implement tests in GitHub Actions by @onetechnical in https://github.com/algorand/py-algorand-sdk/pull/575
+### Enhancements
+* CICD: disable CircleCI and add a GitHub Actions concurrency limiter by @onetechnical in https://github.com/algorand/py-algorand-sdk/pull/576
+* API: Support for filtering /transactions by group-id. by @gmalouf in https://github.com/algorand/py-algorand-sdk/pull/577
+
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v2.9.1...v2.10.0
+
+# v2.9.1
+
+<!-- Release notes generated using configuration in .github/release.yml at release/v2.9.1 -->
+
+## What's Changed
+### Bugfixes
+* API: Revert application boxes pagination by @gmalouf in https://github.com/algorand/py-algorand-sdk/pull/572
+
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v2.9.0...v2.9.1
+
+# v2.9.0
+
+<!-- Release notes generated using configuration in .github/release.yml at release/v2.9.0 -->
+
+## What's Changed
+### Enhancements
+* Build: Update Box API Pagination-dependent integration tests by @gmalouf in https://github.com/algorand/py-algorand-sdk/pull/563
+* Devops: Release process update by @gmalouf in https://github.com/algorand/py-algorand-sdk/pull/564
+* Deps: Bump setuptools from 75.6.0 to 78.1.1 by @dependabot in https://github.com/algorand/py-algorand-sdk/pull/568
+* API: Algorand 4.1.x API updates support, includes enhanced Application Box… by @gmalouf in https://github.com/algorand/py-algorand-sdk/pull/570
+
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v2.8.0...v2.9.0
+
+# v2.8.0
+
+<!-- Release notes generated using configuration in .github/release.yml at release/v2.8.0 -->
+
+## What's Changed
+### Enhancements
+* Blockheaders: Support for blockheaders call against Indexer API. by @gmalouf in https://github.com/algorand/py-algorand-sdk/pull/553
+* API: Support for header-only flag on /v2/block algod endpoint. by @gmalouf in https://github.com/algorand/py-algorand-sdk/pull/557
+
+## New Contributors
+* @dependabot made their first contribution in https://github.com/algorand/py-algorand-sdk/pull/535
+
+**Full Changelog**: https://github.com/algorand/py-algorand-sdk/compare/v2.7.0...v2.8.0
+
 # v2.7.0
 
 <!-- Release notes generated using configuration in .github/release.yml at release/v2.7.0 -->

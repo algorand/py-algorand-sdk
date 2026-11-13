@@ -238,6 +238,61 @@ class AlgodClient:
         req = "/accounts/" + address + "/applications/" + str(application_id)
         return self.algod_request("GET", req, query, **kwargs)
 
+    def account_assets_info(
+        self,
+        address: str,
+        limit: int = 0,
+        next_page: Optional[str] = None,
+        **kwargs: Any,
+    ) -> AlgodResponseType:
+        """
+        Return a paginated list of assets held by an account, inclusive of
+        asset params.
+
+        Args:
+            address (str): account public key
+            limit (int, optional): maximum number of results to return.
+            next_page (str, optional): the next page token from a previous
+                response.
+        """
+        params: Dict[str, Union[int, str]] = {}
+        if limit:
+            params["limit"] = limit
+        if next_page:
+            params["next"] = next_page
+        req = "/accounts/" + address + "/assets"
+        return self.algod_request("GET", req, params=params, **kwargs)
+
+    def account_applications_info(
+        self,
+        address: str,
+        limit: int = 0,
+        next_page: Optional[str] = None,
+        include: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> AlgodResponseType:
+        """
+        Return a paginated list of applications held by an account (local
+        state and params if the account is the creator).
+
+        Args:
+            address (str): account public key
+            limit (int, optional): maximum number of results to return.
+            next_page (str, optional): the next page token from a previous
+                response.
+            include (list, optional): include additional items such as
+                ``"params"`` to include full application parameters.
+        """
+        params: Dict[str, Union[int, str]] = {}
+        if limit:
+            params["limit"] = limit
+        if next_page:
+            params["next"] = next_page
+        if include:
+            params["include"] = ",".join(include)
+        req = "/accounts/" + address + "/applications"
+        return self.algod_request("GET", req, params=params, **kwargs)
+
     def pending_transactions_by_address(
         self,
         address: str,
@@ -270,6 +325,7 @@ class AlgodClient:
         block: Optional[int] = None,
         response_format: str = "json",
         round_num: Optional[int] = None,
+        header_only: Optional[bool] = None,
         **kwargs: Any,
     ) -> AlgodResponseType:
         """
@@ -280,8 +336,15 @@ class AlgodClient:
             response_format (str): the format in which the response is
                 returned: either "json" or "msgpack"
             round_num (int, optional): alias for block; specify one of these
+            header_only (bool, optional): if set to true, only block header would be
+                present in the the response
+
         """
         query = {"format": response_format}
+
+        if header_only:
+            query["header-only"] = "true"
+
         req = "/blocks/" + _specify_round_string(block, round_num)
         res = self.algod_request(
             "GET", req, query, response_format=response_format, **kwargs
@@ -515,30 +578,6 @@ class AlgodClient:
             Dict[str, str],
             self.algod_request("POST", req, data=program_bytes, **kwargs),
         )
-
-    def dryrun(self, drr: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
-        """
-        Dryrun with remote algod.
-
-        Args:
-            drr (obj): dryrun request object
-            request_header (dict, optional): additional header for request
-
-        Returns:
-            dict: loaded from json response body
-        """
-        self._assert_json_response(kwargs, "dryrun")
-
-        req = "/teal/dryrun"
-        headers = util.build_headers_from(
-            kwargs.get("headers", False),
-            {"Content-Type": "application/msgpack"},
-        )
-        kwargs["headers"] = headers
-        data = encoding.msgpack_encode(drr)
-        data = base64.b64decode(data)
-
-        return cast(dict, self.algod_request("POST", req, data=data, **kwargs))
 
     def genesis(self, **kwargs: Any) -> AlgodResponseType:
         """Returns the entire genesis file."""

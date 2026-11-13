@@ -100,8 +100,17 @@ class WrongNoteType(Exception):
 
 
 class WrongNoteLength(Exception):
+    """
+    Deprecated: note size is a consensus parameter enforced by algod; the
+    SDK no longer validates it and this exception is no longer raised.
+    """
+
     def __init__(self):
-        Exception.__init__(self, "note length must be at most 1024")
+        Exception.__init__(
+            self,
+            "note size is a consensus parameter enforced by algod; "
+            "this exception is no longer raised by the SDK",
+        )
 
 
 class InvalidProgram(Exception):
@@ -226,4 +235,46 @@ class SourceMapVersionError(Exception):
         Exception.__init__(
             self,
             "Only SourceMap version 3 is supported, got: {}".format(version),
+        )
+
+
+class PQSchemeLengthError(Exception):
+    def __init__(self, length):
+        Exception.__init__(
+            self,
+            "post-quantum scheme must be 2 bytes, got {}".format(length),
+        )
+
+
+class NoCanonicalSaltError(Exception):
+    def __init__(self):
+        Exception.__init__(
+            self,
+            "no canonical salt exists for this public key and scheme",
+        )
+
+
+class PQMultisigUnsupportedError(Exception):
+    def __init__(self):
+        Exception.__init__(
+            self, "post-quantum signatures do not support multisig"
+        )
+
+
+class InvalidPQSaltError(Exception):
+    def __init__(self, expected, got):
+        Exception.__init__(
+            self,
+            "invalid post-quantum signature salt: expected the canonical"
+            " salt {}, got {}".format(expected, got),
+        )
+
+
+class LogicSigPQSigningKeyMismatchError(Exception):
+    def __init__(self, derived, sigkey):
+        Exception.__init__(
+            self,
+            "signing key for the delegated account does not match the"
+            " post-quantum signature: the signature authorizes {}, but"
+            " sigkey is {}".format(derived, sigkey),
         )

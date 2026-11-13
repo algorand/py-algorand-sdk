@@ -14,6 +14,8 @@ from algosdk import (
     transaction,
 )
 
+from algosdk.app_access import HoldingRef, LocalsRef
+
 
 class TestPaymentTransaction(unittest.TestCase):
     def test_min_txn_fee(self):
@@ -51,14 +53,17 @@ class TestPaymentTransaction(unittest.TestCase):
         txn = transaction.PaymentTxn(address, sp, address, 1000, note="helo")
         self.assertEqual(constants.min_txn_fee, txn.fee)
 
-    def test_note_wrong_length(self):
+    def test_note_large_is_not_validated(self):
+        # note size is a consensus parameter enforced by algod, not by the
+        # SDK: building a transaction with a note larger than the
+        # historical 1024-byte cap must succeed without raising
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         sp = transaction.SuggestedParams(0, 1, 100, gh)
-        f = lambda: transaction.PaymentTxn(
-            address, sp, address, 1000, note=("0" * 1025).encode()
+        txn = transaction.PaymentTxn(
+            address, sp, address, 1000, note=("0" * 4096).encode()
         )
-        self.assertRaises(error.WrongNoteLength, f)
+        self.assertEqual(len(txn.note), 4096)
 
     def test_leases(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
@@ -100,12 +105,17 @@ class TestPaymentTransaction(unittest.TestCase):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
         gh = "JgsgCaCTqIaLeVhyL6XlRu3n7Rfk2FxMeK+wRSaQ7dI="
         sp = transaction.SuggestedParams(3, 1, 100, gh)
-        txn = transaction.PaymentTxn(
-            address, sp, address, 1000, note=("0" * 1024).encode()
-        )
-        enc = encoding.msgpack_encode(txn)
-        re_enc = encoding.msgpack_encode(encoding.msgpack_decode(enc))
-        self.assertEqual(enc, re_enc)
+        # both the historical 1024-byte cap and the larger notes algod
+        # accepts as of vFuture must serialize and decode round-trip
+        for note_length in (1024, 4096):
+            txn = transaction.PaymentTxn(
+                address, sp, address, 1000, note=("0" * note_length).encode()
+            )
+            enc = encoding.msgpack_encode(txn)
+            decoded = encoding.msgpack_decode(enc)
+            self.assertEqual(len(decoded.note), note_length)
+            re_enc = encoding.msgpack_encode(decoded)
+            self.assertEqual(enc, re_enc)
 
     def test_serialize_zero_amt(self):
         address = "7ZUECA7HFLZTXENRV24SHLU4AVPUTMTTDUFUBNBD64C73F3UHRTHAIOF6Q"
@@ -221,17 +231,8 @@ class TestPaymentTransaction(unittest.TestCase):
         txn = transaction.PaymentTxn(msig.address(), params, receiver, 1000000)
         lstx = transaction.LogicSigTransaction(txn, lsig_account)
 
-        golden = (
-            "gqRsc2lngqFsxAUBIAEBIqRtc2lng6ZzdWJzaWeSgqJwa8QgeUdQSBmJmLH5xdID"
-            "nkf+V3AQH6usPifhfJVwnJ7d7nOhc8RAuP0Ms22j1xXTcXYOivDMztXm7vY2uBi8"
-            "vJCDlpWhVxLoEDKhqmqEbT7SfvCrS2aNXPiJUSZ7cNMyUdytOpFdD4KicGvEILxI"
-            "bwe4gu5YCR4TLASEBpTJ25cdJZqxMqhkgMHQqr61oXPEQGOeeZZ1FAJjJ65N5Asj"
-            "i1bK+Q2LZblC77u7NYcw4gPAig8rRUKJYNQtiKVVJQ53A8ufQkn9dZ6uybbaIPxu"
-            "bQejdGhyAqF2AaN0eG6Jo2FtdM4AD0JAo2ZlZc0D6KJmds0Bv6NnZW6qbmV0d29y"
-            "ay12MaJnaMQgzNQES/4IqimxRif40xYvzBBIYCZSbYvNSRIzVIh4swqibHbNBaej"
-            "cmN2xCAbmUF6psn/KWO13vSY9PFeZOSOzXhRxyNIQGngbeVbgqNzbmTEIIytL7Xv"
-            "2XuuO6mS+3IetwlKVPM0qdKBIiMVdhzAOMPKpHR5cGWjcGF5"
-        )
+        # from: msgpacktool -e < tests/unit_tests/pay_msig_delegated.txn | base64
+        golden = "gqRsc2lngqFsxAUBIAEBIqVsbXNpZ4Omc3Vic2lnkoKicGvEIHlHUEgZiZix+cXSA55H/ldwEB+rrD4n4XyVcJye3e5zoXPEQBORyxjnIFjg2USyJaULtogH/jS7nEUjc9cX4KJiXYIIFKzZY1hLK5CxlwYxTKhxyg9NleIJJeKYKi1/epaVNwCConBrxCC8SG8HuILuWAkeEywEhAaUyduXHSWasTKoZIDB0Kq+taFzxEDgg6ULzOGOPLuPnIpM4MHtKjmp92WEN7z38F0JDDuYvtQtfQsV2v4fI6Hf2Z2c92Azv6V+Ns6GytjVE7sDBHIDo3RocgKhdgGjdHhuiaNhbXTOAA9CQKNmZWXNA+iiZnbNAb+jZ2Vuqm5ldHdvcmstdjGiZ2jEIMzUBEv+CKopsUYn+NMWL8wQSGAmUm2LzUkSM1SIeLMKomx2zQWno3JjdsQgG5lBeqbJ/yljtd70mPTxXmTkjs14UccjSEBp4G3lW4Kjc25kxCCMrS+179l7rjupkvtyHrcJSlTzNKnSgSIjFXYcwDjDyqR0eXBlo3BheQ=="
 
         encoded = encoding.msgpack_encode(lstx)
         self.assertEqual(encoded, golden)
@@ -1401,6 +1402,82 @@ class TestApplicationTransactions(unittest.TestCase):
         self.assertEqual(i.dictify(), call.dictify())
         self.assertEqual(i, call)
 
+    def test_application_update_global_schema_and_extra_pages(self):
+        # An update may change the global schema and extra program pages, so
+        # those fields are encoded (apgs, apep) and survive a round trip.
+        empty = b""
+        params = transaction.SuggestedParams(0, 1, 100, self.genesis)
+        gschema = transaction.StateSchema(3, 4)
+        txn = transaction.ApplicationUpdateTxn(
+            self.sender,
+            params,
+            10,
+            empty,
+            empty,
+            global_schema=gschema,
+            extra_pages=2,
+        )
+
+        d = txn.dictify()
+        self.assertEqual(d["apgs"], gschema.dictify())
+        self.assertEqual(d["apep"], 2)
+        # Local schema is not settable on an update, so it is never encoded.
+        self.assertNotIn("apls", d)
+
+        self.assertEqual(transaction.Transaction.undictify(d), txn)
+
+        # An update built through the generic call sets the same fields.
+        call = transaction.ApplicationCallTxn(
+            self.sender,
+            params,
+            10,
+            transaction.OnComplete.UpdateApplicationOC,
+            None,
+            gschema,
+            empty,
+            empty,
+            extra_pages=2,
+        )
+        self.assertEqual(txn.dictify(), call.dictify())
+        self.assertEqual(txn, call)
+
+    def test_application_negative_extra_pages(self):
+        approve = b"\0"
+        clear = b"\1"
+        params = transaction.SuggestedParams(0, 1, 100, self.genesis)
+        with self.assertRaises(ValueError):
+            transaction.ApplicationCallTxn(
+                self.sender,
+                params,
+                10,
+                transaction.OnComplete.NoOpOC,
+                extra_pages=-1,
+            )
+        with self.assertRaises(ValueError):
+            transaction.ApplicationCreateTxn(
+                self.sender,
+                params,
+                transaction.OnComplete.NoOpOC,
+                approve,
+                clear,
+                self.gschema,
+                self.lschema,
+                extra_pages=-1,
+            )
+        with self.assertRaises(ValueError):
+            transaction.ApplicationUpdateTxn(
+                self.sender, params, 10, approve, clear, extra_pages=-2
+            )
+        # None is coerced to 0, same as the default
+        txn = transaction.ApplicationCallTxn(
+            self.sender,
+            params,
+            10,
+            transaction.OnComplete.NoOpOC,
+            extra_pages=None,
+        )
+        self.assertEqual(txn.extra_pages, 0)
+
     def test_application_delete(self):
         params = transaction.SuggestedParams(0, 1, 100, self.genesis)
         i = transaction.ApplicationDeleteTxn(self.sender, params, 10)
@@ -1412,6 +1489,344 @@ class TestApplicationTransactions(unittest.TestCase):
         )
         self.assertEqual(i.dictify(), call.dictify())
         self.assertEqual(i, call)
+
+    def test_translate_to_resource_references(self):
+        translate_to_resource_references = (
+            transaction.translate_to_resource_references
+        )
+        rr = transaction.ResourceReference
+        br = transaction.BoxReference
+        hr = HoldingRef
+        lr = LocalsRef
+
+        accounts = [
+            "47YPQTIGQEO7T4Y4RWDYWEKV6RTR2UNBQXBABEEGM72ESWDQNCQ52OPASU",
+            "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4",
+        ]
+        zero = ""
+        zero_address = encoding.encode_address(bytes(32))
+        one = "AEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKE3PRHE"
+        two = "AIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGFFWAF4"
+        foreign_assets = [2222, 3333]
+        foreign_apps = [222, 333]
+        full_acc_asset_app_pack = [
+            rr(address=accounts[0]),
+            rr(address=accounts[1]),
+            rr(asset_id=foreign_assets[0]),
+            rr(asset_id=foreign_assets[1]),
+            rr(app_id=foreign_apps[0]),
+            rr(app_id=foreign_apps[1]),
+        ]
+        # gradually build up the resource references
+        # starting with only accounts, then foreign arrays, then boxes, then holdings and locals
+        test_cases = [
+            (
+                dict(
+                    app_id=111,
+                    accounts=accounts,
+                ),
+                [
+                    rr(address=accounts[0]),
+                    rr(address=accounts[1]),
+                ],
+            ),
+            (
+                dict(
+                    app_id=111,
+                    accounts=accounts,
+                    foreign_assets=foreign_assets,
+                ),
+                [
+                    rr(address=accounts[0]),
+                    rr(address=accounts[1]),
+                    rr(asset_id=foreign_assets[0]),
+                    rr(asset_id=foreign_assets[1]),
+                ],
+            ),
+            (
+                dict(
+                    app_id=111,
+                    accounts=accounts,
+                    foreign_assets=foreign_assets,
+                    foreign_apps=foreign_apps,
+                ),
+                full_acc_asset_app_pack,
+            ),
+            (
+                dict(
+                    app_id=111,
+                    accounts=accounts,
+                    foreign_assets=foreign_assets,
+                    foreign_apps=foreign_apps,
+                ),
+                full_acc_asset_app_pack,
+            ),
+            (
+                dict(
+                    app_id=111,
+                    accounts=accounts,
+                    foreign_assets=foreign_assets,
+                    foreign_apps=foreign_apps,
+                    boxes=[(3, "aaa"), (0, "bbb"), (111, "bbb2")],
+                ),
+                full_acc_asset_app_pack
+                + [
+                    rr(app_id=3),
+                    rr(box_reference=br(app_index=7, name=b"aaa")),
+                    rr(box_reference=br(app_index=0, name=b"bbb")),
+                    rr(box_reference=br(app_index=0, name=b"bbb2")),
+                ],
+            ),
+            (
+                dict(
+                    app_id=111,
+                    accounts=accounts,
+                    foreign_assets=foreign_assets,
+                    foreign_apps=foreign_apps,
+                    boxes=[(3, "aaa"), (0, "bbb"), (111, "bbb2")],
+                    holdings=[(111, one), (3333, zero)],
+                ),
+                full_acc_asset_app_pack
+                + [
+                    rr(address=one),
+                    rr(asset_id=111),
+                    rr(holding_reference=hr(asset_index=8, addr_index=7)),
+                    rr(holding_reference=hr(asset_index=4, addr_index=0)),
+                    rr(app_id=3),
+                    rr(box_reference=br(app_index=11, name=b"aaa")),
+                    rr(box_reference=br(app_index=0, name=b"bbb")),
+                    rr(box_reference=br(app_index=0, name=b"bbb2")),
+                ],
+            ),
+            (
+                dict(
+                    app_id=111,
+                    accounts=accounts,
+                    foreign_assets=foreign_assets,
+                    foreign_apps=foreign_apps,
+                    boxes=[(3, "aaa"), (0, "bbb"), (111, "bbb2")],
+                    holdings=[(111, one), (3333, zero)],
+                    locals=[(111, two), (333, zero), (444, one)],
+                ),
+                full_acc_asset_app_pack
+                + [
+                    rr(address=one),
+                    rr(asset_id=111),
+                    rr(holding_reference=hr(asset_index=8, addr_index=7)),
+                    rr(holding_reference=hr(asset_index=4, addr_index=0)),
+                    rr(address=two),
+                    rr(locals_reference=lr(app_index=0, addr_index=11)),
+                    rr(locals_reference=lr(app_index=6, addr_index=0)),
+                    rr(app_id=444),
+                    rr(locals_reference=lr(app_index=14, addr_index=7)),
+                    rr(app_id=3),
+                    rr(box_reference=br(app_index=16, name=b"aaa")),
+                    rr(box_reference=br(app_index=0, name=b"bbb")),
+                    rr(box_reference=br(app_index=0, name=b"bbb2")),
+                ],
+            ),
+            # the zero address means the sender: dropped from accounts,
+            # index 0 in holdings and locals
+            (
+                dict(app_id=111, accounts=[zero_address]),
+                [],
+            ),
+            (
+                dict(app_id=111, holdings=[(5, zero_address)]),
+                [
+                    rr(asset_id=5),
+                    rr(holding_reference=hr(asset_index=1, addr_index=0)),
+                ],
+            ),
+            (
+                dict(app_id=111, locals=[(9, zero_address)]),
+                [
+                    rr(app_id=9),
+                    rr(locals_reference=lr(app_index=1, addr_index=0)),
+                ],
+            ),
+            (
+                dict(app_id=111, locals=[(9, one)]),
+                [
+                    rr(app_id=9),
+                    rr(address=one),
+                    rr(locals_reference=lr(app_index=1, addr_index=2)),
+                ],
+            ),
+        ]
+        for test_case in test_cases:
+            result = translate_to_resource_references(**test_case[0])
+            self.assertEqual(result, test_case[1])
+
+    def test_resources_to_fro(self):
+        accounts = [
+            "47YPQTIGQEO7T4Y4RWDYWEKV6RTR2UNBQXBABEEGM72ESWDQNCQ52OPASU",
+            "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4",
+        ]
+        zero = ""
+        one = "AEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKE3PRHE"
+        two = "AIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGFFWAF4"
+        foreign_assets = [2222, 3333]
+        foreign_apps = [222, 333]
+        boxes = [(222, "aaa"), (333, "bbb"), (111, "bbb2")]
+        holdings = [(111, one), (3333, zero)]
+        locals = [(111, two), (333, zero), (444, one)]
+
+        txn_args = dict(
+            accounts=accounts,
+            foreign_assets=foreign_assets,
+            foreign_apps=foreign_apps,
+            boxes=boxes,
+            holdings=holdings,
+            locals=locals,
+        )
+
+        access = transaction.translate_to_resource_references(
+            app_id=111, **txn_args
+        )
+        params = transaction.SuggestedParams(0, 1, 100, self.genesis)
+
+        # no access but foreign data
+        txn1 = transaction.ApplicationCallTxn(
+            self.sender,
+            params,
+            111,
+            transaction.OnComplete.NoOpOC,
+            app_args=[b"hello"],
+            **txn_args,
+        )
+        d1 = txn1.dictify()
+        self.assertEqual(txn1, transaction.ApplicationCallTxn.undictify(d1))
+
+        # with access
+        txn2 = transaction.ApplicationCallTxn(
+            self.sender,
+            params,
+            111,
+            transaction.OnComplete.NoOpOC,
+            app_args=[b"hello"],
+            **txn_args,
+            use_access=True,
+        )
+        d2 = txn2.dictify()
+        self.assertEqual(txn2, transaction.ApplicationCallTxn.undictify(d2))
+
+        # with resources
+        txn3 = transaction.ApplicationCallTxn(
+            self.sender,
+            params,
+            111,
+            transaction.OnComplete.NoOpOC,
+            app_args=[b"hello"],
+            resources=access,
+        )
+        d3 = txn3.dictify()
+        self.assertEqual(txn3, transaction.ApplicationCallTxn.undictify(d3))
+
+        # make sure use_access and resources are dictified the same way
+        self.assertEqual(d2, d3)
+
+    def test_resources_reorder_decoding(self):
+        addr1 = "FDMKB5D72THLYSJEBHBDHUE7XFRDOM5IHO44SOJ7AWPD6EZMWOQ2WKN7HQ"
+        accounts = [addr1]
+        foreign_assets = [123]
+        holdings = [(123, addr1)]
+
+        txn_args = dict(
+            accounts=accounts,
+            foreign_assets=foreign_assets,
+            holdings=holdings,
+        )
+
+        access = transaction.translate_to_resource_references(
+            app_id=111, **txn_args
+        )
+        # make sure holdings is the last entry now
+        self.assertIsNotNone(access[-1].holding_reference)
+        self.assertIsNone(access[0].holding_reference)
+
+        params = transaction.SuggestedParams(0, 1, 100, self.genesis)
+
+        # rearrange access to be out of order
+        access_reordered = [access[2], access[0], access[1]]
+        # make sure holdings is the first entry now
+        self.assertIsNotNone(access_reordered[0].holding_reference)
+        self.assertIsNone(access_reordered[2].holding_reference)
+
+        # ensure decoding-encoding still works despite reordering
+        txn = transaction.ApplicationCallTxn(
+            self.sender,
+            params,
+            111,
+            transaction.OnComplete.NoOpOC,
+            app_args=[b"hello"],
+            resources=access,
+        )
+        d = txn.dictify()
+        self.assertEqual(txn, transaction.ApplicationCallTxn.undictify(d))
+
+    def test_reject_version(self):
+        params = transaction.SuggestedParams(0, 1, 100, self.genesis)
+
+        # Test with specific reject_version
+        txn_with_reject = transaction.ApplicationCallTxn(
+            self.sender,
+            params,
+            123,
+            transaction.OnComplete.NoOpOC,
+            reject_version=5,
+        )
+
+        # Verify reject_version is set
+        self.assertEqual(txn_with_reject.reject_version, 5)
+
+        # Verify encoding includes reject_version
+        txn_dict = txn_with_reject.dictify()
+        self.assertIn("aprv", txn_dict)
+        self.assertEqual(txn_dict["aprv"], 5)
+
+        # Test serialization/deserialization
+        encoded_txn = encoding.msgpack_encode(txn_with_reject)
+        decoded_txn = encoding.msgpack_decode(encoded_txn)
+        self.assertEqual(decoded_txn.reject_version, 5)
+
+        # Test undictify
+        reconstructed_txn = transaction.ApplicationCallTxn.undictify(txn_dict)
+        self.assertEqual(reconstructed_txn.reject_version, 5)
+        self.assertEqual(txn_with_reject, reconstructed_txn)
+
+        # Test with default reject_version (should be 0)
+        txn_default = transaction.ApplicationCallTxn(
+            self.sender,
+            params,
+            456,
+            transaction.OnComplete.NoOpOC,
+        )
+
+        # Verify default reject_version is 0
+        self.assertEqual(txn_default.reject_version, 0)
+
+        # Verify default encoding does not include aprv when 0
+        txn_default_dict = txn_default.dictify()
+        self.assertNotIn("aprv", txn_default_dict)
+
+        # Test undictify with missing aprv field defaults to 0
+        reconstructed_default = transaction.ApplicationCallTxn.undictify(
+            txn_default_dict
+        )
+        self.assertEqual(reconstructed_default.reject_version, 0)
+        self.assertEqual(txn_default, reconstructed_default)
+
+        # Test with explicit 0 reject_version
+        txn_explicit_zero = transaction.ApplicationCallTxn(
+            self.sender,
+            params,
+            456,
+            transaction.OnComplete.NoOpOC,
+            reject_version=0,
+        )
+        self.assertEqual(txn_explicit_zero.reject_version, 0)
+        self.assertEqual(txn_default, txn_explicit_zero)
 
 
 class TestHeartbeatTransactions(unittest.TestCase):
@@ -1524,3 +1939,162 @@ class TestBoxReference(unittest.TestCase):
                 transaction.BoxReference.translate_box_references(
                     test_case[0], test_case[1], 9999
                 )
+
+    def test_empty_resource_reference(self):
+        addr1 = "FDMKB5D72THLYSJEBHBDHUE7XFRDOM5IHO44SOJ7AWPD6EZMWOQ2WKN7HQ"
+
+        params = transaction.SuggestedParams(
+            1000,
+            322575,
+            323575,
+            "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=",
+            "testnet-v1.0",
+        )
+
+        txn = transaction.ApplicationCallTxn(
+            "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4",
+            params,
+            1134696561,
+            transaction.OnComplete.NoOpOC,
+        )
+
+        encoding_data = txn.dictify()
+
+        # Simulate an access list with empty resource references as might come from the blockchain
+        access_list = [
+            {"d": encoding.decode_address(addr1)},
+            {},  # Empty resource reference
+            {"s": 1134696561},
+            {"p": 1134695678},
+        ]
+        encoding_data["al"] = access_list
+
+        # This should not throw an error
+        decoded_txn = transaction.ApplicationCallTxn.undictify(encoding_data)
+
+        # Verify that the decoded transaction has the correct access list
+        self.assertIsNotNone(decoded_txn.resources)
+        self.assertEqual(len(decoded_txn.resources), 4)
+
+        # First reference should be an address
+        self.assertEqual(decoded_txn.resources[0].address, addr1)
+
+        # Second reference should be the canonical empty reference
+        self.assertEqual(
+            decoded_txn.resources[1], transaction.ResourceReference()
+        )
+
+        # Third reference should be an asset
+        self.assertEqual(decoded_txn.resources[2].asset_id, 1134696561)
+
+        # Fourth reference should be an app
+        self.assertEqual(decoded_txn.resources[3].app_id, 1134695678)
+
+    def test_empty_access_refs_encode_canonically(self):
+        # an empty resource reference (an io quota bump) must encode as an
+        # empty map, matching algod's canonical re-encoding; a non-canonical
+        # form like {"b": {}} changes the signed bytes and fails signature
+        # verification at the node. A quota-bump box and an all-zero locals
+        # ref collapse to the same empty reference, so both encode to the
+        # same golden.
+        golden = (
+            "iaJhbJGApGFwaWRvo2ZlZc4AAzwgomZ2zgAE7A+jZ2VurHRlc3RuZXQtdjEuMK"
+            "JnaMQgSGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiKibHbOAATv96Nz"
+            "bmTEIAn70nYsCPhsWua/bdenqQHeZnXXUOB+jFx2mGR9tuH9pHR5cGWkYXBwbA=="
+        )
+        params = transaction.SuggestedParams(
+            1000,
+            322575,
+            323575,
+            "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=",
+            "testnet-v1.0",
+        )
+        sender = "BH55E5RMBD4GYWXGX5W5PJ5JAHPGM5OXKDQH5DC4O2MGI7NW4H6VOE4CP4"
+        zero_address = encoding.encode_address(bytes(32))
+
+        for kwargs in (dict(boxes=[(0, b"")]), dict(locals=[(0, "")])):
+            txn = transaction.ApplicationCallTxn(
+                sender,
+                params,
+                111,
+                transaction.OnComplete.NoOpOC,
+                use_access=True,
+                **kwargs,
+            )
+            self.assertEqual(golden, encoding.msgpack_encode(txn))
+            self.assertEqual(
+                txn, transaction.ApplicationCallTxn.undictify(txn.dictify())
+            )
+
+        # decoding and re-encoding must not change the signed bytes
+        self.assertEqual(
+            golden, encoding.msgpack_encode(encoding.msgpack_decode(golden))
+        )
+
+        # a zero-address account is not listed at all, matching the other
+        # SDKs, so the access list is absent entirely
+        txn = transaction.ApplicationCallTxn(
+            sender,
+            params,
+            111,
+            transaction.OnComplete.NoOpOC,
+            use_access=True,
+            accounts=[zero_address],
+        )
+        self.assertIsNone(txn.resources)
+
+    def test_access_reference_golden_encoding(self):
+        # goldens matching go-algorand's canonical ResourceRef msgpack
+        # encoding (sorted keys, omitted zero fields, bin box names)
+        cases = [
+            (transaction.ResourceReference(), "gA=="),
+            (
+                transaction.ResourceReference(
+                    locals_reference=LocalsRef(app_index=2, addr_index=1)
+                ),
+                "gaFsgqFkAaFwAg==",
+            ),
+            (
+                transaction.ResourceReference(
+                    holding_reference=HoldingRef(asset_index=1, addr_index=0)
+                ),
+                "gaFogaFzAQ==",
+            ),
+            (
+                transaction.ResourceReference(
+                    box_reference=transaction.BoxReference(0, b"name")
+                ),
+                "gaFigaFuxARuYW1l",
+            ),
+        ]
+        for ref, golden in cases:
+            self.assertEqual(golden, encoding.msgpack_encode(ref))
+
+        # str box names are normalized to bytes so they encode as msgpack
+        # bin, the same as algod's []byte re-encoding; this holds on the
+        # tuple path and on direct BoxReference construction alike
+        refs = transaction.translate_to_resource_references(
+            app_id=111, boxes=[(0, "name")]
+        )
+        self.assertEqual(refs[0].box_reference.name, b"name")
+        self.assertEqual(transaction.BoxReference(0, "name").name, b"name")
+
+        # canonical decode-side inputs re-encode byte-identically
+        canonical_dicts = [
+            {},
+            {"b": {"i": 3}},
+            {"b": {"n": b"x"}},
+            {"h": {"d": 2, "s": 1}},
+            {"l": {"d": 1}},
+            {"l": {"p": 2}},
+            {"s": 7},
+            {"p": 9},
+            {"d": bytes(range(32))},
+        ]
+        for d in canonical_dicts:
+            self.assertEqual(
+                encoding.msgpack_encode(
+                    transaction.ResourceReference.undictify(d)
+                ),
+                encoding.msgpack_encode(d),
+            )

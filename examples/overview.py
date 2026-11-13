@@ -4,6 +4,10 @@ from base64 import b64decode
 from utils import get_accounts, get_algod_client
 
 from algosdk import transaction
+from algosdk.atomic_transaction_composer import (
+    AccountTransactionSigner,
+    sign_transaction_with_signer,
+)
 from algosdk.v2client import algod
 
 
@@ -51,7 +55,9 @@ unsigned_txn = transaction.PaymentTxn(
 
 # example: TRANSACTION_PAYMENT_SIGN
 # sign the transaction
-signed_txn = unsigned_txn.sign(private_key)
+signed_txn = sign_transaction_with_signer(
+    unsigned_txn, AccountTransactionSigner(private_key)
+)
 # example: TRANSACTION_PAYMENT_SIGN
 
 # example: TRANSACTION_PAYMENT_SUBMIT

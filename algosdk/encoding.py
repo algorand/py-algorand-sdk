@@ -1,11 +1,12 @@
 import base64
 from collections import OrderedDict
-from typing import Union
+from typing import Tuple, Union
 
 import msgpack
 from Cryptodome.Hash import SHA512
 
 from algosdk import auction, constants, error, transaction
+from algosdk.ed25519_check import is_ed25519_point
 
 
 def msgpack_encode(obj):
@@ -79,8 +80,14 @@ def msgpack_decode(enc):
         if "txn" in decoded:
             return transaction.LogicSigTransaction.undictify(decoded)
         return transaction.LogicSigAccount.undictify(decoded)
+    if "sch" in decoded:
+        # A standalone PQSig also carries a "sig" key, so this check must
+        # come before the SignedTransaction dispatch.
+        return transaction.PQSig.undictify(decoded)
     if "sig" in decoded:
         return transaction.SignedTransaction.undictify(decoded)
+    if "pqsig" in decoded:
+        return transaction.PQSignedTransaction.undictify(decoded)
     if "txn" in decoded:
         return transaction.Transaction.undictify(decoded["txn"])
     if "subsig" in decoded:
@@ -200,6 +207,60 @@ def checksum(data):
     chksum = SHA512.new(truncate="256")
     chksum.update(data)
     return chksum.digest()
+
+
+def address_from_pq_key(scheme: bytes, public_key: bytes) -> Tuple[str, int]:
+    """
+    Derive a post-quantum account address and its canonical salt.
+
+    The address is SHA-512/256("PQA" + scheme + salt + public_key), where the
+    canonical salt is the lowest byte value (0-255) whose resulting 32-byte
+    digest does not decode to an ed25519 curve point.
+
+    Args:
+        scheme (bytes): 2-byte scheme identifier (e.g. b"f1" for Falcon-1024)
+        public_key (bytes): the scheme's public key
+
+    Returns:
+        Tuple[str, int]: the derived address and its canonical salt
+    """
+    if len(scheme) != constants.pq_scheme_len:
+        raise error.PQSchemeLengthError(len(scheme))
+    for salt in range(256):
+        candidate = checksum(
+            constants.pq_address_prefix + scheme + bytes([salt]) + public_key
+        )
+        if not is_ed25519_point(candidate):
+            return encode_address(candidate), salt
+    raise error.NoCanonicalSaltError()
+
+
+def address_from_pq_sig(pqsig: "transaction.PQSig") -> str:
+    """
+    Derive the account address that a post-quantum signature authorizes.
+
+    Unlike an ed25519 signature, a post-quantum signature carries the scheme,
+    salt and public key of the signing account, so the address it authorizes
+    is fully determined by the signature and does not have to be supplied out
+    of band.
+
+    This also validates the signature's self-consistency: the salt must be the
+    canonical one for the given scheme and public key, which is what the
+    network requires.
+
+    Args:
+        pqsig (PQSig): the post-quantum signature to derive the address from
+
+    Returns:
+        str: the address of the account the signature authorizes
+
+    Raises:
+        InvalidPQSaltError: if the salt is not the canonical one
+    """
+    address, salt = address_from_pq_key(pqsig.scheme, pqsig.public_key)
+    if salt != pqsig.salt:
+        raise error.InvalidPQSaltError(salt, pqsig.salt)
+    return address
 
 
 def encode_as_bytes(

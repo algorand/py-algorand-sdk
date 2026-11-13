@@ -3,6 +3,10 @@ import os
 from utils import get_algod_client, get_accounts
 from algosdk import transaction
 from algosdk import encoding
+from algosdk.atomic_transaction_composer import (
+    AccountTransactionSigner,
+    sign_transaction_with_signer,
+)
 
 # example: CODEC_ADDRESS
 address = "4H5UNRBJ2Q6JENAXQ6HNTGKLKINP4J4VTQBEPK5F3I6RDICMZBPGNH6KD4"
@@ -47,7 +51,9 @@ os.remove("pay.txn")
 
 # example: CODEC_TRANSACTION_SIGNED
 # Sign transaction
-spay_txn = pay_txn.sign(acct.private_key)
+spay_txn = sign_transaction_with_signer(
+    pay_txn, AccountTransactionSigner(acct.private_key)
+)
 # write message packed signed transaction to disk
 with open("signed_pay.txn", "w") as f:
     f.write(encoding.msgpack_encode(spay_txn))

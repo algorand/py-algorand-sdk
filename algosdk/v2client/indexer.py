@@ -106,6 +106,7 @@ class IndexerClient:
         round_num=None,
         include_all=False,
         exclude=None,
+        online_only=False,
         **kwargs
     ):
         """
@@ -144,6 +145,8 @@ class IndexerClient:
                 application local data stored for this account,
                 asset parameters created by this account,
                 and application parameters created by this account.
+            online_only (bool, optional): return only accounts whose participation
+                status is currently online. Defaults to false.
         """
         req = "/accounts"
         query = dict()
@@ -166,6 +169,8 @@ class IndexerClient:
             query["include-all"] = include_all
         if exclude:
             query["exclude"] = exclude
+        if online_only:
+            query["online-only"] = "true"
         return self.indexer_request("GET", req, query, **kwargs)
 
     def asset_balances(
@@ -472,6 +477,7 @@ class IndexerClient:
         address_role=None,
         exclude_close_to=False,
         application_id=None,
+        group_id=None,
         rekey_to=False,
         round_num=None,
         **kwargs
@@ -519,6 +525,7 @@ class IndexerClient:
                 to true
             application_id (int, optional): filter for transactions pertaining
                 to an application
+            group_id (bytes, optional): filter transactions by group id
             rekey_to (bool, optional): include results which include the
                 rekey-to field
             round_num (int, optional): alias for block; only specify one of
@@ -561,6 +568,8 @@ class IndexerClient:
             query["exclude-close-to"] = "true"
         if application_id:
             query["application-id"] = application_id
+        if group_id:
+            query["group-id"] = base64.b64encode(group_id).decode()
         if rekey_to:
             query["rekey-to"] = "true"
 

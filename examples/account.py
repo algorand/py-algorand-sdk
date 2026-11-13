@@ -1,6 +1,11 @@
 from utils import get_accounts, get_algod_client
 from algosdk import account, mnemonic
 from algosdk import transaction
+from algosdk.atomic_transaction_composer import (
+    AccountTransactionSigner,
+    MultisigTransactionSigner,
+    sign_transaction_with_signer,
+)
 
 # example: ACCOUNT_GENERATE
 private_key, address = account.generate_account()
@@ -36,9 +41,12 @@ print("Multisig Address: ", msig.address())
 
 algod_client = get_algod_client()
 sp = algod_client.suggested_params()
-ptxn = transaction.PaymentTxn(
+pay_txn = transaction.PaymentTxn(
     account_1.address, sp, msig.address(), int(1e5)
-).sign(account_1.private_key)
+)
+ptxn = sign_transaction_with_signer(
+    pay_txn, AccountTransactionSigner(account_1.private_key)
+)
 txid = algod_client.send_transaction(ptxn)
 transaction.wait_for_confirmation(algod_client, txid, 4)
 # dont check response, assume it worked
@@ -51,9 +59,12 @@ msig_pay = transaction.PaymentTxn(
     0,
     close_remainder_to=account_1.address,
 )
-msig_txn = transaction.MultisigTransaction(msig_pay, msig)
-msig_txn.sign(account_2.private_key)
-msig_txn.sign(account_3.private_key)
+msig_txn = sign_transaction_with_signer(
+    msig_pay,
+    MultisigTransactionSigner(
+        msig, [account_2.private_key, account_3.private_key]
+    ),
+)
 txid = algod_client.send_transaction(msig_txn)
 result = transaction.wait_for_confirmation(algod_client, txid, 4)
 print(
@@ -67,7 +78,9 @@ print(
 rekey_txn = transaction.PaymentTxn(
     account_1.address, sp, account_1.address, 0, rekey_to=account_2.address
 )
-signed_rekey = rekey_txn.sign(account_1.private_key)
+signed_rekey = sign_transaction_with_signer(
+    rekey_txn, AccountTransactionSigner(account_1.private_key)
+)
 txid = algod_client.send_transaction(signed_rekey)
 result = transaction.wait_for_confirmation(algod_client, txid, 4)
 print(f"rekey transaction confirmed in round {result['confirmed-round']}")
@@ -77,14 +90,18 @@ print(f"rekey transaction confirmed in round {result['confirmed-round']}")
 expect_err_txn = transaction.PaymentTxn(
     account_1.address, sp, account_1.address, 0
 )
-signed_expect_err_txn = expect_err_txn.sign(account_1.private_key)
+signed_expect_err_txn = sign_transaction_with_signer(
+    expect_err_txn, AccountTransactionSigner(account_1.private_key)
+)
 try:
     txid = algod_client.send_transaction(signed_expect_err_txn)
 except Exception as e:
     print("Expected error: ", e)
 
 # But its fine if we sign it with the account we rekeyed to
-signed_expect_err_txn = expect_err_txn.sign(account_2.private_key)
+signed_expect_err_txn = sign_transaction_with_signer(
+    expect_err_txn, AccountTransactionSigner(account_2.private_key)
+)
 txid = algod_client.send_transaction(signed_expect_err_txn)
 result = transaction.wait_for_confirmation(algod_client, txid, 4)
 print(f"transaction confirmed in round {result['confirmed-round']}")
@@ -93,7 +110,9 @@ print(f"transaction confirmed in round {result['confirmed-round']}")
 rekey_txn = transaction.PaymentTxn(
     account_1.address, sp, account_1.address, 0, rekey_to=account_1.address
 )
-signed_rekey = rekey_txn.sign(account_2.private_key)
+signed_rekey = sign_transaction_with_signer(
+    rekey_txn, AccountTransactionSigner(account_2.private_key)
+)
 txid = algod_client.send_transaction(signed_rekey)
 result = transaction.wait_for_confirmation(algod_client, txid, 4)
 print(f"rekey transaction confirmed in round {result['confirmed-round']}")

@@ -20,6 +20,7 @@ class ApplicationParams(object):
         "local_state_schema": "ApplicationStateSchema",
         "global_state_schema": "ApplicationStateSchema",
         "global_state": "list[TealKeyValue]",
+        "version": "int",
     }
 
     attribute_map = {
@@ -29,6 +30,7 @@ class ApplicationParams(object):
         "local_state_schema": "local-state-schema",
         "global_state_schema": "global-state-schema",
         "global_state": "global-state",
+        "version": "version",
     }
 
     def __init__(
@@ -39,6 +41,7 @@ class ApplicationParams(object):
         local_state_schema=None,
         global_state_schema=None,
         global_state=None,
+        version=None,
     ):  # noqa: E501
         """ApplicationParams - a model defined in OpenAPI"""  # noqa: E501
 
@@ -48,6 +51,7 @@ class ApplicationParams(object):
         self._local_state_schema = None
         self._global_state_schema = None
         self._global_state = None
+        self._version = None
 
         self.creator = creator
         self.approval_program = approval_program
@@ -58,6 +62,8 @@ class ApplicationParams(object):
             self.global_state_schema = global_state_schema
         if global_state is not None:
             self.global_state = global_state
+        if version is not None:
+            self.version = version
 
     @property
     def creator(self):
@@ -192,6 +198,29 @@ class ApplicationParams(object):
         """
 
         self._global_state = global_state
+
+    @property
+    def version(self):
+        """Gets the version of this Application programs.  # noqa: E501
+
+        Represents the number of updates to the application programs.  # noqa: E501
+
+        :return: The version of this Application programs.  # noqa: E501
+        :rtype: int
+        """
+        return self._version
+
+    @version.setter
+    def version(self, version):
+        """Sets the version of this Application programs.
+
+        Represents the number of updates to the application programs.  # noqa: E501
+
+        :param version: The the version of this Application programs.  # noqa: E501
+        :type version: int
+        """
+
+        self._version = version
 
     def dictify(self):
         """Returns the model properties as a dict"""
